@@ -1,4 +1,3 @@
-import dronekit_sitl
 from enum import Enum
 from math import sqrt
 import random
@@ -39,7 +38,7 @@ formula_dict = {
     "s2": "sqrt(DxDy3a2 + a * (sqDx + (3 * Dy)))",
     "s3": "sqrt(DxDy3a2 + a * (3 * Dy - aDx))",
     "s4": "sqrt(DxDy3a2 - aDx + 3 * a * a)",
-    "s5": "sqrt(DxDy3a2 - a * (aDx + (3 * Dy)))",
+    "s5": "sqrt(DxDy3a2 - a * (sqDx + (3 * Dy)))",
     "s6": "sqrt(DxDy3a2 - a * (3 * Dy - sqDx))"
 }
 
@@ -68,7 +67,6 @@ class Drone:
         sqDx = sq3 * self.positionX
         aDx = (2 * sq3) * self.positionX
         Dy= self.positionY
-        
         #TODO you sshould consider a situation what inside the formaula is negative 
         for s in self.s_list:
             formula = formula_dict.get(s["name"])
@@ -88,15 +86,15 @@ class Drone:
         # using x2+y2 find the distance 
         for s in self.s_list:
             # for now i will have it from the Stdin 
-            num_dron = int(input("Enter number of drone at"+s["name"]))
-            s["drone_in"] = int(num_dron)
+            num_dron = int(input("Enter number of drone at "+s["name"]+" :"))
+            s["drones_in"] = int(num_dron)
             if num_dron > 0:
                 s["occupied"]= True
 
 
-    def move_to(self,direction_num):
-        self.positionX =self.positionX + DIR_VECTORS[direction_num][0] # add the value not assign because it is movement 
-        self.positionY += DIR_VECTORS[direction_num][1]
+    def update_location(self,x,y ):
+        self.positionX =self.positionX + x#DIR_VECTORS[dir][0]# add the value not assign because it is movement 
+        self.positionY = self.positionY+ y #DIR_VECTORS[dir][1]
         print(self.positionX, self.positionY)
     
 
@@ -111,32 +109,27 @@ class Drone:
         for s in self.s_list:
             if not s["occupied"]: # free spot 
                 s["priority"]= s["distance"]* C /denom
+                #print("s["name"],s["priority"] )
+
             else: # s is occupied 
                 if s["name"] in self.min_distance_dicts: #close to sink 
-                    s["priority"]= -1 # or INF 
+                    s["priority"]= float("inf") 
                 else: # random float between [w*c+eps, w+1*c[
                     s["priority"]= random.uniform(s["drones_in"]* C + eps, (s["drones_in"]+1)*C)
+
     
     def findPriority(self):
         min_Priority = min(self.s_list, key=lambda x: x["priority"])["priority"]
         self.Priority_to_go =[s["name"] for s in self.s_list if s["priority"] == min_Priority]
         
-        print(int(self.Priority_to_go[0][1:])) #exteract only the number of nigboor  
+        #print(int(self.Priority_to_go[0][1:])) #exteract only the number of nigboor  
         return int(self.Priority_to_go[0][1:])
 
 
-
-print( DIR_VECTORS[1][0], DIR_VECTORS[1][1] )
-drone= Drone(0.0,0.0) # drone at the sink 
-# move randomaly far from the sink
-random_dir = int(random.randint(1, 6))
-drone.move_to(random_dir)
-# in the new position find the distance of the neigboors 
-drone.calculate_neigboors_dis()
-drone.check_drones_in_neigboors()
-drone.setPriorities()
-drone.move_to(drone.findPriority()) 
-
-        
+    def direction(self, dir):
+     # the north is the y access in the calaulation of the hex and the east is the x 
+     # example reived x=a, y=b 
+     # then the move to the nourth by the value of b ( y in calculation access)
+        return DIR_VECTORS[dir][0], DIR_VECTORS[dir][1]
 
 
