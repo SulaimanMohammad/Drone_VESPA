@@ -6,6 +6,8 @@ sq3=sqrt(3)
 a= 20 # drone range 
 C=100
 eps=20
+
+
 class DroneState(Enum):
     s1 = 0
     s2 = 1
@@ -30,6 +32,24 @@ DIR_VECTORS = [
     [-(sq3 / 2.0) * a, -(3.0/ 2.0) * a], # s5
     [(sq3 / 2.0) * a, -(3.0 / 2.0) * a]   # s6
 ]
+
+def update_DIR_VECTORS():
+    global DIR_VECTORS
+    DIR_VECTORS = [
+    [0, 0],                             # s0 // don't move, stay
+    [(sq3 * a), 0],            # s1
+    [(sq3 / 2.0) * a, (3.0 / 2.0) * a],   # s2
+    [-(sq3 / 2) * a, (3.0 / 2.0) * a],  # s3
+    [-sq3 * a, 0],             # s4
+    [-(sq3 / 2.0) * a, -(3.0/ 2.0) * a], # s5
+    [(sq3 / 2.0) * a, -(3.0 / 2.0) * a]   # s6
+]
+
+def set_a( val):
+    global a
+    a= val
+    update_DIR_VECTORS()
+
 
 
 formula_dict = {
@@ -95,7 +115,7 @@ class Drone:
     def update_location(self,x,y ):
         self.positionX =self.positionX + x#DIR_VECTORS[dir][0]# add the value not assign because it is movement 
         self.positionY = self.positionY+ y #DIR_VECTORS[dir][1]
-        print(self.positionX, self.positionY)
+        return [self.positionX, self.positionY]
     
 
     def findMinDistances_niegboor(self):
@@ -131,5 +151,6 @@ class Drone:
      # example reived x=a, y=b 
      # then the move to the nourth by the value of b ( y in calculation access)
         return DIR_VECTORS[dir][0], DIR_VECTORS[dir][1]
+
 
 
