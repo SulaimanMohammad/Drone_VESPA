@@ -12,7 +12,6 @@ import inspect
 # Declare global variables for logs 
 filename = " "
 directory= " "
-log_file_name= " "
 
 def create_log_file(dir,script_name ):
     # Get the name of the script using this module
@@ -51,7 +50,7 @@ def parse_connect():
     parser.add_argument('--connect')
     args = parser.parse_args()
     connection_string = args.connect
-    print ("Connection to the vehicle on %s"%connection_string)
+    #print ("Connection to the vehicle on %s"%connection_string)
     # Connect to the Vehicle (in this case a simulator running the same computer)
     return connection_string
 
@@ -147,7 +146,7 @@ def send_ned_velocity(self, velocity_x, velocity_y, velocity_z, duration):
         self.send_mavlink(msg)
         time.sleep(0.1)
 
-def send_ned_velocity_stages(self, velocity_x, velocity_y, velocity_z, duration):
+def send_ned_velocity_stages_long(self, velocity_x, velocity_y, velocity_z, duration):
     write_log_message (f"{get_current_function_name()} called:")
     stages = 6  # Number of stages
 
@@ -171,13 +170,13 @@ def send_ned_velocity_stages(self, velocity_x, velocity_y, velocity_z, duration)
             stage_speed_y = velocity_y * 0.5
             stage_speed_z = velocity_z * 0.5
 
-        # # Calculate duration for the current stage
-        # if stage == 0 or stage == stages - 1:  # First and last stage (25% and 25%)
-        #     stage_time = stage_duration * 4.0 # since it speed of 25% then you need 4 times the duration of the satge to go the distance 
-        # elif stage ==2 or stage ==3:  # Middle stage (100%)
-        #     stage_time = stage_duration
-        # else:  # Intermediate stages (50%)
-        #     stage_time = stage_duration *2 # same herer you need 2 times the duration of the stage since you need only 50% of speed so double the time 
+        # Calculate duration for the current stage
+        if stage == 0 or stage == stages - 1:  # First and last stage (25% and 25%)
+            stage_time = stage_duration * 4.0 # since it speed of 25% then you need 4 times the duration of the satge to go the distance 
+        elif stage ==2 or stage ==3:  # Middle stage (100%)
+            stage_time = stage_duration
+        else:  # Intermediate stages (50%)
+            stage_time = stage_duration *2 # same herer you need 2 times the duration of the stage since you need only 50% of speed so double the time 
 
         # Calculate duration for the current stage faster 
         if stage == 0 or stage == stages - 1:  # First and last stage (25% and 25%)
@@ -205,15 +204,56 @@ def send_ned_velocity_stages(self, velocity_x, velocity_y, velocity_z, duration)
         while time.time() - start_time < stage_time:
             self.send_mavlink(msg)
             time.sleep(0.1)
-        # for i in range(0,stage_duration):
-        #     self.send_mavlink(msg)
-        #     time.sleep(1)
 
-        # Print stage information
+def send_ned_velocity_stages_short(self, velocity_x, velocity_y, velocity_z, duration):
+    write_log_message (f"{get_current_function_name()} called:")
+    stages = 6  # Number of stages
 
-        # # Add delay between stages if necessary
-        # if stage != stages - 1:
-        #     time.sleep(1)  # Add a 1-second delay between stages
+    # Calculate distance and time for each stage
+    stage_duration = duration / stages
+
+    # Loop through stages
+    for stage in range(stages):
+        # Calculate speed for the first stage 25% of the speed 
+        if stage == 0 or stage == stages - 1:  # First and last stage (25% and 25%)
+            stage_speed_x = velocity_x * 0.25
+            stage_speed_y = velocity_y * 0.25
+            stage_speed_z = velocity_z * 0.25
+
+        elif stage ==2 or stage ==3:  # Middle stage (100%)
+            stage_speed_x = velocity_x 
+            stage_speed_y = velocity_y 
+            stage_speed_z = velocity_z 
+        else:  # Intermediate stages (50%)
+            stage_speed_x = velocity_x * 0.5
+            stage_speed_y = velocity_y * 0.5
+            stage_speed_z = velocity_z * 0.5
+
+        # Calculate duration for the current stage faster 
+        if stage == 0 or stage == stages - 1:  # First and last stage (25% and 25%)
+            stage_time = stage_duration * 2.0 # since it speed of 25% then you need 4 times the duration of the satge to go the distance 
+        elif stage ==2 or stage ==3:  # Middle stage (100%)
+            stage_time = stage_duration*2
+        else:  # Intermediate stages (50%)
+            stage_time = stage_duration *1 # same herer you need 2 times the duration of the stage since you need only 50% of speed so double the time 
+
+        # Create and send the MAVLink message for the current stage
+        msg = self.message_factory.set_position_target_local_ned_encode(
+            0,       # time_boot_ms (not used)
+            0, 0,    # target system, target component
+            mavutil.mavlink.MAV_FRAME_LOCAL_NED,  # frame
+            0b110111000111,  # type_mask (only speeds enabled)
+            0, 0, 0,  # x, y, z positions (not used)
+            stage_speed_x, stage_speed_y, stage_speed_z,  # x, y, z velocity in m/s
+            0, 0, 0,  # x, y, z acceleration (not supported yet, ignored in GCS_Mavlink)
+            0, 0)  # yaw, yaw_rate (not supported yet, ignored in GCS_Mavlink)
+
+        # Send command to vehicle on 1 Hz cycle for the current stage's duration
+        start_time = time.time()
+        while time.time() - start_time < stage_time:
+            self.send_mavlink(msg)
+            time.sleep(0.1)
+
 
 # this function will calculate the speed and the time and call send_ned_velocity 
 def move_to(self, x , y): 
@@ -225,15 +265,12 @@ def move_to(self, x , y):
     north= y  # on y
     east= x #on x 
     down=0 # stay in the same hight 
-    #total_time= max( abs(x)/north, abs(y)/east) #abs because the position can be - but not needed to calculatet the time  
     total_time= min_time_safe()
-    print ("north", north, "east", east, "total_time",total_time)
-    #print (" go north  %f , in spped of %f , and east to %f with speed of %f",north,east, north/float(total_time), east/float(total_time)  )
     send_ned_velocity(self,north/float(total_time) ,east/float(total_time), down, total_time)
     #send_ned_velocity_stages(self,north/float(total_time) ,east/float(total_time), down, total_time)
     # you can not have one speed for both and only one time for both , so we fix time and change the speed 
 
-def move_to_stages(self, x , y): 
+def move_to_stages_long(self, x , y): 
     write_log_message (f"{get_current_function_name()} called:")
     # need to set speed constant and we change the time 
     # the north is the y access in the calaulation of the hex and the east is the x 
@@ -242,13 +279,20 @@ def move_to_stages(self, x , y):
     north= y  # on y
     east= x #on x 
     down=0 # stay in the same hight 
-    #total_time= max( abs(x)/north, abs(y)/east) #abs because the position can be - but not needed to calculatet the time  
     total_time= min_time_safe()
-    print ("north", north, "east", east, "total_time",total_time)
-    #print (" go north  %f , in spped of %f , and east to %f with speed of %f",north,east, north/float(total_time), east/float(total_time)  )
-    #send_ned_velocity(self,north/float(total_time) ,east/float(total_time), down, total_time)
-    send_ned_velocity_stages(self,north/float(total_time) ,east/float(total_time), down, total_time)
-    # you can not have one speed for both and only one time for both , so we fix time and change the speed 
+    send_ned_velocity_stages_long(self,north/float(total_time) ,east/float(total_time), down, total_time)
+
+def move_to_stages_short(self, x , y): 
+    write_log_message (f"{get_current_function_name()} called:")
+    # need to set speed constant and we change the time 
+    # the north is the y access in the calaulation of the hex and the east is the x 
+    # example reived x=a, y=b 
+    # then the move to the nourth by the value of b ( y in calculation access)
+    north= y  # on y
+    east= x #on x 
+    down=0 # stay in the same hight 
+    total_time= min_time_safe()
+    send_ned_velocity_stages_short(self,north/float(total_time) ,east/float(total_time), down, total_time)
 
 def set_home_to_zero(self):
     write_log_message (f"{get_current_function_name()} called:")
