@@ -256,7 +256,7 @@ def send_ned_velocity_stages_short(self, velocity_x, velocity_y, velocity_z, dur
 
 
 # this function will calculate the speed and the time and call send_ned_velocity 
-def move_to(self, x , y): 
+def move_to(self, x , y, time=0): 
     write_log_message (f"{get_current_function_name()} called:")
     # need to set speed constant and we change the time 
     # the north is the y access in the calaulation of the hex and the east is the x 
@@ -265,7 +265,10 @@ def move_to(self, x , y):
     north= y  # on y
     east= x #on x 
     down=0 # stay in the same hight 
-    total_time= min_time_safe()
+    if time==0:
+        total_time= min_time_safe()
+    else:
+        total_time=time
     send_ned_velocity(self,north/float(total_time) ,east/float(total_time), down, total_time)
     #send_ned_velocity_stages(self,north/float(total_time) ,east/float(total_time), down, total_time)
     # you can not have one speed for both and only one time for both , so we fix time and change the speed 
@@ -319,3 +322,68 @@ def min_time_safe():
         if duration > longest_duration:
             longest_duration = duration
     return int(longest_duration)
+
+#time =0 means that if it was not provided move_to will use the min_time_safe 
+def scan_hexagon(vehicle, drone, a ,camera_image_width,  time=0):
+    
+    #dave the current location 
+    drone.update_location(drone.positionX,drone.positionY)
+    distance=math.sin(math.radians(30))* camera_image_width
+    new_radious= round(a-(distance/2),2)
+    
+    # go to the vertex1 
+    # x=0
+    # y=new_radious
+    # move_to(vehicle,x,y,time)
+    move_to(vehicle,0,a,time) # go to the top of hex 
+    while new_radious > distance/2: 
+        
+        x=0
+        y=-distance/2
+        move_to(vehicle,x,y,time)
+        v1_x=x
+        v1_y=y
+        x_deplacment= round(math.sin(math.radians(60)),2)* (new_radious)
+        y_deplacment= round(math.cos(math.radians(60)),2)* (new_radious)
+        
+        # go to the vertex2 
+        x= x_deplacment
+        y=- y_deplacment
+        move_to(vehicle,x,y,time)
+        
+        # go to the vertex3
+        x=0
+        y=-new_radious
+        move_to(vehicle,x,y,time)
+
+        # go to the vertex4
+        x=-x_deplacment
+        y=-y_deplacment
+        move_to(vehicle,x,y,time)
+
+        # go to the vertex5
+        x=-x_deplacment
+        y= y_deplacment
+        move_to(vehicle,x,y,time)
+        
+        # go to the vertex6
+        x=0
+        y=+new_radious
+        move_to(vehicle,x,y,time)
+
+        # go back to the vertex1 
+        x=x_deplacment
+        y=y_deplacment
+        move_to(vehicle,x,y,time)
+        
+        #reduce the size of hexagone and go down to new vertex1 
+        new_radious= round(new_radious-(distance/2),2)
+        
+    
+    # print("start x and y", drone.positionX, drone.positionY )
+    # print("final x and y", x, y )
+    # print("vertex1  x and y", v1_x, v1_y )
+
+    #back to the start ( center of the main hexagon)
+    move_to(vehicle,v1_x-drone.positionX,v1_y-drone.positionY,time)
+    drone.update_location(v1_x-drone.positionX,v1_y-drone.positionY) #the new coordinates
