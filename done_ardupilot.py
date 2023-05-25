@@ -65,6 +65,7 @@ def arm_and_takeoff(self, aTargetAltitude):
         write_log_message ("initialise the self") 
 
     print("Basic pre-arm checks") 
+    # TODO do not try to take off if the alituduid is not zero 
     # Don't try to arm until autopilot is ready
     while not self.is_armable:
         print ("Waiting for self to initialise...")
@@ -328,62 +329,79 @@ def scan_hexagon(vehicle, drone, a ,camera_image_width,  time=0):
     
     #dave the current location 
     drone.update_location(drone.positionX,drone.positionY)
-    distance=math.sin(math.radians(30))* camera_image_width
-    new_radious= round(a-(distance/2),2)
-    
-    # go to the vertex1 
-    # x=0
-    # y=new_radious
-    # move_to(vehicle,x,y,time)
+    distance=math.sin(math.radians(60))* camera_image_width
+    new_radius= round(a-(distance/2),2)
+    #print("distance= ", distance)
+    i=0
+    # go to the main vertex1 
     move_to(vehicle,0,a,time) # go to the top of hex 
-    while new_radious > distance/2: 
+    drone.update_location(0,a)
+    while new_radius > 0: 
+        #print("new_radius= ", new_radius)
+        #first time move distance/2 to define then path of the drone 
+        if i==0: 
+            x=0
+            y=round(-distance/2,2)
+        else: # then to go to the nex path far by distance 
+            x=0
+            y=round(-distance,2)
         
-        x=0
-        y=-distance/2
+        #print("go to vetex = ", x,y)
         move_to(vehicle,x,y,time)
-        v1_x=x
-        v1_y=y
-        x_deplacment= round(math.sin(math.radians(60)),2)* (new_radious)
-        y_deplacment= round(math.cos(math.radians(60)),2)* (new_radious)
-        
+        drone.update_location(x,y)
+
+        v1_x=drone.positionX
+        v1_y=drone.positionY
+
+        x_deplacment= round( math.sin(math.radians(60)),2) * new_radius
+        y_deplacment= round(math.cos(math.radians(60)),2)* new_radius
+        #print("x_deplacment ,Y_deplacment = ", x_deplacment, y_deplacment)
         # go to the vertex2 
         x= x_deplacment
         y=- y_deplacment
         move_to(vehicle,x,y,time)
-        
+        drone.update_location(x,y)
+
         # go to the vertex3
         x=0
-        y=-new_radious
+        y=-new_radius
         move_to(vehicle,x,y,time)
-
+        drone.update_location(x,y)
         # go to the vertex4
         x=-x_deplacment
         y=-y_deplacment
         move_to(vehicle,x,y,time)
-
+        drone.update_location(x,y)
         # go to the vertex5
         x=-x_deplacment
         y= y_deplacment
         move_to(vehicle,x,y,time)
-        
+        drone.update_location(x,y)       
         # go to the vertex6
         x=0
-        y=+new_radious
+        y=+new_radius
         move_to(vehicle,x,y,time)
-
+        drone.update_location(x,y)
+       
         # go back to the vertex1 
         x=x_deplacment
         y=y_deplacment
         move_to(vehicle,x,y,time)
-        
+        drone.update_location(x,y)
+        # drone did not arrive exactly to the same vertx1 
+        # correcte the error accumulated by the floating point
+        if drone.positionX!= v1_x or drone.positionY != v1_y:
+            print("x vertex1 and y vertex1 y", drone.positionX, v1_x, drone.positionY, v1_y )
+            #move_to(vehicle,drone.positionX- v1_x, drone.positionX- v1_y,time)
+            #drone.update_location(v1_x-drone.positionX,v1_y-drone.positionY) #the new coordinates
+
         #reduce the size of hexagone and go down to new vertex1 
-        new_radious= round(new_radious-(distance/2),2)
-        
-    
-    # print("start x and y", drone.positionX, drone.positionY )
-    # print("final x and y", x, y )
-    # print("vertex1  x and y", v1_x, v1_y )
+        new_radius= round(new_radius-distance,2)
+        i=i+1
+
+    print("current x and y", drone.positionX, drone.positionY )
+    print("vertex1  x and y", v1_x, v1_y )
 
     #back to the start ( center of the main hexagon)
-    move_to(vehicle,v1_x-drone.positionX,v1_y-drone.positionY,time)
-    drone.update_location(v1_x-drone.positionX,v1_y-drone.positionY) #the new coordinates
+    # move_to(vehicle, 0, a-(distance/2)*i, time)
+    # drone.update_location(v1_x-drone.positionX,v1_y-drone.positionY) #the new coordinates
