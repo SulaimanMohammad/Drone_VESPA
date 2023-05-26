@@ -333,9 +333,8 @@ def scan_hexagon(vehicle, drone, camera_image_width,  scan_time=0):
     #dave the current location 
     drone.update_location(drone.positionX,drone.positionY)
     distance= round(math.sin(math.radians(60))* camera_image_width,2)
-    #print("distance= ", distance)
+
     i=0
-    print("go to orginal v1")
     # go to the main vertex1 
     move_to(vehicle,0,a,scan_time) # go to the top of hex 
     new_radius= a
@@ -346,11 +345,9 @@ def scan_hexagon(vehicle, drone, camera_image_width,  scan_time=0):
             x=0
             y=-distance/2
             new_radius= a-(distance/2)
-            print("first time go down on y by ", y, "raduis=",new_radius )
         else: # then to go to the nex path far by distance 
             x=0
             y=-distance
-            print("next time go down on y by", y, "raduis=",new_radius )
         
         move_to(vehicle,x,y,scan_time)
         drone.update_location(x,y)
@@ -360,47 +357,41 @@ def scan_hexagon(vehicle, drone, camera_image_width,  scan_time=0):
 
         x_deplacment=  round(math.sin(math.radians(60)) * new_radius,2)
         y_deplacment= round(math.cos(math.radians(60))* new_radius,2)
-        #print("x_deplacment ,Y_deplacment = ", x_deplacment, y_deplacment)
+
         # go to the vertex2 
         x= x_deplacment
         y=- y_deplacment
-        print("move to v2, x",x,"y",y)
         move_to(vehicle,x,y,scan_time)
         drone.update_location(x,y)
 
         # go to the vertex3
         x=0
         y=-new_radius
-        print("move to v3, x",x,"y",y)
         move_to(vehicle,x,y,scan_time)
         drone.update_location(x,y)
         # go to the vertex4
         x=-x_deplacment
         y=-y_deplacment
-        print("move to v4, x",x,"y",y)
         move_to(vehicle,x,y,scan_time)
         drone.update_location(x,y)
         # go to the vertex5
         x=-x_deplacment
         y= y_deplacment
-        print("move to v5, x",x,"y",y)
         move_to(vehicle,x,y,scan_time)
         drone.update_location(x,y)       
         # go to the vertex6
         x=0
         y=+new_radius
-        print("move to v6, x",x,"y",y)
         move_to(vehicle,x,y,scan_time)
         drone.update_location(x,y)
        
         # go back to the vertex1 
         x=x_deplacment
         y=y_deplacment
-        print("back  to v1, x",x,"y",y)
         move_to(vehicle,x,y,scan_time)
         drone.update_location(x,y)
-        print(" last x ,y",drone.positionX, drone.positionY )
-        # drone did not arrive exactly to the same vertx1 
+        
+        # TODO drone did not arrive exactly to the same vertx1 
         # correcte the error accumulated by the floating point
         # if drone.positionX!= v1_x or drone.positionY != v1_y:
         #     print("x vertex1 and y vertex1 y", drone.positionX, v1_x, drone.positionY, v1_y )
@@ -411,11 +402,7 @@ def scan_hexagon(vehicle, drone, camera_image_width,  scan_time=0):
         new_radius= new_radius-distance
         i=i+1
 
-    # print("current x and y", drone.positionX, drone.positionY )
-    # print("vertex1  x and y", v1_x, v1_y )
-    print("r= ",-(a-distance*i+distance/2) )
-    print("r= ",-(new_radius+distance +distance/2) )
-    # #back to the start ( center of the main hexagon)
-    # move_to(vehicle, 0, -(a-distance*i+distance/2), time_taken)
+   
+    #back to the start ( center of the main hexagon)
     move_to(vehicle, 0, -(a-distance*i+distance/2))
-    # # drone.update_location(v1_x-drone.positionX,v1_y-drone.positionY) #the new coordinates
+    drone.update_location(0,-(a-distance*i+distance/2)) #the new coordinates
