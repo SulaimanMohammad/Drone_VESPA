@@ -11,8 +11,7 @@ For example based on the focal length and the high of the camera, the covrage wi
 - It will start by calculating the distance between two successive hexagons that confine between them the size of the image that can be captured by the drone
 - calcule Distance/2 beause the drone should be in the middle.
 - scan the first region
-    - go north to the orginal vertex V1
-    - go south (y) by distance/2 to V'1= (V1-distance/2)
+    - go north (y) to V'1= (V1-distance/2)
     - move on the path that form hexagon
     - finish the loop
 - scan the second region
