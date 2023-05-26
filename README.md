@@ -5,18 +5,21 @@ The drone will scan the region by taking a hexagon path with length depends on t
 For example based on the focal length and the high of the camera, the covrage will be calculate and define the path of the drone.
 
 ```bash
-        scan_hexagon(vehicle-object, VESPA-object, orgin-hex-length ,camera_image_width)
+        scan_hexagon(vehicle-object, VESPA-object, orgin-hex-length ,camera_image_width, scan_time)
 ```
 
-- It will start by calculating the distance between two successtive hexagon that confined between them the size of the image that can be captured by the drone
-- calcule Distance/2 beause the drone should be in th middle.
+- It will start by calculating the distance between two successive hexagons that confine between them the size of the image that can be captured by the drone
+- calcule Distance/2 beause the drone should be in the middle.
 - scan the first region
     - go to the orginal vertex V1
     - go down on (y) by distance/2 to V'1= (V1-distance/2)
     - move on the path that form hexagon
     - finish the loop
 - scan the second region
-    - from the last position (v'1) go by distance/2 go to v''1=( V'1-distance/2)
+    - from the last position (v'1) go down by distance to v''1=( V'1-distance)
     - move on the path and scan a hexagon
-- repeat until you can't subtract (distance/2) which means no more regions need to be scanned
+    - Note: the reason of moving by "distance" not "distance/2" because (distance/2) was used to go to the path of the dron, then the next path is on "distane" as you see in the fig.
+- repeat until you can't subtract (distance) which means no more regions need to be scanned.
+- suppose the last hexagon was the one with (v'''1), then the drone can back to the original center
+by going south by (a-distance*i+distance/2)
 ![Alt text](https://github.com/SulaimanMohammad/Drone_VESPA/blob/main/.exp/coverage.png)
