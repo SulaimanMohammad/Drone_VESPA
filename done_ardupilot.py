@@ -23,7 +23,9 @@ def create_log_file(dir,script_name ):
     
     # Set the global directory variable
     global directory
-    directory = dir
+    directory = os.path.join(dir, 'log')
+    if not os.path.exists(directory): # if log doesnt exist then create it 
+        os.makedirs(directory)
 
 def open_log_file():
     # Get the absolute path of the log file
@@ -257,7 +259,7 @@ def send_ned_velocity_stages_short(self, velocity_x, velocity_y, velocity_z, dur
 
 
 # this function will calculate the speed and the time and call send_ned_velocity 
-def move_to(self, x , y, time=0): 
+def move_to(self, x , y, time_passed=0): 
     write_log_message (f"{get_current_function_name()} called:")
     # need to set speed constant and we change the time 
     # the north is the y access in the calaulation of the hex and the east is the x 
@@ -266,11 +268,12 @@ def move_to(self, x , y, time=0):
     north= y  # on y
     east= x #on x 
     down=0 # stay in the same hight 
-    if time==0:
+    if time_passed==0:
         total_time= min_time_safe()
     else:
-        total_time=time
-    send_ned_velocity(self,north/float(total_time) ,east/float(total_time), down, total_time)
+        total_time=time_passed
+    #print(" speed on x=",round(north/float(total_time),4), "on y=", round(east/float(total_time),4) )
+    send_ned_velocity(self, north/float(total_time), east/float(total_time), down, total_time)
     #send_ned_velocity_stages(self,north/float(total_time) ,east/float(total_time), down, total_time)
     # you can not have one speed for both and only one time for both , so we fix time and change the speed 
 
@@ -325,83 +328,94 @@ def min_time_safe():
     return int(longest_duration)
 
 #time =0 means that if it was not provided move_to will use the min_time_safe 
-def scan_hexagon(vehicle, drone, a ,camera_image_width,  time=0):
-    
+def scan_hexagon(vehicle, drone, camera_image_width,  scan_time=0):
+    a=drone.a
     #dave the current location 
     drone.update_location(drone.positionX,drone.positionY)
-    distance=math.sin(math.radians(60))* camera_image_width
-    new_radius= round(a-(distance/2),2)
+    distance= round(math.sin(math.radians(60))* camera_image_width,2)
     #print("distance= ", distance)
     i=0
+    print("go to orginal v1")
     # go to the main vertex1 
-    move_to(vehicle,0,a,time) # go to the top of hex 
+    move_to(vehicle,0,a,scan_time) # go to the top of hex 
+    new_radius= a
     drone.update_location(0,a)
-    while new_radius > 0: 
-        #print("new_radius= ", new_radius)
+    while new_radius > distance: 
         #first time move distance/2 to define then path of the drone 
         if i==0: 
             x=0
-            y=round(-distance/2,2)
+            y=-distance/2
+            new_radius= a-(distance/2)
+            print("first time go down on y by ", y, "raduis=",new_radius )
         else: # then to go to the nex path far by distance 
             x=0
-            y=round(-distance,2)
+            y=-distance
+            print("next time go down on y by", y, "raduis=",new_radius )
         
-        #print("go to vetex = ", x,y)
-        move_to(vehicle,x,y,time)
+        move_to(vehicle,x,y,scan_time)
         drone.update_location(x,y)
-
+        time.sleep(5)
         v1_x=drone.positionX
         v1_y=drone.positionY
 
-        x_deplacment= round( math.sin(math.radians(60)),2) * new_radius
-        y_deplacment= round(math.cos(math.radians(60)),2)* new_radius
+        x_deplacment=  round(math.sin(math.radians(60)) * new_radius,2)
+        y_deplacment= round(math.cos(math.radians(60))* new_radius,2)
         #print("x_deplacment ,Y_deplacment = ", x_deplacment, y_deplacment)
         # go to the vertex2 
         x= x_deplacment
         y=- y_deplacment
-        move_to(vehicle,x,y,time)
+        print("move to v2, x",x,"y",y)
+        move_to(vehicle,x,y,scan_time)
         drone.update_location(x,y)
 
         # go to the vertex3
         x=0
         y=-new_radius
-        move_to(vehicle,x,y,time)
+        print("move to v3, x",x,"y",y)
+        move_to(vehicle,x,y,scan_time)
         drone.update_location(x,y)
         # go to the vertex4
         x=-x_deplacment
         y=-y_deplacment
-        move_to(vehicle,x,y,time)
+        print("move to v4, x",x,"y",y)
+        move_to(vehicle,x,y,scan_time)
         drone.update_location(x,y)
         # go to the vertex5
         x=-x_deplacment
         y= y_deplacment
-        move_to(vehicle,x,y,time)
+        print("move to v5, x",x,"y",y)
+        move_to(vehicle,x,y,scan_time)
         drone.update_location(x,y)       
         # go to the vertex6
         x=0
         y=+new_radius
-        move_to(vehicle,x,y,time)
+        print("move to v6, x",x,"y",y)
+        move_to(vehicle,x,y,scan_time)
         drone.update_location(x,y)
        
         # go back to the vertex1 
         x=x_deplacment
         y=y_deplacment
-        move_to(vehicle,x,y,time)
+        print("back  to v1, x",x,"y",y)
+        move_to(vehicle,x,y,scan_time)
         drone.update_location(x,y)
+        print(" last x ,y",drone.positionX, drone.positionY )
         # drone did not arrive exactly to the same vertx1 
         # correcte the error accumulated by the floating point
-        if drone.positionX!= v1_x or drone.positionY != v1_y:
-            print("x vertex1 and y vertex1 y", drone.positionX, v1_x, drone.positionY, v1_y )
+        # if drone.positionX!= v1_x or drone.positionY != v1_y:
+        #     print("x vertex1 and y vertex1 y", drone.positionX, v1_x, drone.positionY, v1_y )
             #move_to(vehicle,drone.positionX- v1_x, drone.positionX- v1_y,time)
             #drone.update_location(v1_x-drone.positionX,v1_y-drone.positionY) #the new coordinates
 
         #reduce the size of hexagone and go down to new vertex1 
-        new_radius= round(new_radius-distance,2)
+        new_radius= new_radius-distance
         i=i+1
 
-    print("current x and y", drone.positionX, drone.positionY )
-    print("vertex1  x and y", v1_x, v1_y )
-
-    #back to the start ( center of the main hexagon)
-    # move_to(vehicle, 0, a-(distance/2)*i, time)
-    # drone.update_location(v1_x-drone.positionX,v1_y-drone.positionY) #the new coordinates
+    # print("current x and y", drone.positionX, drone.positionY )
+    # print("vertex1  x and y", v1_x, v1_y )
+    print("r= ",-(a-distance*i+distance/2) )
+    print("r= ",-(new_radius+distance +distance/2) )
+    # #back to the start ( center of the main hexagon)
+    # move_to(vehicle, 0, -(a-distance*i+distance/2), time_taken)
+    move_to(vehicle, 0, -(a-distance*i+distance/2))
+    # # drone.update_location(v1_x-drone.positionX,v1_y-drone.positionY) #the new coordinates
