@@ -1,6 +1,7 @@
 from enum import Enum
 from math import sqrt
 import random
+import copy
 
 sq3=sqrt(3)
 a= 20 # drone range 
@@ -9,10 +10,10 @@ eps=20
 
 
 class DroneState(Enum):
-    s1 = 0
-    s2 = 1
+    Free = 0
+    BORDER_AND_IRREMOVABLE = 1
     IRREMOVABLE = 2
-    BORDER_AND_IRREMOVABLE = 3  
+
 
 class Direction(Enum):
     s0 = 0
@@ -50,8 +51,6 @@ def set_a( val):
     a= val
     update_DIR_VECTORS()
 
-
-
 formula_dict = {
     "s0": "sqrt(DxDy2)",
     "s1": "sqrt(DxDy3a2 + a * aDx)",
@@ -66,20 +65,20 @@ class Drone:
     def __init__(self, x,y):
         self.positionX=x
         self.positionY=y
+        self.a=a
         self. min_distance_dicts=[] # nigboor close to the sink 
         self.s_list = []
         self.Priority_to_go=[]
+        # init s0 and it will be part of the spots list 
+        s_list=[{"name": "s" + str(0), "distance": 0, "priority": 0, "occupied": False, "drones_in": 1, "state":"Free"}]
+        # save the first spot which is s0 the current place of the drone 
+        # spot is another name of s_list[0] so any changes will be seen in spot
+        self.spot= s_list[0]
         self.num_neigboors = 6
-        for i in range(0, self.num_neigboors+1):
-            s = {"name": "s" + str(i), "distance": 0, "priority": 0, "occupied": False, "drones_in": 0}
+        for i in range(1, self.num_neigboors+1):
+            s = {"name": "s" + str(i), "distance": 0, "priority": 0, "occupied": False, "drones_in": 0, "state":"Free"}
             self.s_list.append(s)
         
-        # s1={"name":"s1", "distance":0, "priority":0, "occupied": False, "drones-in":0}
-        # s2={"name":"s2","distance":0, "priority":0, "occupied": False, "drones-in":0}
-        # s3={"name":"s3","distance":0, "priority":0, "occupied": False, "drones-in":0}
-        # s4={"name":"s4","distance":0, "priority":0, "occupied": False, "drones-in":0}
-        # s5={"name":"s5","distance":0, "priority":0, "occupied": False, "drones-in":0}
-        # s6={"name":"s6","distance":0, "priority":0, "occupied": False, "drones-in":0}
 
     def calculate_neigboors_dis(self):
         DxDy2 = (self.positionX * self.positionX) + (self.positionY * self.positionY)
@@ -104,6 +103,7 @@ class Drone:
         # nigboor with respect to the sink( because can not compare with respect to the drone that recive the signal)
         # TODO in each of the spot s1-s6 creat x,y the coordinates with the respect to the sink then 
         # using x2+y2 find the distance 
+            # no need for that because each drone will have it is own position calculated far from the sink 
         for s in self.s_list:
             # for now i will have it from the Stdin 
             num_dron = int(input("Enter number of drone at "+s["name"]+" :"))
@@ -152,5 +152,54 @@ class Drone:
      # then the move to the nourth by the value of b ( y in calculation access)
         return DIR_VECTORS[dir][0], DIR_VECTORS[dir][1]
 
+    def update_state(self):
+        self.check_drones_in_neigboors()
+         #if s0 where the drone is conatins only the drone ( droen alone) 
+        if self.spot["drones_in"]==1:
+            counter=0
+            for s in self.s_list:
+                if s["drones_in"] >=1: 
+                    counter= counter +1 
+                    continue
+                else: 
+                    break
+            if counter==6: # where we counted the drone itself too 
+                self.spot["state"]= "free"
+            else:  #TODO border just if it doent have niegboor on th epath of the expansion 
+                self.spot["state"]= "border"
+        else: # if the drone is not alone
+            # NOTE :  after yann he said it is not possible to have more than one drone
+            # here i need to verfiy whhat is should be 
+            #because if it is border then that means it will do deal_state 
+            self.spot["state"]= "state"  
+
+    # terminate the stage 
+    # if the drone is border it should start communicating 
+    def deal_satae(self):
+        if self.spot["state"]== "border": # nothing to do if you are free
+            print (" i am border time to check  ") 
+            # your massage sould be id@state
+
+        else: # deone is not border so it should do nothing 
+            pass
 
 
+    # any messges recived should be buffered 
+    def react_on_recived_msg(self):
+        msg="id@state" # it should be  recived from a drone
+        #if the recived message is a msg send by this drone befor 
+        id, state = msg.split('@')
+        if id == self.id and state== "border": 
+            # expansion is done 
+            print(" done expan ")
+            '''
+            The drone then sends a broadcast message
+            indicating the end of the expansion phase and wait for ξ(D)
+            time correlated to the diameter of the expansion area.
+            '''
+        else:
+            if self.spot["state"]=="free": # drone is free should drop the message
+                pass # do nothing 
+            elif self.spot["state"]=="border":
+                #redirect it 
+                pass
