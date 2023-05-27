@@ -61,22 +61,31 @@ formula_dict = {
     "s6": "sqrt(DxDy3a2 - a * (3 * Dy - sqDx))"
 }
 
+State= [ 
+    "FREE",
+    "Alone",
+    "BORDER", 
+    "IRRMOVABLE",
+    "BORDER & IRRMOVABLE"
+]
+
 class Drone: 
     def __init__(self, x,y):
         self.positionX=x
         self.positionY=y
+        self.state=State[0]
         self.a=a
         self. min_distance_dicts=[] # nigboor close to the sink 
         self.s_list = []
         self.Priority_to_go=[]
         # init s0 and it will be part of the spots list 
-        s_list=[{"name": "s" + str(0), "distance": 0, "priority": 0, "occupied": False, "drones_in": 1, "state":"Free"}]
+        s_list=[{"name": "s" + str(0), "distance": 0, "priority": 0, "occupied": False, "drones_in": 1}]
         # save the first spot which is s0 the current place of the drone 
         # spot is another name of s_list[0] so any changes will be seen in spot
         self.spot= s_list[0]
         self.num_neigboors = 6
         for i in range(1, self.num_neigboors+1):
-            s = {"name": "s" + str(i), "distance": 0, "priority": 0, "occupied": False, "drones_in": 0, "state":"Free"}
+            s = {"name": "s" + str(i), "distance": 0, "priority": 0, "occupied": False, "drones_in": 0}
             self.s_list.append(s)
         
 
@@ -155,7 +164,11 @@ class Drone:
     def update_state(self):
         self.check_drones_in_neigboors()
          #if s0 where the drone is conatins only the drone ( droen alone) 
-        if self.spot["drones_in"]==1:
+         # the drone should be alone to be free 
+        if self.spot["drones_in"]==1: # the drone is alone
+            self.state="Alone" 
+        
+        elif self.state=="Alone" : # the drone is alone so see if it is free or border ot irrmovable
             counter=0
             for s in self.s_list:
                 if s["drones_in"] >=1: 
@@ -163,10 +176,11 @@ class Drone:
                     continue
                 else: 
                     break
-            if counter==6: # where we counted the drone itself too 
-                self.spot["state"]= "free"
-            else:  #TODO border just if it doent have niegboor on th epath of the expansion 
+            if counter==6: # all neighboor are occupied including the drone itself 
+                self.state="FREE"
+            else:  #TODO border just if it doent have niegboor on th path of the expansion 
                 self.spot["state"]= "border"
+        
         else: # if the drone is not alone
             # NOTE :  after yann he said it is not possible to have more than one drone
             # here i need to verfiy whhat is should be 
