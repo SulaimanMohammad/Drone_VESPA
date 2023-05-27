@@ -1,5 +1,5 @@
 from  expan import *
-from done_ardupilot import *
+from drone_ardupilot import *
 
 vehicle = connect(parse_connect(), wait_ready=False)
 set_home_to_zero(vehicle)
@@ -7,12 +7,15 @@ arm_and_takeoff(vehicle, 10)
 
 drone= Drone(0.0,0.0) # drone at the sink 
 # move randomaly far from the sink
-random_dir = int(random.randint(1, 6))
+print("current_lat =", vehicle.location.global_relative_frame.lat) 
+print("current_lon=", vehicle.location.global_relative_frame.lon)
+random_dir = int(random.randint(1, 6)) # 0 not include because it should not be cin the sink
 print ("go to S", random_dir)
 x,y= drone.direction(random_dir)
 move_to(vehicle,x,y)
 calculate_relative_pos(vehicle)
 drone.update_location(x,y)
+
 # in the new position find the distance of the neigboors 
 drone.calculate_neigboors_dis()
 drone.check_drones_in_neigboors()

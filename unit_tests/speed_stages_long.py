@@ -7,7 +7,7 @@ parent_directory = os.path.abspath(os.path.join(os.path.dirname(__file__), '..')
 # Add the parent directory to sys.path
 sys.path.append(parent_directory)
 from expan import *
-from done_ardupilot import *
+from drone_ardupilot import *
 
 
 create_log_file(os.path.dirname(os.path.abspath(__file__)),  os.path.splitext(os.path.basename(__file__))[0]) 
