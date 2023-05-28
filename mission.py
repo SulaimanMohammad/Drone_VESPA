@@ -1,6 +1,9 @@
 from  expan import *
 from drone_ardupilot import *
 
+create_log_file(os.path.dirname(os.path.abspath(__file__)),  os.path.splitext(os.path.basename(__file__))[0]) 
+
+
 vehicle = connect(parse_connect(), wait_ready=False)
 set_home_to_zero(vehicle)
 arm_and_takeoff(vehicle, 10)
@@ -16,20 +19,27 @@ move_to(vehicle,x,y)
 calculate_relative_pos(vehicle)
 drone.update_location(x,y)
 
-# in the new position find the distance of the neigboors 
-drone.calculate_neigboors_dis()
-drone.check_drones_in_neigboors()
-drone.setPriorities()
+# do not do the calculation until the vehicle arrive to destination
+while drone.state !="Alone":
+   
+    # in the new position find the distance of the neigboors 
+    drone.calculate_neigboors_dis()
+    drone.check_drones_in_neigboors()
+    drone.setPriorities()
 
-# be carful it should not be move , it is set the psoition 
-# bcause move will use only the direction value as a movement from the current location 
+    # be carful it should not be move , it is set the psoition 
+    # bcause move will use only the direction value as a movement from the current location 
 
-spot= drone.findPriority()
-print ("go to S", spot)
-x,y = drone.direction(spot)
-move_to(vehicle,x,y)
-calculate_relative_pos(vehicle)
-drone.update_location(x,y)
+    spot= drone.findPriority()
+    print ("go to S", spot)
+    x,y = drone.direction(spot)
+    move_to(vehicle,x,y)
+    calculate_relative_pos(vehicle)
+    drone.update_location(x,y)
+    drone.update_state()
+
+print( "drone state:", drone.state)
+
 
 
 print ("Coming Home")
