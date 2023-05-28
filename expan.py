@@ -74,15 +74,16 @@ class Drone:
         self.positionX=x
         self.positionY=y
         self.state=State[0]
+        self.path=[]
         self.a=a
         self. min_distance_dicts=[] # nigboor close to the sink 
         self.s_list = []
         self.Priority_to_go=[]
         # init s0 and it will be part of the spots list 
-        s_list=[{"name": "s" + str(0), "distance": 0, "priority": 0, "occupied": False, "drones_in": 1}]
+        self.s_list=[{"name": "s" + str(0), "distance": 0, "priority": 0, "occupied": False, "drones_in": 1}]
         # save the first spot which is s0 the current place of the drone 
         # spot is another name of s_list[0] so any changes will be seen in spot
-        self.spot= s_list[0]
+        self.spot= self.s_list[0]
         self.num_neigboors = 6
         for i in range(1, self.num_neigboors+1):
             s = {"name": "s" + str(i), "distance": 0, "priority": 0, "occupied": False, "drones_in": 0}
@@ -90,16 +91,17 @@ class Drone:
         
 
     def calculate_neigboors_dis(self):
-        DxDy2 = (self.positionX * self.positionX) + (self.positionY * self.positionY)
-        DxDy3a2 = DxDy2 + 3 * a * a
-        sqDx = sq3 * self.positionX
-        aDx = (2 * sq3) * self.positionX
-        Dy= self.positionY
+        
+        DxDy2 = round((self.positionX * self.positionX) + (self.positionY * self.positionY),2)
+        DxDy3a2 = round(DxDy2 + 3 * a * a,2)
+        sqDx = round(sq3 * self.positionX,2)
+        aDx = round((2 * sq3) * self.positionX,2)
+        Dy= round(self.positionY,2)
         #TODO you sshould consider a situation what inside the formaula is negative 
         for s in self.s_list:
             formula = formula_dict.get(s["name"])
             if formula:
-                distance = eval(formula, {'sqrt': sqrt, 'DxDy2': DxDy2, 'DxDy3a2': DxDy3a2, 'a': a, 'aDx': aDx, 'sqDx': sqDx, 'Dy': Dy})
+                distance = eval(formula, {'sqrt': sqrt, 'DxDy2': DxDy2, 'DxDy3a2': DxDy3a2, 'a': a, 'aDx': aDx, 'sqDx': sqDx, 'Dy': Dy})       
                 s["distance"] = distance
 
 
@@ -113,9 +115,10 @@ class Drone:
         # TODO in each of the spot s1-s6 creat x,y the coordinates with the respect to the sink then 
         # using x2+y2 find the distance 
             # no need for that because each drone will have it is own position calculated far from the sink 
+        
         for s in self.s_list:
             # for now i will have it from the Stdin 
-            num_dron = int(input("Enter number of drone at "+s["name"]+" :"))
+            num_dron = int(input("\t Enter number of drone at "+s["name"]+" :"))
             s["drones_in"] = int(num_dron)
             if num_dron > 0:
                 s["occupied"]= True
@@ -159,8 +162,10 @@ class Drone:
      # the north is the y access in the calaulation of the hex and the east is the x 
      # example reived x=a, y=b 
      # then the move to the nourth by the value of b ( y in calculation access)
+        self.path.append(dir) # add the direcition was chose 
         return DIR_VECTORS[dir][0], DIR_VECTORS[dir][1]
 
+    
     def update_state(self):
         self.check_drones_in_neigboors()
          #if s0 where the drone is conatins only the drone ( droen alone) 
@@ -178,14 +183,49 @@ class Drone:
                     break
             if counter==6: # all neighboor are occupied including the drone itself 
                 self.state="FREE"
-            else:  #TODO border just if it doent have niegboor on th path of the expansion 
-                self.spot["state"]= "border"
-        
-        else: # if the drone is not alone
+            else: #drone is alone but not sourrounded by drones   
+            #TODO border just if it doent have niegboor on th path of the expansion 
             # NOTE :  after yann he said it is not possible to have more than one drone
             # here i need to verfiy whhat is should be 
             #because if it is border then that means it will do deal_state 
-            self.spot["state"]= "state"  
+                dominated_direction= self.expansion_direction() #find the path that the drone take most of the time for the expansion 
+                if self.is_it_border(dominated_direction):
+                    self.state="BORDER"  
+            
+
+    def expansion_direction(self):
+            occurance=[0,0,0,0,0,0] # s0-s6
+            for i in range(0,len(self.path)):
+                occurance[self.path[i]] +=1
+                if i==len(self.path):
+                    occurance[self.path[i]] +=2 # more weight to the last step
+            return occurance.index(max(occurance)) #return the direction that has been taken most of time 
+    
+    def is_it_border(self, dom_dir):
+        border=False
+        unoccupied_neigboors=[]
+        self.check_drones_in_neigboors()
+        for s in self.s_list:
+            if s["occupied"]==False: #if spot is not occupied
+                spot=  int(s["name"][1:]) #extract only the number 
+                unoccupied_neigboors.append(spot) 
+
+        if dom_dir==1:
+            specific_spots=[2,1,6]            
+        elif dom_dir==2:
+            specific_spots=[1,2,3]
+        elif dom_dir==3:
+            specific_spots=[2,3,4]
+        elif dom_dir==4:
+            specific_spots=[3,4,5]
+        elif dom_dir==5:
+            specific_spots=[4,5,6]
+        elif dom_dir==6:
+            specific_spots=[5,6,1]
+        
+        if all(num in unoccupied_neigboors for num in specific_spots): # see if all the specific_spots are not occupied  
+            border= True
+        
 
     # terminate the stage 
     # if the drone is border it should start communicating 
