@@ -24,6 +24,7 @@ while drone.state !="Alone":
    
     # in the new position find the distance of the neigboors 
     drone.calculate_neigboors_dis()
+    print("checking for movement")
     drone.check_drones_in_neigboors()
     drone.setPriorities()
 
@@ -36,11 +37,10 @@ while drone.state !="Alone":
     move_to(vehicle,x,y)
     calculate_relative_pos(vehicle)
     drone.update_location(x,y)
-    drone.update_state()
+    print("checking for update the state")
+    drone.is_it_alone()
 
-print( "drone state:", drone.state)
-
-
+drone.update_state()
 
 print ("Coming Home")
 vehicle.mode = VehicleMode ("RTL")
