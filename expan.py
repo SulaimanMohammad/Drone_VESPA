@@ -73,7 +73,7 @@ class Drone:
     def __init__(self, x,y):
         self.positionX=x
         self.positionY=y
-        self.state=State[0]
+        self.state="NONE"
         self.path=[]
         self.a=a
         self. min_distance_dicts=[] # nigboor close to the sink 
@@ -171,14 +171,17 @@ class Drone:
         return DIR_VECTORS[dir][0], DIR_VECTORS[dir][1]
 
     
-    def update_state(self):
+    def is_it_alone(self):
         self.check_drones_in_neigboors()
          #if s0 where the drone is conatins only the drone ( droen alone) 
          # the drone should be alone to be free 
+        print("drone in s0", self.spot["drones_in"] )
         if self.spot["drones_in"]==1: # the drone is alone
             self.state="Alone" 
-        
-        elif self.state=="Alone" : # the drone is alone so see if it is free or border ot irrmovable
+        print("drone state in s0", self.state )
+    
+    def update_state(self):
+        if self.state=="Alone" : # the drone is alone so see if it is free or border ot irrmovable
             counter=0
             for s in self.s_list:
                 if s["drones_in"] >=1: 
@@ -186,7 +189,8 @@ class Drone:
                     continue
                 else: 
                     break
-            if counter==6: # all neighboor are occupied including the drone itself 
+            print("counter", counter)
+            if counter==7: # all neighboor are occupied including the drone itself 
                 self.state="FREE"
             else: #drone is alone but not sourrounded by drones   
             #TODO border just if it doent have niegboor on th path of the expansion 
@@ -209,7 +213,7 @@ class Drone:
     def is_it_border(self, dom_dir):
         border=False
         unoccupied_neigboors=[]
-        self.check_drones_in_neigboors()
+        #self.check_drones_in_neigboors() # no need=to check agian it is already done in update state 
         for s in self.s_list:
             if s["occupied"]==False: #if spot is not occupied
                 spot=  int(s["name"][1:]) #extract only the number 
@@ -228,6 +232,7 @@ class Drone:
         elif dom_dir==6:
             specific_spots=[5,6,1]
         
+        print("dom_dir", dom_dir)
         if all(num in unoccupied_neigboors for num in specific_spots): # see if all the specific_spots are not occupied  
             border= True
         
