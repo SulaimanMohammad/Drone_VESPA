@@ -40,7 +40,7 @@ def update_DIR_VECTORS():
     [0, 0],                             # s0 // don't move, stay
     [(sq3 * a), 0],            # s1
     [(sq3 / 2.0) * a, (3.0 / 2.0) * a],   # s2
-    [-(sq3 / 2) * a, (3.0 / 2.0) * a],  # s3
+    [-(sq3 / 2.0) * a, (3.0 / 2.0) * a],  # s3
     [-sq3 * a, 0],             # s4
     [-(sq3 / 2.0) * a, -(3.0/ 2.0) * a], # s5
     [(sq3 / 2.0) * a, -(3.0 / 2.0) * a]   # s6
@@ -49,14 +49,14 @@ def update_DIR_VECTORS():
 def set_a( val):
     global a
     a= val
-    update_DIR_VECTORS()
+    update_DIR_VECTORS() # changing of a should change the direction distances
 
 formula_dict = {
     "s0": "sqrt(DxDy2)",
     "s1": "sqrt(DxDy3a2 + a * aDx)",
     "s2": "sqrt(DxDy3a2 + a * (sqDx + (3 * Dy)))",
-    "s3": "sqrt(DxDy3a2 + a * (3 * Dy - aDx))",
-    "s4": "sqrt(DxDy3a2 - aDx + 3 * a * a)",
+    "s3": "sqrt(DxDy3a2 + a * (3 * Dy - sqDx))",
+    "s4": "sqrt(DxDy3a2 - (aDx*a))",
     "s5": "sqrt(DxDy3a2 - a * (sqDx + (3 * Dy)))",
     "s6": "sqrt(DxDy3a2 - a * (3 * Dy - sqDx))"
 }
@@ -92,16 +92,21 @@ class Drone:
 
     def calculate_neigboors_dis(self):
         
-        DxDy2 = round((self.positionX * self.positionX) + (self.positionY * self.positionY),2)
-        DxDy3a2 = round(DxDy2 + 3 * a * a,2)
-        sqDx = round(sq3 * self.positionX,2)
-        aDx = round((2 * sq3) * self.positionX,2)
-        Dy= round(self.positionY,2)
+        # DxDy2 = round((self.positionX * self.positionX) + (self.positionY * self.positionY),2)
+        # DxDy3a2 = round(DxDy2 + 3 * a * a,2)
+        # sqDx = round(sq3 * self.positionX,2)
+        # aDx = round((2*sq3) * self.positionX,2)
+        # Dy= round(self.positionY,2)
+        DxDy2 = (self.positionX * self.positionX) + (self.positionY * self.positionY)
+        DxDy3a2 = DxDy2 + 3 * a * a
+        sqDx = sq3 * self.positionX
+        aDx = (2 * sq3) * self.positionX
+        Dy= self.positionY
         #TODO you sshould consider a situation what inside the formaula is negative 
         for s in self.s_list:
             formula = formula_dict.get(s["name"])
             if formula:
-                distance = eval(formula, {'sqrt': sqrt, 'DxDy2': DxDy2, 'DxDy3a2': DxDy3a2, 'a': a, 'aDx': aDx, 'sqDx': sqDx, 'Dy': Dy})       
+                distance = eval(formula, {'sqrt': sqrt, 'DxDy2': DxDy2, 'DxDy3a2': DxDy3a2, 'a': a, 'aDx': aDx, 'sqDx': sqDx, 'Dy': Dy})
                 s["distance"] = distance
 
 
