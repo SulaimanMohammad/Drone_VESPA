@@ -12,7 +12,9 @@ connection_string = args.connect
 #connection_string = sitl.connection_string()
 
 print ("Connection to the vehicle on %s"%connection_string)
-vehicle = connect (connection_string, wait_ready=False)
+# vehicle = connect (connection_string, wait_ready=False)
+vehicle = connect("/dev/serial0", wait_ready=False,baud=57600)
+vehicle.wait_ready(True, raise_exception=False)
 
 @vehicle.on_attribute('mode')
 def decorated_mode_callback(self, attr_name, value):
