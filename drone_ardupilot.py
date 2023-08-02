@@ -45,7 +45,6 @@ def get_current_function_name():
     function_name = frame.f_code.co_name
     return function_name
 
-
 def parse_connect():
     write_log_message (f"{get_current_function_name()} called:") 
     parser=argparse.ArgumentParser (description='commands')
@@ -69,16 +68,20 @@ def arm_and_takeoff(self, aTargetAltitude):
     print("Basic pre-arm checks") 
     # TODO do not try to take off if the alituduid is not zero 
     # Don't try to arm until autopilot is ready
+    #TODO check that gps lock before the fly by listening to the raw data of the channel
+    #GPs usually it is done by the system  of pixhawc 
+    # TODO check that the battery is enough to fly
     while not self.is_armable:
-        print ("Waiting for self to initialise...")
+        print ("Waiting for self to initialise and Armability...")
         write_log_message ("Waiting for self to initialise...") 
-        time.sleep(3)
+        time.sleep(1)
 
     print ("Arming motors")
     write_log_message ("Arming motors")
     # Copter should arm in GUIDED mode
     self.mode    = VehicleMode("GUIDED")
     self.armed   = True
+    print(" Battery: %s" % self.battery)
 
     # Confirm vehicle armed before attempting to take off
     while not self.armed:
@@ -126,14 +129,15 @@ def calculate_relative_pos(self):
         # Print the drone's position relative to the home position
         return [relative_x/3,relative_y/3, relative_z/3]
 
-def send_ned_velocity(self, velocity_x, velocity_y, velocity_z, duration):
+
+def send_ned_velocity(self, velocity_x, velocity_y, velocity_z, altitude,  duration):
     write_log_message (f"{get_current_function_name()} called:")
     msg = self.message_factory.set_position_target_local_ned_encode(
         0,       # time_boot_ms (not used)
         0, 0,    # target system, target component
-        mavutil.mavlink.MAV_FRAME_LOCAL_NED, # frame
-        0b110111000111, #0b0000111111000111, # type_mask (only speeds enabled)
-        0, 0, 0, # x, y, z positions (not used)
+        mavutil.mavlink.MAV_FRAME_LOCAL_NED, # MAV_FRAME_LOCAL_OFFSET_NED, 
+        0b111111000111,#0b111111000111, #0b110111000111, #, # type_mask (only speeds enabled)
+        0, 0, altitude, # x, y, z positions (not used)
         velocity_x, velocity_y, velocity_z, # x, y, z velocity in m/s
         0, 0, 0, # x, y, z acceleration (not supported yet, ignored in GCS_Mavlink)
         0, 0)    # yaw, yaw_rate (not supported yet, ignored in GCS_Mavlink) 
@@ -148,6 +152,22 @@ def send_ned_velocity(self, velocity_x, velocity_y, velocity_z, duration):
     while time.time() - start_time < duration:
         self.send_mavlink(msg)
         time.sleep(0.1)
+
+
+def send_ned_position(self, north, east, down):
+    write_log_message (f"{get_current_function_name()} called:")
+    msg = self.message_factory.set_position_target_local_ned_encode(
+        0,       # time_boot_ms (not used)
+        0, 0,    # target system, target component
+        mavutil.mavlink.MAV_FRAME_LOCAL_NED, # frame
+        0b0000111111111000, # type_mask (only positions enabled)
+        north, east, down, # x, y, z positions (or North, East, Down in the MAV_FRAME_BODY_NED frame
+        0, 0, 0, # x, y, z velocity in m/s  (not used)
+        0, 0, 0, # x, y, z acceleration (not supported yet, ignored in GCS_Mavlink)
+        0, 0)    # yaw, yaw_rate (not supported yet, ignored in GCS_Mavlink) 
+    # more accurate than using for loop and sleep because duration could be a float number 
+    self.send_mavlink(msg)
+    #self.flush()
 
 def send_ned_velocity_stages_long(self, velocity_x, velocity_y, velocity_z, duration):
     write_log_message (f"{get_current_function_name()} called:")
@@ -255,8 +275,60 @@ def send_ned_velocity_stages_short(self, velocity_x, velocity_y, velocity_z, dur
         start_time = time.time()
         while time.time() - start_time < stage_time:
             self.send_mavlink(msg)
-            time.sleep(0.1)
+            time.sleep(0.5)
 
+def send_ned_velocity_flush(self, velocity_x, velocity_y, velocity_z, altitude, duration):
+    write_log_message (f"{get_current_function_name()} called:")
+    msg = self.message_factory.set_position_target_local_ned_encode(
+        0,       # time_boot_ms (not used)
+        0, 0,    # target system, target component
+        mavutil.mavlink.MAV_FRAME_LOCAL_NED, # MAV_FRAME_LOCAL_OFFSET_NED, 
+        0b0000111111000011,#0b111111000111, #0b110111000111, #, # type_mask (only speeds enabled)
+        0, 0, altitude, # x, y, z positions (not used)
+        velocity_x, velocity_y, velocity_z, # x, y, z velocity in m/s
+        0, 0, 0, # x, y, z acceleration (not supported yet, ignored in GCS_Mavlink)
+        0, 0)    # yaw, yaw_rate (not supported yet, ignored in GCS_Mavlink) 
+
+    # send command to vehicle on 1 Hz cycle
+    # for x in range(0,duration):
+    #     self.send_mavlink(msg)
+    #     #calculate_relative_pos()
+    #     time.sleep(1)
+    # more accurate than using for loop and sleep because duration could be a float number 
+    self.send_mavlink(msg)
+    #self.flush()
+
+# this function will calculate the speed and the time and call send_ned_velocity 
+def move_to_flush(self, x , y, altitude, time_passed=0): 
+    write_log_message (f"{get_current_function_name()} called:")
+    # need to set speed constant and we change the time 
+    # the north is the y access in the calaulation of the hex and the east is the x 
+    # example reived x=a, y=b 
+    # then the move to the nourth by the value of b ( y in calculation access)
+    north= y  # on y
+    east= x #on x 
+    down=0 # stay in the same hight 
+    if time_passed==0:
+        total_time= min_time_safe()
+    else:
+        total_time=time_passed
+    # counter=0 
+    # while counter< time_passed:
+    #     send_ned_velocity_flush(self, north/float(total_time), east/float(total_time), down, total_time)
+    #     time.sleep(1)
+    #     counter=counter+1
+    one_time=0
+    start_time = time.time()
+    while time.time() - start_time < time_passed:            
+        send_ned_velocity_flush(self, north/float(total_time), east/float(total_time),0,-1*altitude, total_time)
+        time.sleep(1)
+
+def move_to_poition(self, x , y, z) :
+    write_log_message (f"{get_current_function_name()} called:")
+    north= y  # on y
+    east= x #on x 
+    down= -z # stay in the same hight 
+    send_ned_position(self, north, east, down)
 
 # this function will calculate the speed and the time and call send_ned_velocity 
 def move_to(self, x , y, time_passed=0): 
@@ -277,7 +349,7 @@ def move_to(self, x , y, time_passed=0):
     #send_ned_velocity_stages(self,north/float(total_time) ,east/float(total_time), down, total_time)
     # you can not have one speed for both and only one time for both , so we fix time and change the speed 
 
-def move_to_stages_long(self, x , y): 
+def move_to_stages_long(self, x , y, time_passed=0): 
     write_log_message (f"{get_current_function_name()} called:")
     # need to set speed constant and we change the time 
     # the north is the y access in the calaulation of the hex and the east is the x 
@@ -286,10 +358,13 @@ def move_to_stages_long(self, x , y):
     north= y  # on y
     east= x #on x 
     down=0 # stay in the same hight 
-    total_time= min_time_safe()
+    if time_passed==0:
+        total_time= min_time_safe()
+    else:
+        total_time=time_passed
     send_ned_velocity_stages_long(self,north/float(total_time) ,east/float(total_time), down, total_time)
 
-def move_to_stages_short(self, x , y): 
+def move_to_stages_short(self, x , y,time_passed=0): 
     write_log_message (f"{get_current_function_name()} called:")
     # need to set speed constant and we change the time 
     # the north is the y access in the calaulation of the hex and the east is the x 
@@ -298,7 +373,10 @@ def move_to_stages_short(self, x , y):
     north= y  # on y
     east= x #on x 
     down=0 # stay in the same hight 
-    total_time= min_time_safe()
+    if time_passed==0:
+        total_time= min_time_safe()
+    else:
+        total_time=time_passed
     send_ned_velocity_stages_short(self,north/float(total_time) ,east/float(total_time), down, total_time)
 
 def set_home_to_zero(self):
@@ -316,7 +394,7 @@ def set_home_to_zero(self):
 
 def min_time_safe():
     write_log_message (f"{get_current_function_name()} called:")
-    max_speed = 2  # Maximum speed in m/s
+    max_speed = 5  # Maximum speed in m/s
     longest_duration = 0  # Initialize the longest duration as 0
 
     for position in DIR_VECTORS:
@@ -326,6 +404,289 @@ def min_time_safe():
         if duration > longest_duration:
             longest_duration = duration
     return int(longest_duration)
+
+
+def set_altitude(self, target_altitude):
+    # Create a location object with the same latitude and longitude as the current location, but with the desired altitude
+    target_location = LocationGlobalRelative(self.location.global_relative_frame.lat,
+                                             self.location.global_relative_frame.lon,
+                                             target_altitude)
+    # Command the vehicle to go to the target location
+    self.simple_goto(target_location)
+
+
+'''
+yaw values are fluctuating around 180 and -180 degrees, which is very close to the north direction (0 degrees) 
+but represented differently.
+This is a common issue in dealing with angles, as 0 degrees and 180 degrees are the same direction
+ but on opposite sides of the compass.
+
+You can handle this by normalizing the yaw angle to a value between 0 and 360 degrees 
+and then checking if it's close to 0 degrees. Here's how you can modify the monitoring loop:
+
+'''
+
+def normalize_angle(angle):
+    while angle < 0:
+        angle += 360
+    while angle >= 360:
+        angle -= 360
+    return angle
+
+def set_yaw (self,yaw_angle, relative=False):
+    if relative:
+        is_relative = 1
+    else:
+        is_relative = 0
+
+    # Create a MAVLink command for setting the yaw
+    msg = self.message_factory.command_long_encode(
+        0, 0,  # target system, target component
+        mavutil.mavlink.MAV_CMD_CONDITION_YAW, # command
+        0, # confirmation
+        yaw_angle, # param 1 - yaw angle ( in degree)
+        0, # param 2 - yaw speed
+        1, # param 3 - direction: 1 = clockwise, -1 = counterclockwise
+        is_relative, # param 4 - relative offset: 1 = relative, 0 = absolute
+        0, 0, 0) # param 5 ~ 7 (not used)
+    # Send the command to the vehicle
+    self.send_mavlink(msg) 
+
+def face_north(self):
+    #current_yaw = normalize_angle(self.heading)
+    current_yaw = normalize_angle(math.degrees(self.attitude.yaw))
+    tolerance = 0.8  # degrees
+
+    # Check if the current yaw is close to 0 degrees (within a tolerance)
+    while abs(current_yaw) > tolerance :
+        #current_yaw = normalize_angle(self.heading)
+        set_yaw(self, 0)
+        time.sleep(0.1)
+        current_yaw = normalize_angle(math.degrees(self.attitude.yaw))
+
+def set_yaw_to_dir(self,yaw_angle):
+     #current_yaw = normalize_angle(self.heading)
+    current_yaw = normalize_angle(math.degrees(self.attitude.yaw))
+    yaw_angle= normalize_angle(yaw_angle) 
+    tolerance = 0.2  # degrees
+    print( "yaw frst",normalize_angle(math.degrees(self.attitude.yaw)) )
+    # Check if the current yaw is close to 0 degrees (within a tolerance)
+    while abs(current_yaw - yaw_angle) > tolerance:
+        #current_yaw = normalize_angle(self.heading)
+        set_yaw(self, yaw_angle)
+        time.sleep(0.01)
+        current_yaw = normalize_angle(math.degrees(self.attitude.yaw))
+    
+    print( "yaw frst",normalize_angle(math.degrees(self.attitude.yaw)) )
+
+
+
+# Send a command to control velocity and yaw
+def send_control(vehicle, velocity_x, velocity_y, yaw_rate):
+    msg = vehicle.message_factory.set_position_target_local_ned_encode(
+        0,
+        0, 0,
+        mavutil.mavlink.MAV_FRAME_LOCAL_NED,
+        0b0000111111000111,
+        0, 0, 0,
+        velocity_x, velocity_y, 0,
+        0, 0, 0,
+        yaw_rate, 0)
+    vehicle.send_mavlink(msg)
+
+def move_PID(self, angl_dir, distance, time_needed):
+    # Set mode to GUIDED
+    self.mode = VehicleMode("GUIDED")
+    
+    set_yaw_to_dir( self, 0)
+    print ( "current yaw in Deg ", math.degrees(self.attitude.yaw))
+    # PID gains for yaw, X, and Y control
+    Kp_yaw = 0.5
+    Ki_yaw = 0.05
+    Kd_yaw = 0.05
+
+    Kp_vel_x = 0.5
+    Ki_vel_x = 0.05
+    Kd_vel_x = 0.05
+
+    Kp_vel_y = 0.5
+    Ki_vel_y = 0.05
+    Kd_vel_y = 0.05
+
+    # Errors and previous errors for PID control
+    error_yaw_prev = 0
+    error_vel_x_prev = 0
+    error_vel_y_prev = 0
+
+    integral_yaw = 0
+    integral_vel_x = 0
+    integral_vel_y = 0
+
+    # Desired yaw and velocities
+    desired_yaw = angl_dir # baed on the direction  needed 
+    print ( "DEs yaw in Deg ", desired_yaw , " in rad",math.radians(desired_yaw) )
+    desired_yaw = math.radians(desired_yaw)
+    
+    
+    desired_vel_x = distance/float(time_needed)
+    desired_vel_y = distance/float(time_needed)
+    
+    desired_vel_x = desired_vel_x * (math.cos(desired_yaw) )# x is on east for that it is cos
+    desired_vel_y = desired_vel_y * ( math.sin(desired_yaw) )
+    print (" Des vx", desired_vel_x ," Des vy", desired_vel_y )
+    #distance=10 # 2 meter 
+    #duration= 50 #
+    #duration= distance/desired_vel_x
+    duration= time_needed
+    send_control(self, desired_vel_x, desired_vel_y, 0)
+    time.sleep(1) 
+
+    start_time = time.time()
+    #duration = 10 # seconds    
+    while time.time() - start_time < duration-1: #not_condition_to_stop
+        # Get current yaw
+        yaw_current = self.attitude.yaw
+
+        # # Yaw error and PID control
+        # error_yaw = desired_yaw - yaw_current
+        # integral_yaw += error_yaw
+        # derivative_yaw = error_yaw - error_yaw_prev
+
+        # yaw_rate = yaw_current + Kp_yaw * error_yaw + Ki_yaw * integral_yaw + Kd_yaw * derivative_yaw
+        # error_yaw_prev = error_yaw
+
+        # Get current velocities
+        velocity_current_x = self.velocity[0]
+        velocity_current_y = self.velocity[1]
+        print( "vx ",velocity_current_x , "vy",velocity_current_y, "yaw", math.degrees(self.attitude.yaw) )
+        # X velocity error and PID control
+        error_vel_x = desired_vel_x - velocity_current_x
+        integral_vel_x += error_vel_x
+        derivative_vel_x = error_vel_x - error_vel_x_prev
+
+        velocity_x = velocity_current_x + Kp_vel_x * error_vel_x + Ki_vel_x * integral_vel_x + Kd_vel_x * derivative_vel_x
+        error_vel_x_prev = error_vel_x
+
+        # Y velocity error and PID control
+        error_vel_y = desired_vel_y - velocity_current_y
+        integral_vel_y += error_vel_y
+        derivative_vel_y = error_vel_y - error_vel_y_prev
+
+        velocity_y = velocity_current_y + Kp_vel_y * error_vel_y + Ki_vel_y * integral_vel_y + Kd_vel_y * derivative_vel_y
+        error_vel_y_prev = error_vel_y
+
+        # Send control to the drone
+        send_control(self, velocity_x, velocity_y, 0)
+
+        # Pause before next iteration
+        time.sleep(1)
+
+
+
+# Send a command to control velocity and yaw
+def send_control_body(vehicle, velocity_x, velocity_y, yaw_rate):
+    msg = vehicle.message_factory.set_position_target_local_ned_encode(
+        0,
+        0, 0,
+        mavutil.mavlink.MAV_FRAME_BODY_OFFSET_NED,
+        0b0000111111000111,
+        0, 0, 0,
+        velocity_x, velocity_y, 0,
+        0, 0, 0,
+        yaw_rate, 0)
+    vehicle.send_mavlink(msg)
+
+def move_PID_body(self, angl_dir, distance, time_needed):
+    # Set mode to GUIDED
+    self.mode = VehicleMode("GUIDED")
+    
+    set_yaw_to_dir( self, angl_dir)
+    print ( "current yaw in Deg ", math.degrees(self.attitude.yaw))
+    # PID gains for yaw, X, and Y control
+    Kp_yaw = 0.1
+    Ki_yaw = 0.01
+    Kd_yaw = 0.01
+
+    Kp_vel_x = 0.1
+    Ki_vel_x = 0.01
+    Kd_vel_x = 0.01
+
+    Kp_vel_y = 0.1
+    Ki_vel_y = 0.01
+    Kd_vel_y = 0.01
+
+    # Errors and previous errors for PID control
+    error_yaw_prev = 0
+    error_vel_x_prev = 0
+    error_vel_y_prev = 0
+
+    integral_yaw = 0
+    integral_vel_x = 0
+    integral_vel_y = 0
+
+    # Desired yaw and velocities
+    desired_yaw = angl_dir # baed on the direction  needed 
+    print ( "DEs yaw in Deg ", desired_yaw , " in rad",math.radians(desired_yaw) )
+    desired_yaw = math.radians(desired_yaw)
+    
+    
+    desired_vel_x = distance/float(time_needed)
+    desired_vel_y = distance/float(time_needed)
+    
+    desired_vel_x = desired_vel_x * (math.sin(desired_yaw) )# x is on east for that it is cos
+    desired_vel_y = desired_vel_y * ( math.cos(desired_yaw) )
+    print (" Des vx", desired_vel_x ," Des vy", desired_vel_y )
+    #distance=10 # 2 meter 
+    #duration= 50 #
+    #duration= distance/desired_vel_x
+    duration= time_needed
+
+    start_time = time.time()
+    #duration = 10 # seconds    
+    while time.time() - start_time < duration-1: #not_condition_to_stop
+        send_control_body(self, desired_vel_x, desired_vel_y, 0)
+        time.sleep(1) 
+
+    # start_time = time.time()
+    # #duration = 10 # seconds    
+    # while time.time() - start_time < duration-1: #not_condition_to_stop
+    #     # Get current yaw
+    #     yaw_current = self.attitude.yaw
+
+    #     # Yaw error and PID control
+    #     error_yaw = desired_yaw - yaw_current
+    #     integral_yaw += error_yaw
+    #     derivative_yaw = error_yaw - error_yaw_prev
+
+    #     yaw_rate = yaw_current + Kp_yaw * error_yaw + Ki_yaw * integral_yaw + Kd_yaw * derivative_yaw
+    #     error_yaw_prev = error_yaw
+
+    #     # Get current velocities
+    #     velocity_current_x = self.velocity[0]
+    #     velocity_current_y = self.velocity[1]
+    #     print( "vx ",velocity_current_x , "vy",velocity_current_y, "yaw", math.degrees(self.attitude.yaw) )
+    #     # X velocity error and PID control
+    #     error_vel_x = desired_vel_x - velocity_current_x
+    #     integral_vel_x += error_vel_x
+    #     derivative_vel_x = error_vel_x - error_vel_x_prev
+
+    #     velocity_x = velocity_current_x + Kp_vel_x * error_vel_x + Ki_vel_x * integral_vel_x + Kd_vel_x * derivative_vel_x
+    #     error_vel_x_prev = error_vel_x
+
+    #     # Y velocity error and PID control
+    #     error_vel_y = desired_vel_y - velocity_current_y
+    #     integral_vel_y += error_vel_y
+    #     derivative_vel_y = error_vel_y - error_vel_y_prev
+
+    #     velocity_y = velocity_current_y + Kp_vel_y * error_vel_y + Ki_vel_y * integral_vel_y + Kd_vel_y * derivative_vel_y
+    #     error_vel_y_prev = error_vel_y
+
+    #     # Send control to the drone
+    #     send_control_body(self, velocity_x, velocity_y, yaw_rate)
+
+    #     # Pause before next iteration
+    #     time.sleep(0.1)
+
 
 #time =0 means that if it was not provided move_to will use the min_time_safe 
 def scan_hexagon(vehicle, drone, camera_image_width,  scan_time=0):
