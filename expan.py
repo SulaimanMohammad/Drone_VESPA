@@ -70,9 +70,10 @@ State= [
 ]
 
 class Drone: 
-    def __init__(self, x,y):
+    def __init__(self, x,y,z):
         self.positionX=x
         self.positionY=y
+        self.hight=z
         self.state="NONE"
         self.path=[]
         self.a=a
