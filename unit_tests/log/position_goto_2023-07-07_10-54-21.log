@@ -1,0 +1,18 @@
+10:54:21: parse_connect called:
+10:54:22: arm_and_takeoff called:
+10:54:22: Waiting for self to initialise...
+10:54:25: Waiting for self to initialise...
+10:54:28: Waiting for self to initialise...
+10:54:31: Waiting for self to initialise...
+10:54:34: Arming motors
+10:54:34:  Waiting for arming...
+10:54:35: Taking off starts
+10:54:35:  Altitude: 0.005
+10:54:36:  Altitude: 0.005
+10:54:37:  Altitude: 0.005
+10:54:38:  Altitude: 0.075
+10:54:39:  Altitude: 1.067
+10:54:40:  Altitude: 2.818
+10:54:41:  Altitude: 4.171
+10:54:42:  Altitude: 4.903
+10:54:42: Reached target altitude

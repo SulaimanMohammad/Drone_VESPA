@@ -1,0 +1,22 @@
+14:58:35: arm_and_takeoff called:
+14:58:35: Arming motors
+14:58:35:  Waiting for arming...
+14:58:36:  Waiting for arming...
+14:58:37: Taking off starts
+14:58:37:  Altitude: 0.038
+14:58:38:  Altitude: 0.06
+14:58:39:  Altitude: 0.361
+14:58:40:  Altitude: 1.336
+14:58:41:  Altitude: 1.953
+14:58:41: Reached target altitude
+14:58:46: move_to_flush called:
+14:58:46: send_ned_velocity_flush called:
+14:58:47: send_ned_velocity_flush called:
+14:58:48: send_ned_velocity_flush called:
+14:58:49: send_ned_velocity_flush called:
+14:58:55: move_to_flush called:
+14:58:55: send_ned_velocity_flush called:
+14:58:56: send_ned_velocity_flush called:
+14:58:57: send_ned_velocity_flush called:
+14:58:58: send_ned_velocity_flush called:
+14:58:59:  Coming Home

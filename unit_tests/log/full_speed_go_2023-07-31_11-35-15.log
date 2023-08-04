@@ -1,0 +1,21 @@
+11:35:15: parse_connect called:
+11:35:16: arm_and_takeoff called:
+11:35:16: Arming motors
+11:35:16:  Waiting for arming...
+11:35:17: Taking off starts
+11:35:17:  Altitude: 0.005
+11:35:18:  Altitude: 0.005
+11:35:19:  Altitude: 0.005
+11:35:20:  Altitude: 0.067
+11:35:21:  Altitude: 1.008
+11:35:22:  Altitude: 1.863
+11:35:23:  Altitude: 2.056
+11:35:23: Reached target altitude
+11:35:28: move_to_flush called:
+11:35:28: send_ned_velocity_flush called:
+11:35:29: send_ned_velocity_flush called:
+11:35:30: send_ned_velocity_flush called:
+11:35:31: send_ned_velocity_flush called:
+11:35:37: move_to_flush called:
+11:35:37: send_ned_velocity_flush called:
+11:35:38: send_ned_velocity_flush called:

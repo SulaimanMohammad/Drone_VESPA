@@ -1,0 +1,52 @@
+15:52:40: arm_and_takeoff called:
+15:52:40: Arming motors
+15:52:40:  Waiting for arming...
+15:52:41:  Waiting for arming...
+15:52:42: Taking off starts
+15:52:42:  Altitude: -0.031
+15:52:43:  Altitude: -0.018
+15:52:44:  Altitude: 0.029
+15:52:45:  Altitude: 0.895
+15:52:46:  Altitude: 2.037
+15:52:46: Reached target altitude
+15:52:52: move_to_flush called:
+15:52:52: send_ned_velocity_flush called:
+15:52:52: send_ned_velocity_flush called:
+15:52:52: send_ned_velocity_flush called:
+15:52:52: send_ned_velocity_flush called:
+15:52:52: send_ned_velocity_flush called:
+15:52:52: send_ned_velocity_flush called:
+15:52:52: send_ned_velocity_flush called:
+15:52:52: send_ned_velocity_flush called:
+15:52:52: send_ned_velocity_flush called:
+15:52:52: send_ned_velocity_flush called:
+15:52:53: send_ned_velocity_flush called:
+15:52:53: send_ned_velocity_flush called:
+15:52:53: send_ned_velocity_flush called:
+15:52:53: send_ned_velocity_flush called:
+15:52:53: send_ned_velocity_flush called:
+15:52:53: send_ned_velocity_flush called:
+15:52:53: send_ned_velocity_flush called:
+15:52:53: send_ned_velocity_flush called:
+15:52:53: send_ned_velocity_flush called:
+15:52:53: send_ned_velocity_flush called:
+15:52:54: send_ned_velocity_flush called:
+15:52:54: send_ned_velocity_flush called:
+15:52:54: send_ned_velocity_flush called:
+15:52:54: send_ned_velocity_flush called:
+15:52:54: send_ned_velocity_flush called:
+15:52:54: send_ned_velocity_flush called:
+15:52:54: send_ned_velocity_flush called:
+15:52:54: send_ned_velocity_flush called:
+15:52:54: send_ned_velocity_flush called:
+15:52:54: send_ned_velocity_flush called:
+15:52:55: send_ned_velocity_flush called:
+15:52:55: send_ned_velocity_flush called:
+15:52:55: send_ned_velocity_flush called:
+15:52:55: send_ned_velocity_flush called:
+15:52:55: send_ned_velocity_flush called:
+15:52:55: send_ned_velocity_flush called:
+15:52:55: send_ned_velocity_flush called:
+15:52:55: send_ned_velocity_flush called:
+15:52:55: send_ned_velocity_flush called:
+15:52:55: send_ned_velocity_flush called:

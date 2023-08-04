@@ -1,0 +1,115 @@
+12:11:56: arm_and_takeoff called:
+12:11:56: Waiting for self to initialise...
+12:11:57: Waiting for self to initialise...
+12:11:58: Waiting for self to initialise...
+12:11:59: Waiting for self to initialise...
+12:12:00: Waiting for self to initialise...
+12:12:01: Waiting for self to initialise...
+12:12:02: Waiting for self to initialise...
+12:12:03: Waiting for self to initialise...
+12:12:04: Waiting for self to initialise...
+12:12:05: Waiting for self to initialise...
+12:12:06: Waiting for self to initialise...
+12:12:07: Waiting for self to initialise...
+12:12:08: Waiting for self to initialise...
+12:12:09: Waiting for self to initialise...
+12:12:10: Waiting for self to initialise...
+12:12:11: Waiting for self to initialise...
+12:12:12: Arming motors
+12:12:12:  Waiting for arming...
+12:12:13: Taking off starts
+12:12:13:  Altitude: -0.025
+12:12:13:  Altitude: -0.035
+12:12:14:  Altitude: -0.053
+12:12:14:  Altitude: -0.047
+12:12:15:  Altitude: -0.045
+12:12:15:  Altitude: -0.017
+12:12:16:  Altitude: 0.213
+12:12:16:  Altitude: 0.697
+12:12:17:  Altitude: 1.268
+12:12:17:  Altitude: 1.758
+12:12:18:  Altitude: 2.113
+12:12:18: Reached target altitude
+12:12:23: move_to_flush called:
+12:12:23: send_ned_velocity_flush called:
+12:12:23: send_ned_velocity_flush called:
+12:12:23: send_ned_velocity_flush called:
+12:12:23: send_ned_velocity_flush called:
+12:12:23: send_ned_velocity_flush called:
+12:12:23: send_ned_velocity_flush called:
+12:12:23: send_ned_velocity_flush called:
+12:12:23: send_ned_velocity_flush called:
+12:12:24: send_ned_velocity_flush called:
+12:12:24: send_ned_velocity_flush called:
+12:12:24: send_ned_velocity_flush called:
+12:12:24: send_ned_velocity_flush called:
+12:12:24: send_ned_velocity_flush called:
+12:12:24: send_ned_velocity_flush called:
+12:12:24: send_ned_velocity_flush called:
+12:12:24: send_ned_velocity_flush called:
+12:12:24: send_ned_velocity_flush called:
+12:12:24: send_ned_velocity_flush called:
+12:12:25: send_ned_velocity_flush called:
+12:12:25: send_ned_velocity_flush called:
+12:12:25: send_ned_velocity_flush called:
+12:12:25: send_ned_velocity_flush called:
+12:12:25: send_ned_velocity_flush called:
+12:12:25: send_ned_velocity_flush called:
+12:12:25: send_ned_velocity_flush called:
+12:12:25: send_ned_velocity_flush called:
+12:12:25: send_ned_velocity_flush called:
+12:12:25: send_ned_velocity_flush called:
+12:12:26: send_ned_velocity_flush called:
+12:12:26: send_ned_velocity_flush called:
+12:12:26: send_ned_velocity_flush called:
+12:12:26: send_ned_velocity_flush called:
+12:12:26: send_ned_velocity_flush called:
+12:12:26: send_ned_velocity_flush called:
+12:12:26: send_ned_velocity_flush called:
+12:12:26: send_ned_velocity_flush called:
+12:12:26: send_ned_velocity_flush called:
+12:12:26: send_ned_velocity_flush called:
+12:12:27: send_ned_velocity_flush called:
+12:12:27: send_ned_velocity_flush called:
+12:12:32: move_to_flush called:
+12:12:32: send_ned_velocity_flush called:
+12:12:32: send_ned_velocity_flush called:
+12:12:32: send_ned_velocity_flush called:
+12:12:32: send_ned_velocity_flush called:
+12:12:32: send_ned_velocity_flush called:
+12:12:32: send_ned_velocity_flush called:
+12:12:32: send_ned_velocity_flush called:
+12:12:32: send_ned_velocity_flush called:
+12:12:33: send_ned_velocity_flush called:
+12:12:33: send_ned_velocity_flush called:
+12:12:33: send_ned_velocity_flush called:
+12:12:33: send_ned_velocity_flush called:
+12:12:33: send_ned_velocity_flush called:
+12:12:33: send_ned_velocity_flush called:
+12:12:33: send_ned_velocity_flush called:
+12:12:33: send_ned_velocity_flush called:
+12:12:33: send_ned_velocity_flush called:
+12:12:33: send_ned_velocity_flush called:
+12:12:34: send_ned_velocity_flush called:
+12:12:34: send_ned_velocity_flush called:
+12:12:34: send_ned_velocity_flush called:
+12:12:34: send_ned_velocity_flush called:
+12:12:34: send_ned_velocity_flush called:
+12:12:34: send_ned_velocity_flush called:
+12:12:34: send_ned_velocity_flush called:
+12:12:34: send_ned_velocity_flush called:
+12:12:34: send_ned_velocity_flush called:
+12:12:34: send_ned_velocity_flush called:
+12:12:35: send_ned_velocity_flush called:
+12:12:35: send_ned_velocity_flush called:
+12:12:35: send_ned_velocity_flush called:
+12:12:35: send_ned_velocity_flush called:
+12:12:35: send_ned_velocity_flush called:
+12:12:35: send_ned_velocity_flush called:
+12:12:35: send_ned_velocity_flush called:
+12:12:35: send_ned_velocity_flush called:
+12:12:35: send_ned_velocity_flush called:
+12:12:35: send_ned_velocity_flush called:
+12:12:36: send_ned_velocity_flush called:
+12:12:36: send_ned_velocity_flush called:
+12:12:36:  Coming Home

@@ -1,0 +1,45 @@
+14:46:27: parse_connect called:
+14:46:27: arm_and_takeoff called:
+14:46:27: Waiting for self to initialise...
+14:46:30: Waiting for self to initialise...
+14:46:33: Waiting for self to initialise...
+14:46:36: Waiting for self to initialise...
+14:46:39: Waiting for self to initialise...
+14:46:42: Waiting for self to initialise...
+14:46:45: Waiting for self to initialise...
+14:46:48: Waiting for self to initialise...
+14:46:51: Arming motors
+14:46:51:  Waiting for arming...
+14:46:52: Taking off starts
+14:46:52:  Altitude: 0.005
+14:46:53:  Altitude: 0.005
+14:46:54:  Altitude: 0.005
+14:46:55:  Altitude: 0.078
+14:46:56:  Altitude: 1.08
+14:46:57:  Altitude: 2.352
+14:46:58:  Altitude: 2.993
+14:46:58: Reached target altitude
+14:47:03: Go to S1
+14:47:03: move_to_flush called:
+14:47:03: send_ned_velocity_flush called:
+14:47:03: send_ned_velocity_flush called:
+14:47:03: send_ned_velocity_flush called:
+14:47:03: send_ned_velocity_flush called:
+14:47:03: send_ned_velocity_flush called:
+14:47:04: send_ned_velocity_flush called:
+14:47:04: send_ned_velocity_flush called:
+14:47:04: send_ned_velocity_flush called:
+14:47:04: send_ned_velocity_flush called:
+14:47:04: send_ned_velocity_flush called:
+14:47:09: move_to_flush called:
+14:47:09: send_ned_velocity_flush called:
+14:47:09: send_ned_velocity_flush called:
+14:47:09: send_ned_velocity_flush called:
+14:47:09: send_ned_velocity_flush called:
+14:47:09: send_ned_velocity_flush called:
+14:47:10: send_ned_velocity_flush called:
+14:47:10: send_ned_velocity_flush called:
+14:47:10: send_ned_velocity_flush called:
+14:47:10: send_ned_velocity_flush called:
+14:47:10: send_ned_velocity_flush called:
+14:47:15:  Coming Home

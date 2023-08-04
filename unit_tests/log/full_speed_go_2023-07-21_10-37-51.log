@@ -1,0 +1,59 @@
+10:38:05: arm_and_takeoff called:
+10:38:05: Waiting for self to initialise...
+10:38:06: Waiting for self to initialise...
+10:38:07: Waiting for self to initialise...
+10:38:08: Waiting for self to initialise...
+10:38:09: Waiting for self to initialise...
+10:38:10: Arming motors
+10:38:10:  Waiting for arming...
+10:38:11: Taking off starts
+10:38:11:  Altitude: 0.0
+10:38:12:  Altitude: -0.006
+10:38:13:  Altitude: -0.002
+10:38:14:  Altitude: 0.218
+10:38:15:  Altitude: 1.261
+10:38:16:  Altitude: 2.052
+10:38:16: Reached target altitude
+10:38:21: move_to_flush called:
+10:38:21: send_ned_velocity_flush called:
+10:38:21: send_ned_velocity_flush called:
+10:38:21: send_ned_velocity_flush called:
+10:38:22: send_ned_velocity_flush called:
+10:38:22: send_ned_velocity_flush called:
+10:38:22: send_ned_velocity_flush called:
+10:38:22: send_ned_velocity_flush called:
+10:38:22: send_ned_velocity_flush called:
+10:38:22: send_ned_velocity_flush called:
+10:38:22: send_ned_velocity_flush called:
+10:38:22: send_ned_velocity_flush called:
+10:38:22: send_ned_velocity_flush called:
+10:38:22: send_ned_velocity_flush called:
+10:38:23: send_ned_velocity_flush called:
+10:38:23: send_ned_velocity_flush called:
+10:38:23: send_ned_velocity_flush called:
+10:38:23: send_ned_velocity_flush called:
+10:38:23: send_ned_velocity_flush called:
+10:38:23: send_ned_velocity_flush called:
+10:38:23: send_ned_velocity_flush called:
+10:38:28: move_to_flush called:
+10:38:28: send_ned_velocity_flush called:
+10:38:28: send_ned_velocity_flush called:
+10:38:28: send_ned_velocity_flush called:
+10:38:29: send_ned_velocity_flush called:
+10:38:29: send_ned_velocity_flush called:
+10:38:29: send_ned_velocity_flush called:
+10:38:29: send_ned_velocity_flush called:
+10:38:29: send_ned_velocity_flush called:
+10:38:29: send_ned_velocity_flush called:
+10:38:29: send_ned_velocity_flush called:
+10:38:29: send_ned_velocity_flush called:
+10:38:29: send_ned_velocity_flush called:
+10:38:29: send_ned_velocity_flush called:
+10:38:30: send_ned_velocity_flush called:
+10:38:30: send_ned_velocity_flush called:
+10:38:30: send_ned_velocity_flush called:
+10:38:30: send_ned_velocity_flush called:
+10:38:30: send_ned_velocity_flush called:
+10:38:30: send_ned_velocity_flush called:
+10:38:30: send_ned_velocity_flush called:
+10:38:35:  Coming Home

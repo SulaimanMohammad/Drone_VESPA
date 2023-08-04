@@ -1,0 +1,16 @@
+10:27:05: arm_and_takeoff called:
+10:27:05: Arming motors
+10:27:05:  Waiting for arming...
+10:27:06:  Waiting for arming...
+10:27:07: Taking off starts
+10:27:07:  Altitude: 0.0
+10:27:08:  Altitude: -0.025
+10:27:09:  Altitude: 0.26
+10:27:10:  Altitude: 0.804
+10:27:11:  Altitude: 1.086
+10:27:11: Reached target altitude
+10:27:16: Go to S1
+10:27:16: move_to_position_speed_flush called:
+10:27:16: send_ned_velocity_position_flush called:
+10:27:17: send_ned_velocity_position_flush called:
+10:27:17: send_ned_velocity_position_flush called:

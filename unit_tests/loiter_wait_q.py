@@ -11,20 +11,25 @@ from expan import *
 from drone_ardupilot import *
 import math 
 
+
+
 #set_a(20)
-def interrupt(self, signal_num, frame):
+def interrupt(signal_num, frame):
     print("Interrupted!")
-    self.mode = VehicleMode ("LAND")
-    time.sleep(3) 
-    self.close()
+    global vehicle
+    if vehicle is not None:
+        vehicle.mode = VehicleMode ("LAND")
+        time.sleep(3) 
+        vehicle.close()
+        sys.exit()
 
 
-signal.signal(vehicle, signal.SIGINT, interrupt)
 
 create_log_file(os.path.dirname(os.path.abspath(__file__)),  os.path.splitext(os.path.basename(__file__))[0]) 
-
-vehicle = connect(parse_connect(), wait_ready=False,baud=57600)
+global vehicle
+vehicle = connect("/dev/ttyUSB0", wait_ready=False,baud=57600)
 vehicle.wait_ready(True, raise_exception=False)
+signal.signal(signal.SIGINT, interrupt)
 
 arm_and_takeoff(vehicle, 0.5)
 

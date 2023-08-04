@@ -1,0 +1,16 @@
+16:23:06: arm_and_takeoff called:
+16:23:06: Arming motors
+16:23:06:  Waiting for arming...
+16:23:07:  Waiting for arming...
+16:23:08: Taking off starts
+16:23:08:  Altitude: 0.033
+16:23:09:  Altitude: 0.073
+16:23:10:  Altitude: 0.252
+16:23:11:  Altitude: 1.071
+16:23:11: Reached target altitude
+16:23:13: Go to S1
+16:23:13: move_to_stages_long called:
+16:23:13: send_ned_velocity_stages_long called:
+16:23:23: move_to_stages_long called:
+16:23:23: send_ned_velocity_stages_long called:
+16:23:33:  Coming Home

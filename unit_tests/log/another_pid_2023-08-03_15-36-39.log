@@ -1,0 +1,13 @@
+15:36:39: parse_connect called:
+15:36:40: arm_and_takeoff called:
+15:36:40: Arming motors
+15:36:40:  Waiting for arming...
+15:36:41: Taking off starts
+15:36:41:  Altitude: 0.009
+15:36:42:  Altitude: 0.009
+15:36:43:  Altitude: 0.009
+15:36:44:  Altitude: 0.081
+15:36:45:  Altitude: 1.044
+15:36:46:  Altitude: 1.886
+15:36:47:  Altitude: 2.055
+15:36:47: Reached target altitude

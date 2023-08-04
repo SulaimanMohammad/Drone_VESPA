@@ -1,0 +1,14 @@
+16:59:25: arm_and_takeoff called:
+16:59:25: Arming motors
+16:59:25:  Waiting for arming...
+16:59:26: Taking off starts
+16:59:26:  Altitude: -0.001
+16:59:27:  Altitude: 0.023
+16:59:28:  Altitude: 0.046
+16:59:29:  Altitude: 0.299
+16:59:30:  Altitude: 0.928
+16:59:31:  Altitude: 1.025
+16:59:31: Reached target altitude
+16:59:33:  current_altitude= 0.97
+16:59:33:  current_altitude= 0.97
+16:59:38:  LAND

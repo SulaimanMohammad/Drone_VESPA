@@ -1,0 +1,29 @@
+10:22:14: set_home_to_zero called:
+10:22:14: arm_and_takeoff called:
+10:22:14: Arming motors
+10:22:14:  Waiting for arming...
+10:22:15: Taking off starts
+10:22:15:  Altitude: 0.013
+10:22:16:  Altitude: 0.033
+10:22:17:  Altitude: 0.054
+10:22:18:  Altitude: 0.186
+10:22:19:  Altitude: 0.773
+10:22:19: Reached target altitude
+10:22:19:  current_lat = 48.1201001
+10:22:19:  current_lon= -1.6295607
+10:22:19: Go to S1
+10:22:19: move_to called:
+10:22:19: send_ned_velocity called:
+10:22:34:  current_lat = 48.1200987
+10:22:34:  current_lon= -1.6295252
+10:22:34: calculate_relative_pos called:
+10:22:34: calculated distance y,x = [0.08534494994271924, 1.4026257000032567, -22.611333333333334]
+10:22:34: supposed distanc x,y = [3.0, 0.0]
+10:22:36: move_to called:
+10:22:36: send_ned_velocity called:
+10:22:51:  current_lat = 48.1200983
+10:22:51:  current_lon= -1.6295538
+10:22:51: calculate_relative_pos called:
+10:22:51: calculated distance y,x = [0.07050235003292471, 0.3413798000015773, -22.612000000000005]
+10:22:51: supposed distanc x,y = [0.0, 0.0]
+10:22:56:  Coming Home

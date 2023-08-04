@@ -1,0 +1,116 @@
+15:08:34: arm_and_takeoff called:
+15:08:34: Waiting for self to initialise...
+15:08:35: Waiting for self to initialise...
+15:08:36: Waiting for self to initialise...
+15:08:37: Waiting for self to initialise...
+15:08:38: Waiting for self to initialise...
+15:08:39: Waiting for self to initialise...
+15:08:40: Waiting for self to initialise...
+15:08:41: Waiting for self to initialise...
+15:08:42: Waiting for self to initialise...
+15:08:43: Waiting for self to initialise...
+15:08:44: Waiting for self to initialise...
+15:08:45: Waiting for self to initialise...
+15:08:46: Waiting for self to initialise...
+15:08:47: Waiting for self to initialise...
+15:08:48: Waiting for self to initialise...
+15:08:49: Waiting for self to initialise...
+15:08:50: Waiting for self to initialise...
+15:08:51: Waiting for self to initialise...
+15:08:52: Waiting for self to initialise...
+15:08:53: Waiting for self to initialise...
+15:08:54: Waiting for self to initialise...
+15:08:55: Waiting for self to initialise...
+15:08:56: Arming motors
+15:08:56:  Waiting for arming...
+15:08:57:  Waiting for arming...
+15:08:58: Taking off starts
+15:08:58:  Altitude: 0.04
+15:08:59:  Altitude: 0.113
+15:09:00:  Altitude: 0.44
+15:09:01:  Altitude: 1.365
+15:09:02:  Altitude: 1.972
+15:09:02: Reached target altitude
+15:09:07: move_to_flush called:
+15:09:07: send_ned_velocity_flush called:
+15:09:07: send_ned_velocity_flush called:
+15:09:07: send_ned_velocity_flush called:
+15:09:07: send_ned_velocity_flush called:
+15:09:07: send_ned_velocity_flush called:
+15:09:07: send_ned_velocity_flush called:
+15:09:07: send_ned_velocity_flush called:
+15:09:08: send_ned_velocity_flush called:
+15:09:08: send_ned_velocity_flush called:
+15:09:08: send_ned_velocity_flush called:
+15:09:08: send_ned_velocity_flush called:
+15:09:08: send_ned_velocity_flush called:
+15:09:08: send_ned_velocity_flush called:
+15:09:08: send_ned_velocity_flush called:
+15:09:08: send_ned_velocity_flush called:
+15:09:08: send_ned_velocity_flush called:
+15:09:08: send_ned_velocity_flush called:
+15:09:09: send_ned_velocity_flush called:
+15:09:09: send_ned_velocity_flush called:
+15:09:09: send_ned_velocity_flush called:
+15:09:09: send_ned_velocity_flush called:
+15:09:09: send_ned_velocity_flush called:
+15:09:09: send_ned_velocity_flush called:
+15:09:09: send_ned_velocity_flush called:
+15:09:09: send_ned_velocity_flush called:
+15:09:09: send_ned_velocity_flush called:
+15:09:09: send_ned_velocity_flush called:
+15:09:10: send_ned_velocity_flush called:
+15:09:10: send_ned_velocity_flush called:
+15:09:10: send_ned_velocity_flush called:
+15:09:10: send_ned_velocity_flush called:
+15:09:10: send_ned_velocity_flush called:
+15:09:10: send_ned_velocity_flush called:
+15:09:10: send_ned_velocity_flush called:
+15:09:10: send_ned_velocity_flush called:
+15:09:10: send_ned_velocity_flush called:
+15:09:10: send_ned_velocity_flush called:
+15:09:11: send_ned_velocity_flush called:
+15:09:11: send_ned_velocity_flush called:
+15:09:11: send_ned_velocity_flush called:
+15:09:16: move_to_flush called:
+15:09:16: send_ned_velocity_flush called:
+15:09:16: send_ned_velocity_flush called:
+15:09:16: send_ned_velocity_flush called:
+15:09:16: send_ned_velocity_flush called:
+15:09:16: send_ned_velocity_flush called:
+15:09:16: send_ned_velocity_flush called:
+15:09:16: send_ned_velocity_flush called:
+15:09:17: send_ned_velocity_flush called:
+15:09:17: send_ned_velocity_flush called:
+15:09:17: send_ned_velocity_flush called:
+15:09:17: send_ned_velocity_flush called:
+15:09:17: send_ned_velocity_flush called:
+15:09:17: send_ned_velocity_flush called:
+15:09:17: send_ned_velocity_flush called:
+15:09:17: send_ned_velocity_flush called:
+15:09:17: send_ned_velocity_flush called:
+15:09:17: send_ned_velocity_flush called:
+15:09:18: send_ned_velocity_flush called:
+15:09:18: send_ned_velocity_flush called:
+15:09:18: send_ned_velocity_flush called:
+15:09:18: send_ned_velocity_flush called:
+15:09:18: send_ned_velocity_flush called:
+15:09:18: send_ned_velocity_flush called:
+15:09:18: send_ned_velocity_flush called:
+15:09:18: send_ned_velocity_flush called:
+15:09:18: send_ned_velocity_flush called:
+15:09:18: send_ned_velocity_flush called:
+15:09:19: send_ned_velocity_flush called:
+15:09:19: send_ned_velocity_flush called:
+15:09:19: send_ned_velocity_flush called:
+15:09:19: send_ned_velocity_flush called:
+15:09:19: send_ned_velocity_flush called:
+15:09:19: send_ned_velocity_flush called:
+15:09:19: send_ned_velocity_flush called:
+15:09:19: send_ned_velocity_flush called:
+15:09:19: send_ned_velocity_flush called:
+15:09:20: send_ned_velocity_flush called:
+15:09:20: send_ned_velocity_flush called:
+15:09:20: send_ned_velocity_flush called:
+15:09:20: send_ned_velocity_flush called:
+15:09:20:  Coming Home

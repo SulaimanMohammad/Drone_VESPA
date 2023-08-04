@@ -1,0 +1,57 @@
+12:12:29: parse_connect called:
+12:12:30: arm_and_takeoff called:
+12:12:30: Arming motors
+12:12:30:  Waiting for arming...
+12:12:31: Taking off starts
+12:12:31:  Altitude: 0.001
+12:12:32:  Altitude: 0.0
+12:12:33:  Altitude: -0.001
+12:12:34:  Altitude: 0.075
+12:12:35:  Altitude: 1.099
+12:12:36:  Altitude: 2.362
+12:12:37:  Altitude: 2.997
+12:12:37: Reached target altitude
+12:12:39: Go to S1
+12:12:39: move_to_position_flush called:
+12:12:39: send_ned_velocity_position_flush called:
+12:12:40: send_ned_velocity_position_flush called:
+12:12:41: send_ned_velocity_position_flush called:
+12:12:42: send_ned_velocity_position_flush called:
+12:12:43: send_ned_velocity_position_flush called:
+12:12:44: send_ned_velocity_position_flush called:
+12:12:45: send_ned_velocity_position_flush called:
+12:12:46: send_ned_velocity_position_flush called:
+12:12:47: send_ned_velocity_position_flush called:
+12:12:48: send_ned_velocity_position_flush called:
+12:12:49: send_ned_velocity_position_flush called:
+12:12:50: send_ned_velocity_position_flush called:
+12:12:51: send_ned_velocity_position_flush called:
+12:12:52: send_ned_velocity_position_flush called:
+12:12:53: send_ned_velocity_position_flush called:
+12:12:54: send_ned_velocity_position_flush called:
+12:12:55: send_ned_velocity_position_flush called:
+12:12:56: send_ned_velocity_position_flush called:
+12:12:57: send_ned_velocity_position_flush called:
+12:12:58: send_ned_velocity_position_flush called:
+12:12:59: move_to_position_flush called:
+12:12:59: send_ned_velocity_position_flush called:
+12:13:00: send_ned_velocity_position_flush called:
+12:13:01: send_ned_velocity_position_flush called:
+12:13:02: send_ned_velocity_position_flush called:
+12:13:03: send_ned_velocity_position_flush called:
+12:13:04: send_ned_velocity_position_flush called:
+12:13:05: send_ned_velocity_position_flush called:
+12:13:06: send_ned_velocity_position_flush called:
+12:13:07: send_ned_velocity_position_flush called:
+12:13:08: send_ned_velocity_position_flush called:
+12:13:09: send_ned_velocity_position_flush called:
+12:13:10: send_ned_velocity_position_flush called:
+12:13:11: send_ned_velocity_position_flush called:
+12:13:12: send_ned_velocity_position_flush called:
+12:13:13: send_ned_velocity_position_flush called:
+12:13:14: send_ned_velocity_position_flush called:
+12:13:15: send_ned_velocity_position_flush called:
+12:13:16: send_ned_velocity_position_flush called:
+12:13:17: send_ned_velocity_position_flush called:
+12:13:18: send_ned_velocity_position_flush called:
+12:13:19:  Coming Home
