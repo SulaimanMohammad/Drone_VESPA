@@ -29,7 +29,7 @@ def normalize_angle(angle):
 
 create_log_file(os.path.dirname(os.path.abspath(__file__)),  os.path.splitext(os.path.basename(__file__))[0]) 
 global vehicle
-# vehicle = connect(parse_connect(), wait_ready=False)
+#vehicle = connect(parse_connect(), wait_ready=False)
 vehicle = connect("/dev/serial0", baud= 921600,  wait_ready=False)
 vehicle.wait_ready(True, raise_exception=False)
 signal.signal(signal.SIGINT, interrupt)
@@ -65,7 +65,6 @@ print( "yaw" ,math.degrees(vehicle.attitude.yaw))
 # if current_altitude != drone.hight:
 #     set_altitude(vehicle,drone.hight)
 
-print( "loiter is on")
 vehicle.mode    = VehicleMode("LOITER") #loiter mode and hover in your place 
 time.sleep(5)
 vehicle.mode     = VehicleMode("GUIDED")
@@ -84,7 +83,7 @@ move_to_flush(vehicle,x,y,drone.hight,time_to_pass) # go 3m in X
 print(" move on x to" ,x , " in speed of",  x/float(time_to_pass) )
 
 face_north(vehicle)
-# vehicle.mode    = VehicleMode("LOITER") #loiter mode and hover in your place 
+vehicle.mode    = VehicleMode("LOITER") #loiter mode and hover in your place 
 time.sleep(5)
 vehicle.mode     = VehicleMode("GUIDED")
 
