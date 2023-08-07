@@ -485,6 +485,7 @@ def face_north_hold_gps(self):
         current_yaw = (math.degrees(self.attitude.yaw))
         print( "current",current_yaw )
 
+
 def face_north_loiter(self):
     #current_yaw = normalize_angle(self.heading)
     self.mode = VehicleMode("LOITER")
