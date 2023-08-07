@@ -323,8 +323,8 @@ def move_to_flush(self, x , y, altitude, time_passed=0):
     start_time = time.time()
     while time.time() - start_time < time_passed:            
         send_ned_velocity_flush(self, north/float(total_time), east/float(total_time),0,-1*altitude, total_time)
-        velocity_current_x = abs(self.velocity[0])
-        velocity_current_y = abs(self.velocity[1])
+        velocity_current_x = (self.velocity[0])
+        velocity_current_y = (self.velocity[1])
         print( "Befor PID loop velocity[0] ",velocity_current_x , "velocity[1]",velocity_current_y, "yaw", math.degrees(self.attitude.yaw) )
         time.sleep(1)
 
@@ -460,20 +460,51 @@ def set_yaw (self,yaw_angle, relative=False):
 def face_north(self):
     #current_yaw = normalize_angle(self.heading)
     current_yaw = normalize_angle(math.degrees(self.attitude.yaw))
-    tolerance = 0.8  # degrees
-
+    tolerance =1 # degrees
     # Check if the current yaw is close to 0 degrees (within a tolerance)
-    while abs(current_yaw) > tolerance :
+    # while abs(current_yaw) > tolerance :
+    while not (current_yaw <= 5 or current_yaw >= 355) :
         #current_yaw = normalize_angle(self.heading)
         set_yaw(self, 0)
-        time.sleep(0.1)
+        time.sleep(0.01)
         current_yaw = normalize_angle(math.degrees(self.attitude.yaw))
+
+def face_north_hold_gps(self):
+    #current_yaw = normalize_angle(self.heading)
+    current_yaw = normalize_angle(math.degrees(self.attitude.yaw))
+    tolerance = 5 # degrees
+    # Get the current position to hold
+    hold_position = self.location.global_relative_frame
+    # Check if the current yaw is close to 0 degrees (within a tolerance)
+    while not (current_yaw <= 5 or current_yaw >= 355) :
+        #current_yaw = normalize_angle(self.heading)
+        set_yaw(self, 0)
+        # Hold position
+        self.simple_goto(hold_position)
+        time.sleep(0.01)
+        current_yaw = (math.degrees(self.attitude.yaw))
+        print( "current",current_yaw )
+
+def face_north_loiter(self):
+    #current_yaw = normalize_angle(self.heading)
+    self.mode = VehicleMode("LOITER")
+    current_yaw = normalize_angle(math.degrees(self.attitude.yaw))
+    tolerance = 5 # degrees
+    # Check if the current yaw is close to 0 degrees (within a tolerance)
+    while not (current_yaw <= 5 or current_yaw >= 355):
+        #current_yaw = normalize_angle(self.heading)
+        set_yaw(self, 0)
+        # Hold position
+        time.sleep(0.01)
+        current_yaw = normalize_angle(math.degrees(self.attitude.yaw))
+    self.mode     = VehicleMode("GUIDED")
+
 
 def set_yaw_to_dir(self,yaw_angle):
      #current_yaw = normalize_angle(self.heading)
     current_yaw = normalize_angle(math.degrees(self.attitude.yaw))
     yaw_angle= normalize_angle(yaw_angle) 
-    tolerance = 0.2  # degrees
+    tolerance = 1 # degrees
     print( "yaw frst",normalize_angle(math.degrees(self.attitude.yaw)) )
     # Check if the current yaw is close to 0 degrees (within a tolerance)
     while abs(current_yaw - yaw_angle) > tolerance:
