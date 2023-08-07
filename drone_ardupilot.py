@@ -9,6 +9,7 @@ import datetime
 from expan import DIR_VECTORS
 import inspect
 import numpy as np
+from simple_pid import PID
 
 
 # Declare global variables for logs 
@@ -470,6 +471,7 @@ def face_north(self):
         current_yaw = normalize_angle(math.degrees(self.attitude.yaw))
 
 def face_north_hold_gps(self):
+    self.mode     = VehicleMode("GUIDED")
     #current_yaw = normalize_angle(self.heading)
     current_yaw = normalize_angle(math.degrees(self.attitude.yaw))
     tolerance = 5 # degrees
@@ -480,10 +482,11 @@ def face_north_hold_gps(self):
         #current_yaw = normalize_angle(self.heading)
         set_yaw(self, 0)
         # Hold position
-        self.simple_goto(hold_position)
         time.sleep(0.01)
         current_yaw = (math.degrees(self.attitude.yaw))
         print( "current",current_yaw )
+        self.simple_goto(hold_position)
+
 
 
 def face_north_loiter(self):
@@ -499,6 +502,56 @@ def face_north_loiter(self):
         time.sleep(0.01)
         current_yaw = normalize_angle(math.degrees(self.attitude.yaw))
     self.mode     = VehicleMode("GUIDED")
+
+
+
+def position_control(self,target_altitude, target_latitude, target_longitude):
+    # Initialize PID controllers
+    altitude_pid = PID(0.1, 0.01, 0.008, setpoint=0)
+    latitude_pid = PID(1, 0.1, 0.01, setpoint=0)
+    longitude_pid = PID(1, 0.1, 0.01, setpoint=0)
+
+    # Current values
+    current_altitude = self.location.global_relative_frame.alt
+    current_latitude = self.location.global_relative_frame.lat
+    current_longitude = self.location.global_relative_frame.lon
+
+    # Calculate errors
+    altitude_error = target_altitude - current_altitude
+    latitude_error = target_latitude - current_latitude
+    longitude_error = target_longitude - current_longitude
+
+    # Calculate control inputs using PID controllers
+    throttle_control = altitude_pid(altitude_error)
+    pitch_control = latitude_pid(latitude_error)
+    roll_control = longitude_pid(longitude_error)
+
+    # Apply control inputs
+    self.channels.overrides['3'] = throttle_control
+    self.channels.overrides['1'] = pitch_control
+    self.channels.overrides['2'] = roll_control
+
+
+def face_north_hold_PID(self):
+    # Target values
+    target_altitude = self.location.global_relative_frame.alt
+    target_latitude = self.location.global_relative_frame.lat
+    target_longitude = self.location.global_relative_frame.lon
+
+    self.mode     = VehicleMode("GUIDED")
+    #current_yaw = normalize_angle(self.heading)
+    current_yaw = normalize_angle(math.degrees(self.attitude.yaw))
+    tolerance = 5 # degrees
+    # Get the current position to hold
+    # Check if the current yaw is close to 0 degrees (within a tolerance)
+    while not (current_yaw <= 5 or current_yaw >= 355) :
+        #current_yaw = normalize_angle(self.heading)
+        set_yaw(self, 0)
+        # Hold position
+        time.sleep(0.1)
+        current_yaw = (math.degrees(self.attitude.yaw))
+        print( "current",current_yaw )
+        position_control(self,target_altitude, target_latitude, target_longitude)
 
 
 def set_yaw_to_dir(self,yaw_angle):
@@ -625,12 +678,12 @@ def move_PID(self, angl_dir, distance, time_needed):
 def velocity_in_body_frame(self):
     # Retrieve the vehicle's velocity in the NED frame
     velocity_ned = np.array([self.velocity[0], self.velocity[1], self.velocity[2]])
-
+    
     # Retrieve the vehicle's roll, pitch, and yaw angles
     roll = self.attitude.roll
     pitch = self.attitude.pitch
     yaw = self.attitude.yaw
-
+    
     # Create the rotation matrix using the roll, pitch, and yaw angles
     R_roll = np.array([
         [1, 0, 0],
@@ -717,23 +770,24 @@ def send_control_body(vehicle, velocity_x, velocity_y, yaw_rate):
 def move_PID_body(self, angl_dir, distance, time_needed):
     # Set mode to GUIDED
     self.mode = VehicleMode("GUIDED")
-    
-    set_yaw_to_dir( self, angl_dir)
     roll = self.attitude.roll
     pitch = self.attitude.pitch
-
+    
+    [ angl_dir, coeff_distance ]= convert_angle_to_set_dir(self, angl_dir)
+    set_yaw_to_dir( self, angl_dir)
+    distance= coeff_distance*distance
     print ( "current yaw in Deg ", math.degrees(self.attitude.yaw))
     # PID gains for yaw, X, and Y control
-    Kp_yaw = 0.1
+    Kp_yaw = 0.5
     Ki_yaw = 0.01
     Kd_yaw = 0.01
 
-    Kp_vel_x = 0.1
+    Kp_vel_x = 0.5
     Ki_vel_x = 0.01
     Kd_vel_x = 0.01
 
 
-    Kp_vel_y = 0.1
+    Kp_vel_y = 0.5
     Ki_vel_y = 0.01
     Kd_vel_y = 0.01
 
@@ -753,11 +807,11 @@ def move_PID_body(self, angl_dir, distance, time_needed):
     
     # Need to be changed because first send control can not use this 
     desired_vel_x = distance/float(time_needed-1)
-    desired_vel_y = distance/float(time_needed-1)
+    #desired_vel_y = distance/float(time_needed-1)
     
     #desired_vel_x = desired_vel_x * ( math.sin(desired_yaw) )
     #desired_vel_x = desired_vel_x * (math.cos(desired_yaw) )# x is on east for that it is cos
-    desired_vel_y=0
+    desired_vel_y=0.0
     print ("in NED frame Desired vx", desired_vel_x ," Des vy", desired_vel_y )
     #desired_vel_x, desired_vel_y = ned_to_body_frame(desired_vel_x, desired_vel_y, roll, pitch, math.radians(desired_yaw) )
     print ("In body frame Desired vx", desired_vel_x ," Des vy", desired_vel_y )
@@ -772,8 +826,8 @@ def move_PID_body(self, angl_dir, distance, time_needed):
     #while time.time() - start_time < duration-1: #not_condition_to_stop
     send_control_body(self, desired_vel_x, desired_vel_y, 0)
     time.sleep(1) 
-    velocity_current_x = abs(self.velocity[1])
-    velocity_current_y = abs(self.velocity[0])
+    velocity_current_x = (self.velocity[1])
+    velocity_current_y = (self.velocity[0])
     # velocity_current_x = velocity_in_body_frame(self)[0]
     # velocity_current_y = velocity_in_body_frame(self)[1]
     print( "Befor PID loop vx ",velocity_current_x , "vy",velocity_current_y, "yaw", math.degrees(self.attitude.yaw) )
@@ -792,8 +846,8 @@ def move_PID_body(self, angl_dir, distance, time_needed):
         error_yaw_prev = error_yaw
 
         # Get current velocities
-        velocity_current_x = abs(self.velocity[1])
-        velocity_current_y = abs(self.velocity[0])
+        velocity_current_x = (self.velocity[1])
+        velocity_current_y = (self.velocity[0])
         # velocity_current_x = abs(velocity_in_body_frame(self)[0])
         # velocity_current_y = abs(velocity_in_body_frame(self)[1])
         
@@ -899,3 +953,21 @@ def scan_hexagon(vehicle, drone, camera_image_width,  scan_time=0):
     print("Come back to origin by",-(new_radius+distance +distance/2) )
     move_to(vehicle, 0, -(a-distance*i+distance/2))
     drone.update_location(0,-(a-distance*i+distance/2)) #the new coordinates
+
+
+def convert_angle_to_set_dir(self, angle): 
+    '''
+    supppose you want the drone to have yaw -90 and move forward in respect to -90 yaw 
+    and the drone currently has yaw in 90, then no need to set yaw=-90 , it is enough to 
+    stay in yaw=90 and set the speed to be negative which means move bacward.
+
+    yaw -90 and velocity positive [forward] = yaw 90 and velocity negative [bacward])
+
+    '''
+    # this function will be always called in any PID move 
+    # get the current yaw 
+    current_yaw = normalize_angle(math.degrees(self.attitude.yaw))
+    if abs(current_yaw - ( normalize_angle(angle) -180)) < 10: # if the current angle is the opposit of what we want with error of 10 degrees 
+        return [ normalize_angle(angle) -180, -1 ] # -1 is to flip the direction so go in direction of backward 
+    else: 
+         return [normalize_angle(angle), +1]
