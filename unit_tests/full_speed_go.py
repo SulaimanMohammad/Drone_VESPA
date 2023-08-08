@@ -56,9 +56,9 @@ print( "face_north ")
 
 
 #face_north(vehicle)
-face_north_hold_gps(vehicle) 
+#face_north_hold_gps(vehicle) 
 #face_north_loiter(vehicle) 
-#face_north_hold_PID(vehicle) 
+face_north_hold_PID(vehicle) 
 print( "yaw" ,math.degrees(vehicle.attitude.yaw))
 
 # # Check the current altitude
