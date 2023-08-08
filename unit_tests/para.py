@@ -13,7 +13,7 @@ connection_string = args.connect
 
 print ("Connection to the vehicle on %s"%connection_string)
 # vehicle = connect (connection_string, wait_ready=False)
-vehicle = connect("/dev/serial0", wait_ready=False,baud=57600)
+vehicle = connect("/dev/serial0", baud= 921600,  wait_ready=False)
 vehicle.wait_ready(True, raise_exception=False)
 
 @vehicle.on_attribute('mode')
