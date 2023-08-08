@@ -527,7 +527,7 @@ def position_control(self,target_altitude, target_latitude, target_longitude):
     roll_control = longitude_pid(longitude_error)
 
     # Apply control inputs
-    self.channels.overrides['3'] = throttle_control
+    #self.channels.overrides['3'] = throttle_control
     self.channels.overrides['1'] = pitch_control
     self.channels.overrides['2'] = roll_control
 
@@ -570,6 +570,20 @@ def set_yaw_to_dir(self,yaw_angle):
     print( "yaw frst",normalize_angle(math.degrees(self.attitude.yaw)) )
 
 
+def set_yaw_to_dir_PID(self,yaw_angle):
+     #current_yaw = normalize_angle(self.heading)
+    current_yaw = normalize_angle(math.degrees(self.attitude.yaw))
+    yaw_angle= normalize_angle(yaw_angle) 
+    tolerance = 1 # degrees
+    print( "yaw frst",normalize_angle(math.degrees(self.attitude.yaw)) )
+    # Check if the current yaw is close to 0 degrees (within a tolerance)
+    while not ( abs(current_yaw- yaw_angle) < +5 ) :
+        #current_yaw = normalize_angle(self.heading)
+        set_yaw(self, yaw_angle)
+        time.sleep(0.01)
+        current_yaw = normalize_angle(math.degrees(self.attitude.yaw))
+    
+    print( "yaw frst",normalize_angle(math.degrees(self.attitude.yaw)) )
 
 # Send a command to control velocity and yaw
 def send_control(vehicle, velocity_x, velocity_y, yaw_rate):
@@ -587,8 +601,8 @@ def send_control(vehicle, velocity_x, velocity_y, yaw_rate):
 def move_PID(self, angl_dir, distance, time_needed):
     # Set mode to GUIDED
     self.mode = VehicleMode("GUIDED")
-    
-    set_yaw_to_dir( self, angl_dir)
+    set_yaw_to_dir_PID( self, angl_dir)
+    #set_yaw_to_dir( self, angl_dir)
     print ( "current yaw in Deg ", math.degrees(self.attitude.yaw))
     # PID gains for yaw, X, and Y control
     Kp_yaw = 0.1
@@ -774,7 +788,9 @@ def move_PID_body(self, angl_dir, distance, time_needed):
     pitch = self.attitude.pitch
     
     [ angl_dir, coeff_distance ]= convert_angle_to_set_dir(self, angl_dir)
-    set_yaw_to_dir( self, angl_dir)
+    #set_yaw_to_dir( self, angl_dir)
+    set_yaw_to_dir_PID( self, angl_dir)
+
     distance= coeff_distance*distance
     print ( "current yaw in Deg ", math.degrees(self.attitude.yaw))
     # PID gains for yaw, X, and Y control
