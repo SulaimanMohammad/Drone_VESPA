@@ -611,9 +611,14 @@ def set_yaw_to_dir_PID(self, target_yaw, max_yaw_speed=10):
     ki=0.01
     kd=0.01
 
+    # Target values
+    target_altitude = self.location.global_relative_frame.alt
+    target_latitude = self.location.global_relative_frame.lat
+    target_longitude = self.location.global_relative_frame.lon
+
     pid = PID(kp, ki, kd, setpoint=target_yaw)
     pid.output_limits = (-max_yaw_speed, max_yaw_speed)  # Limits to ensure the output is within valid bounds
-    pid.sample_time = 0.01  # Update interval
+    pid.sample_time = 0.1  # Update interval
 
     while True:
         current_yaw = normalize_angle(math.degrees(self.attitude.yaw))
@@ -636,7 +641,7 @@ def set_yaw_to_dir_PID(self, target_yaw, max_yaw_speed=10):
 
         # Send the yaw command
         set_yaw_PID(self, abs(error), abs(yaw_speed), direction, relative=True)
-
+        position_control(self,target_altitude, target_latitude, target_longitude)
         time.sleep(pid.sample_time)
 
     print("Yaw set to:", target_yaw)
@@ -875,19 +880,33 @@ def move_PID_body_manual(self, angl_dir, distance, time_needed):
     integral_vel_x = 0
     integral_vel_y = 0
 
-    Kp_yaw = 0.8
-    Ki_yaw = 0.01
-    Kd_yaw = 0.01
+    # Kp_yaw = 0.8
+    # Ki_yaw = 0.01
+    # Kd_yaw = 0.01
 
-    Kp_vel_x = 1.8
-    Ki_vel_x = 0.02
+    # Kp_vel_x = 1.8
+    # Ki_vel_x = 0.02
+    # Kd_vel_x = 0.01
+
+
+    # Kp_vel_y = 0.25
+    # Ki_vel_y = 0.01
+    # Kd_vel_y = 0.01
+
+
+    Kp_yaw = 1.0
+    Ki_yaw = 0.005
+    Kd_yaw = 0.02
+
+    Kp_vel_x = 3.5
+    Ki_vel_x = 0.002
     Kd_vel_x = 0.01
 
-
-    Kp_vel_y = 0.25
-    Ki_vel_y = 0.01
+    Kp_vel_y = 0.9
+    Ki_vel_y = 0.002
     Kd_vel_y = 0.01
 
+    
     # Desired yaw and velocities
     desired_yaw = angl_dir # baed on the direction  needed 
     print ( "DEs yaw in Deg ", desired_yaw , " in rad",math.radians(desired_yaw) )
@@ -966,7 +985,7 @@ def move_PID_body_manual(self, angl_dir, distance, time_needed):
         velocity_current_y = (self.velocity[0])
         print( "vx ",velocity_current_x , "vy",velocity_current_y, "yaw", math.degrees(self.attitude.yaw) )
         # Pause before next iteration
-        time.sleep(1)
+        time.sleep(0.1)
 
 
 
