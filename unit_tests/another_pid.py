@@ -26,9 +26,9 @@ def interrupt(signal_num, frame):
 
 create_log_file(os.path.dirname(os.path.abspath(__file__)),  os.path.splitext(os.path.basename(__file__))[0]) 
 global vehicle
-vehicle = connect(parse_connect(), wait_ready=False)
-# vehicle = connect("/dev/serial0", baud= 921600,  wait_ready=False)
-# vehicle.wait_ready(True, raise_exception=False)
+#vehicle = connect(parse_connect(), wait_ready=False)
+vehicle = connect("/dev/serial0", baud= 921600,  wait_ready=False)
+vehicle.wait_ready(True, raise_exception=False)
 signal.signal(signal.SIGINT, interrupt)
 
 set_a(3)
@@ -42,12 +42,12 @@ time.sleep(3)
 vehicle.mode     = VehicleMode("GUIDED")
 # face_north(vehicle)
 
-distance=20
-time_to_pass=10
+distance=6
+time_to_pass=6
 angl_dir= 90#-45
 # angle dir in degree 
-move_PID_body(vehicle, angl_dir, distance, time_to_pass)
-#move_PID_body_manual(vehicle, angl_dir, distance, time_to_pass)
+#move_PID_body(vehicle, drone.hight, angl_dir, distance, time_to_pass)
+move_PID_body_manual(vehicle, drone.hight, angl_dir, distance, time_to_pass)
 
 vehicle.mode    = VehicleMode("LOITER") #loiter mode and hover in your place 
 time.sleep(3)
@@ -56,8 +56,8 @@ vehicle.mode     = VehicleMode("GUIDED")
 print( "move to the other direction")
 angl_dir= -90#135
 # angle dir in degree 
-move_PID_body(vehicle, angl_dir, distance,time_to_pass)
-#move_PID_body_manual(vehicle, angl_dir, distance, time_to_pass)
+#move_PID_body(vehicle, angl_dir, distance,time_to_pass)
+move_PID_body_manual(vehicle,drone.hight,  angl_dir, distance, time_to_pass)
 
 
 write_log_message(f" Coming Home")
