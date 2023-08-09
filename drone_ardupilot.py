@@ -840,7 +840,7 @@ def send_control_body(vehicle, velocity_x, velocity_y, yaw_rate):
         yaw_rate, 0)
     vehicle.send_mavlink(msg)
 
-def move_PID_body(self, angl_dir, distance, time_needed):
+def move_PID_body_manual(self, angl_dir, distance, time_needed):
     # Set mode to GUIDED
     self.mode = VehicleMode("GUIDED")
     roll = self.attitude.roll
@@ -971,7 +971,7 @@ def move_PID_body(self, angl_dir, distance, time_needed):
 
 
 
-def move_PID_body_t(self, angl_dir, distance, time_needed):
+def move_PID_body(self, angl_dir, distance, time_needed):
     # ...
     max_yaw_speed=10
 
