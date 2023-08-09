@@ -605,9 +605,9 @@ def set_yaw_PID(self, yaw_angle, yaw_speed, direction, relative=False):
     # Send the command to the vehicle
     self.send_mavlink(msg)
 
-def set_yaw_to_dir_PID(self, target_yaw, max_yaw_speed=10):
+def set_yaw_to_dir_PID(self, target_yaw, max_yaw_speed=30):
     
-    kp=0.5
+    kp=1
     ki=0.01
     kd=0.01
 
