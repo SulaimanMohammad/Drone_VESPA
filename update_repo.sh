@@ -1,6 +1,7 @@
 #!/bin/bash
 
-REPO_URL="https://github.com/SulaimanMohammad/Drone_VESPA.git"
+# REPO_URL="https://github.com/SulaimanMohammad/Drone_VESPA.git"
+REPO_URL="https://github.com/SulaimanMohammad/Drone_VESPA/tree/tuning"
 CLONE_PATH="/home/pi-drone1/Drone_VESPA"
 
 # Navigate to the directory where your repository is located
