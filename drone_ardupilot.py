@@ -604,8 +604,9 @@ def set_yaw_PID(self, yaw_angle, yaw_speed, direction, relative=False):
         0, 0, 0) # param 5 ~ 7 (not used)
     # Send the command to the vehicle
     self.send_mavlink(msg)
+    self.flush()
 
-def set_yaw_to_dir_PID(self, target_yaw, max_yaw_speed=10):
+def set_yaw_to_dir_PID(self, target_yaw, relative=True, max_yaw_speed=10):
     
     kp=0.8
     ki=0.01
@@ -640,7 +641,7 @@ def set_yaw_to_dir_PID(self, target_yaw, max_yaw_speed=10):
         direction = 1 if error >= 0 else -1
 
         # Send the yaw command
-        set_yaw_PID(self, abs(error), abs(yaw_speed), direction, relative=True)
+        set_yaw_PID(self, abs(error), abs(yaw_speed), direction, relative)
         #position_control(self,target_altitude, target_latitude, target_longitude)
         time.sleep(pid.sample_time)
     point1 = LocationGlobalRelative(target_latitude, target_longitude, target_altitude)
@@ -650,10 +651,29 @@ def set_yaw_to_dir_PID(self, target_yaw, max_yaw_speed=10):
 
 
 
+def set_yaw_moving(self, yaw_correction , relative=False, max_yaw_speed=10):
+
+    kp=0.8
+    ki=0.01
+    kd=0.01
+
+    if yaw_correction >= 0: 
+        direction=1
+    else:
+        direction=-1
+    
+    pid = PID(kp, ki, kd, setpoint=yaw_correction)
+    pid.output_limits = (-max_yaw_speed, max_yaw_speed)  # Limits to ensure the output is within valid bounds
+    yaw_speed = pid(yaw_correction)
+    
+    # Send the yaw command
+    set_yaw_PID(self, abs(yaw_correction), abs(yaw_speed), direction, relative)
+    
+
 
 # Send a command to control velocity and yaw
-def send_control(vehicle, velocity_x, velocity_y, yaw_rate):
-    msg = vehicle.message_factory.set_position_target_local_ned_encode(
+def send_control(self, velocity_x, velocity_y, yaw_rate):
+    msg = self.message_factory.set_position_target_local_ned_encode(
         0,
         0, 0,
         mavutil.mavlink.MAV_FRAME_LOCAL_OFFSET_NED,
@@ -662,7 +682,8 @@ def send_control(vehicle, velocity_x, velocity_y, yaw_rate):
         velocity_x, velocity_y, 0,
         0, 0, 0,
         yaw_rate, 0)
-    vehicle.send_mavlink(msg)
+    self.send_mavlink(msg)
+    self.flush()
 
 def move_PID(self, angl_dir, distance, time_needed):
     # Set mode to GUIDED
@@ -835,8 +856,8 @@ def ned_to_body_frame(velocity_ned_x, velocity_ned_y, roll, pitch, yaw):
     return velocity_body[0], velocity_body[1]
 
 # Send a command to control velocity and yaw
-def send_control_body(vehicle, velocity_x, velocity_y, yaw_rate,altitude_rate):
-    msg = vehicle.message_factory.set_position_target_local_ned_encode(
+def send_control_body(self, velocity_x, velocity_y, yaw_rate,altitude_rate):
+    msg = self.message_factory.set_position_target_local_ned_encode(
         0,
         0, 0,
         mavutil.mavlink.MAV_FRAME_BODY_OFFSET_NED,
@@ -845,7 +866,8 @@ def send_control_body(vehicle, velocity_x, velocity_y, yaw_rate,altitude_rate):
         velocity_x, velocity_y, altitude_rate,
         0, 0, 0,
         0,yaw_rate)
-    vehicle.send_mavlink(msg)
+    self.send_mavlink(msg)
+    self.flush()
 
 def move_PID_body_manual(self,DeshHight, angl_dir, distance, time_needed):
     # Set mode to GUIDED
@@ -860,7 +882,7 @@ def move_PID_body_manual(self,DeshHight, angl_dir, distance, time_needed):
     distance= coeff_distance*distance
     print ( "current yaw in Deg ", math.degrees(self.attitude.yaw))
     # PID gains for yaw, X, and Y control
-    # Kp_yaw = 2
+    # Kp_yaw = 0.5
     # Ki_yaw = 0.01
     # Kd_yaw = 0.01
 
@@ -882,7 +904,7 @@ def move_PID_body_manual(self,DeshHight, angl_dir, distance, time_needed):
     integral_vel_x = 0
     integral_vel_y = 0
 
-    Kp_yaw = 1.0
+    Kp_yaw = 1
     Ki_yaw = 0.005
     Kd_yaw = 0.02
 
@@ -905,12 +927,19 @@ def move_PID_body_manual(self,DeshHight, angl_dir, distance, time_needed):
     integral_alt = 0
     desired_altitude = DeshHight
 
-    
     # Desired yaw and velocities
     desired_yaw = angl_dir # baed on the direction  needed 
     print ( "DEs yaw in Deg ", desired_yaw , " in rad",math.radians(desired_yaw) )
     desired_yaw = math.radians(desired_yaw)
     
+
+    max_yaw_speed=20
+    # PID controller for yaw
+    pid_yaw = PID(Kp_yaw, Ki_yaw, Kd_yaw, setpoint=desired_yaw)
+    pid_yaw.output_limits = (-max_yaw_speed, max_yaw_speed)  # Assuming you set a max_yaw_speed variable
+    pid_yaw.sample_time = 1  # Update interval in seconds
+
+
     desired_vel_x = distance/float(time_needed)
     desired_vel_y=0.0
 
@@ -936,19 +965,19 @@ def move_PID_body_manual(self,DeshHight, angl_dir, distance, time_needed):
         
         # Yaw error and PID control
         error_yaw = desired_yaw - yaw_current
-        integral_yaw += error_yaw
-        derivative_yaw = error_yaw - error_yaw_prev
+        # integral_yaw += error_yaw
+        # derivative_yaw = error_yaw - error_yaw_prev
 
-        yaw_rate = yaw_current + Kp_yaw * error_yaw + Ki_yaw * integral_yaw + Kd_yaw * derivative_yaw
-        error_yaw_prev = error_yaw
+        # yaw_rate = yaw_current + Kp_yaw * error_yaw + Ki_yaw * integral_yaw + Kd_yaw * derivative_yaw
+        # error_yaw_prev = error_yaw
 
+        yaw_rate = pid_yaw(yaw_current)
         # Get current velocities
         velocity_current_x = (self.velocity[1])
         velocity_current_y = (self.velocity[0])
         # velocity_current_x = (velocity_in_body_frame(self)[0])
         # velocity_current_y = (velocity_in_body_frame(self)[1])
         
-        print( "vx ",velocity_current_x , "vy",velocity_current_y, "yaw", math.degrees(self.attitude.yaw) )
         # X velocity error and PID control
         error_vel_x = desired_vel_x - velocity_current_x
         integral_vel_x += error_vel_x
@@ -969,7 +998,7 @@ def move_PID_body_manual(self,DeshHight, angl_dir, distance, time_needed):
         #send_control_body(self, velocity_x, velocity_y, yaw_rate)
         velocity_current_x = (self.velocity[1])
         velocity_current_y = (self.velocity[0])
-        print( "vx ",velocity_current_x , "vy",velocity_current_y, "yaw", math.degrees(self.attitude.yaw) )
+        print( "vx ",velocity_current_x , "vy",velocity_current_y, "yaw", math.degrees(self.attitude.yaw),"yaw error= ", math.degrees(error_yaw)  )
         # Pause before next iteration
 
         # Check the current altitude
@@ -985,7 +1014,7 @@ def move_PID_body_manual(self,DeshHight, angl_dir, distance, time_needed):
 
         # Send control to the drone (you'll need to modify send_control_body or use a separate method to include altitude control)
         send_control_body(self, velocity_x, velocity_y, yaw_rate, altitude_rate)
-
+        # set_yaw_moving( self, yaw_rate)
         time.sleep(1)
 
 
@@ -994,6 +1023,19 @@ def move_PID_body_manual(self,DeshHight, angl_dir, distance, time_needed):
 def move_PID_body(self, angl_dir, distance, time_needed):
     # ...
     max_yaw_speed=10
+    
+    # Kp_yaw = 0.5
+    # Ki_yaw = 0.01
+    # Kd_yaw = 0.01
+
+    # Kp_vel_x = 0.9
+    # Ki_vel_x = 0.0
+    # Kd_vel_x = 0.0
+
+
+    # Kp_vel_y = 0.9
+    # Ki_vel_y = 0
+    # Kd_vel_y = 0.0
 
     Kp_yaw = 0.5
     Ki_yaw = 0.01
@@ -1030,7 +1072,7 @@ def move_PID_body(self, angl_dir, distance, time_needed):
     pid_yaw = PID(Kp_yaw, Ki_yaw, Kd_yaw, setpoint=desired_yaw)
     pid_yaw.output_limits = (-max_yaw_speed, max_yaw_speed)  # Assuming you set a max_yaw_speed variable
     pid_yaw.sample_time = 1  # Update interval in seconds
-
+    altitude_rate=0
     # PID controllers for x and y velocities
     pid_vel_x = PID(Kp_vel_x, Ki_vel_x, Kd_vel_x, setpoint=desired_vel_x)
     pid_vel_y = PID(Kp_vel_y, Ki_vel_y, Kd_vel_y, setpoint=desired_vel_y)
@@ -1039,7 +1081,7 @@ def move_PID_body(self, angl_dir, distance, time_needed):
     start_time = time.time()
     
     # Within your control loop:
-    while time.time() - start_time < duration-1:
+    while time.time() - start_time < duration:
         yaw_current = self.attitude.yaw
         yaw_rate = pid_yaw(yaw_current)
 
@@ -1049,15 +1091,11 @@ def move_PID_body(self, angl_dir, distance, time_needed):
         velocity_x = pid_vel_x(velocity_current_x)
         velocity_y = pid_vel_y(velocity_current_y)
    
-        send_control_body(self, velocity_x, velocity_y, yaw_rate)
+        send_control_body(self, velocity_x, velocity_y, yaw_rate, altitude_rate)
         velocity_current_x = (self.velocity[1])
         velocity_current_y = (self.velocity[0])
-        print( "Befor PID loop vx ",velocity_current_x , "vy",velocity_current_y, "yaw", math.degrees(self.attitude.yaw) )
-        time.sleep(0.1)
-
-
-
-
+        print( "PID loop vx ",velocity_current_x , "vy",velocity_current_y, "yaw", math.degrees(self.attitude.yaw) )
+        time.sleep(1)
 
 
 #time =0 means that if it was not provided move_to will use the min_time_safe 
@@ -1152,7 +1190,7 @@ def convert_angle_to_set_dir(self, angle):
     # this function will be always called in any PID move 
     # get the current yaw 
     current_yaw = normalize_angle(math.degrees(self.attitude.yaw))
-    if abs(current_yaw - ( normalize_angle(angle) -180)) < 10: # if the current angle is the opposit of what we want with error of 10 degrees 
+    if abs(current_yaw - ( normalize_angle(angle) -180)) < 20: # if the current angle is the opposit of what we want with error of 10 degrees 
         return [ normalize_angle(angle) -180, -1 ] # -1 is to flip the direction so go in direction of backward 
     else: 
          return [normalize_angle(angle), +1]
