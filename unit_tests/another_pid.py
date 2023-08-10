@@ -44,7 +44,7 @@ vehicle.mode     = VehicleMode("GUIDED")
 # face_north(vehicle)
 
 distance=4
-time_to_pass=2
+time_to_pass=8
 angl_dir= 90#-45
 # angle dir in degree 
 #move_PID_body(vehicle,angl_dir, distance, time_to_pass)
