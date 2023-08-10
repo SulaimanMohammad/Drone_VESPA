@@ -609,7 +609,7 @@ def set_yaw_PID(self, yaw_angle, yaw_speed, direction, relative=False):
 def set_yaw_to_dir_PID(self, target_yaw, relative=True, max_yaw_speed=10):
     
     kp=0.8
-    ki=0.01
+    ki=0.02
     kd=0.01
 
     # Target values
@@ -632,7 +632,7 @@ def set_yaw_to_dir_PID(self, target_yaw, relative=True, max_yaw_speed=10):
             error += 360
 
         # Check if error is within tolerance
-        if abs(error) < 5:
+        if abs(error) < 1.5:
             break
         # Get the PID output
         yaw_speed = pid(error)
@@ -644,8 +644,8 @@ def set_yaw_to_dir_PID(self, target_yaw, relative=True, max_yaw_speed=10):
         set_yaw_PID(self, abs(error), abs(yaw_speed), direction, relative)
         #position_control(self,target_altitude, target_latitude, target_longitude)
         time.sleep(pid.sample_time)
-    point1 = LocationGlobalRelative(target_latitude, target_longitude, target_altitude)
 
+    point1 = LocationGlobalRelative(target_latitude, target_longitude, target_altitude)
     self.simple_goto(point1, groundspeed=1)
     print("Yaw set to:", target_yaw)
 
@@ -910,17 +910,17 @@ def move_PID_body_manual(self,DeshHight, angl_dir, distance, time_needed):
 
     Kp_vel_x = 3.3
     Ki_vel_x = 0.005
-    Kd_vel_x = 0.01
+    Kd_vel_x = 0.001
 
-    Kp_vel_y = 0.7
+    Kp_vel_y = 0.8
     Ki_vel_y = 0.002
-    Kd_vel_y = 0.01
+    Kd_vel_y = 0.007
 
 
     # PID gains for altitude control
-    Kp_alt = 1.0
-    Ki_alt = 0.05
-    Kd_alt = 0.2
+    Kp_alt = 0.75
+    Ki_alt = 0.003
+    Kd_alt = 0.01
 
     # Errors and previous errors for altitude PID control
     error_alt_prev = 0
@@ -964,7 +964,7 @@ def move_PID_body_manual(self,DeshHight, angl_dir, distance, time_needed):
         yaw_current = self.attitude.yaw
         
         # Yaw error and PID control
-        error_yaw = desired_yaw - yaw_current
+        #error_yaw = desired_yaw - yaw_current
         # integral_yaw += error_yaw
         # derivative_yaw = error_yaw - error_yaw_prev
 
@@ -998,8 +998,6 @@ def move_PID_body_manual(self,DeshHight, angl_dir, distance, time_needed):
         #send_control_body(self, velocity_x, velocity_y, yaw_rate)
         velocity_current_x = (self.velocity[1])
         velocity_current_y = (self.velocity[0])
-        print( "vx ",velocity_current_x , "vy",velocity_current_y, "yaw", math.degrees(self.attitude.yaw),"yaw error= ", math.degrees(error_yaw)  )
-        # Pause before next iteration
 
         # Check the current altitude
         current_altitude = self.location.global_relative_frame.alt
@@ -1014,6 +1012,8 @@ def move_PID_body_manual(self,DeshHight, angl_dir, distance, time_needed):
 
         # Send control to the drone (you'll need to modify send_control_body or use a separate method to include altitude control)
         send_control_body(self, velocity_x, velocity_y, yaw_rate, altitude_rate)
+        print( "vx ",velocity_current_x , "vy",velocity_current_y, "yaw", math.degrees(self.attitude.yaw),"yaw error= ", math.degrees(error_yaw), "current alt= ", current_altitude  )
+
         # set_yaw_moving( self, yaw_rate)
         time.sleep(1)
 
