@@ -31,6 +31,7 @@ done
 if pip3 show serial &> /dev/null; then
     # If it's installed, uninstall it
     sudo pip3 uninstall -y serial
+fi
 
 
 echo -e "\033[32m ------ Modify Dronekit for python3------ \033[0m"
