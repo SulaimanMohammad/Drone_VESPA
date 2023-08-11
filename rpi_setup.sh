@@ -1,31 +1,41 @@
 #bash
 
+# Set the text color to green
+echo -e "\033[32m ------ Upgrade system  ------ \033[0m"
 # Update and upgrade system packages
 sudo apt-get update && sudo apt-get upgrade
 
+echo -e "\033[32m ------ Install python3 ------ \033[0m"
 # Install required packages
 sudo apt-get install -y python3-pip python3-dev
-sudo apt-get install -y vim
+#sudo apt-get install -y vim
 
+
+echo -e "\033[32m ------ Install Dronekit ------ \033[0m"
 # Install Dronekit and related packages
 sudo pip3 install dronekit dronekit-sitl mavproxy
 
+echo -e "\033[32m ------ Modify Dronekit for python3------ \033[0m"
 # Modify the specified file
 sudo sed -i '2689s/collections.MutableMapping/collections.abc.MutableMapping/' /usr/local/lib/python3.9/dist-packages/dronekit/__init__.py
 
-sudo pip3 install simple-pid
+echo -e "\033[32m ------ Install simple-pid ------ \033[0m"
+sudo pip3 install -y simple-pid
 
 # Connect to mobile WiFi hotspot (Replace SSID and PASSWORD with your hotspot details)
 #sudo nmcli device wifi connect SSID password PASSWORD
 
+echo -e "\033[32m ------ Install git ------ \033[0m"
 # Install git
 sudo apt-get install -y git
 
+echo -e "\033[32m ------clone Drone_VESPA.git ------ \033[0m"
 # Clone the repository
 sudo git clone https://github.com/SulaimanMohammad/Drone_VESPA.git
 
-# Reboot the system
-#sudo reboot
+
+
+echo -e "\033[32m ------ Set the serial comm for the drone ------ \033[0m"
 
 # Run raspi-config in non-interactive mode to configure Serial UART
 # Enable Serial Port hardware
@@ -34,45 +44,6 @@ sudo raspi-config nonint do_serial 1
 sudo raspi-config nonint do_serial_login 1
 
 sudo sed -i 's/console=serial0,[0-9]* //g' /boot/cmdline.txt
-# echo "enable_uart=1" | sudo tee -a /boot/config.txt
-
-# Reboot the Raspberry Pi
-#sudo reboot
-
-
-# Check if HDMI is currently enabled
-if tvservice -s | grep -q "HDMI"; then
-    # Disable HDMI
-    sudo tvservice -o
-    echo "HDMI disabled."
-else
-    echo "HDMI is already disabled."
-fi
-
-
-
-
-# Check if the /boot/config.txt file exists
-if [ -e /boot/config.txt ]; then
-    # Add the lines to disable the LEDs
-    echo "dtparam=act_led_trigger=none" | sudo tee -a /boot/config.txt
-    echo "dtparam=act_led_trigger=off" | sudo tee -a /boot/config.txt
-    echo "dtparam=pwr_led_trigger=none" | sudo tee -a /boot/config.txt
-    echo "dtparam=pwr_led_trigger=off" | sudo tee -a /boot/config.txt
-
-    echo "LEDs disabled. Reboot your Raspberry Pi to apply the changes."
-else
-    echo "Error: /boot/config.txt file not found."
-fi
-
-#sudo reboot
-
-
-# Uninstall serial and pyserial
-pip uninstall -y serial 
-
-# Install mavproxy and pyserial
-pip install mavproxy pyserial
 
 # Modify /boot/config.txt
 # Check if enable_uart=0 exists
@@ -83,16 +54,89 @@ elif ! grep -q "enable_uart=1" /boot/config.txt; then
     # If enable_uart=1 also doesn't exist, append it to the file
     echo "enable_uart=1" | sudo tee -a /boot/config.txt
 fi
-sudo sed -i '$ a dtoverlay=disable-bt' /boot/config.txt
 
-# Reboot the system
-#sudo reboot
+# Check if the specific line exists in the file
+if ! grep -q "^dtoverlay=disable-bt$" /boot/config.txt; then
+    # If not, append it to the end
+    echo "dtoverlay=disable-bt" | sudo tee -a /boot/config.txt
+    echo "dtoverlay=disable-bt added. Reboot your Raspberry Pi to apply the changes."
+else
+    echo "dtoverlay=disable-bt is already present in /boot/config.txt."
+fi
+
+# Uninstall serial and pyserial
+sudo pip3 uninstall -y serial 
+
+# Install mavproxy and pyserial
+sudo pip3 install -y mavproxy pyserial
 
 # Add the user to the dialout group
 sudo usermod -a -G dialout $USER
 
 
 
+echo -e "\033[32m ------ Disabled HDMI ------ \033[0m"
+# Check if HDMI is currently enabled
+if tvservice -s | grep -q "HDMI"; then
+    # Disable HDMI
+    sudo tvservice -o
+    echo "HDMI disabled."
+else
+    echo "HDMI is already disabled."
+fi
+
+# # Check if the /boot/config.txt file exists
+# if [ -e /boot/config.txt ]; then
+#     # Add the lines to disable the LEDs
+#     echo "dtparam=act_led_trigger=none" | sudo tee -a /boot/config.txt
+#     echo "dtparam=act_led_trigger=off" | sudo tee -a /boot/config.txt
+#     echo "dtparam=pwr_led_trigger=none" | sudo tee -a /boot/config.txt
+#     echo "dtparam=pwr_led_trigger=off" | sudo tee -a /boot/config.txt
+
+#     echo "LEDs disabled. Reboot your Raspberry Pi to apply the changes."
+# else
+#     echo "Error: /boot/config.txt file not found."
+# fi
+
+
+# Check if the /boot/config.txt file exists
+if [ -e /boot/config.txt ]; then
+    # Define the lines to check and modify/add
+    declare -A lines
+    lines=(["dtparam=act_led_trigger="]="none"
+           ["dtparam=pwr_led_trigger="]="none"
+    )
+
+    # Loop through the lines to modify or add them if they don't exist
+    for key in "${!lines[@]}"; do
+        if grep -q "${key}.*" /boot/config.txt; then
+            # If the line exists, modify it
+            sudo sed -i "s/${key}.*/${key}${lines[$key]}/" /boot/config.txt
+        else
+            # If the line doesn't exist, append it to the file
+            echo "${key}${lines[$key]}" | sudo tee -a /boot/config.txt
+        fi
+    done
+    
+    # Lines to just ensure exist
+    ensure_lines=("dtparam=act_led_trigger=off"
+                  "dtparam=pwr_led_trigger=off"
+                  "dtoverlay=disable-bt"
+    )
+    
+    for line in "${ensure_lines[@]}"; do
+        if ! grep -q "^${line}$" /boot/config.txt; then
+            echo "$line" | sudo tee -a /boot/config.txt
+        fi
+    done
+
+    echo "Settings updated. Reboot your Raspberry Pi to apply the changes."
+else
+    echo "Error: /boot/config.txt file not found."
+fi
+
+
+echo -e "\033[32m ------ Install soft_uart for extra UART ------ \033[0m"
 # Clone the soft_uart repository
 sudo git clone https://github.com/adrianomarto/soft_uart
 cd soft_uart
@@ -108,7 +152,6 @@ sudo make install
 sudo insmod soft_uart.ko
 
 # Add the user to the dialout group
-
 sudo usermod -a -G dialout $USER
 
 echo "Installation and configuration complete."
