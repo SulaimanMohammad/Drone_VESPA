@@ -149,6 +149,7 @@ sudo usermod -a -G dialout $USER
 
 echo "Installation and configuration complete. Time to REBOOT"
 echo -e "\033[32m *** Reboot Reconnect with ssh *** \033[0m"
+sudo reboot
 
 # Optional: Set custom GPIO pins for TX and RX (modify as needed)
 # GPIO_TX=10
