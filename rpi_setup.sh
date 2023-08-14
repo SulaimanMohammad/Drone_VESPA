@@ -13,8 +13,6 @@ sudo apt-get install -y python3-pip python3-dev
 
 echo -e "\033[32m ------ Install Packages for Drone ------ \033[0m"
 # Install Dronekit and related packages
-# sudo pip3 install dronekit dronekit-sitl mavproxy
-
 packages=("dronekit" "dronekit-sitl" "mavproxy" "simple-pid" "pyserial")
 
 for package in "${packages[@]}"; do
