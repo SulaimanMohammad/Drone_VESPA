@@ -133,6 +133,46 @@ def calculate_relative_pos(self):
         # Print the drone's position relative to the home position
         return [relative_x/3,relative_y/3, relative_z/3]
 
+
+import math
+
+# used in the intialized pahse and done only by the drone 0 on the sink 
+def new_coordinates(self, distance, bearing_deg):
+
+    current_lat = self.location.global_relative_frame.lat
+    current_lon = self.location.global_relative_frame.lon
+    current_alt = self.location.global_relative_frame.alt
+    # Convert latitude and longitude from degrees to radians
+    lat_rad = math.radians(current_lat)
+    lon_rad = math.radians(current_lon)
+    
+    # Convert the bearing from degrees to radians
+    bearing_rad = math.radians(bearing_deg)
+    
+    # Earth's radius in kilometers
+    R = 6371.0
+    
+    # Convert the distance to radians
+    d_rad = distance / R
+    
+    # Calculate new latitude in radians
+    lat2_rad = math.asin(math.sin(lat_rad) * math.cos(d_rad) + 
+                         math.cos(lat_rad) * math.sin(d_rad) * math.cos(bearing_rad))
+    
+    # Calculate new longitude in radians
+    lon2_rad = lon_rad + math.atan2(math.sin(bearing_rad) * math.sin(d_rad) * math.cos(lat_rad), 
+                                    math.cos(d_rad) - math.sin(lat_rad) * math.sin(lat2_rad))
+    
+    # Convert the new latitude and longitude from radians back to degrees
+    lat2 = math.degrees(lat2_rad)
+    lon2 = math.degrees(lon2_rad)
+    
+    return lat2, lon2 
+
+
+
+
+
 def send_ned_velocity(self, velocity_x, velocity_y, velocity_z, altitude,  duration):
     write_log_message (f"{get_current_function_name()} called:")
     msg = self.message_factory.set_position_target_local_ned_encode(
@@ -568,8 +608,37 @@ def set_yaw_PID(self, yaw_angle, yaw_speed, direction, relative=False):
     self.send_mavlink(msg)
     self.flush()
 
+
+new_yaw_data = threading.Event()
+def yaw_listener(self, name, message):
+    global yaw_rad
+    global last_event_time_yaw
+    global interval_between_events_yaw
+    # Record current time
+    current_time = time.time()
+    # If this is not the first event, print the time difference
+    if last_event_time_yaw is not None:
+        interval_between_events_yaw = current_time - last_event_time_yaw
+        print(f"YAW Time between two events: {interval_between_events_yaw} seconds")
+
+    # Update the last event time
+    last_event_time_yaw = current_time
+
+    # Signal that new data is available
+    new_yaw_data.set()
+    # Extract yaw from the message (in radians)
+    yaw_rad = message.yaw
+
+
 def set_yaw_to_dir_PID(self, target_yaw, relative=True, max_yaw_speed=10):
     
+    global yaw_rad
+    yaw_rad = normalize_angle(math.degrees(self.attitude.yaw))
+    global interval_between_events_yaw
+    interval_between_events_yaw=0
+    global last_event_time_yaw
+    last_event_time_yaw=None
+
     kp=0.8
     ki=0.02
     kd=0.01
@@ -582,9 +651,13 @@ def set_yaw_to_dir_PID(self, target_yaw, relative=True, max_yaw_speed=10):
     pid = PID(kp, ki, kd, setpoint=target_yaw)
     pid.output_limits = (-max_yaw_speed, max_yaw_speed)  # Limits to ensure the output is within valid bounds
     pid.sample_time = 0.1  # Update interval
+    
+    self.add_message_listener('ATTITUDE', yaw_listener)
 
     while True:
-        current_yaw = normalize_angle(math.degrees(self.attitude.yaw))
+        new_yaw_data.wait()
+        
+        current_yaw = normalize_angle(math.degrees(yaw_rad))
         error = normalize_angle(target_yaw - current_yaw)
 
         # Correcting error if it's shorter to turn the other way
@@ -604,12 +677,16 @@ def set_yaw_to_dir_PID(self, target_yaw, relative=True, max_yaw_speed=10):
 
         # Send the yaw command
         set_yaw_PID(self, abs(error), abs(yaw_speed), direction, relative)
-        #position_control(self,target_altitude, target_latitude, target_longitude)
-        time.sleep(pid.sample_time)
 
-    point1 = LocationGlobalRelative(target_latitude, target_longitude, target_altitude)
-    self.simple_goto(point1, groundspeed=1)
+        time.sleep(interval_between_events_yaw)
+        new_yaw_data.clear()
+
+    self.remove_message_listener('ATTITUDE', yaw_listener)
     print("Yaw set to:", target_yaw)
+    self.mode    = VehicleMode("LOITER") #loiter mode and hover in your place 
+    time.sleep(0.5)
+    self.mode     = VehicleMode("GUIDED")
+
 
 
 def velocity_in_body_frame(self):
@@ -691,8 +768,8 @@ def send_control_body(self, velocity_x, velocity_y, yaw_rate,altitude_rate):
     self.flush()
 
 
-new_velocity_data = threading.Event()
 
+new_velocity_data = threading.Event()
 def on_velocity(self, attribute_name, value):
     global velocity_listener
     global last_event_time
@@ -715,6 +792,7 @@ def on_velocity(self, attribute_name, value):
     # Convert string values to float
     velocity_listener = [float(v) for v in velocity_components]
     new_velocity_data.set()
+    
 
 
 def move_PID_body_manual(self,DeshHight, angl_dir, distance, max_velocity=2): #max_velocity=2
@@ -738,18 +816,18 @@ def move_PID_body_manual(self,DeshHight, angl_dir, distance, max_velocity=2): #m
 
     print ( "current yaw in Deg ", math.degrees(self.attitude.yaw))
     # PID gains for yaw, X, and Y control
-    Kp_yaw = 0.5
-    Ki_yaw = 0.01
+    Kp_yaw = 0.8
+    Ki_yaw = 0.02
     Kd_yaw = 0.01
 
-    Kp_vel_x = 2
-    Ki_vel_x = 0.03
+    Kp_vel_x = 1.25
+    Ki_vel_x = 0.02
     Kd_vel_x = 0.01
 
 
-    Kp_vel_y = 1
-    Ki_vel_y = 0.01
-    Kd_vel_y = 0.01
+    Kp_vel_y = 0.9
+    Ki_vel_y = 0.008
+    Kd_vel_y = 0.005
 
     # Errors and previous errors for PID control
     error_yaw_prev = 0
