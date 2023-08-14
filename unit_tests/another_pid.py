@@ -30,7 +30,7 @@ def interrupt(signal_num, frame):
 
 create_log_file(os.path.dirname(os.path.abspath(__file__)),  os.path.splitext(os.path.basename(__file__))[0]) 
 global vehicle
-vehicle = connect(parse_connect(), wait_ready=False, rate=50)
+vehicle = connect(parse_connect(), wait_ready=False, rate=10)
 # vehicle = connect("/dev/serial0", baud= 921600,  wait_ready=False)
 # vehicle.wait_ready(True, raise_exception=False)
 signal.signal(signal.SIGINT, interrupt)
@@ -48,7 +48,7 @@ time.sleep(2)
 vehicle.mode     = VehicleMode("GUIDED")
 # face_north(vehicle)
 
-distance=8
+distance=20
 angl_dir= 90#-45
 # angle dir in degree 
 #move_PID_body(vehicle, drone.hight, angl_dir, distance)
