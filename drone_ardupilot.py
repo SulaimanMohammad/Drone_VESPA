@@ -774,14 +774,14 @@ def move_PID_body_manual(self,DeshHight, angl_dir, distance, max_velocity=2): #m
 
 
     # PID gains for altitude control
-    Kp_alt = 0.75
-    Ki_alt = 0.003
-    Kd_alt = 0.01
+    Kp_vel_z = 0.75
+    Ki_vel_z = 0.003
+    Kd_vel_z = 0.01
 
     # Errors and previous errors for altitude PID control
     error_alt_prev = 0
-    integral_alt = 0
-    desired_altitude = DeshHight
+    integral_vel_z = 0
+    desired_vel_z = 0
 
     # Desired yaw and velocities
     desired_yaw = angl_dir # baed on the direction  needed 
@@ -822,7 +822,7 @@ def move_PID_body_manual(self,DeshHight, angl_dir, distance, max_velocity=2): #m
         print( "Befor PID loop vx ",velocity_current_x , "vy",velocity_current_y, "yaw", math.degrees(self.attitude.yaw), "distance", distance )
     # print( "time: ",time_neded )e
 
-
+    previous_velocity_x=0 
     while distance >= 0.1:
         new_velocity_data.wait()
 
@@ -850,7 +850,7 @@ def move_PID_body_manual(self,DeshHight, angl_dir, distance, max_velocity=2): #m
         integral_vel_x += error_vel_x
         derivative_vel_x = error_vel_x - error_vel_x_prev
 
-        velocity_x =  Kp_vel_x * error_vel_x + Ki_vel_x * integral_vel_x + Kd_vel_x * derivative_vel_x
+        velocity_x = velocity_current_x+ Kp_vel_x * error_vel_x + Ki_vel_x * integral_vel_x + Kd_vel_x * derivative_vel_x
         error_vel_x_prev = error_vel_x
 
         # Y velocity error and PID control
@@ -858,7 +858,7 @@ def move_PID_body_manual(self,DeshHight, angl_dir, distance, max_velocity=2): #m
         integral_vel_y += error_vel_y
         derivative_vel_y = error_vel_y - error_vel_y_prev
 
-        velocity_y =  Kp_vel_y * error_vel_y + Ki_vel_y * integral_vel_y + Kd_vel_y * derivative_vel_y
+        velocity_y = velocity_current_y + Kp_vel_y * error_vel_y + Ki_vel_y * integral_vel_y + Kd_vel_y * derivative_vel_y
         error_vel_y_prev = error_vel_y
 
         # Send control to the drone
@@ -872,19 +872,23 @@ def move_PID_body_manual(self,DeshHight, angl_dir, distance, max_velocity=2): #m
         current_altitude = self.location.global_relative_frame.alt
 
         # Altitude error and PID control
-        error_alt = desired_vel_z - velocity_current_z
-        integral_alt += error_alt
-        derivative_alt = error_alt - error_alt_prev
+        error_vel_z = desired_vel_z - velocity_current_z
+        integral_vel_z += error_vel_z
+        derivative_vel_z = error_vel_z - error_alt_prev
 
-        altitude_rate = Kp_alt * error_alt + Ki_alt * integral_alt + Kd_alt * derivative_alt
-        error_alt_prev = error_alt
+        altitude_rate = velocity_current_z +Kp_vel_z * error_vel_z + Ki_vel_z * integral_vel_z + Kd_vel_z * derivative_vel_z
+        error_alt_prev = error_vel_z
 
         # Send control to the drone (you'll need to modify send_control_body or use a separate method to include altitude control)
         send_control_body(self, velocity_x, velocity_y, yaw_rate, altitude_rate)
         print( "vx ",velocity_current_x , "vy",velocity_current_y, "vz",velocity_current_z , "yaw", math.degrees(self.attitude.yaw),"yaw error= ", math.degrees(error_yaw), "current alt= ", current_altitude  )
         
-        distance= distance - (float(interval_between_events* abs(velocity_current_x)))
+        # distance= distance - (float(interval_between_events* abs(velocity_current_x)))
+        # print( "time", time.time() - start_time , "distance left : ",distance )
+        distance= distance - (float(interval_between_events* abs( (velocity_current_x + previous_velocity_x)/2.0 )))
         print( "time", time.time() - start_time , "distance left : ",distance )
+        new_velocity_data.clear()
+        previous_velocity_x= velocity_current_x
         # set_yaw_moving( self, yaw_rate)
         # time.sleep(0.1)
         # time_needed=0
@@ -964,7 +968,7 @@ def move_PID_body(self,DeshHight, angl_dir, distance, max_velocity=2):
     pid_vel_z = PID(Kp_vel_z, Ki_vel_z, Kd_vel_z, setpoint=desired_vel_z)
 
     start_time = time.time()
-    
+    previous_velocity_x=0 
     # Within your control loop:
     while distance >= 0.1:
         new_velocity_data.wait()
@@ -982,9 +986,10 @@ def move_PID_body(self,DeshHight, angl_dir, distance, max_velocity=2):
 
         send_control_body(self, velocity_x, velocity_y, yaw_rate, velocity_z)
         print( "vx ",velocity_current_x , "vy",velocity_current_y, "vz",velocity_current_z , "yaw", math.degrees(self.attitude.yaw),"current alt= ", current_altitude) 
-        distance= distance - (float(interval_between_events* abs(velocity_current_x)))
+        distance= distance - (float(interval_between_events* abs( (velocity_current_x- previous_velocity_x)/2.0 )))
         print( "time", time.time() - start_time , "distance left : ",distance )
         new_velocity_data.clear()
+        previous_velocity_x= velocity_current_x
     self.remove_attribute_listener('velocity', on_velocity)
 
 
