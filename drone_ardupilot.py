@@ -12,7 +12,8 @@ import numpy as np
 from simple_pid import PID
 import threading
 
-
+from dronekit import Command
+from pymavlink import mavutil
 # Declare global variables for logs 
 filename = " "
 directory= " "
@@ -96,7 +97,6 @@ def arm_and_takeoff(self, aTargetAltitude):
     print ("Taking off starts") 
     write_log_message ("Taking off starts")
     self.simple_takeoff(aTargetAltitude) # Take off to target altitude
-
     # Wait until the vehicle reaches a safe height before processing the goto (otherwise the command
     #  after Vehicle.simple_takeoff will execute immediately).
     #takeoff is asynchronous and can be interrupted if another command arrives before it reaches the target altitude so
@@ -684,7 +684,7 @@ def set_yaw_to_dir_PID(self, target_yaw, relative=True, max_yaw_speed=10):
     self.remove_message_listener('ATTITUDE', yaw_listener)
     print("Yaw set to:", target_yaw)
     self.mode    = VehicleMode("LOITER") #loiter mode and hover in your place 
-    time.sleep(0.5)
+    time.sleep(1)
     self.mode     = VehicleMode("GUIDED")
 
 
@@ -825,9 +825,9 @@ def move_PID_body_manual(self,DeshHight, angl_dir, distance, max_velocity=2): #m
     Kd_vel_x = 0.01
 
 
-    Kp_vel_y = 0.9
-    Ki_vel_y = 0.008
-    Kd_vel_y = 0.005
+    Kp_vel_y = 0.78
+    Ki_vel_y = 0.006
+    Kd_vel_y = 0.003
 
     # Errors and previous errors for PID control
     error_yaw_prev = 0
