@@ -6,7 +6,7 @@ import time
 import argparse
 import os
 import datetime
-from expan import DIR_VECTORS
+#from expan import DIR_VECTORS
 import inspect
 import numpy as np
 from simple_pid import PID
@@ -619,7 +619,7 @@ def yaw_listener(self, name, message):
     # If this is not the first event, print the time difference
     if last_event_time_yaw is not None:
         interval_between_events_yaw = current_time - last_event_time_yaw
-        print(f"YAW Time between two events: {interval_between_events_yaw} seconds")
+        #print(f"YAW Time between two events: {interval_between_events_yaw} seconds")
 
     # Update the last event time
     last_event_time_yaw = current_time
@@ -630,7 +630,7 @@ def yaw_listener(self, name, message):
     yaw_rad = message.yaw
 
 
-def set_yaw_to_dir_PID(self, target_yaw, relative=True, max_yaw_speed=10):
+def set_yaw_to_dir_PID(self, target_yaw, relative=True, max_yaw_speed=15):
     
     global yaw_rad
     yaw_rad = normalize_angle(math.degrees(self.attitude.yaw))
@@ -639,9 +639,9 @@ def set_yaw_to_dir_PID(self, target_yaw, relative=True, max_yaw_speed=10):
     global last_event_time_yaw
     last_event_time_yaw=None
 
-    kp=0.8
+    kp= (yaw_rad - normalize_angle(target_yaw) )/180.0  #1.1
     ki=0.02
-    kd=0.01
+    kd=0.008
 
     # Target values
     target_altitude = self.location.global_relative_frame.alt
@@ -779,7 +779,7 @@ def on_velocity(self, attribute_name, value):
     # If this is not the first event, print the time difference
     if last_event_time is not None:
         interval_between_events = current_time - last_event_time
-        print(f"Time between two events: {interval_between_events} seconds")
+        #print(f"Time between two events: {interval_between_events} seconds")
 
     # Update the last event time
     last_event_time = current_time
