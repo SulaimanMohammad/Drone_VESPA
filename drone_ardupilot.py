@@ -351,7 +351,8 @@ def move_to_flush(self, x , y, altitude, time_passed=0):
     east= x #on x 
     down=0 # stay in the same hight 
     if time_passed==0:
-        total_time= min_time_safe()
+        # total_time= min_time_safe()
+        total_time= 10
     else:
         total_time=time_passed
     # counter=0 
@@ -386,7 +387,8 @@ def move_to(self, x , y, time_passed=0):
     east= x #on x 
     down=0 # stay in the same hight 
     if time_passed==0:
-        total_time= min_time_safe()
+        # total_time= min_time_safe()
+        total_time= 10
     else:
         total_time=time_passed
     #print(" speed on x=",round(north/float(total_time),4), "on y=", round(east/float(total_time),4) )
@@ -404,7 +406,8 @@ def move_to_stages_long(self, x , y, time_passed=0):
     east= x #on x 
     down=0 # stay in the same hight 
     if time_passed==0:
-        total_time= min_time_safe()
+        # total_time= min_time_safe()
+        total_time= 10
     else:
         total_time=time_passed
     send_ned_velocity_stages_long(self,north/float(total_time) ,east/float(total_time), down, total_time)
@@ -419,7 +422,8 @@ def move_to_stages_short(self, x , y,time_passed=0):
     east= x #on x 
     down=0 # stay in the same hight 
     if time_passed==0:
-        total_time= min_time_safe()
+        # total_time= min_time_safe()
+        total_time= 10
     else:
         total_time=time_passed
     send_ned_velocity_stages_short(self,north/float(total_time) ,east/float(total_time), down, total_time)
@@ -437,18 +441,18 @@ def set_home_to_zero(self):
     )
     self.send_mavlink(home_position_cmd)
 
-def min_time_safe():
-    write_log_message (f"{get_current_function_name()} called:")
-    max_speed = 5  # Maximum speed in m/s
-    longest_duration = 0  # Initialize the longest duration as 0
+# def min_time_safe():
+#     write_log_message (f"{get_current_function_name()} called:")
+#     max_speed = 5  # Maximum speed in m/s
+#     longest_duration = 0  # Initialize the longest duration as 0
 
-    for position in DIR_VECTORS:
-        distance = math.sqrt(position[0]**2 + position[1]**2)  # Calculate the distance to the position
-        duration = distance / max_speed *0.90 # Calculate the duration to reach the position # take only 0.90% for the safty 
+#     for position in DIR_VECTORS:
+#         distance = math.sqrt(position[0]**2 + position[1]**2)  # Calculate the distance to the position
+#         duration = distance / max_speed *0.90 # Calculate the duration to reach the position # take only 0.90% for the safty 
 
-        if duration > longest_duration:
-            longest_duration = duration
-    return int(longest_duration)
+#         if duration > longest_duration:
+#             longest_duration = duration
+#     return int(longest_duration)
 
 def set_altitude(self, target_altitude):
     # Create a location object with the same latitude and longitude as the current location, but with the desired altitude
@@ -639,9 +643,10 @@ def set_yaw_to_dir_PID(self, target_yaw, relative=True, max_yaw_speed=15):
     global last_event_time_yaw
     last_event_time_yaw=None
 
-    kp= (yaw_rad - normalize_angle(target_yaw) )/180.0  #1.1
+    kp= abs(yaw_rad - normalize_angle(target_yaw) )/180.0  #1.1
     ki=0.02
     kd=0.008
+    print(kp)
 
     # Target values
     target_altitude = self.location.global_relative_frame.alt
