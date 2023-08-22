@@ -25,13 +25,13 @@ def interrupt(signal_num, frame):
         vehicle.close()
         sys.exit()
 
-# Define a listener function to receive updates
-def attribute_listener(self, attr_name, value):
-    if attr_name == 'location.global_frame':
-        latitude = value.lat
-        longitude = value.lon
-        altitude = value.alt
-        print(f"Latitude: {latitude}, Longitude: {longitude}, Altitude: {altitude}")
+# # Define a listener function to receive updates
+# def attribute_listener(self, attr_name, value):
+#     if attr_name == 'location.global_frame':
+#         latitude = value.lat
+#         longitude = value.lon
+#         altitude = value.alt
+#         print(f"Latitude: {latitude}, Longitude: {longitude}, Altitude: {altitude}")
 
 # def on_velocity(self, attribute_name, value):
 #     print("Velocity: %s" % str(value))
@@ -46,7 +46,7 @@ signal.signal(signal.SIGINT, interrupt)
 set_a(3)
 # vehicle.add_attribute_listener('velocity', on_velocity)
 # Add the listener to the vehicle's attribute
-vehicle.add_attribute_listener('location.global_frame', attribute_listener)
+# vehicle.add_attribute_listener('location.global_frame', attribute_listener)
 
 drone= Drone(0.0,0.0,2) # drone at the sink 
 #set_home_to_zero(vehicle)
@@ -80,7 +80,7 @@ move_PID_body_manual(vehicle,drone.hight,  angl_dir, distance)
 write_log_message(f" Coming Home")
 vehicle.mode = VehicleMode ("LAND")
 time.sleep(2) 
-vehicle.remove_attribute_listener('location.global_frame', attribute_listener)
+# vehicle.remove_attribute_listener('location.global_frame', attribute_listener)
 
 # Close connection
 vehicle.close()
