@@ -62,14 +62,6 @@ formula_dict = {
     "s6": "sqrt(DxDy3a2 - a * (3 * Dy - sqDx))"
 }
 
-State= [ 
-    "FREE",
-    "Alone",
-    "BORDER", 
-    "IRRMOVABLE",
-    "BORDER & IRRMOVABLE"
-]
-
 
 '''
 phase= E expansion 
@@ -78,8 +70,11 @@ pahse= B balancing
 This will be used in the message 
 '''
 
-
-
+Alone=0
+Free=1
+Border=2
+Irremovable= 3 
+Irremovable_boarder=4 
 
 class Drone: 
     def __init__(self, x,y,z):
@@ -88,8 +83,8 @@ class Drone:
         self.distance_from_sink=0 # the distance of the drone from  the sink 
         self.id=0
         self.hight=z
-        self.state="NONE"
-        self.previous_state= "NONE"
+        self.state=1
+        self.previous_state=1
         self.path=[]
         self.drone_id_to_sink=0 
         self.drone_id_to_border=0
@@ -103,13 +98,13 @@ class Drone:
         self.direction_taken=[]  # direction path (spots) that are taken in the phase 
         self.neighbor_list = []  # list that contains the 6 neighbors around the current location
         # init s0 and it will be part of the spots list 
-        self.neighbor_list=[{"name": "s" + str(0), "distance": 0, "priority": 0, "drones_in": 1, "id":self.id , "state": "NONE" , "previous_state": "NONE", "phase": "E"}]
+        self.neighbor_list=[{"name": "s" + str(0), "distance": 0, "priority": 0, "drones_in": 1, "id":self.id , "state": 1 , "previous_state": 1, "phase": "E"}]
         # save the first spot which is s0 the current place of the drone 
         # spot is another name of s_list[0] so any changes will be seen in spot
-        self.spot= self.neighbor_list[0]
+        self.spot= [{"name": "s" + str(0), "distance": 0, "priority": 0, "drones_in": 1, "id":self.id , "state": 1 , "previous_state": 1, "phase": "E"}]#self.neighbor_list[0]
         self.num_neigboors = 6
         for i in range(1, self.num_neigboors+1):
-            s = {"name": "s" + str(i), "distance": 0, "priority": 0,"drones_in": 0, "id":0 , "state": "NONE", "previous_state": "NONE" ,"phase": "E" }
+            s = {"name": "s" + str(i), "distance": 0, "priority": 0,"drones_in": 0, "id":0 , "state": 1, "previous_state": 1 ,"phase": "E" }
             self.neighbor_list.append(s)
 
     def change_state_to( self, new_state):
@@ -124,6 +119,7 @@ class Drone:
         # sqDx = round(sq3 * self.positionX,2)
         # aDx = round((2*sq3) * self.positionX,2)
         # Dy= round(self.positionY,2)
+
         DxDy2 = (self.positionX * self.positionX) + (self.positionY * self.positionY)
         DxDy3a2 = DxDy2 + 3 * a * a
         sqDx = sq3 * self.positionX
@@ -205,7 +201,7 @@ class Drone:
          # the drone should be alone to be free 
         print("drone in s0", self.spot["drones_in"] )
         if self.spot["drones_in"]==1: # the drone is alone
-            self.change_state_to ("Alone" )
+            self.change_state_to (Alone)
         print("drone state in s0", self.state )
 
 
@@ -275,23 +271,23 @@ class Drone:
         if counter>0: # at least one spot is empty so the drone can be part of he border
             self.border_candidate=True
             self.start_messaging_circle() 
-            if self.border_messaging_circle_completed and self.state=="IRRMOVABLE":
-                self.change_state_to( "BORDER & IRRMOVABLE")
+            if self.border_messaging_circle_completed and self.state==Irremovable:
+                self.change_state_to( Irremovable_boarder)
             elif self.border_messaging_circle_completed:
-                self.change_state_to( "BORDER")
+                self.change_state_to( Border)
 
 
         else: 
             #means that the drone is sourounded in the expansion direction it can be set as free 
-            self.change_state_to("FREE")
+            self.change_state_to(Free)
 
     
     def update_state(self):
         # if self.state=="Alone" : # the drone is alone so see if it is free or border or irrmovable
         if self.spot["disance"]==0:  #the drone that is sink should be always itrremvable the  it can be doen frt thing 
-            self.change_state_to("IRREMOVABLE")
+            self.change_state_to(Irremovable)
 
-        while self.state=="Alone":
+        while self.state==Alone:
             counter=0
             # need to check the number arouund because many spot was changed meanwhile 
             for s in self.neighbor_list:
@@ -302,7 +298,7 @@ class Drone:
                     break
             print("counter", counter)
             if counter==7: # all neighboor are occupied including the drone itself 
-                self.change_state_to("FREE")
+                self.change_state_to(Free)
                 # since border_neighbors is used only for border drone then no need for it 
                 self.border_neighbors=[] #erase border_neighbors because no need for it 
 
@@ -323,7 +319,7 @@ class Drone:
     # terminate the stage 
     # if the drone is border it should start communicating 
     def deal_satae(self):
-        if self.state== "border": # nothing to do if you are free
+        if self.state== Border: # nothing to do if you are free
             print (" i am border time to check  ") 
             # your massage sould be id@state
 
@@ -336,7 +332,7 @@ class Drone:
         msg="id@state" # it should be  recived from a drone
         #if the recived message is a msg send by this drone befor 
         id, state = msg.split('@')
-        if id == self.id and state== "border": 
+        if id == self.id and state== Border: 
             # expansion is done 
             print(" done expan ")
             '''
@@ -345,9 +341,9 @@ class Drone:
             time correlated to the diameter of the expansion area.
             '''
         else:
-            if self.spot["state"]=="free": # drone is free should drop the message
+            if self.spot["state"]==Free: # drone is free should drop the message
                 pass # do nothing 
-            elif self.spot["state"]=="border":
+            elif self.spot["state"]==Border:
                 #redirect it 
                 pass
 
@@ -358,7 +354,7 @@ class Drone:
         calculate_relative_pos(vehicle)
         self.update_location(x,y)
 
-        while self.state !="Alone":
+        while self.state !=Alone:
         
             # in the new position find the distance of the neigboors 
             self.calculate_neigboors_dis()
