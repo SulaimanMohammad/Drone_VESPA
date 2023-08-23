@@ -145,48 +145,67 @@ def spanning_sink(self):
 def find_close_neigboor_2sink(self):
     neighbor_irremovable= None
 
-    # Filter the neighbor_list for objects with "drones_in" > 0 as it contains a drone in 
-    filtered_neighbors = [neighbor for neighbor in self.neighbor_list if neighbor["drones_in"] > 0]
-
     # Sort the neighbor_list based on the distance
-    sorted_neighbors = sorted(filtered_neighbors, key=lambda x: x['distance'])
+    sorted_neighbors = sorted(self.neighbor_list, key=lambda x: x['distance'])
 
     # Extract the first 3 elements with the minimum distances
     three_min_neighbors = sorted_neighbors[:3]
 
-    # Find the neighbor with id of the drone that is irremovable or it is sink ( distance =0 )
-    neighbor_irremovable = next((neighbor for neighbor in three_min_neighbors if ( neighbor['state'] == "irremovable") ), None) # no need to check for or neighbor['distance'] == 0 because the sink is already irremovable 
+    # Filter the neighbor_list for objects with "drones_in" > 0 as it contains a drone in 
+    filtered_neighbors = [neighbor for neighbor in three_min_neighbors if neighbor["drones_in"] > 0]
+    
+    if filtered_neighbors is not None:  # there are occupied neighbors
+        # Find the neighbor with id of the drone that is irremovable or it is sink ( distance =0 )
+        # if you arrive to irremovable or there is no need to send message
+        neighbor_irremovable = next((neighbor for neighbor in filtered_neighbors if ( neighbor['state'] == "irremovable") ), None) # no need to check for or neighbor['distance'] == 0 because the sink is already irremovable 
 
-    if neighbor_irremovable== None:
-        return min(three_min_neighbors, key=lambda x: x["distance"])["id"] # retuen the id of the drone 
-    else: 
-        return -1
+        if neighbor_irremovable== None:
+            return min(filtered_neighbors, key=lambda x: x["distance"])["id"] # retuen the id of the drone 
+        else: 
+            return -1
+    else: # the case of no occupied neighbors around is very possible after further expansion
+        # check if the neighbors drones are preivious border 
+        # befor this function is called all niegbor data are updates    
+            # at the same time the neighbors drones contains in neighbor_list info of its own neighbor
+            # so the each drone in this pahse need to check if it has a drone was a border
+        # notice the earch here for all niegbors 
+        # "border -irremovable" because it can turn to only irrmovable if it is not part of the border    
+        drone_previous_border = [neighbor for neighbor in self.neighbor_list if ( neighbor["drones_in"] > 0 and neighbor["previous_state"]== "border" or neighbor["previous_state"]== "border -irremovable"  ) ] 
+        
+        # if there are many drones had a state border befor chose the one closer to sink 
+        if drone_previous_border>1: 
+            return min(drone_previous_border, key=lambda x: x["distance"])["id"]
+        elif drone_previous_border==1:
+            return drone_previous_border["id"]
+
+        #nohthing found then connect to the border it is not possible 
+        # after the further exapnsion, the drones will be close to the old border 
+        # it is necessary to find a free drone or previous border 
+        # TODO check of it 
 
 
 def find_close_neigboor_2border(self):
     neighbor_irremovable= None
-
-    # Filter the neighbor_list for objects with "drones_in" > 0 as it contains a drone in 
-    filtered_neighbors = [neighbor for neighbor in self.neighbor_list if neighbor["drones_in"] > 0]
+    filtered_neighbors= None 
 
     # Sort the neighbor_list based on the distance
-    sorted_neighbors = sorted(filtered_neighbors, key=lambda x: x['distance'],reverse=True)
+    sorted_neighbors = sorted(self.neighbor_list , key=lambda x: x['distance'],reverse=True)
 
     # Extract the first 3 elements with the max distances ( close to the border)
     three_max_neighbors = sorted_neighbors[:3]
 
+    # Filter the neighbor_list for objects with "drones_in" > 0 as it contains a drone in 
+    filtered_neighbors = [neighbor for neighbor in three_max_neighbors if neighbor["drones_in"] > 0]
+    
     # Find the neighbor with drone that is irremovable or irremovable- border because 
     # if you arrive to irremovable or irremovable-border there is no need to send message
-    neighbor_irremovable = next((neighbor for neighbor in three_max_neighbors if ( neighbor['state'] == "irremovable" or neighbor['state'] == "irremovable- border"  ) ), None)
+    neighbor_irremovable = next((neighbor for neighbor in filtered_neighbors if ( neighbor['state'] == "irremovable" or neighbor['state'] == "irremovable- border"  ) ), None)
 
     if neighbor_irremovable== None: # if it doesnt exist check what is closest to the sink 
-        return max(three_max_neighbors, key=lambda x: x["distance"])["id"] # retuen the id of the drone 
-    else: 
+        return max(filtered_neighbors, key=lambda x: x["distance"])["id"] # retuen the id of the drone 
+    else: # there is a irremovable drone in occupied neighbors
         return -1
-
-
-
-
+  
 
 
 # each drone needs to save the irrmovable drones around so it can send messages to it as a path 
@@ -210,12 +229,17 @@ def spanining ( self):
         if (self.state== " irremovable") or (self.state == " irremovable- border"):
             send_msg_drone_id= self.find_close_neigboor_2sink() 
             if send_msg_drone_id != -1 : # there is no irremovable send msg to a drone close to sink to make it irremovable 
+                self.drone_id_to_sink=send_msg_drone_id # save the id of the drone for future use to connect to sink
                 # send message to a drone that had Id= send_msg_drone_id 
-                pass
+                
 
         if (self.state == " irremovable" ): # it is irrmovable doesnt belong to boarder no need to check (self.state != " irremovable- border" ) because it is border no need to sed to border
             
             send_msg_drone_id= self.find_close_neigboor_2border()  # since it doesnt belong to border then find to path to border 
             if send_msg_drone_id != -1 : # there is no irremovable send msg to a drone to make it irremovable 
                 # send message to a drone that had Id= send_msg_drone_id
-                pass
+                self.drone_id_to_border=send_msg_drone_id  # save the id of the drone for future use to connect to border
+                
+# the drone that recive the message with parallel listening 
+# the message in this way will be recived and save the message in variable like a buffer
+# because the drone can recive the message while the drone is searching to build a path 
