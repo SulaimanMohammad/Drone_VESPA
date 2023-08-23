@@ -89,7 +89,10 @@ class Drone:
         self.id=0
         self.hight=z
         self.state="NONE"
+        self.previous_state= "NONE"
         self.path=[]
+        self.drone_id_to_sink=0 
+        self.drone_id_to_border=0
         self.a=a
         self.border_candidate=False
         self.border_messaging_circle_completed=False 
@@ -100,15 +103,19 @@ class Drone:
         self.direction_taken=[]  # direction path (spots) that are taken in the phase 
         self.neighbor_list = []  # list that contains the 6 neighbors around the current location
         # init s0 and it will be part of the spots list 
-        self.neighbor_list=[{"name": "s" + str(0), "distance": 0, "priority": 0, "drones_in": 1, "id":self.id , "state": "NONE" , "phase": "E"}]
+        self.neighbor_list=[{"name": "s" + str(0), "distance": 0, "priority": 0, "drones_in": 1, "id":self.id , "state": "NONE" , "previous_state": "NONE", "phase": "E"}]
         # save the first spot which is s0 the current place of the drone 
         # spot is another name of s_list[0] so any changes will be seen in spot
         self.spot= self.neighbor_list[0]
         self.num_neigboors = 6
         for i in range(1, self.num_neigboors+1):
-            s = {"name": "s" + str(i), "distance": 0, "priority": 0,"drones_in": 0, "id":0 , "state": "NONE" ,"phase": "E" }
+            s = {"name": "s" + str(i), "distance": 0, "priority": 0,"drones_in": 0, "id":0 , "state": "NONE", "previous_state": "NONE" ,"phase": "E" }
             self.neighbor_list.append(s)
-        
+
+    def change_state_to( self, new_state):
+        self.previous_state= self.state # save the preivious state 
+        self.state= new_state # change the state 
+            
 
     def calculate_neigboors_dis(self):
         
@@ -198,7 +205,7 @@ class Drone:
          # the drone should be alone to be free 
         print("drone in s0", self.spot["drones_in"] )
         if self.spot["drones_in"]==1: # the drone is alone
-            self.state="Alone" 
+            self.change_state_to ("Alone" )
         print("drone state in s0", self.state )
 
 
@@ -269,21 +276,20 @@ class Drone:
             self.border_candidate=True
             self.start_messaging_circle() 
             if self.border_messaging_circle_completed and self.state=="IRRMOVABLE":
-                self.state="BORDER & IRRMOVABLE"
+                self.change_state_to( "BORDER & IRRMOVABLE")
             elif self.border_messaging_circle_completed:
-                self.state="BORDER"
+                self.change_state_to( "BORDER")
 
 
         else: 
             #means that the drone is sourounded in the expansion direction it can be set as free 
-            self.state="FREE"
-
+            self.change_state_to("FREE")
 
     
     def update_state(self):
         # if self.state=="Alone" : # the drone is alone so see if it is free or border or irrmovable
         if self.spot["disance"]==0:  #the drone that is sink should be always itrremvable the  it can be doen frt thing 
-            self.state="IRREMOVABLE " 
+            self.change_state_to("IRREMOVABLE")
 
         while self.state=="Alone":
             counter=0
@@ -296,7 +302,7 @@ class Drone:
                     break
             print("counter", counter)
             if counter==7: # all neighboor are occupied including the drone itself 
-                self.state="FREE"
+                self.change_state_to("FREE")
                 # since border_neighbors is used only for border drone then no need for it 
                 self.border_neighbors=[] #erase border_neighbors because no need for it 
 
@@ -317,7 +323,7 @@ class Drone:
     # terminate the stage 
     # if the drone is border it should start communicating 
     def deal_satae(self):
-        if self.spot["state"]== "border": # nothing to do if you are free
+        if self.state== "border": # nothing to do if you are free
             print (" i am border time to check  ") 
             # your massage sould be id@state
 
