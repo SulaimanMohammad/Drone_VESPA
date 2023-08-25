@@ -85,7 +85,9 @@ def decode_message(message):
 
 
 
-
+global lock
+# Lock for the shared dictionary
+lock = threading.Lock()
 
 class Sink_Timer:
 
@@ -105,11 +107,17 @@ class Sink_Timer:
             sink_t.on_message_received()
             x+=1
 
-    def on_message_received(sink_t):
+    def on_message_received(sink_t, self): # this need to be for the timer too 
+        # TODO check if there is need 2 distincet threads for timer and reciver 
         #This method is called whenever a message is received.
         print("Message received!")
         sink_t.last_message_time = time.time()
         sink_t.message_counter = sink_t.message_counter +1
+        # find the id in the message 
+        # modify any new value ( of the status ) in lock( mutex to avoid race condition)
+        id_updated=0 # here the value of the id is taken from the message and find the index in neighbor_list
+        with lock:
+            self.neighbor_list[id_updated]['state']=1 # here you update the value 
 
     # here it is from the main the thread of spaning 
     def run(sink_t):
@@ -130,12 +138,13 @@ def spanning_sink(self):
     # initialize a timer that will be rest after reciving new message 
     app = Sink_Timer()
     app.run()
+    # after the time is up ' waiting time '
     if app.message_counter==0: #if no message received # the sink it is already irremovable 
         send_msg_drone_id= self.find_close_neigboor_2border()  # since it doesnt belong to border then find to path to border 
         if send_msg_drone_id != -1 : # there is no irremovable send msg to a drone to make it irremovable 
             # send message to a drone that had Id= send_msg_drone_id
             pass
-    else: # if you already message and path is constructed then brodcast end of spanning
+    else: # if you already message and path is constructed then brodcast end of spanning 
         # broadcast the end of spanning 
         pass
 
@@ -144,9 +153,14 @@ def spanning_sink(self):
 # check the 3 neighbors that are close to the sink to know if any is irremovable
 def find_close_neigboor_2sink(self):
     neighbor_irremovable= None
+    filtered_neighbors= None
+
+    # the search should be only in the neighbor_list but since it contains also the data of s0 ( current drone)
+    # Because we need to find min of occupied distance, we should remove the s0 from the list 
+    neighbor_list_no_s0= self.neighbor_list[1:]
 
     # Sort the neighbor_list based on the distance
-    sorted_neighbors = sorted(self.neighbor_list, key=lambda x: x['distance'])
+    sorted_neighbors = sorted(neighbor_list_no_s0, key=lambda x: x['distance'])
 
     # Extract the first 3 elements with the minimum distances
     three_min_neighbors = sorted_neighbors[:3]
@@ -157,7 +171,10 @@ def find_close_neigboor_2sink(self):
     if filtered_neighbors is not None:  # there are occupied neighbors
         # Find the neighbor with id of the drone that is irremovable or it is sink ( distance =0 )
         # if you arrive to irremovable or there is no need to send message
-        neighbor_irremovable = next((neighbor for neighbor in filtered_neighbors if ( neighbor['state'] == Irremovable) ), None) # no need to check for or neighbor['distance'] == 0 because the sink is already irremovable 
+        
+        # here a mutex needed in this operation to read  the state is already changed 
+        with lock:
+            neighbor_irremovable = next((neighbor for neighbor in filtered_neighbors if ( neighbor['state'] == Irremovable) ), None) # no need to check for or neighbor['distance'] == 0 because the sink is already irremovable 
 
         if neighbor_irremovable== None:
             return min(filtered_neighbors, key=lambda x: x["distance"])["id"] # retuen the id of the drone 
@@ -186,10 +203,11 @@ def find_close_neigboor_2sink(self):
 
 def find_close_neigboor_2border(self):
     neighbor_irremovable= None
-    filtered_neighbors= None 
+     
+    neighbor_list_no_s0= self.neighbor_list[1:]
 
     # Sort the neighbor_list based on the distance
-    sorted_neighbors = sorted(self.neighbor_list , key=lambda x: x['distance'],reverse=True)
+    sorted_neighbors = sorted(neighbor_list_no_s0 , key=lambda x: x['distance'],reverse=True)
 
     # Extract the first 3 elements with the max distances ( close to the border)
     three_max_neighbors = sorted_neighbors[:3]
@@ -199,7 +217,9 @@ def find_close_neigboor_2border(self):
     
     # Find the neighbor with drone that is irremovable or irremovable- border because 
     # if you arrive to irremovable or irremovable-border there is no need to send message
-    neighbor_irremovable = next((neighbor for neighbor in filtered_neighbors if ( neighbor['state'] == Irremovable or neighbor['state'] == Irremovable_boarder) ), None)
+    # here a mutex needed in this operation to read  the state is already changed 
+    with lock:  
+        neighbor_irremovable = next((neighbor for neighbor in filtered_neighbors if ( neighbor['state'] == Irremovable or neighbor['state'] == Irremovable_boarder) ), None)
 
     if neighbor_irremovable== None: # if it doesnt exist check what is closest to the sink 
         return max(filtered_neighbors, key=lambda x: x["distance"])["id"] # retuen the id of the drone 
@@ -217,6 +237,12 @@ def find_close_neigboor_2border(self):
 # each droen should svar the id of the drone for the path to sink and for the path to border 
 
 def spanining ( self): 
+
+
+    # since a lock is introduced then the drone will not read a old value after any update it will see it 
+    xbee_thread = threading.Thread(target=xbee_listener(self))
+    xbee_thread.start()
+
     self.check_drones_in_neigboors() # update neigboors after the finish of expansion 
                                      # here you need to safe the id of the drone that is neigboor , ask for data 
 
@@ -248,8 +274,7 @@ def spanining ( self):
                 else: 
                     self.change_state(Irremovable)
 
-
-
+    xbee_thread.join() # this top at the end of he phase because no need to use mutex anymore 
 
 
 
