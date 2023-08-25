@@ -10,12 +10,6 @@ C=100
 eps=20
 
 
-class DroneState(Enum):
-    Free = 0
-    BORDER_AND_IRREMOVABLE = 1
-    IRREMOVABLE = 2
-
-
 class Direction(Enum):
     s0 = 0
     s1 = 1
@@ -101,17 +95,51 @@ class Drone:
         self.neighbor_list=[{"name": "s" + str(0), "distance": 0, "priority": 0, "drones_in": 1, "id":self.id , "state": 1 , "previous_state": 1, "phase": "E"}]
         # save the first spot which is s0 the current place of the drone 
         # spot is another name of s_list[0] so any changes will be seen in spot
-        self.spot= [{"name": "s" + str(0), "distance": 0, "priority": 0, "drones_in": 1, "id":self.id , "state": 1 , "previous_state": 1, "phase": "E"}]#self.neighbor_list[0]
+        self.spot= self.neighbor_list[0]
         self.num_neigboors = 6
         for i in range(1, self.num_neigboors+1):
             s = {"name": "s" + str(i), "distance": 0, "priority": 0,"drones_in": 0, "id":0 , "state": 1, "previous_state": 1 ,"phase": "E" }
             self.neighbor_list.append(s)
 
+
+    # communication 
+    
+    def send_demand(self): 
+        # the drone will send message to demand the data
+        # this mssage contains only way to ask data 
+        # the message will be recived from all the drones are in the range of commuinication 
+        pass 
+
+    def receive_message (self):
+        # here you need to receive the message but you need to know when to start the algo of expansion 
+        # the drone will have a timer will start after the demand message is sent 
+        # after the receive of each message the timer will be reset 
+        # after the timer is up means no more message is arriving 
+        # you should notice that is important to use timer because we can not use counter of message because spots might be unoccipied 
+        # The moment the drone receive the message beside reseting the time a ACK message will be sent 
+        # the recived message will contain the id that sent the message, the ACK will contain that id 
+        # if that drone received the ACK will not try to resend message
+          # self.send_ACK() 
+          # 
+        # the recive function should change also the variable, and deal with demand and ACK from other drones    
+        pass
+    
+    def send_ACK(self):
+        pass
+
+    def start_observing(self):
+        #send a demand 
+        # set a timer 
+        # recieve message 
+        # send Ack 
+        pass
+        
+
     def change_state_to( self, new_state):
         self.previous_state= self.state # save the preivious state 
         self.state= new_state # change the state 
             
-
+    # distance is _.xx 2 decimal
     def calculate_neigboors_dis(self):
         
         # DxDy2 = round((self.positionX * self.positionX) + (self.positionY * self.positionY),2)
@@ -130,9 +158,9 @@ class Drone:
             formula = formula_dict.get(s["name"])
             if formula:
                 distance = eval(formula, {'sqrt': sqrt, 'DxDy2': DxDy2, 'DxDy3a2': DxDy3a2, 'a': a, 'aDx': aDx, 'sqDx': sqDx, 'Dy': Dy})
-                s["distance"] = distance
-        
-        self.distance_from_sink=self.spot['distance'] # where spot is the data of s0 the current position 
+                s["distance"] = round(distance,2)
+
+        self.distance_from_sink=self.spot["distance"] # where spot is the data of s0 the current position 
 
 
     def check_drones_in_neigboors(self):
@@ -146,6 +174,7 @@ class Drone:
         # using x2+y2 find the distance 
             # no need for that because each drone will have it is own position calculated far from the sink 
         
+        # here you need to use distance and compare it to know how to fill neighbor_list
         for s in self.neighbor_list:
             # for now i will have it from the Stdin 
             num_dron = int(input("\t Enter number of drone at "+s["name"]+" :"))
@@ -275,8 +304,6 @@ class Drone:
                 self.change_state_to( Irremovable_boarder)
             elif self.border_messaging_circle_completed:
                 self.change_state_to( Border)
-
-
         else: 
             #means that the drone is sourounded in the expansion direction it can be set as free 
             self.change_state_to(Free)
@@ -355,7 +382,8 @@ class Drone:
         self.update_location(x,y)
 
         while self.state !=Alone:
-        
+             #  after steady and hover 
+                # start observing the location
             # in the new position find the distance of the neigboors 
             self.calculate_neigboors_dis()
             print("checking for movement")
@@ -369,6 +397,8 @@ class Drone:
             print ("go to S", spot)
             x,y = self.direction(spot)
             move_to(vehicle,x,y)
+            #  after steady and hover 
+                # start observing the location 
             calculate_relative_pos(vehicle)
             self.update_location(x,y)
             print("checking for update the state")
