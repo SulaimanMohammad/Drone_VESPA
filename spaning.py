@@ -83,12 +83,6 @@ def decode_message(message):
 
 
 
-
-
-global lock
-# Lock for the shared dictionary
-lock = threading.Lock()
-
 class Sink_Timer:
 
     def __init__(sink_t, timeout=10):
@@ -113,12 +107,7 @@ class Sink_Timer:
         print("Message received!")
         sink_t.last_message_time = time.time()
         sink_t.message_counter = sink_t.message_counter +1
-        # find the id in the message 
-        # modify any new value ( of the status ) in lock( mutex to avoid race condition)
-        id_updated=0 # here the value of the id is taken from the message and find the index in neighbor_list
-        with lock:
-            self.neighbor_list[id_updated]['state']=1 # here you update the value 
-
+        
     # here it is from the main the thread of spaning 
     def run(sink_t):
         while True:
@@ -131,7 +120,25 @@ class Sink_Timer:
     def time_up(sink_t):
         #Called when the timer reaches its timeout without being reset.
         print("Time's up! ")
-        
+
+
+# Lock for the shared dictionary
+lock = threading.Lock()
+
+# Event flag to signal that xbee_listener wants to write
+listener_wants_to_write = threading.Event()
+def xbee_listener(self):
+
+    # Signal that we want to write
+    listener_wants_to_write.set()
+    # find the id in the message 
+    # modify any new value ( of the status ) in lock( mutex to avoid race condition)
+    id_updated=0 # here the value of the id is taken from the message and find the index in neighbor_list
+    with lock:
+        self.neighbor_list[id_updated]['state']=1 # here you update the value
+    listener_wants_to_write.clear()  # Clear the flag
+
+
 
 
 def spanning_sink(self):
@@ -166,6 +173,7 @@ def find_close_neigboor_2sink(self):
     three_min_neighbors = sorted_neighbors[:3]
 
     # Filter the neighbor_list for objects with "drones_in" > 0 as it contains a drone in 
+    # it is done after sorting because we need the occupied of the 3 minimum , ( if it is done before it would be minimum distance of occupied spots)
     filtered_neighbors = [neighbor for neighbor in three_min_neighbors if neighbor["drones_in"] > 0]
     
     if filtered_neighbors is not None:  # there are occupied neighbors
@@ -173,8 +181,13 @@ def find_close_neigboor_2sink(self):
         # if you arrive to irremovable or there is no need to send message
         
         # here a mutex needed in this operation to read  the state is already changed 
-        with lock:
-            neighbor_irremovable = next((neighbor for neighbor in filtered_neighbors if ( neighbor['state'] == Irremovable) ), None) # no need to check for or neighbor['distance'] == 0 because the sink is already irremovable 
+        
+        # lock prioirty fo the state
+        # Check if xbee_listener wants to write
+        if not listener_wants_to_write.is_set():
+            # Acquire the lock to read the shared dictionary
+            with lock:
+                neighbor_irremovable = next((neighbor for neighbor in filtered_neighbors if ( neighbor['state'] == Irremovable) ), None) # no need to check for or neighbor['distance'] == 0 because the sink is already irremovable 
 
         if neighbor_irremovable== None:
             return min(filtered_neighbors, key=lambda x: x["distance"])["id"] # retuen the id of the drone 
@@ -218,8 +231,12 @@ def find_close_neigboor_2border(self):
     # Find the neighbor with drone that is irremovable or irremovable- border because 
     # if you arrive to irremovable or irremovable-border there is no need to send message
     # here a mutex needed in this operation to read  the state is already changed 
-    with lock:  
-        neighbor_irremovable = next((neighbor for neighbor in filtered_neighbors if ( neighbor['state'] == Irremovable or neighbor['state'] == Irremovable_boarder) ), None)
+    
+    # Check if xbee_listener wants to write( messag is recived)
+    if not listener_wants_to_write.is_set():
+        # Acquire the lock to read the shared dictionary
+        with lock:     
+            neighbor_irremovable = next((neighbor for neighbor in filtered_neighbors if ( neighbor['state'] == Irremovable or neighbor['state'] == Irremovable_boarder) ), None)
 
     if neighbor_irremovable== None: # if it doesnt exist check what is closest to the sink 
         return max(filtered_neighbors, key=lambda x: x["distance"])["id"] # retuen the id of the drone 
@@ -238,13 +255,14 @@ def find_close_neigboor_2border(self):
 
 def spanining ( self): 
 
-
-    # since a lock is introduced then the drone will not read a old value after any update it will see it 
-    xbee_thread = threading.Thread(target=xbee_listener(self))
-    xbee_thread.start()
-
+    #rthis will be done through demand message 
     self.check_drones_in_neigboors() # update neigboors after the finish of expansion 
                                      # here you need to safe the id of the drone that is neigboor , ask for data 
+
+    # since a lock is introduced then the drone will not read a old value after any update it will see it 
+    # this shuld be different from only normal lisenting because it cotains listener
+    xbee_thread = threading.Thread(target=xbee_listener, args=(self,)) #pass the function reference and arguments separately to the Thread constructor.
+    xbee_thread.start()
 
     # for the sink drone 
     if self.spot['distance']==0: # if the drone is sink ( leader of the termination of the spaning phase)
