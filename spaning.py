@@ -126,17 +126,44 @@ class Sink_Timer:
 lock = threading.Lock()
 
 # Event flag to signal that xbee_listener wants to write
-listener_wants_to_write = threading.Event()
+listener_neighbor_update_state = threading.Event()
+listener_current_updated_irremovable = threading.Event()
+listener_end_of_spanning = threading.Event()
+
 def xbee_listener(self):
 
-    # Signal that we want to write
-    listener_wants_to_write.set()
-    # find the id in the message 
+    '''
+    1- check that the message starts with S ( for spanning ) otherwise ignore and relance spaning 
+    2- check in the message what is the data ( it should be id )
+    3- extract the id and save it in id_msg and the state of the sender that it should be usually irremovabe 
+        The reason is that the messages in this pahse are sent only if the drone is irremovable 
+    '''
     # modify any new value ( of the status ) in lock( mutex to avoid race condition)
-    id_updated=0 # here the value of the id is taken from the message and find the index in neighbor_list
-    with lock:
-        self.neighbor_list[id_updated]['state']=1 # here you update the value
-    listener_wants_to_write.clear()  # Clear the flag
+    id_msg=0
+
+    if id_msg == self.id : 
+        #that means on of the neigboor is irremovable and sent a taged message
+        # This means that this current drone should change it is current state 
+        with lock:
+            if self.state== Border: 
+                self.change_state(Irremovable_boarder)
+                self.neighbor_list[id_msg]['state']=Irremovable_boarder # here you update the value
+            else: 
+                self.change_state(Irremovable)
+                self.neighbor_list[id_msg]['state']=Irremovable# here you update the value
+            listener_current_updated_irremovable.set() # flag that the state was changed to irremovable 
+
+    else: # the recieved msg refer to changes in state to irrremovable in one of the nighbors
+        # Signal that we want to write
+        listener_neighbor_update_state.set()
+        with lock:
+            self.neighbor_list[id_msg]['state']=1 # here you update the value
+        listener_neighbor_update_state.clear()  # Clear the flag
+
+    if id_msg<0 and id_msg ==-127: # it is the message sent by the sink announcing the end of spanning phase
+        listener_end_of_spanning.set()
+
+
 
 
 
@@ -184,7 +211,7 @@ def find_close_neigboor_2sink(self):
         
         # lock prioirty fo the state
         # Check if xbee_listener wants to write
-        if not listener_wants_to_write.is_set():
+        if not listener_neighbor_update_state.is_set():
             # Acquire the lock to read the shared dictionary
             with lock:
                 neighbor_irremovable = next((neighbor for neighbor in filtered_neighbors if ( neighbor['state'] == Irremovable) ), None) # no need to check for or neighbor['distance'] == 0 because the sink is already irremovable 
@@ -233,7 +260,7 @@ def find_close_neigboor_2border(self):
     # here a mutex needed in this operation to read  the state is already changed 
     
     # Check if xbee_listener wants to write( messag is recived)
-    if not listener_wants_to_write.is_set():
+    if not listener_neighbor_update_state.is_set():
         # Acquire the lock to read the shared dictionary
         with lock:     
             neighbor_irremovable = next((neighbor for neighbor in filtered_neighbors if ( neighbor['state'] == Irremovable or neighbor['state'] == Irremovable_boarder) ), None)
@@ -243,6 +270,22 @@ def find_close_neigboor_2border(self):
     else: # there is a irremovable drone in occupied neighbors
         return -1
   
+
+def build_path(self):
+
+    #if (self.state== Irremovable) or (self.state == Irremovable_boarder):
+        send_msg_drone_id= self.find_close_neigboor_2sink() 
+        if send_msg_drone_id != -1 : # there is no irremovable send msg to a drone close to sink to make it irremovable 
+            self.drone_id_to_sink=send_msg_drone_id # save the id of the drone for future use to connect to sink
+            # send message to a drone that had Id= send_msg_drone_id
+        
+        if self.state != Irremovable_boarder:  # it is irrmovable doesnt belong to boarder no need to check (self.state != " irremovable- border" ) 
+            send_msg_drone_id= self.find_close_neigboor_2border()  # since it doesnt belong to border then find to path to border 
+            if send_msg_drone_id != -1 : # there is no irremovable send msg to a drone to make it irremovable 
+                # send message to a drone that had Id= send_msg_drone_id
+                self.drone_id_to_border=send_msg_drone_id  # save the id of the drone for future use to connect to border
+    
+
 
 
 # each drone needs to save the irrmovable drones around so it can send messages to it as a path 
@@ -259,38 +302,33 @@ def spanining ( self):
     self.check_drones_in_neigboors() # update neigboors after the finish of expansion 
                                      # here you need to safe the id of the drone that is neigboor , ask for data 
 
+
+
     # since a lock is introduced then the drone will not read a old value after any update it will see it 
     # this shuld be different from only normal lisenting because it cotains listener
     xbee_thread = threading.Thread(target=xbee_listener, args=(self,)) #pass the function reference and arguments separately to the Thread constructor.
     xbee_thread.start()
 
-    # for the sink drone 
+    # for the sink drone TODO the sink is responsable of ending the phase  
     if self.spot['distance']==0: # if the drone is sink ( leader of the termination of the spaning phase)
         self.spanning_sink()
     
-    # for the rest of the drones 
     else: 
-        if (self.state== Irremovable) or (self.state == Irremovable_boarder):
-            send_msg_drone_id= self.find_close_neigboor_2sink() 
-            if send_msg_drone_id != -1 : # there is no irremovable send msg to a drone close to sink to make it irremovable 
-                self.drone_id_to_sink=send_msg_drone_id # save the id of the drone for future use to connect to sink
-                # send message to a drone that had Id= send_msg_drone_id
-            
-            if self.state != Irremovable_boarder:  # it is irrmovable doesnt belong to boarder no need to check (self.state != " irremovable- border" ) 
-                send_msg_drone_id= self.find_close_neigboor_2border()  # since it doesnt belong to border then find to path to border 
-                if send_msg_drone_id != -1 : # there is no irremovable send msg to a drone to make it irremovable 
-                    # send message to a drone that had Id= send_msg_drone_id
-                    self.drone_id_to_border=send_msg_drone_id  # save the id of the drone for future use to connect to border
-        
-        else: # if the drone is not removable how it should react to a drone around sent a message  
-            # that maybe should be done in the reading message  first check the message if it contains "s" as spaning phase
-            # check in the message the part that it contains the id od destination 
-            destination_id="id form message"
-            if destination_id == self.spot["id"]:
-                if self.state== Border: 
-                    self.change_state(Irremovable_boarder)
-                else: 
-                    self.change_state(Irremovable)
+        # the drone is free 
+        # wait for turning to a irremovable by another drone that build a path or wait broadcast from sink of finihing spannng
+        if self.state== Free:
+            # Wait for xbee_listener to signal that state has been changed ( doesn't keep the CPU busy.)
+
+            while not listener_current_updated_irremovable.is_set() or ( not listener_end_of_spanning.is_set()):
+                time.sleep(0.1)
+            listener_current_updated_irremovable.clear() # need to clear it for the next spanning 
+
+        # for the rest of the drones 
+        if (self.state== Irremovable) or (self.state == Irremovable_boarder): 
+            self.build_path()
+
+        listener_end_of_spanning.wait() # wait until reciving end to finish this phase , Note if the end detected in Free then this will not wait because it is already seen 
+        listener_end_of_spanning.clear()
 
     xbee_thread.join() # this top at the end of he phase because no need to use mutex anymore 
 
