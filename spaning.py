@@ -84,42 +84,64 @@ def decode_message(message):
 
 
 class Sink_Timer:
-
-    def __init__(sink_t, timeout=10):
+    def __init__(sink_t,self,timeout=10):
         sink_t.timeout = timeout
-        sink_t.last_message_time = time.time()
         sink_t.message_counter = 0  # Initialize message count
-        # Start the thread that simulates message reception
-        sink_t.message_thread = threading.Thread(target=sink_t.on_message_received)
+        sink_t.remaining_time = sink_t.timeout
+        sink_t.lock_sink = threading.Lock()  # Create a lock
+        sink_t.message_thread = threading.Thread(target=sink_listener, args=(sink_t,self,timeout,))
         sink_t.message_thread.start()
 
-    def simulate_message_reception(sink_t):
-        #This method reception of messages
-        x=0
-        while x<4: # This is should be whilr True 
-            time.sleep(1)
-            sink_t.on_message_received()
-            x+=1
-
-    def on_message_received(sink_t, self): # this need to be for the timer too 
-        # TODO check if there is need 2 distincet threads for timer and reciver 
-        #This method is called whenever a message is received.
-        print("Message received!")
-        sink_t.last_message_time = time.time()
-        sink_t.message_counter = sink_t.message_counter +1
-        
-    # here it is from the main the thread of spaning 
-    def run(sink_t):
+    def run(sink_t, self):
         while True:
-            time.sleep(0.5)  # Sleep for a short duration to avoid busy-waiting
-            elapsed_time = time.time() - sink_t.last_message_time
-            if elapsed_time >= sink_t.timeout:
-                sink_t.time_up()
-                break
+            with sink_t.lock_sink:  # Acquire the lock
+                sink_t.remaining_time -= 0.5
+                print(f"Remaining time: {sink_t.remaining_time:.2f} seconds")
+                if sink_t.remaining_time <= 0:
+                    sink_t.time_up(sink_t,self)
+                    break
+            time.sleep(0.5)
 
-    def time_up(sink_t):
+    def time_up(sink_t,self):
         #Called when the timer reaches its timeout without being reset.
         print("Time's up! ")
+        
+        if sink_t.message_counter==0: #if no message received # the sink it is already irremovable 
+            send_msg_drone_id= self.find_close_neigboor_2border()  # since it doesnt belong to border then find to path to border 
+            if send_msg_drone_id != -1 : # there is no irremovable send msg to a drone to make it irremovable 
+                # send message to a drone that had Id= send_msg_drone_id
+                pass
+        else: # if you already have  message and path is constructed then brodcast end of spanning 
+            # broadcast the end of spanning 
+            # Here to brodcast the end of the pahse 
+            # the message contains -127 as id to confirm that is end of pahse 
+         #   after the time is up ' waiting time '
+         # the message here should contains a ref to sink when it is arrive to border, it should come back to the sink 
+            pass
+
+
+def sink_listener(self,sink_t, timeout):
+    '''
+    if a path to sink is contructed a drone of the niegboor wil become irremovable 
+    when a drone became irremovable it will send message contains its id to all around 
+
+    The sink listener check that message contains S- id different than id of sink 
+    and based on that it will be considered as a message to complet the path  
+     
+    '''
+    id_rec=0 
+    if id_rec != self.id: 
+        print("Message received!")
+        with sink_t.lock_sink:  # Acquire the lock
+            sink_t.message_counter += 1
+            sink_t.remaining_time = sink_t.timeout
+
+
+def spanning_sink(self):
+    # initialize a timer that will be rest after reciving new message 
+    app = Sink_Timer()
+    app.run()
+ 
 
 
 # Lock for the shared dictionary
@@ -131,7 +153,7 @@ listener_current_updated_irremovable = threading.Event()
 listener_end_of_spanning = threading.Event()
 
 def xbee_listener(self):
-
+# TODO THIS SHOULD BE IN WHILE LOOP so ir will keep doing the same operations 
     '''
     1- check that the message starts with S ( for spanning ) otherwise ignore and relance spaning 
     2- check in the message what is the data ( it should be id )
@@ -160,27 +182,8 @@ def xbee_listener(self):
             self.neighbor_list[id_msg]['state']=1 # here you update the value
         listener_neighbor_update_state.clear()  # Clear the flag
 
-    if id_msg<0 and id_msg ==-127: # it is the message sent by the sink announcing the end of spanning phase
+    if id_msg ==-127: # it is the message sent by the sink announcing the end of spanning phase
         listener_end_of_spanning.set()
-
-
-
-
-
-
-def spanning_sink(self):
-    # initialize a timer that will be rest after reciving new message 
-    app = Sink_Timer()
-    app.run()
-    # after the time is up ' waiting time '
-    if app.message_counter==0: #if no message received # the sink it is already irremovable 
-        send_msg_drone_id= self.find_close_neigboor_2border()  # since it doesnt belong to border then find to path to border 
-        if send_msg_drone_id != -1 : # there is no irremovable send msg to a drone to make it irremovable 
-            # send message to a drone that had Id= send_msg_drone_id
-            pass
-    else: # if you already message and path is constructed then brodcast end of spanning 
-        # broadcast the end of spanning 
-        pass
 
 
 # since the 6 neighbors has 2 different regions one close to sink and one in opposit 
@@ -227,7 +230,12 @@ def find_close_neigboor_2sink(self):
             # so the each drone in this pahse need to check if it has a drone was a border
         # notice the earch here for all niegbors 
         # "border -irremovable" because it can turn to only irrmovable if it is not part of the border    
-        drone_previous_border = [neighbor for neighbor in self.neighbor_list if ( neighbor["drones_in"] > 0 and neighbor["previous_state"]== Border or neighbor["previous_state"]== Irremovable_boarder ) ] 
+        
+        # checking for previous need lock also because it is related to the chnages of sate 
+        if not listener_neighbor_update_state.is_set():
+            # Acquire the lock to read the shared dictionary
+            with lock:
+                drone_previous_border = [neighbor for neighbor in self.neighbor_list if ( neighbor["drones_in"] > 0 and neighbor["previous_state"]== Border or neighbor["previous_state"]== Irremovable_boarder ) ] 
         
         # if there are many drones had a state border befor chose the one closer to sink 
         if drone_previous_border>1: 
@@ -286,8 +294,6 @@ def build_path(self):
                 self.drone_id_to_border=send_msg_drone_id  # save the id of the drone for future use to connect to border
     
 
-
-
 # each drone needs to save the irrmovable drones around so it can send messages to it as a path 
 # recive all the neigboor including the state of each 
 # if the current drone is irremovable then send message to the drone close to the sink 
@@ -314,24 +320,27 @@ def spanining ( self):
         self.spanning_sink()
     
     else: 
-        # the drone is free 
-        # wait for turning to a irremovable by another drone that build a path or wait broadcast from sink of finihing spannng
-        if self.state== Free:
-            # Wait for xbee_listener to signal that state has been changed ( doesn't keep the CPU busy.)
-
-            while not listener_current_updated_irremovable.is_set() or ( not listener_end_of_spanning.is_set()):
-                time.sleep(0.1)
-            listener_current_updated_irremovable.clear() # need to clear it for the next spanning 
-
-        # for the rest of the drones 
-        if (self.state== Irremovable) or (self.state == Irremovable_boarder): 
-            self.build_path()
+        if not listener_neighbor_update_state.is_set():
+            # Acquire the lock to read the shared dictionary            
+            # the drone is free 
+            # wait for turning to a irremovable by another drone that build a path or wait broadcast from sink of finihing spannng
+            if self.state== Free or self.state== Border:
+                # Wait for xbee_listener to signal that state has been changed ( doesn't keep the CPU busy.)
+                while not listener_current_updated_irremovable.is_set() or ( not listener_end_of_spanning.is_set()):
+                    time.sleep(0.1)
+                listener_current_updated_irremovable.clear() # need to clear it for the next spanning 
+        if not listener_neighbor_update_state.is_set():
+            # for the rest of the drones 
+            if (self.state== Irremovable) or (self.state == Irremovable_boarder): 
+                self.build_path()
 
         listener_end_of_spanning.wait() # wait until reciving end to finish this phase , Note if the end detected in Free then this will not wait because it is already seen 
         listener_end_of_spanning.clear()
 
-    xbee_thread.join() # this top at the end of he phase because no need to use mutex anymore 
+        # send the end of the phase from your side to every one around 
 
+    xbee_thread.join() # this top at the end of he phase because no need to use mutex anymore 
+    
 
 
 # the drone that recive the message with parallel listening 
