@@ -906,7 +906,7 @@ def send_control_body(self, velocity_x, velocity_y, altitude_rate):
     self.send_mavlink(msg)
     self.flush()
 
-def set_yaw_to_dir_PID(self, target_yaw, relative=True, max_yaw_speed=10):
+def set_yaw_to_dir_PID(self, target_yaw, relative=True, max_yaw_speed=18):
     
     global yaw_rad
     yaw_rad = normalize_angle(math.degrees(self.attitude.yaw))
@@ -1089,8 +1089,8 @@ def move_PID_body_manual(self,DeshHight, angl_dir, distance,max_velocity=1): #ma
         # Get current velocities
         # velocity_current_x = (velocity_in_body_frame(self)[0])
         # velocity_current_y = (velocity_in_body_frame(self)[1])
-        velocity_current_x = (velocity_listener[1])
-        velocity_current_y = (velocity_listener[0])
+        velocity_current_x = (velocity_listener[0])
+        velocity_current_y = (velocity_listener[1])
         # X velocity error and PID control
         error_vel_x = desired_vel_x - velocity_current_x
         integral_vel_x += error_vel_x
@@ -1107,8 +1107,8 @@ def move_PID_body_manual(self,DeshHight, angl_dir, distance,max_velocity=1): #ma
         velocity_y = velocity_current_y + Kp_vel_y * error_vel_y + Ki_vel_y * integral_vel_y + Kd_vel_y * derivative_vel_y
         error_vel_y_prev = error_vel_y
 
-        velocity_current_x = (velocity_listener[1])
-        velocity_current_y = (velocity_listener[0])
+        velocity_current_x = (velocity_listener[0])
+        velocity_current_y = (velocity_listener[1])
         velocity_current_z = (velocity_listener[2])
         # Check the current altitude
         current_altitude = self.location.global_relative_frame.alt
