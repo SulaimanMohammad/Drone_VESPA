@@ -169,10 +169,6 @@ def new_coordinates(self, distance, bearing_deg):
     
     return lat2, lon2 
 
-
-
-
-
 def send_ned_velocity(self, velocity_x, velocity_y, velocity_z, altitude,  duration):
     write_log_message (f"{get_current_function_name()} called:")
     msg = self.message_factory.set_position_target_local_ned_encode(
@@ -474,13 +470,6 @@ and then checking if it's close to 0 degrees. Here's how you can modify the moni
 
 '''
 
-def normalize_angle(angle):
-    while angle < 0:
-        angle += 360
-    while angle >= 360:
-        angle -= 360
-    return angle
-
 def set_yaw (self,yaw_angle, relative=False):
     if relative:
         is_relative = 1
@@ -586,113 +575,10 @@ def set_yaw_to_dir(self,yaw_angle):
     while abs(current_yaw - yaw_angle) > tolerance:
         #current_yaw = normalize_angle(self.heading)
         set_yaw(self, yaw_angle)
-        time.sleep(0.01)
+        time.sleep(0.5)
         current_yaw = normalize_angle(math.degrees(self.attitude.yaw))
     
     print( "yaw frst",normalize_angle(math.degrees(self.attitude.yaw)) )
-
-
-def set_yaw_PID(self, yaw_angle, yaw_speed, direction, relative=False):
-    if relative:
-        is_relative = 1
-    else:
-        is_relative = 0
-
-    # Create a MAVLink command for setting the yaw
-    msg = self.message_factory.command_long_encode(
-        0, 0,  # target system, target component
-        mavutil.mavlink.MAV_CMD_CONDITION_YAW, # command
-        0, # confirmation
-        yaw_angle, # param 1 - yaw angle (in degrees)
-        yaw_speed, # param 2 - yaw speed (in degrees/second)
-        direction, # param 3 - direction: 1 = clockwise, -1 = counterclockwise
-        is_relative, # param 4 - relative offset: 1 = relative, 0 = absolute
-        0, 0, 0) # param 5 ~ 7 (not used)
-    # Send the command to the vehicle
-    self.send_mavlink(msg)
-    self.flush()
-
-
-new_yaw_data = threading.Event()
-def yaw_listener(self, name, message):
-    global yaw_rad
-    global last_event_time_yaw
-    global interval_between_events_yaw
-    # Record current time
-    current_time = time.time()
-    # If this is not the first event, print the time difference
-    if last_event_time_yaw is not None:
-        interval_between_events_yaw = current_time - last_event_time_yaw
-        #print(f"YAW Time between two events: {interval_between_events_yaw} seconds")
-
-    # Update the last event time
-    last_event_time_yaw = current_time
-
-    # Signal that new data is available
-    new_yaw_data.set()
-    # Extract yaw from the message (in radians)
-    yaw_rad = message.yaw
-
-
-def set_yaw_to_dir_PID(self, target_yaw, relative=True, max_yaw_speed=15):
-    
-    global yaw_rad
-    yaw_rad = normalize_angle(math.degrees(self.attitude.yaw))
-    global interval_between_events_yaw
-    interval_between_events_yaw=0
-    global last_event_time_yaw
-    last_event_time_yaw=None
-
-    kp= abs(yaw_rad - normalize_angle(target_yaw) )/180.0  #1.1
-    ki=0.02
-    kd=0.008
-    print(kp)
-
-    # Target values
-    target_altitude = self.location.global_relative_frame.alt
-    target_latitude = self.location.global_relative_frame.lat
-    target_longitude = self.location.global_relative_frame.lon
-
-    pid = PID(kp, ki, kd, setpoint=target_yaw)
-    pid.output_limits = (-max_yaw_speed, max_yaw_speed)  # Limits to ensure the output is within valid bounds
-    pid.sample_time = 0.1  # Update interval
-    
-    self.add_message_listener('ATTITUDE', yaw_listener)
-
-    while True:
-        new_yaw_data.wait()
-        
-        current_yaw = normalize_angle(math.degrees(yaw_rad))
-        error = normalize_angle(target_yaw - current_yaw)
-
-        # Correcting error if it's shorter to turn the other way
-        if error > 180:
-            error -= 360
-        elif error < -180:
-            error += 360
-
-        # Check if error is within tolerance
-        if abs(error) < 1.5:
-            break
-        # Get the PID output
-        yaw_speed = pid(error)
-        
-        # Determine the direction (clockwise or counterclockwise)
-        direction = 1 if error >= 0 else -1
-
-        # Send the yaw command
-        set_yaw_PID(self, abs(error), abs(yaw_speed), direction, relative)
-
-        time.sleep(interval_between_events_yaw)
-        new_yaw_data.clear()
-
-    self.remove_message_listener('ATTITUDE', yaw_listener)
-    print("Yaw set to:", target_yaw)
-    self.mode    = VehicleMode("LOITER") #loiter mode and hover in your place 
-    time.sleep(1)
-    self.mode     = VehicleMode("GUIDED")
-
-
 
 def velocity_in_body_frame(self):
     # Retrieve the vehicle's velocity in the NED frame
@@ -758,229 +644,6 @@ def ned_to_body_frame(velocity_ned_x, velocity_ned_y, roll, pitch, yaw):
 
     return velocity_body[0], velocity_body[1]
 
-# Send a command to control velocity and yaw
-def send_control_body(self, velocity_x, velocity_y, yaw_rate,altitude_rate):
-    msg = self.message_factory.set_position_target_local_ned_encode(
-        0,
-        0, 0,
-        mavutil.mavlink.MAV_FRAME_BODY_OFFSET_NED,
-        0b0000010111000111,
-        0, 0, 0,
-        velocity_x, velocity_y, altitude_rate,
-        0, 0, 0,
-        0,yaw_rate)
-    self.send_mavlink(msg)
-    self.flush()
-
-
-
-new_velocity_data = threading.Event()
-def on_velocity(self, attribute_name, value):
-    global velocity_listener
-    global last_event_time
-    global interval_between_events
-    # Record current time
-    current_time = time.time()
-    # If this is not the first event, print the time difference
-    if last_event_time is not None:
-        interval_between_events = current_time - last_event_time
-        #print(f"Time between two events: {interval_between_events} seconds")
-
-    # Update the last event time
-    last_event_time = current_time
-
-    # Signal that new data is available
-    # print("Velocity: %s" % str(value))
-    # Remove the square brackets and split by comma
-    # velocity_components = value[1:-1].split(', ')
-    velocity_components = value
-    # Convert string values to float
-    velocity_listener = [float(v) for v in velocity_components]
-    new_velocity_data.set()
-    
-
-
-def move_PID_body_manual(self,DeshHight, angl_dir, distance, max_velocity=2): #max_velocity=2
-    # Set mode to GUIDED
-    self.mode = VehicleMode("GUIDED")
-    roll = self.attitude.roll
-    pitch = self.attitude.pitch
-
-    global velocity_listener
-    velocity_listener=0
-    global interval_between_events
-    interval_between_events=0
-    global last_event_time
-    last_event_time=None
-
-    self.add_attribute_listener('velocity', on_velocity)
-    
-    [ angl_dir, velocity_direction ]= convert_angle_to_set_dir(self, angl_dir)
-    #set_yaw_to_dir( self, angl_dir)
-    set_yaw_to_dir_PID( self, angl_dir)
-
-    print ( "current yaw in Deg ", math.degrees(self.attitude.yaw))
-    # PID gains for yaw, X, and Y control
-    Kp_yaw = 0.8
-    Ki_yaw = 0.02
-    Kd_yaw = 0.01
-
-    Kp_vel_x = 1.25
-    Ki_vel_x = 0.02
-    Kd_vel_x = 0.01
-
-
-    Kp_vel_y = 0.78
-    Ki_vel_y = 0.006
-    Kd_vel_y = 0.003
-
-    # Errors and previous errors for PID control
-    error_yaw_prev = 0
-    error_vel_x_prev = 0
-    error_vel_y_prev = 0
-
-    integral_yaw = 0
-    integral_vel_x = 0
-    integral_vel_y = 0
-
-    # Kp_yaw = 1
-    # Ki_yaw = 0.005
-    # Kd_yaw = 0.02
-
-    # Kp_vel_x = 3.3
-    # Ki_vel_x = 0.005
-    # Kd_vel_x = 0.001
-
-    # Kp_vel_y = 0.8
-    # Ki_vel_y = 0.002
-    # Kd_vel_y = 0.007
-
-
-    # PID gains for altitude control
-    Kp_vel_z = 0.75
-    Ki_vel_z = 0.003
-    Kd_vel_z = 0.01
-
-    # Errors and previous errors for altitude PID control
-    error_alt_prev = 0
-    integral_vel_z = 0
-    desired_vel_z = 0
-
-    # Desired yaw and velocities
-    desired_yaw = angl_dir # baed on the direction  needed 
-    print ( "DEs yaw in Deg ", desired_yaw , " in rad",math.radians(desired_yaw) )
-    desired_yaw = math.radians(desired_yaw)
-    
-
-    max_yaw_speed=20
-    # PID controller for yaw
-    pid_yaw = PID(Kp_yaw, Ki_yaw, Kd_yaw, setpoint=desired_yaw)
-    pid_yaw.output_limits = (-max_yaw_speed, max_yaw_speed)  # Assuming you set a max_yaw_speed variable
-    pid_yaw.sample_time = 1  # Update interval in seconds
-
-
-    desired_vel_x = velocity_direction* max_velocity
-    desired_vel_y=0.0
-    desired_vel_z=0.0
-
-    print ("in NED frame Desired vx", desired_vel_x ," Des vy", desired_vel_y )
-    #desired_vel_x, desired_vel_y = ned_to_body_frame(desired_vel_x, desired_vel_y, roll, pitch, math.radians(desired_yaw) )
-    print ("In body frame Desired vx", desired_vel_x ," Des vy", desired_vel_y )
-    
-    start_time = time.time()
-
-    send_control_body(self, desired_vel_x, desired_vel_y, 0 ,0)
-    #time.sleep(0.5) 
-    # time_needed=abs(float(distance))/float(max_velocity)
-
-    # velocity_current_x = (self.velocity[1])
-    # velocity_current_y = (self.velocity[0])
-    # distance= distance - (float(1* velocity_current_x))
-    if velocity_listener:
-        velocity_current_x = (velocity_listener[1])
-        velocity_current_y = (velocity_listener[0])
-    # # velocity_current_x = velocity_in_body_frame(self)[0]
-    # # velocity_current_y = velocity_in_body_frame(self)[1]
-
-        print( "Befor PID loop vx ",velocity_current_x , "vy",velocity_current_y, "yaw", math.degrees(self.attitude.yaw), "distance", distance )
-    # print( "time: ",time_neded )e
-
-    previous_velocity_x=0 
-    while distance >= 0.1:
-        new_velocity_data.wait()
-
-        # Get current yaw
-        yaw_current = self.attitude.yaw
-        
-        # Yaw error and PID control
-        error_yaw = desired_yaw - yaw_current
-        # integral_yaw += error_yaw
-        # derivative_yaw = error_yaw - error_yaw_prev
-
-        # yaw_rate = yaw_current + Kp_yaw * error_yaw + Ki_yaw * integral_yaw + Kd_yaw * derivative_yaw
-        # error_yaw_prev = error_yaw
-
-        yaw_rate = pid_yaw(yaw_current)
-        # Get current velocities
-        # velocity_current_x = (self.velocity[1])
-        # velocity_current_y = (self.velocity[0])
-        # velocity_current_x = (velocity_in_body_frame(self)[0])
-        # velocity_current_y = (velocity_in_body_frame(self)[1])
-        velocity_current_x = (velocity_listener[1])
-        velocity_current_y = (velocity_listener[0])
-        # X velocity error and PID control
-        error_vel_x = desired_vel_x - velocity_current_x
-        integral_vel_x += error_vel_x
-        derivative_vel_x = error_vel_x - error_vel_x_prev
-
-        velocity_x = velocity_current_x+ Kp_vel_x * error_vel_x + Ki_vel_x * integral_vel_x + Kd_vel_x * derivative_vel_x
-        error_vel_x_prev = error_vel_x
-
-        # Y velocity error and PID control
-        error_vel_y = desired_vel_y - velocity_current_y
-        integral_vel_y += error_vel_y
-        derivative_vel_y = error_vel_y - error_vel_y_prev
-
-        velocity_y = velocity_current_y + Kp_vel_y * error_vel_y + Ki_vel_y * integral_vel_y + Kd_vel_y * derivative_vel_y
-        error_vel_y_prev = error_vel_y
-
-        # Send control to the drone
-        #send_control_body(self, velocity_x, velocity_y, yaw_rate)
-        # velocity_current_x = (self.velocity[1])
-        # velocity_current_y = (self.velocity[0])
-        velocity_current_x = (velocity_listener[1])
-        velocity_current_y = (velocity_listener[0])
-        velocity_current_z = (velocity_listener[2])
-        # Check the current altitude
-        current_altitude = self.location.global_relative_frame.alt
-
-        # Altitude error and PID control
-        error_vel_z = desired_vel_z - velocity_current_z
-        integral_vel_z += error_vel_z
-        derivative_vel_z = error_vel_z - error_alt_prev
-
-        altitude_rate = velocity_current_z +Kp_vel_z * error_vel_z + Ki_vel_z * integral_vel_z + Kd_vel_z * derivative_vel_z
-        error_alt_prev = error_vel_z
-
-        # Send control to the drone (you'll need to modify send_control_body or use a separate method to include altitude control)
-        send_control_body(self, velocity_x, velocity_y, yaw_rate, altitude_rate)
-        print( "vx ",velocity_current_x , "vy",velocity_current_y, "vz",velocity_current_z , "yaw", math.degrees(self.attitude.yaw),"yaw error= ", math.degrees(error_yaw), "current alt= ", current_altitude  )
-        
-        # distance= distance - (float(interval_between_events* abs(velocity_current_x)))
-        # print( "time", time.time() - start_time , "distance left : ",distance )
-        distance= distance - (float(interval_between_events* abs( (velocity_current_x + previous_velocity_x)/2.0 )))
-        print( "time", time.time() - start_time , "distance left : ",distance )
-        new_velocity_data.clear()
-        previous_velocity_x= velocity_current_x
-        # set_yaw_moving( self, yaw_rate)
-        # time.sleep(0.1)
-        # time_needed=0
-        # Clear the event so we can wait for the next update
-        new_velocity_data.clear()
-    
-    self.remove_attribute_listener('velocity', on_velocity)
-
-
 def move_PID_body(self,DeshHight, angl_dir, distance, max_velocity=2):
     # ...
     max_yaw_speed=20
@@ -1005,7 +668,7 @@ def move_PID_body(self,DeshHight, angl_dir, distance, max_velocity=2):
     # Ki_vel_y = 0
     # Kd_vel_y = 0.0
 
-    Kp_yaw = 0.5
+    Kp_yaw = 0.1
     Ki_yaw = 0.01
     Kd_yaw = 0.01
 
@@ -1067,16 +730,13 @@ def move_PID_body(self,DeshHight, angl_dir, distance, max_velocity=2):
         velocity_z = pid_vel_z(velocity_current_z)
         current_altitude = self.location.global_relative_frame.alt
 
-        send_control_body(self, velocity_x, velocity_y, yaw_rate, velocity_z)
+        send_control_body(self, velocity_x, velocity_y,velocity_z)
         print( "vx ",velocity_current_x , "vy",velocity_current_y, "vz",velocity_current_z , "yaw", math.degrees(self.attitude.yaw),"current alt= ", current_altitude) 
         distance= distance - (float(interval_between_events* abs( (velocity_current_x- previous_velocity_x)/2.0 )))
         print( "time", time.time() - start_time , "distance left : ",distance )
         new_velocity_data.clear()
         previous_velocity_x= velocity_current_x
     self.remove_attribute_listener('velocity', on_velocity)
-
-
-
 
 #time =0 means that if it was not provided move_to will use the min_time_safe 
 def scan_hexagon(vehicle, drone, camera_image_width,  scan_time=0):
@@ -1158,6 +818,323 @@ def scan_hexagon(vehicle, drone, camera_image_width,  scan_time=0):
     drone.update_location(0,-(a-distance*i+distance/2)) #the new coordinates
 
 
+def normalize_angle(angle):
+    while angle < 0:
+        angle += 360
+    while angle >= 360:
+        angle -= 360
+    return angle
+
+new_yaw_data = threading.Event()
+def yaw_listener(self, name, message):
+    global yaw_rad
+    global last_event_time_yaw
+    global interval_between_events_yaw
+    # Record current time
+    current_time = time.time()
+    # If this is not the first event, print the time difference
+    if last_event_time_yaw is not None:
+        interval_between_events_yaw = current_time - last_event_time_yaw
+        #print(f"YAW Time between two events: {interval_between_events_yaw} seconds")
+
+    # Update the last event time
+    last_event_time_yaw = current_time
+
+    # Signal that new data is available
+    new_yaw_data.set()
+    # Extract yaw from the message (in radians)
+    yaw_rad = message.yaw
+
+new_velocity_data = threading.Event()
+def on_velocity(self, attribute_name, value):
+    global velocity_listener
+    global last_event_time
+    global interval_between_events
+    # Record current time
+    current_time = time.time()
+    # If this is not the first event, print the time difference
+    if last_event_time is not None:
+        interval_between_events = current_time - last_event_time
+        #print(f"Time between two events: {interval_between_events} seconds")
+
+    # Update the last event time
+    last_event_time = current_time
+
+    # Signal that new data is available
+    # print("Velocity: %s" % str(value))
+    # Remove the square brackets and split by comma
+    # velocity_components = value[1:-1].split(', ')
+    velocity_components = value
+    # Convert string values to float
+    velocity_listener = [float(v) for v in velocity_components]
+    new_velocity_data.set()
+
+
+def set_yaw_PID(self, yaw_angle, yaw_speed, direction, relative=False):
+    if relative:
+        is_relative = 1
+    else:
+        is_relative = 0
+
+    # Create a MAVLink command for setting the yaw
+    msg = self.message_factory.command_long_encode(
+        0, 0,  # target system, target component
+        mavutil.mavlink.MAV_CMD_CONDITION_YAW, # command
+        0, # confirmation
+        yaw_angle, # param 1 - yaw angle (in degrees)
+        yaw_speed, # param 2 - yaw speed (in degrees/second)
+        direction, # param 3 - direction: 1 = clockwise, -1 = counterclockwise
+        is_relative, # param 4 - relative offset: 1 = relative, 0 = absolute
+        0, 0, 0) # param 5 ~ 7 (not used)
+    # Send the command to the vehicle
+    self.send_mavlink(msg)
+    self.flush()
+
+# Send a command to control velocity and yaw
+# notice you need to see that here yaw rate is requierd to be counted and set to be zero
+# that will ensure right movement 
+def send_control_body(self, velocity_x, velocity_y, altitude_rate):
+    msg = self.message_factory.set_position_target_local_ned_encode(
+        0,
+        0, 0,
+        mavutil.mavlink.MAV_FRAME_BODY_OFFSET_NED, # MAV_FRAME_LOCAL_NED
+        0b010111000111,
+        0, 0, 0,
+        velocity_x, velocity_y, altitude_rate,
+        0, 0, 0,
+        0, 0)
+    self.send_mavlink(msg)
+    self.flush()
+
+def set_yaw_to_dir_PID(self, target_yaw, relative=True, max_yaw_speed=10):
+    
+    global yaw_rad
+    yaw_rad = normalize_angle(math.degrees(self.attitude.yaw))
+    global interval_between_events_yaw
+    interval_between_events_yaw=0
+    global last_event_time_yaw
+    last_event_time_yaw=None
+
+    kp= abs(yaw_rad - normalize_angle(target_yaw) )/180.0  #1.1
+    ki=0.02
+    kd=0.008
+    print(kp)
+
+    # Target values
+    target_altitude = self.location.global_relative_frame.alt
+    target_latitude = self.location.global_relative_frame.lat
+    target_longitude = self.location.global_relative_frame.lon
+
+    pid = PID(kp, ki, kd, setpoint=target_yaw)
+    pid.output_limits = (-max_yaw_speed, max_yaw_speed)  # Limits to ensure the output is within valid bounds
+    pid.sample_time = 0.1  # Update interval
+    
+    self.add_message_listener('ATTITUDE', yaw_listener)
+
+    while True:
+        new_yaw_data.wait()
+        
+        current_yaw = normalize_angle(math.degrees(yaw_rad))
+        error = normalize_angle(target_yaw - current_yaw)
+
+        # Correcting error if it's shorter to turn the other way
+        if error > 180:
+            error -= 360
+        elif error < -180:
+            error += 360
+
+        # Check if error is within tolerance
+        if abs(error) < 1.5:
+            break
+        # Get the PID output
+        yaw_speed = pid(error)
+        
+        # Determine the direction (clockwise or counterclockwise)
+        direction = 1 if error >= 0 else -1
+
+        # Send the yaw command
+        set_yaw_PID(self, abs(error), abs(yaw_speed), direction, relative)
+
+        time.sleep(interval_between_events_yaw)
+        new_yaw_data.clear()
+
+    self.remove_message_listener('ATTITUDE', yaw_listener)
+    print("Yaw set to:", target_yaw)
+    self.mode    = VehicleMode("LOITER") #loiter mode and hover in your place 
+    time.sleep(1.5)
+    self.mode     = VehicleMode("GUIDED")
+
+def move_PID_body_manual(self,DeshHight, angl_dir, distance,max_velocity=1): #max_velocity=2
+    # Set mode to GUIDED
+    self.mode = VehicleMode("GUIDED")
+    roll = self.attitude.roll
+    pitch = self.attitude.pitch
+
+    global velocity_listener
+    velocity_listener=0
+    global interval_between_events
+    interval_between_events=0
+    global last_event_time
+    last_event_time=None
+
+    self.add_attribute_listener('velocity', on_velocity)
+    [ angl_dir, velocity_direction ]= convert_angle_to_set_dir(self, angl_dir)
+    set_yaw_to_dir_PID( self, angl_dir)
+
+    print ( "current yaw in Deg ", math.degrees(self.attitude.yaw))
+    # PID gains for yaw, X, and Y control
+    Kp_yaw = 0.03
+    Ki_yaw = 0.02
+    Kd_yaw = 0.01
+
+    Kp_vel_x = 1.25
+    Ki_vel_x = 0.02
+    Kd_vel_x = 0.01
+
+
+    Kp_vel_y = 0.78
+    Ki_vel_y = 0.006
+    Kd_vel_y = 0.003
+
+    # Errors and previous errors for PID control
+    error_yaw_prev = 0
+    error_vel_x_prev = 0
+    error_vel_y_prev = 0
+
+    integral_yaw = 0
+    integral_vel_x = 0
+    integral_vel_y = 0
+
+    # Kp_yaw = 1
+    # Ki_yaw = 0.005
+    # Kd_yaw = 0.02
+
+    # Kp_vel_x = 3.3
+    # Ki_vel_x = 0.005
+    # Kd_vel_x = 0.001
+
+    # Kp_vel_y = 0.8
+    # Ki_vel_y = 0.002
+    # Kd_vel_y = 0.007
+
+
+    # PID gains for altitude control
+    Kp_vel_z = 0.75
+    Ki_vel_z = 0.003
+    Kd_vel_z = 0.01
+
+    # Errors and previous errors for altitude PID control
+    error_alt_prev = 0
+    integral_vel_z = 0
+    desired_vel_z = 0
+
+    # Desired yaw and velocities
+    desired_yaw = normalize_angle(angl_dir) # baed on the direction  needed 
+    print ( "DEs yaw in Deg ", desired_yaw , " in rad",math.radians(desired_yaw) )
+    
+
+    max_yaw_speed=2
+    # PID controller for yaw
+    pid_yaw = PID(Kp_yaw, Ki_yaw, Kd_yaw, setpoint=desired_yaw)
+    pid_yaw.output_limits = (-max_yaw_speed, max_yaw_speed)  # Assuming you set a max_yaw_speed variable
+    pid_yaw.sample_time = 1  # Update interval in seconds
+
+
+    desired_vel_x = velocity_direction* max_velocity
+    desired_vel_y=0.0
+    desired_vel_z=0.0
+
+    print ("in NED frame Desired vx", desired_vel_x ," Des vy", desired_vel_y )
+    #desired_vel_x, desired_vel_y = ned_to_body_frame(desired_vel_x, desired_vel_y, roll, pitch, math.radians(desired_yaw) )
+    #print ("In body frame Desired vx", desired_vel_x ," Des vy", desired_vel_y )
+    
+    start_time = time.time()
+
+    #send_control_body(self, desired_vel_x, desired_vel_y, 0 ,0)
+
+    if velocity_listener:
+        velocity_current_x = (velocity_listener[1])
+        velocity_current_y = (velocity_listener[0])
+    # # velocity_current_x = velocity_in_body_frame(self)[0]
+    # # velocity_current_y = velocity_in_body_frame(self)[1]
+
+        print( "Befor PID loop vx ",velocity_current_x , "vy",velocity_current_y, "yaw", normalize_angle(math.degrees(self.attitude.yaw)), "distance", distance )
+    # print( "time: ",time_neded )e
+    #desired_yaw= math.radians(desired_yaw )
+    previous_velocity_x=0 
+    while distance >= 0.1:
+        new_velocity_data.wait()
+
+        # # Get current yaw
+        yaw_current = self.attitude.yaw
+        current_yaw = normalize_angle(math.degrees(yaw_current))
+        error = (desired_yaw - current_yaw)
+        error = normalize_angle(desired_yaw - current_yaw)
+
+        # Correcting error if it's shorter to turn the other way
+        if error > 180:
+            error -= 360
+        elif error < -180:
+            error += 360
+
+        # Get the PID output
+        yaw_speed = pid_yaw(error)
+        
+        # Determine the direction (clockwise or counterclockwise)
+        direction_yaw = 1 if error >= 0 else -1
+
+        # Send the yaw command
+        set_yaw_PID(self, abs(error), abs(yaw_speed), direction_yaw)
+
+        # Get current velocities
+        # velocity_current_x = (velocity_in_body_frame(self)[0])
+        # velocity_current_y = (velocity_in_body_frame(self)[1])
+        velocity_current_x = (velocity_listener[1])
+        velocity_current_y = (velocity_listener[0])
+        # X velocity error and PID control
+        error_vel_x = desired_vel_x - velocity_current_x
+        integral_vel_x += error_vel_x
+        derivative_vel_x = error_vel_x - error_vel_x_prev
+
+        velocity_x = velocity_current_x+ Kp_vel_x * error_vel_x + Ki_vel_x * integral_vel_x + Kd_vel_x * derivative_vel_x
+        error_vel_x_prev = error_vel_x
+
+        # Y velocity error and PID control
+        error_vel_y = desired_vel_y - velocity_current_y
+        integral_vel_y += error_vel_y
+        derivative_vel_y = error_vel_y - error_vel_y_prev
+
+        velocity_y = velocity_current_y + Kp_vel_y * error_vel_y + Ki_vel_y * integral_vel_y + Kd_vel_y * derivative_vel_y
+        error_vel_y_prev = error_vel_y
+
+        velocity_current_x = (velocity_listener[1])
+        velocity_current_y = (velocity_listener[0])
+        velocity_current_z = (velocity_listener[2])
+        # Check the current altitude
+        current_altitude = self.location.global_relative_frame.alt
+
+        # Altitude error and PID control
+        error_vel_z = desired_vel_z - velocity_current_z
+        integral_vel_z += error_vel_z
+        derivative_vel_z = error_vel_z - error_alt_prev
+
+        altitude_rate = velocity_current_z +Kp_vel_z * error_vel_z + Ki_vel_z * integral_vel_z + Kd_vel_z * derivative_vel_z
+        error_alt_prev = error_vel_z
+
+        # Send control to the drone (you'll need to modify send_control_body or use a separate method to include altitude control)
+        send_control_body(self, velocity_x, velocity_y, altitude_rate)
+        print( "vx ",velocity_current_x , "vy",velocity_current_y, "vz",velocity_current_z , "yaw", normalize_angle(math.degrees(self.attitude.yaw)),"yaw error= ",error, "current alt= ", current_altitude  )
+        
+        distance= distance - (float(interval_between_events* abs( (velocity_current_x + previous_velocity_x)/2.0 )))
+        print( "time", time.time() - start_time , "distance left : ",distance )
+        new_velocity_data.clear()
+        previous_velocity_x= velocity_current_x
+        
+        # Clear the event so we can wait for the next update
+        new_velocity_data.clear()
+    
+    self.remove_attribute_listener('velocity', on_velocity)
+
 def convert_angle_to_set_dir(self, angle): 
     '''
     supppose you want the drone to have yaw -90 and move forward in respect to -90 yaw 
@@ -1174,3 +1151,6 @@ def convert_angle_to_set_dir(self, angle):
         return [ normalize_angle(angle) -180, -1 ] # -1 is to flip the direction so go in direction of backward 
     else: 
          return [normalize_angle(angle), +1]
+    
+def shortest_angular_distance(target, current):
+    return normalize_angle(target - current)
