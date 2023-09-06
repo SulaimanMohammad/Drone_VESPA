@@ -15,7 +15,7 @@ print("current_lon=", vehicle.location.global_relative_frame.lon)
 random_dir = int(random.randint(1, 6)) # 0 not include because it should not be cin the sink
 print ("go to S", random_dir)
 x,y= drone.direction(random_dir)
-move_to(vehicle,x,y)
+#move_to(vehicle,x,y)
 calculate_relative_pos(vehicle)
 drone.update_location(x,y)
 
@@ -34,14 +34,14 @@ while drone.state !="Alone":
     spot= drone.findPriority()
     print ("go to S", spot)
     x,y = drone.direction(spot)
-    move_to(vehicle,x,y)
+    #move_to(vehicle,x,y)
     calculate_relative_pos(vehicle)
     drone.update_location(x,y)
     print("checking for update the state")
     drone.is_it_alone()
 
-drone.update_state()
-
+drone.search_for_target() # find if there is target in the area or not 
+drone.update_state() # it inclueds forming the border
 print ("Coming Home")
 vehicle.mode = VehicleMode ("RTL")
 time.sleep(10) 
