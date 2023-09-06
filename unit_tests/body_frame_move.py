@@ -1,8 +1,6 @@
 from dronekit import connect, VehicleMode
 from pymavlink import mavutil
 import time
-
-
 import os
 import datetime
 import sys
@@ -38,14 +36,15 @@ def interrupt(signal_num, frame):
 
 create_log_file(os.path.dirname(os.path.abspath(__file__)),  os.path.splitext(os.path.basename(__file__))[0]) 
 global vehicle
-#vehicle = connect(parse_connect(), wait_ready=False)
-vehicle = connect("/dev/ttyUSB0", baud= 921600,  wait_ready=False, rate=10)
+# vehicle = connect (connection_string, wait_ready=False) # for simulation 
+vehicle = connect("/dev/serial0", baud= 921600,  wait_ready=False,rate=10) # for raspberry p
+#vehicle = connect("/dev/ttyUSB0", baud= 57600,  wait_ready=False, rate=10) #for telemetry 
 vehicle.wait_ready(True, raise_exception=False)
 signal.signal(signal.SIGINT, interrupt)
 
 set_a(3)
 # vehicle.add_attribute_listener('velocity', on_velocity)
-#Add the listener to the vehicle's attribute
+# Add the listener to the vehicle's attribute
 # vehicle.add_attribute_listener('location.global_frame', attribute_listener)
 
 drone= Drone(0.0,0.0,2) # drone at the sink 
@@ -53,24 +52,24 @@ drone= Drone(0.0,0.0,2) # drone at the sink
 arm_and_takeoff(vehicle,drone.hight)
 print( "Takeoff and wait 2 sec")
 
-vehicle.mode    = VehicleMode("LOITER") 
+vehicle.mode    = VehicleMode("LOITER") #loiter mode and hover in your place 
+time.sleep(2)
+vehicle.mode     = VehicleMode("GUIDED")
+# face_north(vehicle)
+
+distance=4
+angl_dir= 90#-45
+# angle dir in degree 
+move_body_PID(vehicle, drone.hight, angl_dir, distance)
+
+vehicle.mode    = VehicleMode("LOITER") #loiter mode and hover in your place 
 time.sleep(2)
 vehicle.mode     = VehicleMode("GUIDED")
 
-hex_side=0.5
-angl_dir=[0,120, 180,240,300,360,60,180]
-#angl_dir=[0]
+print( "move to the other direction")
 
-for i in range(len(angl_dir)):
-
-    print( "moving to",angl_dir[i] )    
-    move_PID_body_manual(vehicle,  drone.hight, angl_dir[i], hex_side)
-    
-    vehicle.mode    = VehicleMode("LOITER") 
-    time.sleep(5)
-    vehicle.mode     = VehicleMode("GUIDED")
-
-time.sleep(2)
+angl_dir= -90#135
+move_body_PID(vehicle,drone.hight,  angl_dir, distance)
 
 
 write_log_message(f" Coming Home")

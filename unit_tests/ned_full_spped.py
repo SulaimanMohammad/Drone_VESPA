@@ -61,18 +61,7 @@ time.sleep(8)
 
 x=3
 y=0
-#move_to_flush(vehicle,x,y,drone.hight,2)
-#move_to_stages_short(vehicle,x,y)
 move_to_stages_long(vehicle,x,y, 10)
-
-# #move_to_poition(vehicle,x,y,drone.hight ) #need to set the ground velocity 
-# #move_to_position_speed_flush(vehicle,x,y,drone.hight,20)
-
-# # write_log_message(f" current_lat = {vehicle.location.global_relative_frame.lat}") 
-# # write_log_message(f" current_lon= {vehicle.location.global_relative_frame.lon}")
-# # write_log_message(f"calculated distance y,x = {calculate_relative_pos(vehicle)}")
-# # write_log_message(f"supposed distanc x,y = {drone.update_location(x,y)}")
-# time.sleep(5)
 
 print( "come back")
 x=-3
@@ -81,16 +70,7 @@ y=0
 #move_to_stages_short(vehicle,x,y)
 move_to_stages_long(vehicle,x,y,10)
 
-#x=0
-#y=0
-#move_to_poition(vehicle,x,y, drone.hight)
-#move_to_position_speed_flush(vehicle,x,y,drone.hight,20)
 
-
-# write_log_message(f" current_lat = {vehicle.location.global_relative_frame.lat}") 
-# write_log_message(f" current_lon= {vehicle.location.global_relative_frame.lon}")
-# write_log_message(f"calculated distance y,x = {calculate_relative_pos(vehicle)}")
-# write_log_message(f"supposed distanc x,y = {drone.update_location(x,y)}")
 time.sleep(1)
 
 

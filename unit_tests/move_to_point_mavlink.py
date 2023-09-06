@@ -92,13 +92,6 @@ move_to_poition(vehicle,x,y, drone.hight) # go 3m in X
 print(" move on x to" ,x , " in speed of",  x/float(time_to_pass) )
 time.sleep(10)
 
-# write_log_message(f" current_lat = {vehicle.location.global_relative_frame.lat}") 
-# write_log_message(f" current_lon= {vehicle.location.global_relative_frame.lon}")
-# write_log_message(f"calculated distance y,x = {calculate_relative_pos(vehicle)}")
-# write_log_message(f"supposed distanc x,y = {drone.update_location(x,y)}")
-# time.sleep(10)
-
-
 write_log_message(f" Coming Home")
 vehicle.mode = VehicleMode ("LAND")
 time.sleep(2) 

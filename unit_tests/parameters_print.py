@@ -12,8 +12,9 @@ connection_string = args.connect
 #connection_string = sitl.connection_string()
 
 print ("Connection to the vehicle on %s"%connection_string)
-# vehicle = connect (connection_string, wait_ready=False)
-vehicle = connect("/dev/serial0", baud= 921600,  wait_ready=False)
+# vehicle = connect (connection_string, wait_ready=False) # for simulation 
+vehicle = connect("/dev/serial0", baud= 921600,  wait_ready=False,rate=10) # for raspberry p
+#vehicle = connect("/dev/ttyUSB0", baud= 57600,  wait_ready=False, rate=10) #for telemetry 
 vehicle.wait_ready(True, raise_exception=False)
 
 @vehicle.on_attribute('mode')
