@@ -410,3 +410,4 @@ class Drone:
         # because it will be problem if all not in the same phase 
         self.spot["phase"]= "S"
         
+        #TODO here the drones should wait in loop until reciving a brodcast of finishing the expanshion 
