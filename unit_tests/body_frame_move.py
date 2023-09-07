@@ -53,17 +53,19 @@ drone= Drone(0.0,0.0,2) # drone at the sink
 arm_and_takeoff(vehicle,drone.hight)
 print( "Takeoff and wait 2 sec")
 
-# vehicle.mode    = VehicleMode("LOITER") #loiter mode and hover in your place 
+vehicle.mode    = VehicleMode("LOITER") #loiter mode and hover in your place 
 time.sleep(2)
 vehicle.mode     = VehicleMode("GUIDED")
 # face_north(vehicle)
+
+set_data_rate(vehicle, 20)
 
 distance=2
 angl_dir= 90#-45
 # angle dir in degree 
 move_body_PID(vehicle, drone.hight, angl_dir, distance)
 
-# vehicle.mode    = VehicleMode("LOITER") #loiter mode and hover in your place 
+vehicle.mode    = VehicleMode("LOITER") #loiter mode and hover in your place 
 time.sleep(2)
 vehicle.mode     = VehicleMode("GUIDED")
 
