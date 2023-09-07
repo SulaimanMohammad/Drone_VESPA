@@ -8,14 +8,10 @@ parser.add_argument('--connect')
 args = parser.parse_args()
 connection_string = args.connect
 
-#sitl = dronekit_sitl.start_default()
-#connection_string = sitl.connection_string()
-
-print ("Connection to the vehicle on %s"%connection_string)
-# vehicle = connect (connection_string, wait_ready=False) # for simulation 
+# vehicle = connect (parse_connect(), wait_ready=False) # for simulation 
 vehicle = connect("/dev/serial0", baud= 921600,  wait_ready=False,rate=10) # for raspberry p
-#vehicle = connect("/dev/ttyUSB0", baud= 57600,  wait_ready=False, rate=10) #for telemetry 
-vehicle.wait_ready(True, raise_exception=False)
+#vehicle = connect("/dev/ttyUSB0", baud= 57600,  wait_ready=False, rate=10) #for telemetry
+vehicle.wait_ready(True, raise_exception=False) # for raspberry pi & telemetry only 
 
 @vehicle.on_attribute('mode')
 def decorated_mode_callback(self, attr_name, value):
