@@ -359,6 +359,19 @@ def normalize_angle(angle):
         angle -= 360
     return angle
 
+def set_data_rate(self, rate_hz=15):
+    # Request velocity/position message updates
+    msg_rate = self.message_factory.request_data_stream_encode(
+        target_system=0,  # target_system
+        target_component=0,  # target_component
+        req_stream_id=6,  # MAV_DATA_STREAM enum value for POSITION including velocity 
+        req_message_rate=rate_hz,  # Rate in Hz
+        start_stop=1  # 1 to start sending, 0 to stop
+    )
+
+    self.send_mavlink(msg_rate)    
+
+
 new_yaw_data = threading.Event()
 def yaw_listener(self, name, message):
     global yaw_rad
@@ -434,7 +447,7 @@ def send_control_body(self, velocity_x, velocity_y, altitude_rate):
     self.send_mavlink(msg)
     self.flush()
 
-def set_yaw_to_dir_PID(self, target_yaw, relative=True, max_yaw_speed=10):
+def set_yaw_to_dir_PID(self, target_yaw, relative=True, max_yaw_speed=20):
     
     global yaw_rad
     yaw_rad = normalize_angle(math.degrees(self.attitude.yaw))
@@ -598,12 +611,12 @@ def move_body_PID(self,DeshHight, angl_dir, distance,max_velocity=2): #max_veloc
     
     start_time = time.time()
 
-    send_control_body(self, desired_vel_x, desired_vel_y, 0 ,0)
+    send_control_body(self, desired_vel_x, desired_vel_y, 0)
    
     previous_velocity_x=0 
     remaining_distance= distance 
     velocity_current_x=0
-    k=0.6
+    k=0.4
 
     while remaining_distance >= 0.1:
         new_velocity_data.wait()
