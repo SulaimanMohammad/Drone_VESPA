@@ -564,7 +564,7 @@ def move_body_PID(self,DeshHight, angl_dir, distance,max_velocity=2): #max_veloc
     Ki_yaw = 0.03
     Kd_yaw = 0.05
 
-    Kp_vel_x = 0.9
+    Kp_vel_x = 0.6
     Ki_vel_x = 0.02
     Kd_vel_x = 0.01
 
