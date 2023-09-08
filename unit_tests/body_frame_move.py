@@ -54,7 +54,7 @@ arm_and_takeoff(vehicle,drone.hight)
 print( "Takeoff and wait 2 sec")
 
 vehicle.mode    = VehicleMode("LOITER") #loiter mode and hover in your place 
-time.sleep(2)
+time.sleep(1)
 vehicle.mode     = VehicleMode("GUIDED")
 # face_north(vehicle)
 
@@ -71,8 +71,8 @@ vehicle.mode     = VehicleMode("GUIDED")
 
 print( "move to the other direction")
 
-angl_dir= -90#135
-move_body_PID(vehicle,drone.hight,  angl_dir, distance)
+# angl_dir= -90#135
+# move_body_PID(vehicle,drone.hight,  angl_dir, distance)
 
 
 write_log_message(f" Coming Home")
