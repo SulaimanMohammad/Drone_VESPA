@@ -290,8 +290,8 @@ def build_path(self):
         if self.state != Irremovable_boarder:  # it is irrmovable doesnt belong to boarder no need to check (self.state != " irremovable- border" ) 
             send_msg_drone_id= self.find_close_neigboor_2border()  # since it doesnt belong to border then find to path to border 
             if send_msg_drone_id != -1 : # there is no irremovable send msg to a drone to make it irremovable 
+                self.drone_id_to_border= send_msg_drone_id # save the drone id that is the path to the border from the current one 
                 # send message to a drone that had Id= send_msg_drone_id
-                self.drone_id_to_border=send_msg_drone_id  # save the id of the drone for future use to connect to border
     
 
 # each drone needs to save the irrmovable drones around so it can send messages to it as a path 

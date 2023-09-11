@@ -87,6 +87,8 @@ class Drone:
         self.border_messaging_circle_completed=False 
         self.dominated_direction=0
         self.spots_to_check_for_border=[]
+        self.drone_id_to_sink
+        self.drone_id_to_border
         self. min_distance_dicts=[] # nigboor close to the sink 
         self.border_neighbors=[] # contains the spots that are occupied while forming the border
         self.direction_taken=[]  # direction path (spots) that are taken in the phase 
