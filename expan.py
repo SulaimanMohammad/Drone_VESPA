@@ -11,41 +11,19 @@ eps=20
 speed_of_drone=2 # 2 m/s 
 movement_time= a*speed_of_drone (1+ 0.2)  # add 20% of time for safty 
 
-class Direction(Enum):
-    s0 = 0
-    s1 = 1
-    s2 = 2
-    s3 = 3
-    s4 = 4
-    s5 = 5
-    s6 = 6
-
 DIR_VECTORS = [
     [0, 0],                             # s0 // don't move, stay
-    [(sq3 * a), 0],            # s1
-    [(sq3 / 2.0) * a, (3.0 / 2.0) * a],   # s2
-    [-(sq3 / 2) * a, (3.0 / 2.0) * a],  # s3
-    [-sq3 * a, 0],             # s4
-    [-(sq3 / 2.0) * a, -(3.0/ 2.0) * a], # s5
-    [(sq3 / 2.0) * a, -(3.0 / 2.0) * a]   # s6
-]
-
-def update_DIR_VECTORS():
-    global DIR_VECTORS
-    DIR_VECTORS = [
-    [0, 0],                             # s0 // don't move, stay
-    [(sq3 * a), 0],            # s1
-    [(sq3 / 2.0) * a, (3.0 / 2.0) * a],   # s2
-    [-(sq3 / 2.0) * a, (3.0 / 2.0) * a],  # s3
-    [-sq3 * a, 0],             # s4
-    [-(sq3 / 2.0) * a, -(3.0/ 2.0) * a], # s5
-    [(sq3 / 2.0) * a, -(3.0 / 2.0) * a]   # s6
+    [90, a],            # s1
+    [30, a],   # s2
+    [330, a],  # s3
+    [270, a],             # s4
+    [210, a], # s5
+    [150, a]   # s6
 ]
 
 def set_a( val):
     global a
     a= val
-    update_DIR_VECTORS() # changing of a should change the direction distances
 
 formula_dict = {
     "s0": "sqrt(DxDy2)",
@@ -80,7 +58,6 @@ class Drone:
         self.hight=z
         self.state=1
         self.previous_state=1
-        self.path=[]
         self.drone_id_to_sink=0 
         self.drone_id_to_border=0
         self.a=a
@@ -215,16 +192,10 @@ class Drone:
     def find_priority(self): 
         min_Priority = min(self.neighbor_list, key=lambda x: x["priority"])["priority"]
         spot_to_go =[s["name"] for s in self.neighbor_list if s["priority"] == min_Priority]
-        self.direction_taken.append( int(spot_to_go[0][1:]))
         #print(int(self.Priority_to_go[0][1:])) #exteract only the number of nigboor  
         return int(spot_to_go[0][1:])
 
-    # TODO to be set as convert spot name to angle , distance 
-    def direction(self, dir):
-     # the north is the y access in the calaulation of the hex and the east is the x 
-     # example reived x=a, y=b 
-     # then the move to the nourth by the value of b ( y in calculation access)
-        self.path.append(dir) # add the direcition was chose 
+    def convert_spot_angle_distance(self, dir):
         return DIR_VECTORS[dir][0], DIR_VECTORS[dir][1]
 
     
@@ -386,7 +357,7 @@ class Drone:
 
 
     def first_exapnsion (self, vehicle):
-        random_dir = int(random.randint(1, 6)) # 0 not include because it should not be cin the sink
+        random_dir = int(random.randint(1, 6)) # 0 not include because it should not be in the sink
         x,y= self.direction(random_dir)
         move_body_PID(vehicle,x,y)
         calculate_relative_pos(vehicle)
@@ -403,16 +374,18 @@ class Drone:
 
             # be carful it should not be move , it is set the psoition 
             # bcause move will use only the direction value as a movement from the current location 
-            spot= self.find_priority()
+            destination_spot= self.find_priority() 
             #if self.spot["drones_in"]>1: # more than one drone in the current spot
             elected_id= self.neighbors_election()
             if elected_id== self.id: # current drone is elected to move
-                print ("go to S", spot)
-                x,y = self.direction(spot)
-                move_body_PID(vehicle,x,y)
-                # after steady and hover 
-                # start observing the location
-                # after arriving ( send )
+                if destination_spot != 0: # it means movement otherwise it is hovering 
+                    print ("go to S", destination_spot)
+                    x,y = self.direction(destination_spot)
+                    self.direction_taken.append( destination_spot)
+                    move_body_PID(vehicle,x,y)
+                    # after steady and hover 
+                    # start observing the location
+                    # after arriving ( send )
             else: # another should move 
                 time.sleep ( movement_time) # Wait untile the elected drone to leave to next stop.
                 # TODO here sleep means loiter 
