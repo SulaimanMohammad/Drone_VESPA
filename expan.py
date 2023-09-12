@@ -21,9 +21,33 @@ DIR_VECTORS = [
     [150, a]   # s6
 ]
 
+DIR_xy_distance_VECTORS = [
+    [0, 0],                             # s0 // don't move, stay
+    [(sq3 * a), 0],            # s1
+    [(sq3 / 2.0) * a, (3.0 / 2.0) * a],   # s2
+    [-(sq3 / 2) * a, (3.0 / 2.0) * a],  # s3
+    [-sq3 * a, 0],             # s4
+    [-(sq3 / 2.0) * a, -(3.0/ 2.0) * a], # s5
+    [(sq3 / 2.0) * a, -(3.0 / 2.0) * a]   # s6
+]
+
+def update_DIR_xy_distance_VECTORS():
+    global DIR_xy_distance_VECTORS
+    DIR_xy_distance_VECTORS = [
+    [0, 0],                             # s0 // don't move, stay
+    [(sq3 * a), 0],            # s1
+    [(sq3 / 2.0) * a, (3.0 / 2.0) * a],   # s2
+    [-(sq3 / 2.0) * a, (3.0 / 2.0) * a],  # s3
+    [-sq3 * a, 0],             # s4
+    [-(sq3 / 2.0) * a, -(3.0/ 2.0) * a], # s5
+    [(sq3 / 2.0) * a, -(3.0 / 2.0) * a]   # s6
+    ]
+
 def set_a( val):
     global a
     a= val
+    update_DIR_xy_distance_VECTORS() # changing of a should change the direction distances
+
 
 formula_dict = {
     "s0": "sqrt(DxDy2)",
@@ -64,6 +88,7 @@ class Drone:
         self.border_candidate=False
         self.border_messaging_circle_completed=False 
         self.dominated_direction=0
+        self.phase="S"
         self.spots_to_check_for_border=[]
         self.drone_id_to_sink
         self.drone_id_to_border
@@ -72,13 +97,13 @@ class Drone:
         self.direction_taken=[]  # direction path (spots) that are taken in the phase 
         self.neighbor_list = []  # list that contains the 6 neighbors around the current location
         # init s0 and it will be part of the spots list 
-        self.neighbor_list=[{"name": "s" + str(0), "distance": 0, "priority": 0, "drones_in": 1,"drones_in_id":[], "states": [] , "previous_state": [], "phase": "E"}]
+        self.neighbor_list=[{"name": "s" + str(0), "distance": 0, "priority": 0, "drones_in": 1,"drones_in_id":[], "states": [] , "previous_state": []}]
         # save the first spot which is s0 the current place of the drone 
         # spot is another name of s_list[0] so any changes will be seen in spot
         self.spot= self.neighbor_list[0]
         self.num_neigbors = 6
         for i in range(1, self.num_neigbors+1):
-            s = {"name": "s" + str(i), "distance": 0, "priority": 0,"drones_in": 0,"drones_in_id":[] ,"id":0 , "states": [], "previous_state": [],"phase": "E" }
+            s = {"name": "s" + str(i), "distance": 0, "priority": 0,"drones_in": 0,"drones_in_id":[] ,"id":0 , "states": [], "previous_state": []}
             self.neighbor_list.append(s)
 
 
@@ -164,7 +189,9 @@ class Drone:
 
 
     # positionX , positionY are the distance from the sink 
-    def update_location(self,x,y ):
+    def update_location(self, dir):
+        x=  DIR_xy_distance_VECTORS[dir][0]
+        y= DIR_xy_distance_VECTORS[dir][1]
         self.positionX =self.positionX + x#DIR_VECTORS[dir][0]# add the value not assign because it is movement 
         self.positionY = self.positionY+ y #DIR_VECTORS[dir][1]
         #return [self.positionX, self.positionY]   
@@ -358,10 +385,11 @@ class Drone:
 
     def first_exapnsion (self, vehicle):
         random_dir = int(random.randint(1, 6)) # 0 not include because it should not be in the sink
-        x,y= self.direction(random_dir)
-        move_body_PID(vehicle,x,y)
+        self.direction_taken.append( random_dir)
+        angle, distance = self.convert_spot_angle_distance(random_dir)
+        move_body_PID(vehicle,angle, distance)
         calculate_relative_pos(vehicle)
-        self.update_location(x,y)
+        self.update_location(random_dir)
 
         while self.state !=Alone:
              #  after steady and hover 
@@ -380,9 +408,10 @@ class Drone:
             if elected_id== self.id: # current drone is elected to move
                 if destination_spot != 0: # it means movement otherwise it is hovering 
                     print ("go to S", destination_spot)
-                    x,y = self.direction(destination_spot)
                     self.direction_taken.append( destination_spot)
-                    move_body_PID(vehicle,x,y)
+                    angle, distance = self.convert_spot_angle_distance(destination_spot)
+                    move_body_PID(vehicle,angle, distance)
+                    self.update_location(destination_spot)
                     # after steady and hover 
                     # start observing the location
                     # after arriving ( send )
@@ -393,7 +422,6 @@ class Drone:
                 '''The need of re-doing all process because there is possibility that the spots around have changed'''
 
             calculate_relative_pos(vehicle)
-            self.update_location(x,y)
             print("checking for update the state")
             self.is_it_alone()
 
