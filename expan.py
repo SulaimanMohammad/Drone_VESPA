@@ -4,6 +4,12 @@ import random
 import copy
 from drone_ardupilot import *
 
+'''
+-------------------------------------------------------------------------------------
+---------------------------------- Variables ----------------------------------------
+-------------------------------------------------------------------------------------
+'''
+
 sq3=sqrt(3)
 a= 20 # drone range 
 C=100
@@ -73,6 +79,12 @@ Border=2
 Irremovable= 3 
 Irremovable_boarder=4 
 
+
+'''
+-------------------------------------------------------------------------------------
+----------------------------- Calss members, init__ ---------------------------------
+-------------------------------------------------------------------------------------
+'''
 class Drone: 
     def __init__(self, x,y,z):
         self.positionX=x
@@ -106,8 +118,11 @@ class Drone:
             s = {"name": "s" + str(i), "distance": 0, "priority": 0,"drones_in": 0,"drones_in_id":[] ,"id":0 , "states": [], "previous_state": []}
             self.neighbor_list.append(s)
 
-
-    # communication 
+    '''
+    -------------------------------------------------------------------------------------
+    ----------------------------- Communication ---------------------------------
+    -------------------------------------------------------------------------------------
+    '''
     
     def send_demand(self): 
         # the drone will send message to demand the data
@@ -140,10 +155,11 @@ class Drone:
         # send Ack 
         pass
         
-
-    def change_state_to( self, new_state):
-        self.previous_state= self.state # save the preivious state 
-        self.state= new_state # change the state 
+    '''
+    -------------------------------------------------------------------------------------
+    -------------------------------- Movement calculation -------------------------------
+    -------------------------------------------------------------------------------------
+    '''
             
     # distance is _.xx 2 decimal
     def calculate_neighbors_distance_sink(self):
@@ -153,7 +169,7 @@ class Drone:
         sqDx = round(sq3 * self.positionX,2)
         aDx = round((2*sq3) * self.positionX,2)
         Dy= round(self.positionY,2)
-        
+
         #TODO you should consider a situation what inside the formaula is negative 
         for s in self.neighbor_list:
             formula = formula_dict.get(s["name"])
@@ -183,14 +199,6 @@ class Drone:
             # append the ids of each drone in the same spot to drones_in_id
 
 
-    # positionX , positionY are the distance from the sink 
-    def update_location(self, dir):
-        x=  DIR_xy_distance_VECTORS[dir][0]
-        y= DIR_xy_distance_VECTORS[dir][1]
-        self.positionX =self.positionX + x#DIR_VECTORS[dir][0]# add the value not assign because it is movement 
-        self.positionY = self.positionY+ y #DIR_VECTORS[dir][1]
-        #return [self.positionX, self.positionY]   
-
     def findMinDistances_niegboor(self):
         min_distance = min(self.neighbor_list, key=lambda x: x["distance"])["distance"]
         self.min_distance_dicts =[s["name"] for s in self.neighbor_list if s["distance"] == min_distance]
@@ -217,8 +225,11 @@ class Drone:
         #print(int(self.Priority_to_go[0][1:])) #exteract only the number of nigboor  
         return int(spot_to_go[0][1:])
 
-    def convert_spot_angle_distance(self, dir):
-        return DIR_VECTORS[dir][0], DIR_VECTORS[dir][1]
+
+    def neighbors_election(self):
+        # self.spot={"name": "s" + str(0), "distance": 0, "priority": 0, "drones_in": 1,"drones_in_id":[], "states": [] , "previous_state": 1, "phase": "E"}
+        id_free = [id for id, state in zip(self.spot["drones_in_id"], self.spot["states"]) if state == Free]
+        return min(id_free) # return the min id of a drone is in state Free 
 
     
     def is_it_alone(self):
@@ -232,6 +243,62 @@ class Drone:
         print("drone state in s0", self.state )
 
 
+    def convert_spot_angle_distance(self, dir):
+        return DIR_VECTORS[dir][0], DIR_VECTORS[dir][1]
+    
+
+    '''
+    -------------------------------------------------------------------------------------
+    -------------------------------- Update upon movement--------------------------------
+    -------------------------------------------------------------------------------------
+    '''
+    def change_state_to( self, new_state):
+        self.previous_state= self.state # save the preivious state 
+        self.state= new_state # change the state     
+
+    # positionX , positionY are the distance from the sink 
+    def update_location(self, dir):
+        x=  DIR_xy_distance_VECTORS[dir][0]
+        y= DIR_xy_distance_VECTORS[dir][1]
+        self.positionX =self.positionX + x#DIR_VECTORS[dir][0]# add the value not assign because it is movement 
+        self.positionY = self.positionY+ y #DIR_VECTORS[dir][1]
+        #return [self.positionX, self.positionY] 
+
+
+    def update_state(self):
+        # if self.state=="Alone" : # the drone is alone so see if it is free or border or irrmovable
+        if self.spot["disance"]==0 and self.state==Alone:  #the drone that is sink should be always itrremvable but it should be first alone 
+            self.change_state_to(Irremovable)
+
+        while self.state==Alone:
+            counter=0
+            # need to check the number arouund because many spot was changed meanwhile 
+            for s in self.neighbor_list:
+                if s["drones_in"] >=1: 
+                    counter= counter +1 
+                    continue
+                else: 
+                    break
+            print("counter", counter)
+            if counter==7: # all neighboor are occupied including the drone itself 
+                self.change_state_to(Free)
+                # since border_neighbors is used only for border drone then no need for it 
+                self.border_neighbors=[] #erase border_neighbors because no need for it 
+
+            else: #drone is alone but not sourrounded by drones
+                self.check_border()
+            #TODO border just if it doent have niegboor on th path of the expansion 
+            # NOTE :  after yann he said it is not possible to have more than one drone
+            # here i need to verfiy whhat is should be 
+            # because if it is border then that means it will do deal_state 
+
+
+
+    '''
+    -------------------------------------------------------------------------------------
+    --------------------------------- Forming the border---------------------------------
+    -------------------------------------------------------------------------------------
+    '''
     def count_element_occurrences(self):
         # Find the maximum element in the direction_taken list
         max_element = 7  # s0 to s6
@@ -307,75 +374,11 @@ class Drone:
             self.change_state_to(Free)
 
     
-    def update_state(self):
-        # if self.state=="Alone" : # the drone is alone so see if it is free or border or irrmovable
-        if self.spot["disance"]==0 and self.state==Alone:  #the drone that is sink should be always itrremvable but it should be first alone 
-            self.change_state_to(Irremovable)
-
-        while self.state==Alone:
-            counter=0
-            # need to check the number arouund because many spot was changed meanwhile 
-            for s in self.neighbor_list:
-                if s["drones_in"] >=1: 
-                    counter= counter +1 
-                    continue
-                else: 
-                    break
-            print("counter", counter)
-            if counter==7: # all neighboor are occupied including the drone itself 
-                self.change_state_to(Free)
-                # since border_neighbors is used only for border drone then no need for it 
-                self.border_neighbors=[] #erase border_neighbors because no need for it 
-
-            else: #drone is alone but not sourrounded by drones
-                self.check_border()
-            #TODO border just if it doent have niegboor on th path of the expansion 
-            # NOTE :  after yann he said it is not possible to have more than one drone
-            # here i need to verfiy whhat is should be 
-            # because if it is border then that means it will do deal_state 
-
 
     def search_for_target(self): # find if there is target in the area or not 
         pass
         # move int th lace and couver it to check if there is target or not 
-
-
-            
-    # terminate the stage 
-    # if the drone is border it should start communicating 
-    def deal_satae(self):
-        if self.state== Border: # nothing to do if you are free
-            print (" i am border time to check  ") 
-            # your massage sould be id@state
-
-        else: # deone is not border so it should do nothing 
-            pass
-
-
-    # any messges recived should be buffered 
-    def react_on_recived_msg(self):
-        msg="id@state" # it should be  recived from a drone
-        #if the recived message is a msg send by this drone befor 
-        id, state = msg.split('@')
-        if id == self.id and state== Border: 
-            # expansion is done 
-            print(" done expan ")
-            '''
-            The drone then sends a broadcast message
-            indicating the end of the expansion phase and wait for ξ(D)
-            time correlated to the diameter of the expansion area.
-            '''
-        else:
-            if self.state==Free: # drone is free should drop the message
-                pass # do nothing 
-            elif self.state ==Border:
-                #redirect it 
-                pass
     
-    def neighbors_election(self):
-        # self.spot={"name": "s" + str(0), "distance": 0, "priority": 0, "drones_in": 1,"drones_in_id":[], "states": [] , "previous_state": 1, "phase": "E"}
-        id_free = [id for id, state in zip(self.spot["drones_in_id"], self.spot["states"]) if state == Free]
-        return min(id_free) # return the min id of a drone is in state Free 
 
 
     def first_exapnsion (self, vehicle):
@@ -425,5 +428,4 @@ class Drone:
         #the drone will never do to the second phase before finihing the search and the update 
         # because it will be problem if all not in the same phase 
         self.spot["phase"]= "S"
-        
         #TODO here the drones should wait in loop until reciving a brodcast of finishing the expanshion 
