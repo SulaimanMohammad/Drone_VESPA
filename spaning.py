@@ -12,7 +12,7 @@ def compute_checksum(data):
 
 def build_message(self, numbers):
     # start with 'M' character
-    message = self.spot["phase"].encode() #b'E' for example 
+    message = self.phase.encode() #b'E' for example 
     
     # convert the float to an integer using the known multiplier
     encoded_float = int(numbers[0] * multiplier)
@@ -138,6 +138,8 @@ def sink_listener(self,sink_t, timeout):
             with sink_t.lock_sink:  # Acquire the lock
                 sink_t.message_counter += 1
                 sink_t.remaining_time = sink_t.timeout
+    
+    sink_t.end_of_spanning.clear() # reset so the next spanning the listenning loop will be activated  
 
 
 def spanning_sink(self):
