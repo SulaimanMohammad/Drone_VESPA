@@ -8,7 +8,8 @@ sq3=sqrt(3)
 a= 20 # drone range 
 C=100
 eps=20
-
+speed_of_drone=2 # 2 m/s 
+movement_time= a*speed_of_drone (1+ 0.2)  # add 20% of time for safty 
 
 class Direction(Enum):
     s0 = 0
@@ -94,13 +95,13 @@ class Drone:
         self.direction_taken=[]  # direction path (spots) that are taken in the phase 
         self.neighbor_list = []  # list that contains the 6 neighbors around the current location
         # init s0 and it will be part of the spots list 
-        self.neighbor_list=[{"name": "s" + str(0), "distance": 0, "priority": 0, "drones_in": 1, "id":self.id , "state": 1 , "previous_state": 1, "phase": "E"}]
+        self.neighbor_list=[{"name": "s" + str(0), "distance": 0, "priority": 0, "drones_in": 1,"drones_in_id":[], "states": [] , "previous_state": [], "phase": "E"}]
         # save the first spot which is s0 the current place of the drone 
         # spot is another name of s_list[0] so any changes will be seen in spot
         self.spot= self.neighbor_list[0]
-        self.num_neigboors = 6
-        for i in range(1, self.num_neigboors+1):
-            s = {"name": "s" + str(i), "distance": 0, "priority": 0,"drones_in": 0, "id":0 , "state": 1, "previous_state": 1 ,"phase": "E" }
+        self.num_neigbors = 6
+        for i in range(1, self.num_neigbors+1):
+            s = {"name": "s" + str(i), "distance": 0, "priority": 0,"drones_in": 0,"drones_in_id":[] ,"id":0 , "states": [], "previous_state": [],"phase": "E" }
             self.neighbor_list.append(s)
 
 
@@ -113,6 +114,7 @@ class Drone:
         pass 
 
     def receive_message (self):
+        # TODO this sould be listening all the time with while loop 
         # here you need to receive the message but you need to know when to start the algo of expansion 
         # the drone will have a timer will start after the demand message is sent 
         # after the receive of each message the timer will be reset 
@@ -142,7 +144,7 @@ class Drone:
         self.state= new_state # change the state 
             
     # distance is _.xx 2 decimal
-    def calculate_neigboors_dis(self):
+    def calculate_neighbors_distance_sink(self):
         
         # DxDy2 = round((self.positionX * self.positionX) + (self.positionY * self.positionY),2)
         # DxDy3a2 = round(DxDy2 + 3 * a * a,2)
@@ -165,7 +167,7 @@ class Drone:
         self.distance_from_sink=self.spot["distance"] # where spot is the data of s0 the current position 
 
 
-    def check_drones_in_neigboors(self):
+    def check_num_drones_in_neigbors(self):
         #TODO it is about sending signal and recive it to count the number in each spot 
         # The idea the drone will recive signal from the nigboors the signal is coordinates 
         #of each drone and compare it, and since all the movement on 6 nigbor and the reive about a 
@@ -181,20 +183,21 @@ class Drone:
             # for now i will have it from the Stdin 
             num_dron = int(input("\t Enter number of drone at "+s["name"]+" :"))
             s["drones_in"] = int(num_dron)
+            # append the ids of each drone in the same spot to drones_in_id
 
 
     # positionX , positionY are the distance from the sink 
     def update_location(self,x,y ):
         self.positionX =self.positionX + x#DIR_VECTORS[dir][0]# add the value not assign because it is movement 
         self.positionY = self.positionY+ y #DIR_VECTORS[dir][1]
-        return [self.positionX, self.positionY]   
+        #return [self.positionX, self.positionY]   
 
     def findMinDistances_niegboor(self):
         min_distance = min(self.neighbor_list, key=lambda x: x["distance"])["distance"]
         self.min_distance_dicts =[s["name"] for s in self.neighbor_list if s["distance"] == min_distance]
         #self.min_distance_dicts = [s for s in self.neighbor_list if s["distance"] == min_distance]
 
-    def setPriorities(self):
+    def set_priorities(self):
         denom= 4.0 * self.neighbor_list[0]["distance"] # 4*distance of s0 from sink 
         self.findMinDistances_niegboor()
         for s in self.neighbor_list:
@@ -209,14 +212,14 @@ class Drone:
                     s["priority"]= random.uniform(s["drones_in"]* C + eps, (s["drones_in"]+1)*C)
 
     # find the neighbor have to go to and save it in direction_taken
-    def findPriority(self): 
+    def find_priority(self): 
         min_Priority = min(self.neighbor_list, key=lambda x: x["priority"])["priority"]
         spot_to_go =[s["name"] for s in self.neighbor_list if s["priority"] == min_Priority]
         self.direction_taken.append( int(spot_to_go[0][1:]))
         #print(int(self.Priority_to_go[0][1:])) #exteract only the number of nigboor  
         return int(spot_to_go[0][1:])
 
-
+    # TODO to be set as convert spot name to angle , distance 
     def direction(self, dir):
      # the north is the y access in the calaulation of the hex and the east is the x 
      # example reived x=a, y=b 
@@ -226,7 +229,7 @@ class Drone:
 
     
     def is_it_alone(self):
-        self.check_drones_in_neigboors()
+        self.check_num_drones_in_neigbors()
          #if s0 where the drone is conatins only the drone ( droen alone) 
          # the done as you see count itself at the spot 
          # the drone should be alone to be free 
@@ -278,7 +281,7 @@ class Drone:
     def check_border(self):
         self.border_candidate=False  
         # the drone after it is candidateq should continue searcching anif not should search to be free 
-        self.check_drones_in_neigboors()
+        self.check_num_drones_in_neigbors()
         self.border_neighbors = self.save_occupied_spots()
         self.dominated_direction= self.count_element_occurrences()
         # Define a dictionary to map directions to the corresponding spots_to_check_for_border values
@@ -313,7 +316,7 @@ class Drone:
     
     def update_state(self):
         # if self.state=="Alone" : # the drone is alone so see if it is free or border or irrmovable
-        if self.spot["disance"]==0:  #the drone that is sink should be always itrremvable the  it can be doen frt thing 
+        if self.spot["disance"]==0 and self.state==Alone:  #the drone that is sink should be always itrremvable but it should be first alone 
             self.change_state_to(Irremovable)
 
         while self.state==Alone:
@@ -370,16 +373,22 @@ class Drone:
             time correlated to the diameter of the expansion area.
             '''
         else:
-            if self.spot["state"]==Free: # drone is free should drop the message
+            if self.state==Free: # drone is free should drop the message
                 pass # do nothing 
-            elif self.spot["state"]==Border:
+            elif self.state ==Border:
                 #redirect it 
                 pass
+    
+    def neighbors_election(self):
+        # self.spot={"name": "s" + str(0), "distance": 0, "priority": 0, "drones_in": 1,"drones_in_id":[], "states": [] , "previous_state": 1, "phase": "E"}
+        id_free = [id for id, state in zip(self.spot["drones_in_id"], self.spot["states"]) if state == Free]
+        return min(id_free) # return the min id of a drone is in state Free 
+
 
     def first_exapnsion (self, vehicle):
         random_dir = int(random.randint(1, 6)) # 0 not include because it should not be cin the sink
         x,y= self.direction(random_dir)
-        move_to(vehicle,x,y)
+        move_body_PID(vehicle,x,y)
         calculate_relative_pos(vehicle)
         self.update_location(x,y)
 
@@ -387,20 +396,29 @@ class Drone:
              #  after steady and hover 
                 # start observing the location
             # in the new position find the distance of the neigboors 
-            self.calculate_neigboors_dis()
+            self.calculate_neighbors_distance_sink()
             print("checking for movement")
-            self.check_drones_in_neigboors()
-            self.setPriorities()
+            self.check_num_drones_in_neigbors()
+            self.set_priorities()
 
             # be carful it should not be move , it is set the psoition 
             # bcause move will use only the direction value as a movement from the current location 
+            spot= self.find_priority()
+            #if self.spot["drones_in"]>1: # more than one drone in the current spot
+            elected_id= self.neighbors_election()
+            if elected_id== self.id: # current drone is elected to move
+                print ("go to S", spot)
+                x,y = self.direction(spot)
+                move_body_PID(vehicle,x,y)
+                # after steady and hover 
+                # start observing the location
+                # after arriving ( send )
+            else: # another should move 
+                time.sleep ( movement_time) # Wait untile the elected drone to leave to next stop.
+                # TODO here sleep means loiter 
+                continue # do all the steps again escape update location because no movement done yet 
+                '''The need of re-doing all process because there is possibility that the spots around have changed'''
 
-            spot= self.findPriority()
-            print ("go to S", spot)
-            x,y = self.direction(spot)
-            move_to(vehicle,x,y)
-            #  after steady and hover 
-                # start observing the location 
             calculate_relative_pos(vehicle)
             self.update_location(x,y)
             print("checking for update the state")
