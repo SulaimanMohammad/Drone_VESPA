@@ -88,7 +88,7 @@ class Drone:
         self.border_candidate=False
         self.border_messaging_circle_completed=False 
         self.dominated_direction=0
-        self.phase="S"
+        self.phase="E"
         self.spots_to_check_for_border=[]
         self.drone_id_to_sink
         self.drone_id_to_border
@@ -148,17 +148,12 @@ class Drone:
     # distance is _.xx 2 decimal
     def calculate_neighbors_distance_sink(self):
         
-        # DxDy2 = round((self.positionX * self.positionX) + (self.positionY * self.positionY),2)
-        # DxDy3a2 = round(DxDy2 + 3 * a * a,2)
-        # sqDx = round(sq3 * self.positionX,2)
-        # aDx = round((2*sq3) * self.positionX,2)
-        # Dy= round(self.positionY,2)
-
-        DxDy2 = (self.positionX * self.positionX) + (self.positionY * self.positionY)
-        DxDy3a2 = DxDy2 + 3 * a * a
-        sqDx = sq3 * self.positionX
-        aDx = (2 * sq3) * self.positionX
-        Dy= self.positionY
+        DxDy2 = round((self.positionX * self.positionX) + (self.positionY * self.positionY),2)
+        DxDy3a2 = round(DxDy2 + 3 * a * a,2)
+        sqDx = round(sq3 * self.positionX,2)
+        aDx = round((2*sq3) * self.positionX,2)
+        Dy= round(self.positionY,2)
+        
         #TODO you should consider a situation what inside the formaula is negative 
         for s in self.neighbor_list:
             formula = formula_dict.get(s["name"])
