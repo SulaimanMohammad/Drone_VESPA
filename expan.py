@@ -145,7 +145,14 @@ class Drone:
           # self.send_ACK() 
           # 
         # the recive function should change also the variable, and deal with demand and ACK from other drones    
-        pass
+        
+        msg_header="E"
+        id_rec= 0
+        if msg_header== "E":
+            pass
+        elif msg_header== "F":
+            if id_rec == self.id: # the message recived contains the id of the drone means the message came back  
+                pass
     
     def send_ACK(self):
         pass
@@ -328,17 +335,27 @@ class Drone:
         occupied_spots = [int(spot["name"][1:]) for spot in self.neighbor_list if spot["drones_in"] != 0]
         return occupied_spots
     
+    # start_messaging_circle this message will return only when it meet the goal 
     def start_messaging_circle(self):
         pass
         # the headrer is F representing forming border
         # the massage will contain the ID of the drone that started the circle 
         # Always keep reading and reciving 
-            # the drone will become bordere if recived the good message and it is self.border_candidate=True 
+        # in the reciver check for F header 
+            # firt the drone will ckeck the id of the msg is the same of the current drone 
+                # then return and send brodcast 
+            # else the msg id is not same of the current drone 
+            # the drone will check if it is self.border_candidate=True it will forward the msg and keep the id of the sender 
+                # if the drone is not self.border_candidate=True then it will drop the message 
+
+        # the drone will become bordere if recived the good message and it is self.border_candidate=True 
             # and it needs again to check for border unoccupied ,and send a bordcast 
             # otherwise check agin for free
             # in reciving part also 
-            # The drones those are in situation as candidates to be part of the border and receive the broadcast message with the ID they compare that ID with the one they saved   in step 2 which mean that they where part of the circle, so they check that they still meet the requirements and change to border state. 
-            # this can reduce the amount of messaging. and ensure that any drone was in the completed circle of communication is a part of the border
+        # The drones those are in situation as candidates to be part of the border and receive the broadcast message with the ID they compare that ID with the one they saved  
+        #  in step 2 which mean that they where part of the circle, so they check that they still meet the requirements and change to border state. 
+        # this can reduce the amount of messaging. and ensure that any drone was in the completed circle of communication is a part of the border
+        # the broadcast should be taged as brodcast to differeniate between brodcast msg and fprming border msg 
 
 
     def check_border(self):
@@ -358,17 +375,17 @@ class Drone:
         }
         self.spots_to_check_for_border=direction_to_check_map.get(self.dominated_direction, [])
         
-        occupied_spots_counter = 0
+        unoccupied_spots_counter = 0
         for check in self.spots_to_check_for_border:
             # Find the corresponding entry in neighbor_list by its name
             neighbor = next((n for n in self.neighbor_list if n["name"] == "s" + str(check)), None)
             if neighbor and (neighbor ["drones_in"] == 0 ): # spot also is not occupied 
-                occupied_spots_counter += 1
+                unoccupied_spots_counter += 1
 
-        if occupied_spots_counter>0: # at least one spot is empty so the drone can be part of he border
+        if unoccupied_spots_counter>0: # at least one spot is empty so the drone can be part of he border
             self.border_candidate=True
             self.start_messaging_circle() 
-            if self.border_messaging_circle_completed:
+            if self.border_messaging_circle_completed: 
                 self.change_state_to( Border)
         else: 
             #means that the drone is sourounded in the expansion direction it can be set as free 
@@ -425,8 +442,11 @@ class Drone:
             print("checking for update the state")
             self.is_it_alone()
 
-        self.search_for_target() # find if there is target in the area or not 
+        self.check_border()
+        # check border should not return until the drones receive bordcast of forming border 
+        # the drone is alone and can search for border or become Free 
         self.update_state() # it inclueds forming the border
+        self.search_for_target() # find if there is target in the area or not 
         #the drone will never do to the second phase before finihing the search and the update 
         # because it will be problem if all not in the same phase 
         self.spot["phase"]= "S"
