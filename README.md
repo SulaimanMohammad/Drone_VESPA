@@ -1,5 +1,21 @@
 # Drone_VESPA
 
+## Setup raspberry pi
+- Connect raspberry pi to pixhawk using Telemetry 2 port
+- Configure raspberry pi to be able to connect with raspberry pi 
+```bash
+        git clone https://github.com/SulaimanMohammad/Drone_VESPA.git
+        cd Drone_VESPA
+```
+Then 
+```bash
+        ./rpi_setup.sh
+```
+- Check for updates, create logs directory, set permissions 
+```bash
+        ./update_repo.sh
+``` 
+
 ## How to find tagret in the region of the drone
 The drone will scan the region by taking a hexagon path with length depends on the camera setting.
 For example based on the focal length and the high of the camera, the covrage will be calculate and define the path of the drone.
