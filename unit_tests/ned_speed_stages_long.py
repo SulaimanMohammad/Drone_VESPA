@@ -41,10 +41,7 @@ time.sleep(5)
 # write_log_message(f" current_lat = {vehicle.location.global_relative_frame.lat}") 
 # write_log_message(f" current_lon= {vehicle.location.global_relative_frame.lon}")
 
-# move randomaly far from the sink
-dir = 1 # go in x or east 
-write_log_message(f"Go to S{dir}")
-#x,y= drone.direction(dir)
+
 time_to_pass=4
 x=2
 y=0
@@ -53,18 +50,11 @@ print(" move on x to" ,x , " in speed of",  x/float(time_to_pass) )
 time.sleep(5)
 
 
-# x=-2
-# y=0
-# move_to_stages_long(vehicle,x,y,time_to_pass) # go 3m in X 
-# print(" move on x to" ,x , " in speed of",  x/float(time_to_pass) )
-# time.sleep(5)
-
-# write_log_message(f" current_lat = {vehicle.location.global_relative_frame.lat}") 
-# write_log_message(f" current_lon= {vehicle.location.global_relative_frame.lon}")
-# write_log_message(f"calculated distance y,x = {calculate_relative_pos(vehicle)}")
-# write_log_message(f"supposed distanc x,y = {drone.update_location(x,y)}")
-# time.sleep(10)
-
+x=-2
+y=0
+move_to_stages_long(vehicle,x,y,time_to_pass) # go 3m in X 
+print(" move on x to" ,x , " in speed of",  x/float(time_to_pass) )
+time.sleep(5)
 
 write_log_message(f" Coming Home")
 vehicle.mode = VehicleMode ("LAND")

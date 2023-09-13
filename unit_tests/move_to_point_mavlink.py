@@ -57,7 +57,6 @@ def crash_message_handler(_, message):
 
             time.sleep(1)
 
-            #time.sleep(5)  # Allow time for the emergency maneuver
             print("Emergency maneuver complete. Resuming normal flight.")
 
 
@@ -67,15 +66,6 @@ drone= Drone(0.0,0.0,1.5) # drone at the sink
 arm_and_takeoff(vehicle,drone.hight)
 print( "Takeoff and wait 2 sec")
 time.sleep(2)
-
-
-# write_log_message(f" current_lat = {vehicle.location.global_relative_frame.lat}") 
-# write_log_message(f" current_lon= {vehicle.location.global_relative_frame.lon}")
-
-# move randomaly far from the sink
-dir = 1 # go in x or east 
-write_log_message(f"Go to S{dir}")
-#x,y= drone.direction(dir)
 
 time_to_pass=2 
 x=3

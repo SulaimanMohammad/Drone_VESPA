@@ -25,8 +25,6 @@ def interrupt(signal_num, frame):
         vehicle.close()
         sys.exit()
 
-# def on_velocity(self, attribute_name, value):
-#     print("Velocity: %s" % str(value))
 
 create_log_file(os.path.dirname(os.path.abspath(__file__)),  os.path.splitext(os.path.basename(__file__))[0]) 
 global vehicle
@@ -38,7 +36,6 @@ vehicle.wait_ready(True, raise_exception=False) # for raspberry pi & telemetry o
 signal.signal(signal.SIGINT, interrupt)
 
 set_a(3)
-# vehicle.add_attribute_listener('velocity', on_velocity)
 
 drone= Drone(0.0,0.0,2) # drone at the sink 
 #set_home_to_zero(vehicle)

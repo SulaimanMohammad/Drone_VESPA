@@ -35,17 +35,7 @@ drone= Drone(0.0,0.0,3) # drone at the sink
 arm_and_takeoff(vehicle, drone.hight)
 time.sleep(5) # needed to stable and set EKF 
 
-
-# write_log_message(f" current_lat = {vehicle.location.global_relative_frame.lat}") 
-# write_log_message(f" current_lon= {vehicle.location.global_relative_frame.lon}")
-# print("Set groundspeed to 15m/s (max).")
-# vehicle.groundspeed =5
-# print("Set airspeed to 10m/s (max).")
-#vehicle.airspeed = 2
-# move randomaly far from the sink
-dir = 1 # go in x or east 
-write_log_message(f"Go to S{dir}")
-#x,y= drone.direction(dir)
+#vehicle.groundspeed =5
 
 print( "come move_to_poition 1")
 
@@ -53,7 +43,7 @@ x=3
 y=0
 move_to_poition(vehicle,x,y,drone.hight) #need to set the ground velocity 
 time.sleep(8)
-#move_to_position_speed_flush(vehicle,x,y,drone.hight,20)
+
 print( "come move_to_poition 2")
 x=0
 y=0
@@ -67,11 +57,7 @@ move_to_stages_long(vehicle,x,y, 10)
 print( "come back")
 x=-3
 y=0
-#move_to_flush(vehicle,x,y,drone.hight,2)
-#move_to_stages_short(vehicle,x,y)
 move_to_stages_long(vehicle,x,y,10)
-
-
 time.sleep(1)
 
 
