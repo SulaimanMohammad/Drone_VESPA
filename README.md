@@ -2,19 +2,37 @@
 
 ## Setup raspberry pi
 - Connect raspberry pi to pixhawk using Telemetry 2 port
-- Configure raspberry pi to be able to connect with raspberry pi 
+- Configure raspberry pi to be able to communicate with pixhawk 
+
 ```bash
         git clone https://github.com/SulaimanMohammad/Drone_VESPA.git
         cd Drone_VESPA
-```
-Then 
+``` 
 ```bash
         ./rpi_setup.sh
 ```
 - Check for updates, create logs directory, set permissions 
+
 ```bash
         ./update_repo.sh
 ``` 
+
+## Scripts Map 
+- "drone_ardupilot.py": API to move take off, and move the drone 
+- "unit_tests" contains implementation of drone_ardupilot 
+- "expan.py", "spaning.py" are the pahses in VESPA Algoithm 
+    To see more about this algorithm check the [simulation here](https://github.com/SulaimanMohammad/self-organized-uav)
+
+
+## Run tests 
+- All tests in unit_tests can be used to commuinicate with raspberry pi, telemetry and simulation 
+- The test used in the algorithm of VESPA is  body_frame_move.py 
+    - It uses the movement using Yaw , distance and PID 
+    
+    ```bash
+        python3 body_frame_move.py
+    ``` 
+
 
 ## How to find tagret in the region of the drone
 The drone will scan the region by taking a hexagon path with length depends on the camera setting.
