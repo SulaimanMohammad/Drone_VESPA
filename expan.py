@@ -16,6 +16,7 @@ C=100
 eps=20
 speed_of_drone=2 # 2 m/s 
 movement_time= a*speed_of_drone (1+ 0.2)  # add 20% of time for safty 
+scanning_time= 10 # in second ( TODO function to the speed and size of a )
 
 DIR_VECTORS = [
     [0, 0],                             # s0 // don't move, stay
@@ -67,7 +68,8 @@ formula_dict = {
 
 
 '''
-phase= E expansion 
+phase= E expansion
+phase= F forming border
 phase= S Spaning  
 pahse= B balancing 
 This will be used in the message 
@@ -328,6 +330,7 @@ class Drone:
     
     def start_messaging_circle(self):
         pass
+        # the headrer is F representing forming border
         # the massage will contain the ID of the drone that started the circle 
         # Always keep reading and reciving 
             # the drone will become bordere if recived the good message and it is self.border_candidate=True 
@@ -355,23 +358,22 @@ class Drone:
         }
         self.spots_to_check_for_border=direction_to_check_map.get(self.dominated_direction, [])
         
-        counter = 0
+        occupied_spots_counter = 0
         for check in self.spots_to_check_for_border:
             # Find the corresponding entry in neighbor_list by its name
             neighbor = next((n for n in self.neighbor_list if n["name"] == "s" + str(check)), None)
-            if neighbor and (neighbor ["drones_in"] == 0 ): # spot also i not occupied 
-                counter += 1
+            if neighbor and (neighbor ["drones_in"] == 0 ): # spot also is not occupied 
+                occupied_spots_counter += 1
 
-        if counter>0: # at least one spot is empty so the drone can be part of he border
+        if occupied_spots_counter>0: # at least one spot is empty so the drone can be part of he border
             self.border_candidate=True
             self.start_messaging_circle() 
-            if self.border_messaging_circle_completed and self.state==Irremovable:
-                self.change_state_to( Irremovable_boarder)
-            elif self.border_messaging_circle_completed:
+            if self.border_messaging_circle_completed:
                 self.change_state_to( Border)
         else: 
             #means that the drone is sourounded in the expansion direction it can be set as free 
             self.change_state_to(Free)
+            self.direction_taken=[] # reset the direction taken for the nex expansion 
 
     
 
@@ -414,7 +416,7 @@ class Drone:
                     # start observing the location
                     # after arriving ( send )
             else: # another should move 
-                time.sleep ( movement_time) # Wait untile the elected drone to leave to next stop.
+                time.sleep (movement_time) # Wait untile the elected drone to leave to next stop.
                 # TODO here sleep means loiter 
                 continue # do all the steps again escape update location because no movement done yet 
                 '''The need of re-doing all process because there is possibility that the spots around have changed'''
