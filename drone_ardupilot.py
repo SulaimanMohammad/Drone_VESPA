@@ -359,6 +359,19 @@ def normalize_angle(angle):
         angle -= 360
     return angle
 
+def set_data_rate(self, rate_hz=15):
+    # Request velocity/position message updates
+    msg_rate = self.message_factory.request_data_stream_encode(
+        target_system=0,  # target_system
+        target_component=0,  # target_component
+        req_stream_id=6,  # MAV_DATA_STREAM enum value for POSITION including velocity 
+        req_message_rate=rate_hz,  # Rate in Hz
+        start_stop=1  # 1 to start sending, 0 to stop
+    )
+
+    self.send_mavlink(msg_rate)    
+
+
 new_yaw_data = threading.Event()
 def yaw_listener(self, name, message):
     global yaw_rad
@@ -434,7 +447,7 @@ def send_control_body(self, velocity_x, velocity_y, altitude_rate):
     self.send_mavlink(msg)
     self.flush()
 
-def set_yaw_to_dir_PID(self, target_yaw, relative=True, max_yaw_speed=10):
+def set_yaw_to_dir_PID(self, target_yaw, relative=True, max_yaw_speed=20):
     
     global yaw_rad
     yaw_rad = normalize_angle(math.degrees(self.attitude.yaw))
@@ -445,7 +458,7 @@ def set_yaw_to_dir_PID(self, target_yaw, relative=True, max_yaw_speed=10):
 
     kp= abs(yaw_rad - normalize_angle(target_yaw) )/190.0  #1.1
     ki=0.02
-    kd=0.008
+    kd=0.02
     print(kp)
 
     # Target values
@@ -527,7 +540,7 @@ def ned_to_body(self,velocity_vec):
     return V_body
 
 
-def move_body_PID(self,DeshHight, angl_dir, distance,max_velocity=2): #max_velocity=2
+def move_body_PID(self, angl_dir, distance,max_velocity=2): #max_velocity=2
     # Set mode to GUIDED
     if self.mode != "GUIDED":
         self.mode = VehicleMode("GUIDED")
@@ -551,7 +564,7 @@ def move_body_PID(self,DeshHight, angl_dir, distance,max_velocity=2): #max_veloc
     Ki_yaw = 0.03
     Kd_yaw = 0.05
 
-    Kp_vel_x = 0.9
+    Kp_vel_x = 1.2
     Ki_vel_x = 0.02
     Kd_vel_x = 0.01
 
@@ -587,7 +600,7 @@ def move_body_PID(self,DeshHight, angl_dir, distance,max_velocity=2): #max_veloc
     max_yaw_speed=5
     pid_yaw = PID(Kp_yaw, Ki_yaw, Kd_yaw, setpoint=desired_yaw)
     pid_yaw.output_limits = (-max_yaw_speed, max_yaw_speed)  # Assuming you set a max_yaw_speed variable
-    pid_yaw.sample_time = 1  # Update interval in seconds
+    pid_yaw.sample_time = 1 # Update interval in seconds
 
 
     desired_vel_x = velocity_direction* max_velocity
@@ -598,20 +611,23 @@ def move_body_PID(self,DeshHight, angl_dir, distance,max_velocity=2): #max_veloc
     
     start_time = time.time()
 
-    send_control_body(self, desired_vel_x, desired_vel_y, 0 ,0)
+    send_control_body(self, desired_vel_x, desired_vel_y, 0)
    
     previous_velocity_x=0 
     remaining_distance= distance 
     velocity_current_x=0
-    k=0.6
-
+    k=0.1
+    start_control_timer=0
+    acc=True
     while remaining_distance >= 0.1:
         new_velocity_data.wait()
+        
         print( "---------------------------------------------------------------------")
-        if remaining_distance < distance*( 1-0.3):
+        if remaining_distance < distance*( 1-0.2) and (time.time() - start_control_timer > 0.1):
             #desired_vel_x= desired_vel_x*( 1-0.2)
             reduction= k*velocity_current_x*remaining_distance 
             desired_vel_x=desired_vel_x-reduction
+            acc=False
             desired_vel_x = max(desired_vel_x, 0.1)
 
         # # Get current yaw
@@ -641,13 +657,14 @@ def move_body_PID(self,DeshHight, angl_dir, distance,max_velocity=2): #max_veloc
         velocity_current_y=(velocity_body[1])
         velocity_current_z=(velocity_body[2])
 
+
         # X velocity error and PID control
         error_vel_x = desired_vel_x - velocity_current_x
         integral_vel_x += error_vel_x
         derivative_vel_x = error_vel_x - error_vel_x_prev
 
         velocity_x = velocity_current_x+ Kp_vel_x * error_vel_x + Ki_vel_x * integral_vel_x + Kd_vel_x * derivative_vel_x
-        error_vel_x_prev = error_vel_x
+        
 
         # Y velocity error and PID control
         error_vel_y = desired_vel_y - velocity_current_y
@@ -667,15 +684,23 @@ def move_body_PID(self,DeshHight, angl_dir, distance,max_velocity=2): #max_veloc
         
         # Check the current altitude
         current_altitude = self.location.global_relative_frame.alt
-
-        # Send control to the drone 
-        send_control_body(self, velocity_x, velocity_y, altitude_rate)
+        
+        
+        #if (time.time() - start_control_timer > 0.5) or (abs(error_vel_x) > abs(error_vel_x_prev) and acc==True ) or (abs(error_vel_x) < abs(error_vel_x_prev) and acc==False ) or abs(velocity_y -desired_vel_y) > 0.1 or abs(altitude_rate- desired_vel_z)> 0.5:
+        if (time.time() - start_control_timer > 0.05):    
+            # Send control to the drone 
+            print("     controle        ")
+            print( "velocity_x", velocity_x, "velocity_y",velocity_y)
+            send_control_body(self, velocity_x, velocity_y, altitude_rate)
+            start_control_timer= time.time()
         
         remaining_distance= remaining_distance - (float(interval_between_events* abs( (velocity_current_x + previous_velocity_x)/2.0 )))
         
-        print( "vx ",velocity_current_x , "vy",velocity_current_y, "vz",velocity_current_z ,"yaw error= ",error, "current alt= ", current_altitude  )
-        print( "time", time.time() - start_time , "distance left : ",remaining_distance, "dis speed", desired_vel_x )
-
+        print( "\n vx ",velocity_current_x , "vy",velocity_current_y, "vz",velocity_current_z ,"yaw error= ",error, "current alt= ", current_altitude  )
+        print( "time", time.time() - start_time , "distance left : ",remaining_distance, "dis speed", desired_vel_x,"\n\n" )
+        
+        # save data for the next iteration 
+        error_vel_x_prev = error_vel_x
         previous_velocity_x= velocity_current_x # save the current for next iteration 
         
         # Clear the event so we can wait for the next update

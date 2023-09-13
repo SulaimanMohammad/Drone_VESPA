@@ -12,7 +12,7 @@ def compute_checksum(data):
 
 def build_message(self, numbers):
     # start with 'M' character
-    message = self.spot["phase"].encode() #b'E' for example 
+    message = self.phase.encode() #b'E' for example 
     
     # convert the float to an integer using the known multiplier
     encoded_float = int(numbers[0] * multiplier)
@@ -91,6 +91,7 @@ class Sink_Timer:
         sink_t.lock_sink = threading.Lock()  # Create a lock
         sink_t.message_thread = threading.Thread(target=sink_listener, args=(sink_t,self,timeout,))
         sink_t.message_thread.start()
+        sink_t.end_of_spanning= threading.Event()
 
     def run(sink_t, self):
         while True:
@@ -114,10 +115,11 @@ class Sink_Timer:
         else: # if you already have  message and path is constructed then brodcast end of spanning 
             # broadcast the end of spanning 
             # Here to brodcast the end of the pahse 
-            # the message contains -127 as id to confirm that is end of pahse 
-         #   after the time is up ' waiting time '
-         # the message here should contains a ref to sink when it is arrive to border, it should come back to the sink 
-            pass
+            # the message contains -127 as id to confirm that is end of pahse   
+            #   after the time is up ' waiting time '
+            # the message here should contains a ref to sink when it is arrive to border, it should come back to the sink 
+            sink_t.end_of_spanning.set() # flag to tell listener that it is the end 
+            sink_listener.join() # stop listenning 
 
 
 def sink_listener(self,sink_t, timeout):
@@ -129,18 +131,21 @@ def sink_listener(self,sink_t, timeout):
     and based on that it will be considered as a message to complet the path  
      
     '''
-    id_rec=0 
-    if id_rec != self.id: 
-        print("Message received!")
-        with sink_t.lock_sink:  # Acquire the lock
-            sink_t.message_counter += 1
-            sink_t.remaining_time = sink_t.timeout
+    while not sink_t.end_of_spanning.is_set(): # the end is not reached , keep listenning 
+        id_rec=0 
+        if id_rec != self.id: 
+            print("Message received!")
+            with sink_t.lock_sink:  # Acquire the lock
+                sink_t.message_counter += 1
+                sink_t.remaining_time = sink_t.timeout
+    
+    sink_t.end_of_spanning.clear() # reset so the next spanning the listenning loop will be activated  
 
 
 def spanning_sink(self):
     # initialize a timer that will be rest after reciving new message 
-    app = Sink_Timer()
-    app.run()
+    sink_proess = Sink_Timer()
+    sink_proess.run()
  
 
 
@@ -153,37 +158,38 @@ listener_current_updated_irremovable = threading.Event()
 listener_end_of_spanning = threading.Event()
 
 def xbee_listener(self):
-# TODO THIS SHOULD BE IN WHILE LOOP so ir will keep doing the same operations 
     '''
     1- check that the message starts with S ( for spanning ) otherwise ignore and relance spaning 
     2- check in the message what is the data ( it should be id )
     3- extract the id and save it in id_msg and the state of the sender that it should be usually irremovabe 
         The reason is that the messages in this pahse are sent only if the drone is irremovable 
     '''
-    # modify any new value ( of the status ) in lock( mutex to avoid race condition)
-    id_msg=0
+    # Keep litining until reciving a end of the phase 
+    while not listener_end_of_spanning.is_set(): 
+        # modify any new value ( of the status ) in lock( mutex to avoid race condition)
+        id_msg=0
 
-    if id_msg == self.id : 
-        #that means on of the neigboor is irremovable and sent a taged message
-        # This means that this current drone should change it is current state 
-        with lock:
-            if self.state== Border: 
-                self.change_state(Irremovable_boarder)
-                self.neighbor_list[id_msg]['state']=Irremovable_boarder # here you update the value
-            else: 
-                self.change_state(Irremovable)
-                self.neighbor_list[id_msg]['state']=Irremovable# here you update the value
-            listener_current_updated_irremovable.set() # flag that the state was changed to irremovable 
+        if id_msg == self.id : 
+            #that means on of the neigboor is irremovable and sent a taged message
+            # This means that this current drone should change it is current state 
+            with lock:
+                if self.state== Border: 
+                    self.change_state(Irremovable_boarder)
+                    self.neighbor_list[id_msg]['state']=Irremovable_boarder # here you update the value
+                else: 
+                    self.change_state(Irremovable)
+                    self.neighbor_list[id_msg]['state']=Irremovable# here you update the value
+                listener_current_updated_irremovable.set() # flag that the state was changed to irremovable 
 
-    else: # the recieved msg refer to changes in state to irrremovable in one of the nighbors
-        # Signal that we want to write
-        listener_neighbor_update_state.set()
-        with lock:
-            self.neighbor_list[id_msg]['state']=1 # here you update the value
-        listener_neighbor_update_state.clear()  # Clear the flag
+        else: # the recieved msg refer to changes in state to irrremovable in one of the nighbors
+            # Signal that we want to write
+            listener_neighbor_update_state.set()
+            with lock:
+                self.neighbor_list[id_msg]['state']=1 # here you update the value
+            listener_neighbor_update_state.clear()  # Clear the flag
 
-    if id_msg ==-127: # it is the message sent by the sink announcing the end of spanning phase
-        listener_end_of_spanning.set()
+        if id_msg ==-127: # it is the message sent by the sink announcing the end of spanning phase
+            listener_end_of_spanning.set()
 
 
 # since the 6 neighbors has 2 different regions one close to sink and one in opposit 
@@ -290,8 +296,8 @@ def build_path(self):
         if self.state != Irremovable_boarder:  # it is irrmovable doesnt belong to boarder no need to check (self.state != " irremovable- border" ) 
             send_msg_drone_id= self.find_close_neigboor_2border()  # since it doesnt belong to border then find to path to border 
             if send_msg_drone_id != -1 : # there is no irremovable send msg to a drone to make it irremovable 
+                self.drone_id_to_border= send_msg_drone_id # save the drone id that is the path to the border from the current one 
                 # send message to a drone that had Id= send_msg_drone_id
-                self.drone_id_to_border=send_msg_drone_id  # save the id of the drone for future use to connect to border
     
 
 # each drone needs to save the irrmovable drones around so it can send messages to it as a path 

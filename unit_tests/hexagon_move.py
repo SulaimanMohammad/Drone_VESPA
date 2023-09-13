@@ -51,7 +51,7 @@ angl_dir=[0,120, 180,240,300,360,60,180]
 for i in range(len(angl_dir)):
 
     print( "************************* Moving to",angl_dir[i], "*************************" )    
-    move_body_PID(vehicle,  drone.hight, angl_dir[i], hex_side)
+    move_body_PID(vehicle, angl_dir[i], hex_side)
     
     vehicle.mode    = VehicleMode("LOITER") 
     time.sleep(2)
