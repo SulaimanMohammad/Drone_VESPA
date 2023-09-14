@@ -2,6 +2,7 @@ from enum import Enum
 from math import sqrt
 import random
 import copy
+import struct
 from drone_ardupilot import *
 
 '''
@@ -81,6 +82,11 @@ Border=2
 Irremovable= 3 
 Irremovable_boarder=4 
 
+Expan_header= "E"
+Forming_border_header= "F"
+Span_header= "S"
+Balance_header= "B"
+
 
 '''
 -------------------------------------------------------------------------------------
@@ -102,7 +108,7 @@ class Drone:
         self.border_candidate=False
         self.border_messaging_circle_completed=False 
         self.dominated_direction=0
-        self.phase="E"
+        self.phase= Expan_header
         self.spots_to_check_for_border=[]
         self.drone_id_to_sink
         self.drone_id_to_border
@@ -117,7 +123,7 @@ class Drone:
         self.spot= self.neighbor_list[0]
         self.num_neigbors = 6
         for i in range(1, self.num_neigbors+1):
-            s = {"name": "s" + str(i), "distance": 0, "priority": 0,"drones_in": 0,"drones_in_id":[] ,"id":0 , "states": [], "previous_state": []}
+            s = {"name": "s" + str(i), "distance": 0, "priority": 0,"drones_in": 0,"drones_in_id":[] , "states": [], "previous_state": []}
             self.neighbor_list.append(s)
 
     '''
@@ -125,7 +131,62 @@ class Drone:
     ----------------------------- Communication ---------------------------------
     -------------------------------------------------------------------------------------
     '''
+
+        
+    #Return the byte count necessary to represent max ID.
+    def determine_max_byte_size (slef,number):
+        if number <= 0xFF:  # 1 byte
+            return 1
+        elif number <= 0xFFFF:  # 2 bytes
+            return 2
+        elif number <= 0xFFFFFF:  # 3 bytes
+            return 3
+        else:
+            return 4  # max 4 bytes
+
+    def build_border_message(self, target_ids):
     
+        # Determine max byte count for numbers
+        max_byte_count = max([self.determine_max_byte_size(num) for num in target_ids + [self.id]])
+
+        # Start message with 'F', followed by max byte count and then the length of the numbers list
+        # Forming_border_header.encode() = b'F'
+        message = Forming_border_header.encode() + struct.pack('>BB', max_byte_count, len(target_ids))
+
+        # Add each number to the message using determined byte count
+        for num in target_ids:
+            message += num.to_bytes(max_byte_count, 'big')
+
+        # Append the last number using the determined byte count
+        message += self.id.to_bytes(max_byte_count, 'big')
+
+        # End with '\n'
+        message += b'\n'
+        
+        return message
+
+
+    def decode_message(message):
+        # Check that the message starts with "F" and ends with "\n"
+        if not message.startswith(Forming_border_header.encode()) or not message.endswith(b'\n'):
+            raise ValueError("Invalid message format")
+
+        # Extract max byte count and length of numbers list
+        max_byte_count, numbers_length = struct.unpack('>BB', message[1:3])
+
+        # Determine the start and end indices for the main list of numbers
+        indices = [(i * max_byte_count + 3, (i + 1) * max_byte_count + 3) for i in range(numbers_length)]
+
+        # Extract the numbers
+        targets_ids = [int.from_bytes(message[start:end], 'big') for start, end in indices]
+
+        # Extract the last number
+        last_number_start = 3 + max_byte_count * numbers_length
+        sender_candidate = int.from_bytes(message[last_number_start:-1], 'big')
+
+        return targets_ids, sender_candidate
+
+
     def send_demand(self): 
         # the drone will send message to demand the data
         # this mssage contains only way to ask data 
@@ -337,7 +398,15 @@ class Drone:
     
     # start_messaging_circle this message will return only when it meet the goal 
     def start_messaging_circle(self):
-        pass
+        # forming the target_ids that should recive the message that is related to forming the border 
+        # it consisit sending to all the neigbors around 
+        target_ids=[]
+        for s in self.neighbor_list:
+            target_ids.extend(s["drones_in_id"]) # add the id of all the niegbors including the current 
+
+        Msg= self.build_border_message(target_ids)
+        self.send_msg(Msg)
+        
         # the headrer is F representing forming border
         # the massage will contain the ID of the drone that started the circle 
         # Always keep reading and reciving 
