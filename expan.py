@@ -144,7 +144,7 @@ class Drone:
         else:
             return 4  # max 4 bytes
 
-    def build_border_message(self, target_ids):
+    def build_border_message(self, target_ids, data):
     
         # Determine max byte count for numbers
         max_byte_count = max([self.determine_max_byte_size(num) for num in target_ids + [self.id]])
@@ -186,6 +186,33 @@ class Drone:
 
         return targets_ids, sender_candidate
 
+    def forward_border_message(self,targets_ids, sender_candidate):
+        ''' 
+        The drone that receives the message will check target_ids, if it is included then it will forward the message 
+        The message is forwarded to the neigbor drones that have ids are not in the recieved targets_ids
+
+        If the drone is not part of the target_ids
+        '''
+        if self.id in targets_ids: # the current drone is in the targeted ids
+            
+            all_neigbors_id=[]
+            for s in self.neighbor_list:
+                all_neigbors_id.extend(s["drones_in_id"]) # add the id of all the niegbors including the current 
+
+            # find the ids of the neigbors that are not in the recieved targets_ids 
+            # This retuen the unique values in all_neigbors_id that are not present in recieved targets_ids 
+            # targets_ids = [0,1, 2, 3] , all_neigbors_id = [0,1,2,4,9] => [4,9]
+            new_targets_ids= [item for item in all_neigbors_id if item not in targets_ids] 
+            msg= self.build_border_message(new_targets_ids, sender_candidate) # as you see the sender_candidate is resent as it was recived 
+            self.send_msg(msg)
+        
+        else: # it is not in the tagreted ids then do nothing ( drop the message)
+            return 
+
+
+
+    def send_msg(self,msg):
+        pass
 
     def send_demand(self): 
         # the drone will send message to demand the data
@@ -206,14 +233,22 @@ class Drone:
           # self.send_ACK() 
           # 
         # the recive function should change also the variable, and deal with demand and ACK from other drones    
-        
-        msg_header="E"
-        id_rec= 0
-        if msg_header== "E":
+        msg= b'F\x01\x07\x01\x02\x03\x04\x05\x06\x07\x00\n' #example of message [1, 2, 3, 4, 5, 6, 7] 0
+
+        if msg.startswith(Expan_header.encode()):
             pass
-        elif msg_header== "F":
-            if id_rec == self.id: # the message recived contains the id of the drone means the message came back  
+        
+        elif msg.startswith(Forming_border_header.encode()): # message starts with F 
+            targets_ids, sender_candidate= self.decode_message(msg)
+            if sender_candidate == self.id: # the message recived contains the id of the drone means the message came back  
                 pass
+                # handel the ending of theborder and the brodcast 
+            else: # the current drone received a message from a candidate border so it needs to forward it  
+                # check if the drone is candidate too so it can forward the message 
+                if self.border_candidate:
+                    self.forward_border_message(targets_ids, sender_candidate) 
+                else: # the drone is not candidate to be in the border then drop the message 
+                    return 
     
     def send_ACK(self):
         pass
@@ -404,9 +439,9 @@ class Drone:
         for s in self.neighbor_list:
             target_ids.extend(s["drones_in_id"]) # add the id of all the niegbors including the current 
 
-        Msg= self.build_border_message(target_ids)
+        Msg= self.build_border_message(target_ids, self.id)
         self.send_msg(Msg)
-        
+
         # the headrer is F representing forming border
         # the massage will contain the ID of the drone that started the circle 
         # Always keep reading and reciving 
