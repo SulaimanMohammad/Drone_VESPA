@@ -106,10 +106,10 @@ class Drone:
         self.drone_id_to_border=0
         self.a=a
         self.border_candidate=False
-        self.border_messaging_circle_completed=False 
         self.dominated_direction=0
         self.phase= Expan_header
         self.spots_to_check_for_border=[]
+        self.rec_sender_candidate=[]
         self.drone_id_to_sink
         self.drone_id_to_border
         self. min_distance_dicts=[] # nigboor close to the sink 
@@ -125,14 +125,17 @@ class Drone:
         for i in range(1, self.num_neigbors+1):
             s = {"name": "s" + str(i), "distance": 0, "priority": 0,"drones_in": 0,"drones_in_id":[] , "states": [], "previous_state": []}
             self.neighbor_list.append(s)
+        
+        # lance a thread to read messages continuously 
+        self.xbee_receive_message_thread = threading.Thread(target=self.receive_message, args=(self,)) #pass the function reference and arguments separately to the Thread constructor.
+        self.xbee_receive_message_thread.start()
 
     '''
     -------------------------------------------------------------------------------------
     ----------------------------- Communication ---------------------------------
     -------------------------------------------------------------------------------------
     '''
-
-        
+ 
     #Return the byte count necessary to represent max ID.
     def determine_max_byte_size (slef,number):
         if number <= 0xFF:  # 1 byte
@@ -164,7 +167,6 @@ class Drone:
         message += b'\n'
         
         return message
-
 
     def decode_message(message):
         # Check that the message starts with "F" and ends with "\n"
@@ -209,8 +211,6 @@ class Drone:
         else: # it is not in the tagreted ids then do nothing ( drop the message)
             return 
 
-
-
     def send_msg(self,msg):
         pass
 
@@ -219,8 +219,9 @@ class Drone:
         # this mssage contains only way to ask data 
         # the message will be recived from all the drones are in the range of commuinication 
         pass 
-
+    
     def receive_message (self):
+        self.Forming_Border_Broadcast_REC = threading.Event()
         # TODO this sould be listening all the time with while loop 
         # here you need to receive the message but you need to know when to start the algo of expansion 
         # the drone will have a timer will start after the demand message is sent 
@@ -232,23 +233,51 @@ class Drone:
         # if that drone received the ACK will not try to resend message
           # self.send_ACK() 
           # 
-        # the recive function should change also the variable, and deal with demand and ACK from other drones    
-        msg= b'F\x01\x07\x01\x02\x03\x04\x05\x06\x07\x00\n' #example of message [1, 2, 3, 4, 5, 6, 7] 0
+        # the recive function should change also the variable, and deal with demand and ACK from other drones
+        # keep reciveing while the brodcast is not recived ,t represent the end of exapnsion 
+        while not self.Forming_Border_Broadcast_REC.is_set():
 
-        if msg.startswith(Expan_header.encode()):
-            pass
-        
-        elif msg.startswith(Forming_border_header.encode()): # message starts with F 
-            targets_ids, sender_candidate= self.decode_message(msg)
-            if sender_candidate == self.id: # the message recived contains the id of the drone means the message came back  
+            msg= b'F\x01\x07\x01\x02\x03\x04\x05\x06\x07\x00\n' #example of message [1, 2, 3, 4, 5, 6, 7] 0
+
+            if msg.startswith(Expan_header.encode()):
                 pass
-                # handel the ending of theborder and the brodcast 
-            else: # the current drone received a message from a candidate border so it needs to forward it  
-                # check if the drone is candidate too so it can forward the message 
-                if self.border_candidate:
-                    self.forward_border_message(targets_ids, sender_candidate) 
-                else: # the drone is not candidate to be in the border then drop the message 
-                    return 
+            
+            elif msg.startswith(Forming_border_header.encode()): # message starts with F 
+                targets_ids, sender_candidate= self.decode_message(msg)
+
+                if sender_candidate == self.id: # the message recived contains the id of the drone means the message came back  
+                    
+                    if self.check_border_candidate_eligibility():
+                        self.change_state_to(Border)
+                        Broadcast_Msg= self.build_border_message([-1], self.id)
+                        self.send_msg(Broadcast_Msg)
+                        self.Forming_Border_Broadcast_REC.set() # to end the the loop 
+
+                else: # the current drone received a message from a candidate border so it needs to forward it   
+                    # check if the drone is candidate too so it can forward the message 
+                    if self.border_candidate:
+                         # check if the message is broadcast 
+                        if len(targets_ids)==1 and targets_ids[0]==-1: # it is broadcast msg
+                            if sender_candidate in self.rec_sender_candidate: # the sender of broadcast already sent msg to the current drone so it is part of the circle 
+                                # re-check the the droen around still have same situation and still can be border 
+                                if self.check_border_candidate_eligibility():
+                                    self.change_state_to(Border)    
+                            else: # if drone doesnt have the sender_candidate or the sourounding has changed 
+                                self.change_state_to(Free)
+                            
+                            # the forming of border is done 
+                            self.Forming_Border_Broadcast_REC.set()
+                                
+                        else:     
+                            # add the received id to the list so when a broadcast from the same id is recicved that means a full circle is completed
+                            self.rec_sender_candidate.append(sender_candidate)
+                            self.forward_border_message(targets_ids, sender_candidate) 
+                    else: # the drone is not candidate to be in the border thus it drops the message 
+                        # it doesnt need to listen forward or do anything but it need to wait the end of the expansion 
+                        if len(targets_ids)==1 and targets_ids[0]==-1:
+                            self.Forming_Border_Broadcast_REC.set()
+                        else: 
+                            continue 
     
     def send_ACK(self):
         pass
@@ -284,7 +313,6 @@ class Drone:
 
         self.distance_from_sink=self.spot["distance"] # where spot is the data of s0 the current position 
 
-
     def check_num_drones_in_neigbors(self):
         #TODO it is about sending signal and recive it to count the number in each spot 
         # The idea the drone will recive signal from the nigboors the signal is coordinates 
@@ -302,7 +330,6 @@ class Drone:
             num_dron = int(input("\t Enter number of drone at "+s["name"]+" :"))
             s["drones_in"] = int(num_dron)
             # append the ids of each drone in the same spot to drones_in_id
-
 
     def findMinDistances_niegboor(self):
         min_distance = min(self.neighbor_list, key=lambda x: x["distance"])["distance"]
@@ -330,12 +357,10 @@ class Drone:
         #print(int(self.Priority_to_go[0][1:])) #exteract only the number of nigboor  
         return int(spot_to_go[0][1:])
 
-
     def neighbors_election(self):
         # self.spot={"name": "s" + str(0), "distance": 0, "priority": 0, "drones_in": 1,"drones_in_id":[], "states": [] , "previous_state": 1, "phase": "E"}
         id_free = [id for id, state in zip(self.spot["drones_in_id"], self.spot["states"]) if state == Free]
         return min(id_free) # return the min id of a drone is in state Free 
-
     
     def is_it_alone(self):
         self.check_num_drones_in_neigbors()
@@ -346,7 +371,6 @@ class Drone:
         if self.spot["drones_in"]==1: # the drone is alone
             self.change_state_to (Alone)
         print("drone state in s0", self.state )
-
 
     def convert_spot_angle_distance(self, dir):
         return DIR_VECTORS[dir][0], DIR_VECTORS[dir][1]
@@ -368,36 +392,6 @@ class Drone:
         self.positionX =self.positionX + x#DIR_VECTORS[dir][0]# add the value not assign because it is movement 
         self.positionY = self.positionY+ y #DIR_VECTORS[dir][1]
         #return [self.positionX, self.positionY] 
-
-
-    def update_state(self):
-        # if self.state=="Alone" : # the drone is alone so see if it is free or border or irrmovable
-        if self.spot["disance"]==0 and self.state==Alone:  #the drone that is sink should be always itrremvable but it should be first alone 
-            self.change_state_to(Irremovable)
-
-        while self.state==Alone:
-            counter=0
-            # need to check the number arouund because many spot was changed meanwhile 
-            for s in self.neighbor_list:
-                if s["drones_in"] >=1: 
-                    counter= counter +1 
-                    continue
-                else: 
-                    break
-            print("counter", counter)
-            if counter==7: # all neighboor are occupied including the drone itself 
-                self.change_state_to(Free)
-                # since border_neighbors is used only for border drone then no need for it 
-                self.border_neighbors=[] #erase border_neighbors because no need for it 
-
-            else: #drone is alone but not sourrounded by drones
-                self.check_border()
-            #TODO border just if it doent have niegboor on th path of the expansion 
-            # NOTE :  after yann he said it is not possible to have more than one drone
-            # here i need to verfiy whhat is should be 
-            # because if it is border then that means it will do deal_state 
-
-
 
     '''
     -------------------------------------------------------------------------------------
@@ -426,43 +420,11 @@ class Drone:
         # If there are multiple occurrences of the maximum frequency, choose randomly
         return random.choice(max_indices)        
     
-    
     def save_occupied_spots(self):
         occupied_spots = [int(spot["name"][1:]) for spot in self.neighbor_list if spot["drones_in"] != 0]
         return occupied_spots
     
-    # start_messaging_circle this message will return only when it meet the goal 
-    def start_messaging_circle(self):
-        # forming the target_ids that should recive the message that is related to forming the border 
-        # it consisit sending to all the neigbors around 
-        target_ids=[]
-        for s in self.neighbor_list:
-            target_ids.extend(s["drones_in_id"]) # add the id of all the niegbors including the current 
-
-        Msg= self.build_border_message(target_ids, self.id)
-        self.send_msg(Msg)
-
-        # the headrer is F representing forming border
-        # the massage will contain the ID of the drone that started the circle 
-        # Always keep reading and reciving 
-        # in the reciver check for F header 
-            # firt the drone will ckeck the id of the msg is the same of the current drone 
-                # then return and send brodcast 
-            # else the msg id is not same of the current drone 
-            # the drone will check if it is self.border_candidate=True it will forward the msg and keep the id of the sender 
-                # if the drone is not self.border_candidate=True then it will drop the message 
-
-        # the drone will become bordere if recived the good message and it is self.border_candidate=True 
-            # and it needs again to check for border unoccupied ,and send a bordcast 
-            # otherwise check agin for free
-            # in reciving part also 
-        # The drones those are in situation as candidates to be part of the border and receive the broadcast message with the ID they compare that ID with the one they saved  
-        #  in step 2 which mean that they where part of the circle, so they check that they still meet the requirements and change to border state. 
-        # this can reduce the amount of messaging. and ensure that any drone was in the completed circle of communication is a part of the border
-        # the broadcast should be taged as brodcast to differeniate between brodcast msg and fprming border msg 
-
-
-    def check_border(self):
+    def check_border_candidate_eligibility(self):
         self.border_candidate=False  
         # the drone after it is candidateq should continue searcching anif not should search to be free 
         self.check_num_drones_in_neigbors()
@@ -488,21 +450,38 @@ class Drone:
 
         if unoccupied_spots_counter>0: # at least one spot is empty so the drone can be part of he border
             self.border_candidate=True
-            self.start_messaging_circle() 
-            if self.border_messaging_circle_completed: 
-                self.change_state_to( Border)
+        
+        return self.border_candidate
+            
+    def Forme_border(self):
+       # since border_neighbors is used only for border drone then no need for it 
+       #self.border_neighbors=[] #erase border_neighbors because no need for it 
+        self.check_border_candidate_eligibility()
+        
+        if self.border_candidate:
+
+            target_ids=[]
+            for s in self.neighbor_list:
+                target_ids.extend(s["drones_in_id"]) # add the id of all the niegbors including the current 
+            
+            Msg= self.build_border_message(target_ids, self.id)
+            self.send_msg(Msg)
+
         else: 
             #means that the drone is sourounded in the expansion direction it can be set as free 
             self.change_state_to(Free)
             self.direction_taken=[] # reset the direction taken for the nex expansion 
 
-    
+        self.Forming_Border_Broadcast_REC.wait() # wait until the border procesdure is finished 
+        self.Forming_Border_Broadcast_REC.clear() # reset for the next expansion 
 
     def search_for_target(self): # find if there is target in the area or not 
-        pass
+        
+        if self.spot["disance"]==0 and self.state==Alone:  #the drone that is sink should be always itrremvable but it should be first alone 
+            self.change_state_to(Irremovable)
+
         # move int th lace and couver it to check if there is target or not 
     
-
 
     def first_exapnsion (self, vehicle):
         random_dir = int(random.randint(1, 6)) # 0 not include because it should not be in the sink
@@ -540,18 +519,17 @@ class Drone:
                 time.sleep (movement_time) # Wait untile the elected drone to leave to next stop.
                 # TODO here sleep means loiter 
                 continue # do all the steps again escape update location because no movement done yet 
-                '''The need of re-doing all process because there is possibility that the spots around have changed'''
+                '''Go to another iteration to redo all process because there is possibility that the spots around have changed'''
 
             calculate_relative_pos(vehicle)
             print("checking for update the state")
             self.is_it_alone()
 
-        self.check_border()
-        # check border should not return until the drones receive bordcast of forming border 
-        # the drone is alone and can search for border or become Free 
-        self.update_state() # it inclueds forming the border
+        self.Forme_border()# will not return until the drones receive bordcast of forming border
+        time.sleep(1) # wait awhile as result of the accumulated communication time ( for sync between all drones)
+        self.xbee_receive_message_thread.join() # stop listening to message
         self.search_for_target() # find if there is target in the area or not 
         #the drone will never do to the second phase before finihing the search and the update 
         # because it will be problem if all not in the same phase 
-        self.spot["phase"]= "S"
+        self.phase= Span_header
         #TODO here the drones should wait in loop until reciving a brodcast of finishing the expanshion 
