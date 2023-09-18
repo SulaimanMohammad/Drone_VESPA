@@ -16,7 +16,7 @@ a= 20 # drone range
 C=100
 eps=20
 speed_of_drone=2 # 2 m/s 
-movement_time= a*speed_of_drone (1+ 0.2)  # add 20% of time for safty 
+movement_time= a*speed_of_drone*(1+ 0.2)  # add 20% of time for safty 
 scanning_time= 10 # in second ( TODO function to the speed and size of a )
 
 DIR_VECTORS = [
@@ -147,21 +147,29 @@ class Drone:
         else:
             return 4  # max 4 bytes
 
-    def build_border_message(self, target_ids, data):
+    def build_border_message(self, propagation_indicator ,target_ids, sender_candidate):
     
         # Determine max byte count for numbers
-        max_byte_count = max([self.determine_max_byte_size(num) for num in target_ids + [self.id]])
-
-        # Start message with 'F', followed by max byte count and then the length of the numbers list
+        max_byte_count = max(
+                            [self.determine_max_byte_size(num) for num in target_ids ]+
+                            [self.determine_max_byte_size(num) for num in propagation_indicator]+
+                            [self.determine_max_byte_size(sender_candidate)]                            
+                            )
+            
+        # Start message with 'F', followed by max byte count and then the length of the propagation_indicator
         # Forming_border_header.encode() = b'F'
-        message = Forming_border_header.encode() + struct.pack('>BB', max_byte_count, len(target_ids))
-
+        message = Forming_border_header.encode() + struct.pack('>BB', max_byte_count, len(propagation_indicator))
+    
         # Add each number to the message using determined byte count
-        for num in target_ids:
+        for num in propagation_indicator:
             message += num.to_bytes(max_byte_count, 'big')
+        
+        message += struct.pack('>B',len(target_ids))
+        for num in target_ids:
+                message += num.to_bytes(max_byte_count, 'big')
 
         # Append the last number using the determined byte count
-        message += self.id.to_bytes(max_byte_count, 'big')
+        message += sender_candidate.to_bytes(max_byte_count, 'big')
 
         # End with '\n'
         message += b'\n'
@@ -169,43 +177,68 @@ class Drone:
         return message
 
     def decode_message(message):
-        # Check that the message starts with "F" and ends with "\n"
-        if not message.startswith(Forming_border_header.encode()) or not message.endswith(b'\n'):
-            raise ValueError("Invalid message format")
+            
+        # Extract max byte count and lengths of the lists
+        max_byte_count, propagation_length = struct.unpack('>BB', message[1:3])
 
-        # Extract max byte count and length of numbers list
-        max_byte_count, numbers_length = struct.unpack('>BB', message[1:3])
+        # Determine the start and end indices for the propagation_indicator numbers
+        indices = [(i * max_byte_count + 3, (i + 1) * max_byte_count + 3) for i in range(propagation_length)]
 
-        # Determine the start and end indices for the main list of numbers
-        indices = [(i * max_byte_count + 3, (i + 1) * max_byte_count + 3) for i in range(numbers_length)]
+        # Extract the numbers in propagation_indicator
+        propagation_indicator = [int.from_bytes(message[start:end], 'big') for start, end in indices]
 
-        # Extract the numbers
-        targets_ids = [int.from_bytes(message[start:end], 'big') for start, end in indices]
+        # Extract the length of target_ids and then extract the numbers in target_ids
+        target_ids_length_position = 3 + max_byte_count * propagation_length
+        target_ids_length = struct.unpack('>B', message[target_ids_length_position:target_ids_length_position+1])[0]
 
-        # Extract the last number
-        last_number_start = 3 + max_byte_count * numbers_length
-        sender_candidate = int.from_bytes(message[last_number_start:-1], 'big')
+        # Determine the start and end indices for the target_ids numbers
+        target_ids_start = target_ids_length_position + 1
+        indices_target = [(i * max_byte_count + target_ids_start, (i + 1) * max_byte_count + target_ids_start) for i in range(target_ids_length)]
 
-        return targets_ids, sender_candidate
+        # Extract the numbers in target_ids
+        target_ids = [int.from_bytes(message[start:end], 'big') for start, end in indices_target]
 
-    def forward_border_message(self,targets_ids, sender_candidate):
+        # Extract the sender_candidate
+        sender_candidate_start = target_ids_start + max_byte_count * target_ids_length
+        sender_candidate = int.from_bytes(message[sender_candidate_start:sender_candidate_start+max_byte_count], 'big')
+
+        return propagation_indicator, target_ids, sender_candidate
+    
+
+    def calculate_propagation_indicator_target(self,rec_propagation_indicator, all_neighbor):
+       
+        # Calculate the target 
+        # the new target is found based on rec_propagation_indicator so for that we need to find the new one so the reciver can calculate its next target 
+        # This retuen the unique values in all_neigbors_id that are not present in recieved rec_propagation_indicator
+        # rec_propagation_indicator = [0,1, 2, 3] , all_neigbors_id = [0,1,2,4,9] => [4,9]
+        new_target_ids= [item for item in rec_propagation_indicator if item not in all_neighbor]
+
+        # Calculated propagation_indicator
+        ''' (A ∩ B) ∪ (B - A) ''' 
+        # where A is received  propagation_indicator and B is all_neighbor of current drone 
+        common = set(rec_propagation_indicator) & set(all_neighbor)
+        unique_in_all_neighbor = set(all_neighbor) - set(rec_propagation_indicator)
+        new_propagation_indicator= list(common | unique_in_all_neighbor)
+
+        return new_target_ids, new_propagation_indicator
+
+
+
+    def forward_border_message(self, propagation_indicator, targets_ids, sender_candidate):
         ''' 
         The drone that receives the message will check target_ids, if it is included then it will forward the message 
-        The message is forwarded to the neigbor drones that have ids are not in the recieved targets_ids
+        The message is forwarded to the neigbor drones that have ids are not in the recieved targets_ids and in the propagation_indicator
+        Propagation_indicator will help to prevint the messages to have target are backward 
 
-        If the drone is not part of the target_ids
         '''
         if self.id in targets_ids: # the current drone is in the targeted ids
             
             all_neigbors_id=[]
             for s in self.neighbor_list:
                 all_neigbors_id.extend(s["drones_in_id"]) # add the id of all the niegbors including the current 
-
-            # find the ids of the neigbors that are not in the recieved targets_ids 
-            # This retuen the unique values in all_neigbors_id that are not present in recieved targets_ids 
-            # targets_ids = [0,1, 2, 3] , all_neigbors_id = [0,1,2,4,9] => [4,9]
-            new_targets_ids= [item for item in all_neigbors_id if item not in targets_ids] 
-            msg= self.build_border_message(new_targets_ids, sender_candidate) # as you see the sender_candidate is resent as it was recived 
+            
+            new_propagation_indicator, new_targets_ids= self.calculate_propagation_indicator_target( propagation_indicator,targets_ids)
+            msg= self.build_border_message(new_propagation_indicator,new_targets_ids, sender_candidate) # as you see the sender_candidate is resent as it was recived 
             self.send_msg(msg)
         
         else: # it is not in the tagreted ids then do nothing ( drop the message)
@@ -227,6 +260,10 @@ class Drone:
         msg_counter=0 
         msg=" "
         if xbee_message is not None:
+                # Check that the message starts with "F" and ends with "\n"
+            if not msg.startswith(Forming_border_header.encode()) or not msg.endswith(b'\n'):
+                raise ValueError("Invalid message format")
+            # or for E TODO handel with error message 
             return msg  
     
    
@@ -256,9 +293,9 @@ class Drone:
             
             elif msg.startswith(Forming_border_header.encode()): # message starts with F 
         
-                targets_ids, sender_candidate= self.decode_message(msg) 
+                propagation_indicator, target_ids, sender_candidate= self.decode_message(msg) 
                 # all the drone wwill retrive from the buffere then see if it is targeted or not 
-                if self.id in  targets_ids: # the drone respond only if it is targeted
+                if self.id in  target_ids: # the drone respond only if it is targeted
                     if sender_candidate == self.id: # the message recived contains the id of the drone means the message came back  
                         
                         if self.check_border_candidate_eligibility():
@@ -269,7 +306,7 @@ class Drone:
 
                     else: # the current drone received a message from a candidate border so it needs to forward it   
                         # check if the message is broadcast 
-                        if len(targets_ids)==1 and targets_ids[0]==-1: # it is broadcast msg
+                        if len(target_ids)==1 and target_ids[0]==-1: # it is broadcast msg
                             if sender_candidate in self.rec_sender_candidate: # the sender of broadcast already sent msg to the current drone so it is part of the circle 
                                 # re-check the the droen around still have same situation and still can be border 
                                 if self.check_border_candidate_eligibility():
@@ -284,11 +321,11 @@ class Drone:
                             # need to check if it is already there if not add it, because many message can arrive 
                             if sender_candidate not in self.rec_sender_candidate:
                                 self.rec_sender_candidate.append(sender_candidate)
-                                self.forward_border_message(targets_ids, sender_candidate) 
+                                self.forward_border_message(propagation_indicator, target_ids, sender_candidate) 
 
                 else: # the drone is not targeted to be in the border thus it drops the message 
                     # it doesnt need to listen forward or do anything but it need to wait the end of the expansion 
-                    if len(targets_ids)==1 and targets_ids[0]==-1:
+                    if len(target_ids)==1 and target_ids[0]==-1:
                         self.Forming_Border_Broadcast_REC.set()
                     else: 
                         continue 
@@ -477,8 +514,9 @@ class Drone:
             target_ids=[]
             for s in self.neighbor_list:
                 target_ids.extend(s["drones_in_id"]) # add the id of all the niegbors including the current 
-            
-            Msg= self.build_border_message(target_ids, self.id)
+            # At the beginning  propagation_indicator and target_ids are the same in the source of the message 
+            propagation_indicator= target_ids
+            Msg= self.build_border_message(propagation_indicator, target_ids, self.id)
             self.send_msg(Msg)
 
         else: 
