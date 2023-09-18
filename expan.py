@@ -220,6 +220,16 @@ class Drone:
         # the message will be recived from all the drones are in the range of commuinication 
         pass 
     
+    def retrive_msgs_from_buffer(self):
+        # device is the object of Xbee connection 
+        xbee_message = device.read_data(0.02) #  0.02 timeout in seconds
+        # read untile the bufere is empty or retrive 7 msgs
+        msg_counter=0 
+        msg=" "
+        if xbee_message is not None:
+            return msg  
+    
+   
     def receive_message (self):
         self.Forming_Border_Broadcast_REC = threading.Event()
         # TODO this sould be listening all the time with while loop 
@@ -236,27 +246,29 @@ class Drone:
         # the recive function should change also the variable, and deal with demand and ACK from other drones
         # keep reciveing while the brodcast is not recived ,t represent the end of exapnsion 
         while not self.Forming_Border_Broadcast_REC.is_set():
-
+                      
+            msg= self.retrive_msg_from_buffer() 
+            time.slee(0.01) # wait to have many msg in the buffe, time based on size of messages 
             msg= b'F\x01\x07\x01\x02\x03\x04\x05\x06\x07\x00\n' #example of message [1, 2, 3, 4, 5, 6, 7] 0
-
+            
             if msg.startswith(Expan_header.encode()):
-                pass
+                pass  
             
             elif msg.startswith(Forming_border_header.encode()): # message starts with F 
-                targets_ids, sender_candidate= self.decode_message(msg)
+        
+                targets_ids, sender_candidate= self.decode_message(msg) 
+                # all the drone wwill retrive from the buffere then see if it is targeted or not 
+                if self.id in  targets_ids: # the drone respond only if it is targeted
+                    if sender_candidate == self.id: # the message recived contains the id of the drone means the message came back  
+                        
+                        if self.check_border_candidate_eligibility():
+                            self.change_state_to(Border)
+                            Broadcast_Msg= self.build_border_message([-1], self.id)
+                            self.send_msg(Broadcast_Msg)
+                            self.Forming_Border_Broadcast_REC.set() # to end the the loop 
 
-                if sender_candidate == self.id: # the message recived contains the id of the drone means the message came back  
-                    
-                    if self.check_border_candidate_eligibility():
-                        self.change_state_to(Border)
-                        Broadcast_Msg= self.build_border_message([-1], self.id)
-                        self.send_msg(Broadcast_Msg)
-                        self.Forming_Border_Broadcast_REC.set() # to end the the loop 
-
-                else: # the current drone received a message from a candidate border so it needs to forward it   
-                    # check if the drone is candidate too so it can forward the message 
-                    if self.border_candidate:
-                         # check if the message is broadcast 
+                    else: # the current drone received a message from a candidate border so it needs to forward it   
+                        # check if the message is broadcast 
                         if len(targets_ids)==1 and targets_ids[0]==-1: # it is broadcast msg
                             if sender_candidate in self.rec_sender_candidate: # the sender of broadcast already sent msg to the current drone so it is part of the circle 
                                 # re-check the the droen around still have same situation and still can be border 
@@ -264,20 +276,22 @@ class Drone:
                                     self.change_state_to(Border)    
                             else: # if drone doesnt have the sender_candidate or the sourounding has changed 
                                 self.change_state_to(Free)
-                            
                             # the forming of border is done 
                             self.Forming_Border_Broadcast_REC.set()
                                 
                         else:     
                             # add the received id to the list so when a broadcast from the same id is recicved that means a full circle is completed
-                            self.rec_sender_candidate.append(sender_candidate)
-                            self.forward_border_message(targets_ids, sender_candidate) 
-                    else: # the drone is not candidate to be in the border thus it drops the message 
-                        # it doesnt need to listen forward or do anything but it need to wait the end of the expansion 
-                        if len(targets_ids)==1 and targets_ids[0]==-1:
-                            self.Forming_Border_Broadcast_REC.set()
-                        else: 
-                            continue 
+                            # need to check if it is already there if not add it, because many message can arrive 
+                            if sender_candidate not in self.rec_sender_candidate:
+                                self.rec_sender_candidate.append(sender_candidate)
+                                self.forward_border_message(targets_ids, sender_candidate) 
+
+                else: # the drone is not targeted to be in the border thus it drops the message 
+                    # it doesnt need to listen forward or do anything but it need to wait the end of the expansion 
+                    if len(targets_ids)==1 and targets_ids[0]==-1:
+                        self.Forming_Border_Broadcast_REC.set()
+                    else: 
+                        continue 
     
     def send_ACK(self):
         pass
