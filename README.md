@@ -33,6 +33,21 @@
         python3 body_frame_move.py
     ``` 
 ## Forming border communication 
+**Propagation Indicator:** This represents the list that the previous node used to construct the target. Essentially, it's the list of all neighbors of the previous node.
+
+Given that at least two neighbors are shared between two consecutive centers of a hexagon, this helps to prevent sending messages to nodes that have already received the message from behind. It also prevents forming a closed loop due to backward communication.
+
+**Target:** This is the result of the difference between the current neighbors and the neighbors of the previous node. Therefore, messages are only sent to neighbors that haven't received any messages before.
+
+
+The node will check if the sender of the received message is in the Propagation Indicator. If not, this implies that the message is either coming for the first time or from the same direction taken by the previous neighbors. It will then save that Propagation Indicator, which represents from which direction the message arrived at this node. It will then forward the message to everyone. However, only the node with an ID equal to the target in the message will respond and may forward the message further.
+
+Note: If a node receives a message from a different direction (as illustrated in the figure when node 9 receives the message), it will verify if the sender's ID is in its saved Propagation Indicator. If it's not, this indicates that the direction is different, and it should continue forwarding the message in the same direction. The remaining nodes will continue to receive and forward the message until it reaches node 1, closing the circle.
+
+Note: The same process will occur for node 8, and it will forward the message in the opposite direction (not shown in the figure). In this manner, the first message that arrives at node 1 will initiate the broadcast, stopping all other nodes from forwarding messages.
+
+This method guarantees the full circulation of the message. In case of any communication error, we still have a chance to complete the cycle due to messaging in both directions. Moreover, it's faster since the construction starts in both directions, making it more reliable.
+
 ![Alt text](https://github.com/SulaimanMohammad/Drone_VESPA/blob/main/.exp/forming_border.png)
 ## Spanning UML 
 UML for the communication in the spanning phase of VESPA
