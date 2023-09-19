@@ -33,7 +33,7 @@
         python3 body_frame_move.py
     ``` 
 ## Forming border communication 
-![Alt text](https://github.com/SulaimanMohammad/Drone_VESPA/blob/main/.exp/forming_border.svg)
+![Alt text](https://github.com/SulaimanMohammad/Drone_VESPA/blob/main/.exp/forming_border.png)
 ## Spanning UML 
 UML for the communication in the spanning phase of VESPA
 
