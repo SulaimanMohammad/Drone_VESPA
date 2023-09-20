@@ -322,10 +322,10 @@ class Drone:
             time.slee(0.01) # wait to have many msg in the buffe, time based on size of messages 
             msg= b'F\x01\x07\x01\x02\x03\x04\x05\x06\x07\x00\n' #example of message [1, 2, 3, 4, 5, 6, 7] 0
             
-            if msg.startswith(Expan_header.encode()):
+            if msg.startswith(Expan_header.encode()) and msg.endswith(b'\n'):
                 pass  
             
-            elif msg.startswith(Forming_border_header.encode()): # message starts with F 
+            elif msg.startswith(Forming_border_header.encode()) and msg.endswith(b'\n'): # message starts with F end with \n 
         
                 rec_propagation_indicator, target_ids, sender, candidate= self.decode_message(msg) 
                 # all the drone wwill retrive from the buffere then see if it is targeted or not 
