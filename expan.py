@@ -18,6 +18,7 @@ eps=20
 speed_of_drone=2 # 2 m/s 
 movement_time= a*speed_of_drone*(1+ 0.2)  # add 20% of time for safty 
 scanning_time= 10 # in second ( TODO function to the speed and size of a )
+multiplier = 100
 
 DIR_VECTORS = [
     [0, 0],                             # s0 // don't move, stay
@@ -83,6 +84,8 @@ Irremovable= 3
 Irremovable_boarder=4 
 
 Expan_header= "E"
+Arrival_header= "A"
+Inherit_header= "I" 
 Forming_border_header= "F"
 Span_header= "S"
 Balance_header= "B"
@@ -109,7 +112,7 @@ class Drone:
         self.dominated_direction=0
         self.phase= Expan_header
         self.spots_to_check_for_border=[]
-        self.rec_candidate=[]
+        self.rec_candidate=[] # contains ids of drone that fired a messaging circle 
         self.drone_id_to_sink
         self.drone_id_to_border
         self. min_distance_dicts=[] # nigboor close to the sink 
@@ -158,7 +161,6 @@ class Drone:
                             )
             
         # Start message with 'F', followed by max byte count and then the length of the propagation_indicator
-        # Forming_border_header.encode() = b'F'
         message = Forming_border_header.encode() + struct.pack('>BB', max_byte_count, len(propagation_indicator))
     
         # Add each number to the message using determined byte count
@@ -180,7 +182,7 @@ class Drone:
         
         return message
 
-    def decode_message(message):
+    def decode_message_border_message(message):
             
         # Extract max byte count and lengths of the lists
         max_byte_count, propagation_length = struct.unpack('>BB', message[1:3])
@@ -212,7 +214,6 @@ class Drone:
 
         return propagation_indicator, target_ids,sender, candidate
     
-
     def calculate_propagation_indicator_target(self,rec_propagation_indicator, all_neighbor):
        
         # Calculate the target 
@@ -227,8 +228,6 @@ class Drone:
         new_propagation_indicator= all_neighbor
 
         return new_target_ids, new_propagation_indicator
-
-
 
     def forward_border_message(self, propagation_indicator, targets_ids, candidate):
         ''' 
@@ -260,19 +259,122 @@ class Drone:
         # the message will be recived from all the drones are in the range of commuinication 
         pass 
     
-    def retrive_msgs_from_buffer(self):
+    def retrive_msg_from_buffer(self):
         # device is the object of Xbee connection 
         xbee_message = device.read_data(0.02) #  0.02 timeout in seconds
         # read untile the bufere is empty or retrive 7 msgs
-        msg_counter=0 
         msg=" "
         if xbee_message is not None:
-                # Check that the message starts with "F" and ends with "\n"
-            if not msg.startswith(Forming_border_header.encode()) or not msg.endswith(b'\n'):
-                raise ValueError("Invalid message format")
-            # or for E TODO handel with error message 
             return msg  
+
+    def encode_float_to_int(self, value, multiplier=100):
+        """Encodes a float as an integer with a given multiplier."""
+        encoded = int(value * multiplier)
+
+        # Choose the format based on the size of the integer
+        format_char = '>H' if encoded <= 65535 else '>I'
+
+        return struct.pack(format_char, encoded)
     
+    def decode_int_to_float(self, encoded_float):
+        # Check the byte length to decide the format
+        if len(encoded_float) == 2:
+            value = struct.unpack('>H', encoded_float)[0]
+        elif len(encoded_float) == 4:
+            value = struct.unpack('>I', encoded_float)[0]
+
+        # Convert back to float
+        return value / multiplier  # Assuming multiplier = 100
+    
+    def build_spot_info_message(self):
+        # Start message with 'E'
+        message = Arrival_header.encode()
+
+        # Encode positionX and positionY
+        message += self.encode_float_to_int(self.positionX)
+        message += self.encode_float_to_int(self.positionY)
+
+        # Determine and append max byte count for self.id 
+        max_byte_count = self.determine_max_byte_size(self.id)
+        message += struct.pack('>B', max_byte_count)  # Note the single B format
+        
+        # Encode state 
+        message += struct.pack('>B', self.state)
+
+        # Append the id itself
+        message += self.id.to_bytes(max_byte_count, 'big')
+
+        # End with '\n'
+        message += b'\n'
+
+        return message
+
+    def decode_spot_info_message(self,message):
+        # Starting index after the header
+        index = len(Arrival_header.encode()) # =1 
+        
+        # Decode positionX
+        positionX_encoded = message[index:index+2] if len(message) - index == 6 else message[index:index+4]
+        positionX = self.decode_int_to_float(positionX_encoded)
+        index += len(positionX_encoded)
+        
+        # Decode positionY
+        positionY_encoded = message[index:index+2] if len(message) - index == 6 else message[index:index+4]
+        positionY = self.decode_int_to_float(positionY_encoded)
+        index += len(positionY_encoded)
+        
+        # Decode state
+        state = struct.unpack('>B', message[index:index+1])[0]
+        index += 1
+
+        # Decode max_byte_count for id
+        max_byte_count = struct.unpack('>B', message[index:index+1])[0]
+        index += 1
+        
+        # Decode self.id
+        id_value = int.from_bytes(message[index:index+max_byte_count], 'big')
+
+        return positionX, positionY, state, id_value
+
+    def build_inherit_message(self,id_rec):
+        # Start message with 'I'
+        message = Inherit_header.encode() 
+        
+        max_byte_count = max([self.determine_max_byte_size(num) for num in self.rec_candidate]+ [self.determine_max_byte_size(id_rec)])
+        
+        #Add the length of rec_candidate list and size of representation of eeach element 
+        message += struct.pack('>BB', max_byte_count, len(self.rec_candidate))
+        
+        # Add the element of the list with a max_byte_count byte representation 
+        for num in self.rec_candidate:
+            message += num.to_bytes(max_byte_count, 'big')
+
+        message +=id_rec.to_bytes(max_byte_count, 'big')
+        
+        message += b'\n'
+
+        return message
+    
+    def decode_inherit_message(message):
+    
+        index = len(Inherit_header.encode())
+        
+        # Extract max_byte_count and the length of rec_candidate list
+        max_byte_count, rec_candidate_length = struct.unpack('>BB', message[index:index+2])
+        index += 2
+        
+        # Decode the numbers in rec_candidate
+        rec_candidate_values = []
+        for _ in range(rec_candidate_length):
+            num = int.from_bytes(message[index:index+max_byte_count], 'big')
+            rec_candidate_values.append(num)
+            index += max_byte_count
+        
+        # Decode id_rec
+        id_rec = int.from_bytes(message[index:index+max_byte_count], 'big')
+        
+        return rec_candidate_values, id_rec
+
     def circle_completed(self):
         if self.check_border_candidate_eligibility():
             self.change_state_to(Border)
@@ -301,34 +403,43 @@ class Drone:
             self.rec_propagation_indicator= rec_propagation_indicator # change the propagation_indicator means message from opposite direction has arrived
             self.forward_border_message(rec_propagation_indicator, target_ids, candidate) 
 
+    def handel_broken_into_spot(self, msg):
+        if self.border_candidate== True: 
+            positionX, positionY, state, id_rec= self.decode_spot_info_message(msg)
+            self.spot_info_update_neighbors_list(positionX, positionY, state, id_rec) # No need to mutex since the drone is in border_candidate only in it was Alone and reserved spot
+            self.check_border_candidate_eligibility(observe=False) # use only the upddated list and see if the current drone still candidate 
+            if self.border_candidate == False: # changed due to 6 neigbors filled 
+                msg=self.build_inherit_message(id_rec)
+                self.send_msg(msg) 
+
+    def handel_inheritence_message(self, msg):
+        new_rec_candidate_values, id_rec= self.decode_inherit_message(msg)
+        if id_rec== self.id:
+            self.update_rec_candidate(new_rec_candidate_values)
+
     def receive_message (self):
         self.Forming_Border_Broadcast_REC = threading.Event()
-        # TODO Deal with broadcast message
-        # here you need to receive the message but you need to know when to start the algo of expansion 
-        # the drone will have a timer will start after the demand message is sent 
-        # after the receive of each message the timer will be reset 
-        # after the timer is up means no more message is arriving 
-        # you should notice that is important to use timer because we can not use counter of message because spots might be unoccipied 
-        # The moment the drone receive the message beside reseting the time a ACK message will be sent 
-        # the recived message will contain the id that sent the message, the ACK will contain that id 
-        # if that drone received the ACK will not try to resend message
-          # self.send_ACK() 
-          # 
-        # the recive function should change also the variable, and deal with demand and ACK from other drones
-        # keep reciveing while the brodcast is not recived ,t represent the end of exapnsion 
+        
         while not self.Forming_Border_Broadcast_REC.is_set():
                       
             msg= self.retrive_msg_from_buffer() 
-            time.slee(0.01) # wait to have many msg in the buffe, time based on size of messages 
-            msg= b'F\x01\x07\x01\x02\x03\x04\x05\x06\x07\x00\n' #example of message [1, 2, 3, 4, 5, 6, 7] 0
+            time.slee(0.01) # wait to have msgs in the buffer
+
+            msg= b'F\x01\x07\x01\x02\x03\x04\x05\x06\x07\x00\n' #example of message F [1, 2, 3, 4, 5, 6, 7] 0
             
             if msg.startswith(Expan_header.encode()) and msg.endswith(b'\n'):
                 pass  
             
+            elif msg.startswith(Arrival_header.encode()) and msg.endswith(b'\n'):
+                self.handel_broken_into_spot(msg)
+              
+            elif msg.startswith(Inherit_header.encode()) and msg.endswith(b'\n'):
+                self.handel_inheritence_message(msg)
+
+
             elif msg.startswith(Forming_border_header.encode()) and msg.endswith(b'\n'): # message starts with F end with \n 
-        
-                rec_propagation_indicator, target_ids, sender, candidate= self.decode_message(msg) 
-                # all the drone wwill retrive from the buffere then see if it is targeted or not 
+                rec_propagation_indicator, target_ids, sender, candidate= self.decode_message_border_message(msg) 
+                # all the drone will retrive from the buffere then see if it is targeted or not 
                 if self.id in  target_ids: # the drone respond only if it is targeted
                     
                     if candidate == self.id: # the message recived contains the id of the drone means the message came back  
@@ -348,17 +459,18 @@ class Drone:
                         self.Forming_Border_Broadcast_REC.set()
                     else: 
                         continue 
+            else: 
+                print(" Undefined header")
     
-    def send_ACK(self):
-        pass
-
     def start_observing(self):
         #send a demand 
         # set a timer 
         # recieve message 
         # send Ack 
         pass
-        
+    
+       
+
     '''
     -------------------------------------------------------------------------------------
     -------------------------------- Movement calculation -------------------------------
@@ -445,7 +557,13 @@ class Drone:
     def convert_spot_angle_distance(self, dir):
         return DIR_VECTORS[dir][0], DIR_VECTORS[dir][1]
     
-
+    def find_relative_spot(self, x, y ):
+        for i, vector in enumerate(DIR_xy_distance_VECTORS):
+            if abs(self.positionX - (x + vector[0])) < 1e-9 and abs(self.positionY - (y + vector[1])) < 1e-9:
+                return i  # Return index if a match is found
+        return -1  # Return -1 if no match is found
+    
+    
     '''
     -------------------------------------------------------------------------------------
     -------------------------------- Update upon movement--------------------------------
@@ -455,13 +573,55 @@ class Drone:
         self.previous_state= self.state # save the preivious state 
         self.state= new_state # change the state     
 
-    # positionX , positionY are the distance from the sink 
+    def update_rec_candidate(self, new_rec_candidate):
+        # Update without duplicates 
+        for item in new_rec_candidate:
+            if item not in self.rec_candidate:
+                self.rec_candidate.append(item)
+
+    # positionX , positionY are the coordinates from the sink 
+    # format: _.xx 2 decimal
     def update_location(self, dir):
         x=  DIR_xy_distance_VECTORS[dir][0]
         y= DIR_xy_distance_VECTORS[dir][1]
-        self.positionX =self.positionX + x#DIR_VECTORS[dir][0]# add the value not assign because it is movement 
-        self.positionY = self.positionY+ y #DIR_VECTORS[dir][1]
-        #return [self.positionX, self.positionY] 
+        self.positionX =round(self.positionX + x,2) #add the value not assign because it is movement 
+        self.positionY = round(self.positionY+ y ,2) #
+    
+    def update_candidate_spot_info_to_neighbors(self):
+        msg= self.build_spot_info_message()
+        self.send_msg(msg)   
+
+    def spot_info_update_neighbors_list(self, positionX, positionY, state, id_rec):
+        
+        s_index= self.find_relative_spot(positionX, positionY)
+        
+        # Check if index is valid ( index between 0 and 6 )
+        if 0 <= s_index <= self.num_neigbors+1:
+            s = self.neighbor_list[s_index] # Retrieve the corresponding spot
+
+            # Check if drone_id exists in 'drones_in_id'
+            if id_rec in s['drones_in_id']:
+                # Find the index of the drone_id
+                idx = s['drones_in_id'].index(id_rec)
+                
+                # Remove from drones_in_id and states
+                s['drones_in_id'].pop(idx)
+                s['states'].pop(idx)
+                
+                # Decrement drones_in count
+                s['drones_in'] -= 1
+                
+            else:
+                # Append drone_id to drones_in_id and state_rec to states
+                s['drones_in_id'].append(id_rec)
+                s['states'].append(state)
+                
+                # Increment drones_in count
+                s['drones_in'] += 1
+
+        else:
+            print("Invalid index provided")
+
 
     '''
     -------------------------------------------------------------------------------------
@@ -494,10 +654,12 @@ class Drone:
         occupied_spots = [int(spot["name"][1:]) for spot in self.neighbor_list if spot["drones_in"] != 0]
         return occupied_spots
     
-    def check_border_candidate_eligibility(self):
+    def check_border_candidate_eligibility(self, observe=True):
         self.border_candidate=False  
-        # the drone after it is candidateq should continue searcching anif not should search to be free 
-        self.check_num_drones_in_neigbors()
+        # Collect the info about the drones around , and that can be ignored in case of drone arriver after election
+        if observe:
+            self.check_num_drones_in_neigbors()
+
         self.border_neighbors = self.save_occupied_spots()
         self.dominated_direction= self.count_element_occurrences()
         # Define a dictionary to map directions to the corresponding spots_to_check_for_border values
@@ -529,6 +691,7 @@ class Drone:
         self.check_border_candidate_eligibility()
         
         if self.border_candidate:
+            self.update_candidate_spot_info_to_neighbors() # Useful if the drone arrived and filled a spot made others sourounded 
 
             target_ids=[]
             for s in self.neighbor_list:
@@ -595,7 +758,8 @@ class Drone:
             calculate_relative_pos(vehicle)
             print("checking for update the state")
             self.is_it_alone()
-
+        # TODO need to wait a time and during this time the drone has nothing with it in S0 
+        # if that nothing done all drone will think itself candidate ( this way we reduce the numbers of messages )
         self.Forme_border()# will not return until the drones receive bordcast of forming border
         self.rec_propagation_indicator=[] # rest this indecator for the next iteration 
         time.sleep(1) # wait awhile as result of the accumulated communication time ( for sync between all drones)
