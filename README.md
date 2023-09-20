@@ -33,7 +33,7 @@
         python3 body_frame_move.py
     ``` 
 ## Forming border communication 
-**Propagation Indicator:** This represents the list that the previous node used to construct the target. Essentially, it's the list of all neighbors of the previous node.
+**Propagation Indicator:** This represents the list that previous node used to construct the target. Essentially, it's the list of all neighbors of the previous node.
 
 Given that at least two neighbors are shared between two consecutive centers of a hexagon, this helps to prevent sending messages to nodes that have already received the message from behind. It also prevents forming a closed loop due to backward communication.
 
@@ -48,7 +48,13 @@ Note: The same process will occur for node 8, and it will forward the message in
 
 This method guarantees the full circulation of the message. In case of any communication error, we still have a chance to complete the cycle due to messaging in both directions. Moreover, it's faster since the construction starts in both directions, making it more reliable.
 
+Note: since any message will be received by all the nodes in the range, thus there is need to ignore messages 
+
+- if the id of the node is not in the targets_id in the message then the message will be ignored
+- if the id of the sender is in the Propagation Indicator then the message will be ignored that due to the fact that the message came from the same center of hexagon
+
 ![Alt text](https://github.com/SulaimanMohammad/Drone_VESPA/blob/main/.exp/forming_border.png)
+
 ## Spanning UML 
 UML for the communication in the spanning phase of VESPA
 
