@@ -55,6 +55,32 @@ Note: since any message will be received by all the nodes in the range, thus the
 
 ![Alt text](https://github.com/SulaimanMohammad/Drone_VESPA/blob/main/.exp/forming_border.png)
 
+### Breaking into a spot in front of border candidate
+
+![Alt text](https://github.com/SulaimanMohammad/Drone_VESPA/blob/main/.exp/breaking_into_spot.png)
+
+Suppose drone 15 is located in the same spot as drone 13. In this scenario, drone 13 considers itself to be alone since it has claimed the spot.
+
+In such a case, drone 15 will continue moving. If the process of forming a border has already started, drone 15 will join the formation after it has already begun. If no action has been taken, two scenarios may arise:
+
+1. If the messages have already reached drone 14, then upon completion of the broadcast circle, drone 14 will check its status. It will find that it is no longer a candidate for forming the border and will become free. However, this will result in a discontinuity in the formation of the border path, as the remaining drones will continue to serve as border nodes.
+2. If the messages have not yet reached drone 14, there is another issue: there is no communication in place to detect any changes in the topology of the surroundings. In this stage, both drones 15 and 14 will remain candidates and will continue to pass messages. Drone 14 will not become free until a broadcast that includes checking the surrounding drones is received. This could result in unnecessary communication and an unexpected border path.
+
+This scenario highlights potential issues that could arise, impacting both the communication efficiency and the reliability of the formed border.
+
+### Solution
+
+When a drone moves and claims a spot, determining that it is a border candidate, it will send a message to its neighbors to indicate that it is a border candidate and has occupied a spot in the neighborhood (e.g., drone 15 sends messages to drones 1, 11, and 14).
+
+Upon receiving this message, the neighboring drones will check which spot is occupied and reassess their own status as border candidates (for example, drones 1 and 11 remain candidates, while drone 14 is no longer a candidate).
+
+If a drone is no longer a candidate, two situations may arise:
+
+- If no messages regarding border formation have arrived yet, the drone will become "Free" and wait for the expansion process to complete (e.g., drone 14 becomes Free).
+- If the drone has already received one or more messages and saved the IDs of drones initiating messaging circles, it will send these saved IDs, along with its Propagation Indicator, to the newly arrived drone and become Free. The message will be tagged so that only the new arrival (in this case, drone 15) will consider it.
+
+The impact of this procedure is twofold: if a broadcast message arrives from a specific border candidate, drone 15 will already have this information, enabling it to become a border drone. The Propagation Indicator is used to handle scenarios where messages are still circulating, thus facilitating more efficient communication and border formation.
+
 ## Spanning UML 
 UML for the communication in the spanning phase of VESPA
 
