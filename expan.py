@@ -77,7 +77,7 @@ pahse= B balancing
 This will be used in the message 
 '''
 
-Alone=0
+Owner=0
 Free=1
 Border=2
 Irremovable= 3 
@@ -416,7 +416,7 @@ class Drone:
             self.change_state_to(Free)
 
     def find_msg_direction_forward(self,rec_propagation_indicator,target_ids,sender,candidate ):
-        # Only the drone that is candidate will forward messages , the Free or Alone no 
+        # Only the drone that is candidate will forward messages , the Free or Owner no 
         if self.border_candidate == True: 
             if sender not in self.rec_propagation_indicator: 
                 if candidate not in self.rec_candidate:
@@ -427,7 +427,7 @@ class Drone:
     def handel_broken_into_spot(self, msg):
         if self.border_candidate== True: 
             positionX, positionY, state, id_rec= self.decode_spot_info_message(msg)
-            self.spot_info_update_neighbors_list(positionX, positionY, state, id_rec) # No need to mutex since the drone is in border_candidate only in it was Alone and reserved spot
+            self.spot_info_update_neighbors_list(positionX, positionY, state, id_rec) # No need to mutex since the drone is in border_candidate only in it was Owner and reserved spot
             self.check_border_candidate_eligibility(observe=False) # use only the upddated list and see if the current drone still candidate 
             if self.border_candidate == False: # changed due to 6 neigbors filled 
                 self.change_state_to(Free) # Has 6 neighbors                
@@ -571,14 +571,14 @@ class Drone:
         id_free = [id for id, state in zip(self.spot["drones_in_id"], self.spot["states"]) if state == Free]
         return min(id_free) # return the min id of a drone is in state Free 
     
-    def is_it_alone(self):
+    def is_it_Owner(self):
         self.check_num_drones_in_neigbors()
-         #if s0 where the drone is conatins only the drone ( droen alone) 
+         #if s0 where the drone is conatins only the drone ( droen Owner) 
          # the done as you see count itself at the spot 
-         # the drone should be alone to be free 
+         # the drone should be Owner to be free 
         print("drone in s0", self.spot["drones_in"] )
-        if self.spot["drones_in"]==1: # the drone is alone
-            self.change_state_to (Alone)
+        if self.spot["drones_in"]==1: # the drone is Owner
+            self.change_state_to (Owner)
         print("drone state in s0", self.state )
 
     def convert_spot_angle_distance(self, dir):
@@ -744,7 +744,7 @@ class Drone:
 
     def search_for_target(self): # find if there is target in the area or not 
         
-        if self.spot["disance"]==0 and self.state==Alone:  #the drone that is sink should be always itrremvable but it should be first alone 
+        if self.spot["disance"]==0 and self.state==Owner:  #the drone that is sink should be always itrremvable but it should be first Owner 
             self.change_state_to(Irremovable)
 
         # move int th lace and couver it to check if there is target or not 
@@ -758,7 +758,7 @@ class Drone:
         calculate_relative_pos(vehicle)
         self.update_location(random_dir)
 
-        while self.state !=Alone:
+        while self.state !=Owner:
              #  after steady and hover 
                 # start observing the location
             # in the new position find the distance of the neigboors 
@@ -790,7 +790,7 @@ class Drone:
 
             calculate_relative_pos(vehicle)
             print("checking for update the state")
-            self.is_it_alone()
+            self.is_it_Owner()
         # TODO need to wait a time and during this time the drone has nothing with it in S0 
         # if that nothing done all drone will think itself candidate ( this way we reduce the numbers of messages )
         self.Forme_border()# will not return until the drones receive bordcast of forming border
