@@ -414,7 +414,6 @@ class Drone:
                 self.change_state_to(Border)    
         else: # if drone doesnt have the candidate or the sourounding has changed 
             self.change_state_to(Free)
-       
 
     def find_msg_direction_forward(self,rec_propagation_indicator,target_ids,sender,candidate ):
         # Only the drone that is candidate will forward messages , the Free or Alone no 
@@ -432,8 +431,9 @@ class Drone:
             self.check_border_candidate_eligibility(observe=False) # use only the upddated list and see if the current drone still candidate 
             if self.border_candidate == False: # changed due to 6 neigbors filled 
                 self.change_state_to(Free) # Has 6 neighbors                
-                msg=self.build_inherit_message(id_rec)
-                self.send_msg(msg) 
+                if not self.rec_candidate: # if the rec_candidate is not empty, means messages for border are already received 
+                    msg=self.build_inherit_message(id_rec)
+                    self.send_msg(msg) 
 
     def handel_inheritence_message(self, msg):
         new_rec_candidate_values, new_rec_propagation_indicator_values, id_rec= self.decode_inherit_message(msg)
