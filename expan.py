@@ -414,15 +414,16 @@ class Drone:
                 self.change_state_to(Border)    
         else: # if drone doesnt have the candidate or the sourounding has changed 
             self.change_state_to(Free)
-        # the forming of border is done 
-        self.Forming_Border_Broadcast_REC.set()
+       
 
     def find_msg_direction_forward(self,rec_propagation_indicator,target_ids,sender,candidate ):
-        if sender not in self.rec_propagation_indicator: 
-            if candidate not in self.rec_candidate:
-                self.rec_candidate.append(candidate)
-            self.rec_propagation_indicator= rec_propagation_indicator # change the propagation_indicator means message from opposite direction has arrived
-            self.forward_border_message(rec_propagation_indicator, target_ids, candidate) 
+        # Only the drone that is candidate will forward messages , the Free or Alone no 
+        if self.border_candidate == True: 
+            if sender not in self.rec_propagation_indicator: 
+                if candidate not in self.rec_candidate:
+                    self.rec_candidate.append(candidate) # add the received id to the list so when a Broadcast from the same id is recicved that means a full circle include the current drone is completed
+                self.rec_propagation_indicator= rec_propagation_indicator # change the propagation_indicator means message from opposite direction has arrived
+                self.forward_border_message(rec_propagation_indicator, target_ids, candidate) 
 
     def handel_broken_into_spot(self, msg):
         if self.border_candidate== True: 
@@ -462,26 +463,29 @@ class Drone:
 
             elif msg.startswith(Forming_border_header.encode()) and msg.endswith(b'\n'): # message starts with F end with \n 
                 rec_propagation_indicator, target_ids, sender, candidate= self.decode_message_border_message(msg) 
-                # all the drone will retrive from the buffere then see if it is targeted or not 
-                if self.id in  target_ids: # the drone respond only if it is targeted
-                    
+                
+                # End of the expansion broadcast msg
+                if len(target_ids)==1 and target_ids[0]==-1 and rec_propagation_indicator[0]==-1 : 
+                    if self.border_candidate==True: 
+                        self.border_broadcast_respond(candidate)
+                     
+                    # Here any drone in any state needs to forward the boradcast message and rise ending flag  
+                    self.forward_border_message(rec_propagation_indicator, target_ids, candidate) 
+                    self.Forming_Border_Broadcast_REC.set()
+
+                
+                elif self.id in  target_ids: # the drone respond only if it is targeted
+
                     if candidate == self.id: # the message recived contains the id of the drone means the message came back  
                         self.circle_completed ()  
                         
-                    else: # the current drone received a message from a candidate border so it needs to forward it   
-                          # check if the message is broadcast 
-                        if len(target_ids)==1 and target_ids[0]==-1: # it is broadcast msg
-                            self.border_broadcast_respond(candidate)      
-                        else:     
-                            # add the received id to the list so when a Broadcast from the same id is recicved that means a full circle include the current drone is completed
-                            self.find_msg_direction_forward(rec_propagation_indicator,target_ids,sender,candidate )
+                    else: # the current drone received a message from a candidate border so it needs to forward it          
+                        self.find_msg_direction_forward(rec_propagation_indicator,target_ids,sender,candidate )
 
-                else: # the drone is not targeted to be in the border thus it drops the message 
-                      # it doesnt need to listen forward or do anything but it need to wait the end of the expansion 
-                    if len(target_ids)==1 and target_ids[0]==-1:
-                        self.Forming_Border_Broadcast_REC.set()
-                    else: 
+                else: # Drone is not targeted ( doesnt matter it it is free or candidate) thus it drops the message 
+                      # Do anything but wait for end of the expansion broadcast
                         continue 
+                
             else: 
                 print(" Undefined header")
     
