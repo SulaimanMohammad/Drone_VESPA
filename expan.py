@@ -717,22 +717,26 @@ class Drone:
             self.border_candidate=True
         
         return self.border_candidate
-            
+
+    def Fire_bordr_msg(self): 
+        target_ids=[]
+        for s in self.neighbor_list:
+            target_ids.extend(s["drones_in_id"]) # add the id of all the niegbors including the current 
+        # At the beginning  propagation_indicator and target_ids are the same in the source of the message 
+        propagation_indicator= target_ids
+        Msg= self.build_border_message(propagation_indicator, target_ids, self.id)
+        self.send_msg(Msg)
+
     def Forme_border(self):
        # since border_neighbors is used only for border drone then no need for it 
        #self.border_neighbors=[] #erase border_neighbors because no need for it 
         self.check_border_candidate_eligibility()
         
         if self.border_candidate:
-            self.update_candidate_spot_info_to_neighbors() # Useful if the drone arrived and filled a spot made others sourounded 
 
-            target_ids=[]
-            for s in self.neighbor_list:
-                target_ids.extend(s["drones_in_id"]) # add the id of all the niegbors including the current 
-            # At the beginning  propagation_indicator and target_ids are the same in the source of the message 
-            propagation_indicator= target_ids
-            Msg= self.build_border_message(propagation_indicator, target_ids, self.id)
-            self.send_msg(Msg)
+            self.update_candidate_spot_info_to_neighbors() # Useful if the drone arrived and filled a spot made others sourounded 
+            '''launch a message circulation for current candidat'''
+            self.Fire_bordr_msg()
 
         else: 
             #means that the drone is sourounded in the expansion direction it can be set as free 
