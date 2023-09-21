@@ -340,13 +340,23 @@ class Drone:
         # Start message with 'I'
         message = Inherit_header.encode() 
         
-        max_byte_count = max([self.determine_max_byte_size(num) for num in self.rec_candidate]+ [self.determine_max_byte_size(id_rec)])
+        max_byte_count = max([self.determine_max_byte_size(num) for num in self.rec_candidate]+ 
+                             [self.determine_max_byte_size(id_rec)]+ 
+                             [self.determine_max_byte_size(num) for num in self.rec_propagation_indicator]
+                             )
         
         #Add the length of rec_candidate list and size of representation of eeach element 
         message += struct.pack('>BB', max_byte_count, len(self.rec_candidate))
         
         # Add the element of the list with a max_byte_count byte representation 
         for num in self.rec_candidate:
+            message += num.to_bytes(max_byte_count, 'big')
+
+        #Add the length of rec_propagation_indicator list
+        message += struct.pack('>B', len(self.rec_propagation_indicator))
+
+        # Add the element of rec_propagation_indicator list with a max_byte_count byte representation 
+        for num in self.rec_propagation_indicator:
             message += num.to_bytes(max_byte_count, 'big')
 
         message +=id_rec.to_bytes(max_byte_count, 'big')
@@ -370,10 +380,21 @@ class Drone:
             rec_candidate_values.append(num)
             index += max_byte_count
         
+        # Extract the length of rec_propagation_indicator list
+        rec_propagation_indicator_length = struct.unpack('>B', message[index:index+1])[0]
+        index += 1
+
+        # Decode the numbers in rec_propagation_indicator
+        rec_propagation_indicator_values = []
+        for _ in range(rec_propagation_indicator_length):
+            num = int.from_bytes(message[index:index+max_byte_count], 'big')
+            rec_propagation_indicator_values.append(num)
+            index += max_byte_count
+
         # Decode id_rec
         id_rec = int.from_bytes(message[index:index+max_byte_count], 'big')
-        
-        return rec_candidate_values, id_rec
+
+        return rec_candidate_values, rec_propagation_indicator_values, id_rec
 
     def circle_completed(self):
         if self.check_border_candidate_eligibility():
@@ -409,13 +430,15 @@ class Drone:
             self.spot_info_update_neighbors_list(positionX, positionY, state, id_rec) # No need to mutex since the drone is in border_candidate only in it was Alone and reserved spot
             self.check_border_candidate_eligibility(observe=False) # use only the upddated list and see if the current drone still candidate 
             if self.border_candidate == False: # changed due to 6 neigbors filled 
+                self.change_state_to(Free) # Has 6 neighbors                
                 msg=self.build_inherit_message(id_rec)
                 self.send_msg(msg) 
 
     def handel_inheritence_message(self, msg):
-        new_rec_candidate_values, id_rec= self.decode_inherit_message(msg)
+        new_rec_candidate_values, new_rec_propagation_indicator_values, id_rec= self.decode_inherit_message(msg)
         if id_rec== self.id:
             self.update_rec_candidate(new_rec_candidate_values)
+            self.update_rec_propagation_indicator(new_rec_propagation_indicator_values)
 
     def receive_message (self):
         self.Forming_Border_Broadcast_REC = threading.Event()
@@ -578,6 +601,12 @@ class Drone:
         for item in new_rec_candidate:
             if item not in self.rec_candidate:
                 self.rec_candidate.append(item)
+    
+    def update_rec_propagation_indicator(self, new_rec_propagation_indicator):
+        # Update without duplicates 
+        for item in new_rec_propagation_indicator:
+            if item not in self.rec_propagation_indicator:
+                self.rec_propagation_indicator.append(item)
 
     # positionX , positionY are the coordinates from the sink 
     # format: _.xx 2 decimal
