@@ -59,7 +59,7 @@ Note: since any message will be received by all the nodes in the range, thus the
 
 ![Alt text](https://github.com/SulaimanMohammad/Drone_VESPA/blob/main/.exp/breaking_into_spot.png)
 
-Suppose drone 15 is located in the same spot as drone 13. In this scenario, drone 13 considers itself to be alone since it has claimed the spot.
+Suppose drone 15 is located in the same spot as drone 13. In this scenario, drone 13 considers itself to be Owner since it has claimed the spot.
 
 In such a case, drone 15 will continue moving. If the process of forming a border has already started, drone 15 will join the formation after it has already begun. If no action has been taken, two scenarios may arise:
 
