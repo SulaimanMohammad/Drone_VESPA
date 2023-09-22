@@ -4,7 +4,6 @@ import sys
 import threading
 import time
 
-multiplier = 100
 
 def compute_checksum(data):
     """Compute the modulo-256 sum of the bytes in the data."""
@@ -15,7 +14,7 @@ def build_message(self, numbers):
     message = self.phase.encode() #b'E' for example 
     
     # convert the float to an integer using the known multiplier
-    encoded_float = int(numbers[0] * multiplier)
+    encoded_float = int(numbers[0] * multiplier) # multiplier = 100 from expan 
 
     if encoded_float <= 65535 : 
         message += struct.pack('>H', encoded_float)
