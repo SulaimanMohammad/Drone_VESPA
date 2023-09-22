@@ -182,7 +182,7 @@ class Drone:
         
         return message
 
-    def decode_message_border_message(message):
+    def decode_border_message(message):
             
         # Extract max byte count and lengths of the lists
         max_byte_count, propagation_length = struct.unpack('>BB', message[1:3])
@@ -462,7 +462,7 @@ class Drone:
 
 
             elif msg.startswith(Forming_border_header.encode()) and msg.endswith(b'\n'): # message starts with F end with \n 
-                rec_propagation_indicator, target_ids, sender, candidate= self.decode_message_border_message(msg) 
+                rec_propagation_indicator, target_ids, sender, candidate= self.decode_border_message(msg) 
                 
                 # End of the expansion broadcast msg
                 if len(target_ids)==1 and target_ids[0]==-1 and rec_propagation_indicator[0]==-1 : 
@@ -665,7 +665,7 @@ class Drone:
         # Find the maximum element in the direction_taken list
         max_element = 7  # s0 to s6
 
-        # Create a dictionary to store the frequencies, Python dictionaries (similar to hash maps) to count occurrences.
+        # Create a dictionary to store the frequencies, similar to hash map to count occurrences.
         frequency_dict = {i: 0 for i in range(max_element + 1)}
 
         # Count the occurrences of each element
@@ -683,6 +683,7 @@ class Drone:
         # If there are multiple occurrences of the maximum frequency, choose randomly
         return random.choice(max_indices)        
     
+    # This function saves the spots that are occupied regarless if it is in the dominated direction or not 
     def save_occupied_spots(self):
         occupied_spots = [int(spot["name"][1:]) for spot in self.neighbor_list if spot["drones_in"] != 0]
         return occupied_spots
