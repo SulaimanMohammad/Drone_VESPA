@@ -626,27 +626,33 @@ class Drone:
 
     def spot_info_update_neighbors_list(self, positionX, positionY, state, id_rec):
         
+        #Check if the id_rec of the drone is already in neighbor_list
+        for s in self.neighbor_list:
+            if id_rec in s["drones_in_id"]:
+
+                # Find the index of the drone_id
+                idx = s['drones_in_id'].index(id_rec)
+                
+                # Remove from drones_in_id and states
+                s['drones_in_id'].pop(idx)
+                s['states'].pop(idx)
+                
+                # Decrement drones_in count
+                s['drones_in'] -= 1
+
         s_index= self.find_relative_spot(positionX, positionY)
         
         # Check if index is valid ( index between 0 and 6 )
         if 0 <= s_index <= self.num_neigbors+1:
-            s = self.neighbor_list[s_index] # Retrieve the corresponding spot
+            # Retrieve the corresponding spot
+            s = self.neighbor_list[s_index] 
 
-            # Check if drone_id exists in 'drones_in_id'
-            if id_rec in s['drones_in_id']:
-                # Find the index of the drone_id
-                idx = s['drones_in_id'].index(id_rec)
-                
-                # change the state at the corresponding index 
-                s['states'][idx]= state
-                
-            else:
-                # Append drone_id to drones_in_id and state_rec to states
-                s['drones_in_id'].append(id_rec)
-                s['states'].append(state)
-                
-                # Increment drones_in count
-                s['drones_in'] += 1
+            # Append drone_id to drones_in_id and state_rec to states
+            s['drones_in_id'].append(id_rec)
+            s['states'].append(state)
+            
+            # Increment drones_in count
+            s['drones_in'] += 1
 
         else:
             print("Invalid index provided")
