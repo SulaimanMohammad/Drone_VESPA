@@ -432,7 +432,7 @@ class Drone:
             if self.border_candidate == False: # changed due to 6 neigbors filled 
                 self.change_state_to(Free) # Has 6 neighbors                
                 if not self.rec_candidate: # if the rec_candidate is not empty, means messages for border are already received 
-                    msg=self.build_inherit_message(id_rec)
+                    msg=self.build_inherit_message(id_rec) # id_rec is the id of the drone hopped in 
                     self.send_msg(msg) 
 
     def handel_inheritence_message(self, msg):
@@ -637,12 +637,8 @@ class Drone:
                 # Find the index of the drone_id
                 idx = s['drones_in_id'].index(id_rec)
                 
-                # Remove from drones_in_id and states
-                s['drones_in_id'].pop(idx)
-                s['states'].pop(idx)
-                
-                # Decrement drones_in count
-                s['drones_in'] -= 1
+                # change the state at the corresponding index 
+                s['states'][idx]= state
                 
             else:
                 # Append drone_id to drones_in_id and state_rec to states
