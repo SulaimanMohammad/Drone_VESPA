@@ -34,7 +34,7 @@
     ``` 
 
 ## Expansion phase 
-![Alt text](https://github.com/SulaimanMohammad/Drone_VESPA/blob/main/.exp/expansion.svg)
+![Alt text](https://github.com/SulaimanMohammad/Drone_VESPA/blob/main/.exp/expansion.png)
 
 
 ### Forming border communication 
