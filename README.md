@@ -32,7 +32,12 @@
     ```bash
         python3 body_frame_move.py
     ``` 
-## Forming border communication 
+
+## Expansion phase 
+![Alt text](https://github.com/SulaimanMohammad/Drone_VESPA/blob/main/.exp/expansion.svg)
+
+
+### Forming border communication 
 **Propagation Indicator:** This represents the list that previous node used to construct the target. Essentially, it's the list of all neighbors of the previous node.
 
 Given that at least two neighbors are shared between two consecutive centers of a hexagon, this helps to prevent sending messages to nodes that have already received the message from behind. It also prevents forming a closed loop due to backward communication.
@@ -55,7 +60,7 @@ Note: since any message will be received by all the nodes in the range, thus the
 
 ![Alt text](https://github.com/SulaimanMohammad/Drone_VESPA/blob/main/.exp/forming_border.png)
 
-### Breaking into a spot in front of border candidate
+#### Breaking into a spot in front of border candidate
 
 ![Alt text](https://github.com/SulaimanMohammad/Drone_VESPA/blob/main/.exp/breaking_into_spot.png)
 
