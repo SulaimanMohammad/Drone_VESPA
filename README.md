@@ -33,8 +33,8 @@
         python3 body_frame_move.py
     ``` 
 
-## Expansion phase 
-![Alt text](https://github.com/SulaimanMohammad/Drone_VESPA/blob/main/.exp/expansion.png)
+## Expansion phase
+Here you can have acess [expansion UML](https://github.com/SulaimanMohammad/Drone_VESPA/blob/main/.exp/expansion.html)
 
 
 ### Forming border communication 
