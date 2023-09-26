@@ -18,6 +18,7 @@ eps=20
 speed_of_drone=2 # 2 m/s 
 movement_time= a*speed_of_drone*(1+ 0.2)  # add 20% of time for safty 
 scanning_time= 10 # in second ( TODO function to the speed and size of a )
+sync_time= 10
 multiplier = 100
 
 DIR_VECTORS = [
@@ -233,8 +234,8 @@ class Drone:
         ''' 
         The drone that receives the message will check target_ids, if it is included then it will forward the message 
         The message is forwarded to the neigbor drones that have ids are not in the recieved targets_ids and in the propagation_indicator
-        Propagation_indicator will help to prevint the messages to have target are backward 
-
+        Propagation_indicator will help to prevent the messages to have targets from behind
+        If the drone is not in the targets then it will ignore the message 
         '''
         if self.id in targets_ids: # the current drone is in the targeted ids
             
@@ -260,7 +261,6 @@ class Drone:
         msg= self.build_border_message([-1] ,[-1],candidate) # as you see the candidate is resent as it was recived 
         self.send_msg(msg)
         
- 
     def send_msg(self,msg):
         #TODO deal with sending boradcasting 
         pass
@@ -742,13 +742,18 @@ class Drone:
         Msg= self.build_border_message(propagation_indicator, target_ids, self.id)
         self.send_msg(Msg)
 
-    def Forme_border(self):
+    def Forme_border(self, vehicle):
        # since border_neighbors is used only for border drone then no need for it 
        #self.border_neighbors=[] #erase border_neighbors because no need for it 
         self.check_border_candidate_eligibility()
         
-        if self.border_candidate:
+        # Ensure the drone is the only one in its spot, even if this check is done implicitly before in waiting time.
 
+        while self.spot["drones_in"] > 1:
+            wait_and_hover(vehicle, 10)
+            self.check_num_drones_in_neigbors()
+        
+        if self.border_candidate :
             self.update_candidate_spot_info_to_neighbors() # Useful if the drone arrived and filled a spot made others sourounded 
             '''launch a message circulation for current candidat'''
             self.Fire_bordr_msg()
@@ -758,7 +763,11 @@ class Drone:
             self.change_state_to(Free)
             self.direction_taken=[] # reset the direction taken for the nex expansion 
 
-        self.Forming_Border_Broadcast_REC.wait() # wait until the border procesdure is finished 
+        # wait until the border procesdure is finished 
+        while not self.Forming_Border_Broadcast_REC.is_set():
+           hover(vehicle)
+        
+        set_to_move(vehicle)
         self.Forming_Border_Broadcast_REC.clear() # reset for the next expansion 
 
     def search_for_target(self): # find if there is target in the area or not 
@@ -802,23 +811,29 @@ class Drone:
                     # start observing the location
                     # after arriving ( send )
             else: # another should move 
-                time.sleep (movement_time) # Wait untile the elected drone to leave to next stop.
-                # TODO here sleep means loiter 
+                wait_and_hover(vehicle,movement_time) # Wait untile the elected drone to leave to next stop.
                 continue # do all the steps again escape update location because no movement done yet 
                 '''Go to another iteration to redo all process because there is possibility that the spots around have changed'''
 
             calculate_relative_pos(vehicle)
             print("checking for update the state")
             self.is_it_Owner()
-        # TODO need to wait a time and during this time the drone has nothing with it in S0 
-        # if that nothing done all drone will think itself candidate ( this way we reduce the numbers of messages )
-        self.Forme_border()# will not return until the drones receive bordcast of forming border
+        
+        # Before initiating the border procedure, it's important to wait for some time toensures that the drone is alone in its spot.
+        # This step eliminates the possibility of erroneously considering a drone as a border-candidate when another drone in the same spot is about to move.
+        wait_and_hover(vehicle, sync_time) 
+
+        self.Forme_border(vehicle)# will not return until the drones receive bordcast of forming border
         self.rec_propagation_indicator=[] # rest this indecator for the next iteration 
-        time.sleep(1) # wait awhile as result of the accumulated communication time ( for sync between all drones)
         self.xbee_receive_message_thread.join() # stop listening to message
+        
+        # Time guarantees that all drones begin the searching procedure simultaneously and synchronized.
+        wait_and_hover(vehicle, sync_time) 
+
         self.search_for_target() # find if there is target in the area or not 
         #the drone will never do to the second phase before finihing the search and the update 
-        # because it will be problem if all not in the same phase 
+      
         self.phase= Span_header
         #TODO here the drones should wait in loop until reciving a brodcast of finishing the expanshion 
-        
+        # TODO snce the broadcast is continueing but the retriving stopped so a message will be left
+            # there is need to empty the buferre before the next phase to avoid any surplus
