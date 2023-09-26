@@ -730,3 +730,9 @@ def wait_and_hover(self, time_req):
     self.mode    = VehicleMode("LOITER") #loiter mode and hover in your place 
     time.sleep(time_req)
     self.mode     = VehicleMode("GUIDED")
+
+def hover(self):
+    self.mode    = VehicleMode("LOITER") #loiter mode and hover in your place 
+
+def set_to_move(self):
+    self.mode     = VehicleMode("GUIDED")
