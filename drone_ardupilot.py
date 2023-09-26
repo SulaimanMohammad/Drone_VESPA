@@ -726,3 +726,7 @@ def convert_angle_to_set_dir(self, angle):
     else: 
          return [normalize_angle(angle), +1]
     
+def wait_and_hover(self, time_req):
+    self.mode    = VehicleMode("LOITER") #loiter mode and hover in your place 
+    time.sleep(time_req)
+    self.mode     = VehicleMode("GUIDED")
