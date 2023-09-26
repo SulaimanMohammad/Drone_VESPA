@@ -10,6 +10,7 @@ vehicle.wait_ready(True, raise_exception=False)
 #Capture STATUSTEXT Messages
 def handle_statustext_callback(self, name, message):
     #print("Received STATUSTEXT:", message.text)
+    # TODO should be modified for all types of Pixhawk6C not only 6C
     if 'Pixhawk6C' in message.text:  
         print("ID:", message.text)
 
