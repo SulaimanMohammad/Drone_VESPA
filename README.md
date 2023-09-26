@@ -34,7 +34,7 @@
     ``` 
 
 ## Expansion phase
-Here you can have acess [expansion UML](https://github.com/SulaimanMohammad/Drone_VESPA/blob/main/.exp/expansion.html)
+Here you can have acess [expansion UML](https://SulaimanMohammad.github.io/Drone_VESPA/.exp/expansion.html)
 
 
 ### Forming border communication 
