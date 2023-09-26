@@ -248,7 +248,19 @@ class Drone:
         
         else: # it is not in the tagreted ids then do nothing ( drop the message)
             return 
-
+    
+    def forward_broadcast_message(self,candidate):
+        ''' 
+        Build and send messgaes to all the niegbors and since only it is a broadcast 
+        then propagation_indicator, targets_ids both are [-1].
+        The most important is the candidate that fired the broadcast, which is already recieved from neigbors
+        Note: since the message will be sent to all the drone around , but rememeber the ones that already received 
+        it will not recieved it again and th reason is the flag that end the listener is raised and no reading of buffer will be performed
+        '''
+        msg= self.build_border_message([-1] ,[-1],candidate) # as you see the candidate is resent as it was recived 
+        self.send_msg(msg)
+        
+ 
     def send_msg(self,msg):
         #TODO deal with sending boradcasting 
         pass
@@ -470,7 +482,7 @@ class Drone:
                         self.border_broadcast_respond(candidate)
                      
                     # Here any drone in any state needs to forward the boradcast message and rise ending flag  
-                    self.forward_border_message(rec_propagation_indicator, target_ids, candidate) 
+                    self.forward_broadcast_message(candidate) 
                     self.Forming_Border_Broadcast_REC.set()
 
                 
@@ -809,3 +821,4 @@ class Drone:
         # because it will be problem if all not in the same phase 
         self.phase= Span_header
         #TODO here the drones should wait in loop until reciving a brodcast of finishing the expanshion 
+        
