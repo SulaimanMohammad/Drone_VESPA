@@ -131,9 +131,6 @@ class Drone:
             s = {"name": "s" + str(i), "distance": 0, "priority": 0,"drones_in": 0,"drones_in_id":[] , "states": [], "previous_state": []}
             self.neighbor_list.append(s)
         
-        # lance a thread to read messages continuously 
-        self.xbee_receive_message_thread = threading.Thread(target=self.receive_message, args=(self,)) #pass the function reference and arguments separately to the Thread constructor.
-        self.xbee_receive_message_thread.start()
 
     '''
     -------------------------------------------------------------------------------------
@@ -784,18 +781,22 @@ class Drone:
 
         # move int th lace and couver it to check if there is target or not 
     
-    def first_exapnsion (self, vehicle):
-        random_dir = int(random.randint(1, 6)) # 0 not include because it should not be in the sink
-        self.direction_taken.append( random_dir)
-        angle, distance = self.convert_spot_angle_distance(random_dir)
-        move_body_PID(vehicle,angle, distance)
-        calculate_relative_pos(vehicle)
-        self.update_location(random_dir)
+
+    '''
+    -------------------------------------------------------------------------------------
+    ----------------------------------- Main functions ----------------------------------
+    -------------------------------------------------------------------------------------
+    '''
+
+    def expan_border_search(self,vehicle):
+        # Lance a thread to read messages continuously 
+        self.xbee_receive_message_thread = threading.Thread(target=self.receive_message, args=(self,)) #pass the function reference and arguments separately to the Thread constructor.
+        self.xbee_receive_message_thread.start()
         self.check_Ownership()
+        
         while self.state !=Owner:
-             #  after steady and hover 
-                # start observing the location
-            # in the new position find the distance of the neigboors 
+            
+            # Start observing the location in the new position find the distance of the neigboors 
             self.calculate_neighbors_distance_sink()
             print("checking for movement")
             self.check_num_drones_in_neigbors()
@@ -844,7 +845,21 @@ class Drone:
         # It's essential to clear the buffer before the next phase to prevent any surplus.
         self.clear_buffer()
 
+    def first_exapnsion (self, vehicle):
 
+        random_dir = int(random.randint(1, 6)) # 0 not include because it should not be in the sink
+        self.direction_taken.append( random_dir)
+        angle, distance = self.convert_spot_angle_distance(random_dir)
+        move_body_PID(vehicle,angle, distance)
+        calculate_relative_pos(vehicle)
+        self.update_location(random_dir)
+        wait_and_hover(vehicle, 5)
+        self.expan_border_search(vehicle)
 
-
-
+    def further_expansion (self,vehicle):
+        if self.state == Border:
+            self.change_state_to(Owner) # The border save it is own spot 
+        elif self.state == Irremovable_boarder:
+            self.change_state_to(Irremovable)
+        else: # State is Free
+            self.expan_border_search(vehicle)
