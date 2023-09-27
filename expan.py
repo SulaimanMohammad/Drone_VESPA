@@ -588,16 +588,6 @@ class Drone:
         # self.spot={"name": "s" + str(0), "distance": 0, "priority": 0, "drones_in": 1,"drones_in_id":[], "states": [] , "previous_state": 1, "phase": "E"}
         id_free = [id for id, state in zip(self.spot["drones_in_id"], self.spot["states"]) if state == Free]
         return min(id_free) # return the min id of a drone is in state Free 
-    
-    def is_it_Owner(self):
-        self.check_num_drones_in_neigbors()
-         #if s0 where the drone is conatins only the drone ( droen Owner) 
-         # the done as you see count itself at the spot 
-         # the drone should be Owner to be free 
-        print("drone in s0", self.spot["drones_in"] )
-        if self.spot["drones_in"]==1: # the drone is Owner
-            self.change_state_to (Owner)
-        print("drone state in s0", self.state )
 
     def convert_spot_angle_distance(self, dir):
         return DIR_VECTORS[dir][0], DIR_VECTORS[dir][1]
@@ -608,6 +598,8 @@ class Drone:
                 return i  # Return index if a match is found
         return -1  # Return -1 if no match is found
     
+    def allowed_direction(self):
+        pass
     
     '''
     -------------------------------------------------------------------------------------
@@ -617,7 +609,17 @@ class Drone:
     def change_state_to( self, new_state):
         self.previous_state= self.state # save the preivious state 
         self.state= new_state # change the state     
-
+    
+    def check_Ownership(self):
+        self.check_num_drones_in_neigbors()
+         #if s0 where the drone is conatins only the drone ( droen Owner) 
+         # the done as you see count itself at the spot 
+         # the drone should be Owner to be free 
+        print("drone in s0", self.spot["drones_in"] )
+        if self.spot["drones_in"]==1: # the drone is Owner
+            self.change_state_to (Owner)
+        print("drone state in s0", self.state )
+  
     def update_rec_candidate(self, new_rec_candidate):
         # Update without duplicates 
         for item in new_rec_candidate:
@@ -789,7 +791,7 @@ class Drone:
         move_body_PID(vehicle,angle, distance)
         calculate_relative_pos(vehicle)
         self.update_location(random_dir)
-
+        self.check_Ownership()
         while self.state !=Owner:
              #  after steady and hover 
                 # start observing the location
@@ -820,7 +822,7 @@ class Drone:
 
             calculate_relative_pos(vehicle)
             print("checking for update the state")
-            self.is_it_Owner()
+            self.check_Ownership()
         
         # Before initiating the border procedure, it's important to wait for some time to ensures that the drone is alone in its spot.
         # This step eliminates the possibility of erroneously considering a drone as a border-candidate when another drone in the same spot is about to move.
@@ -841,3 +843,8 @@ class Drone:
         # Since broadcast messages might still be circulating while retrieval has stopped, there could be leftover messages in the buffer.
         # It's essential to clear the buffer before the next phase to prevent any surplus.
         self.clear_buffer()
+
+
+
+
+
