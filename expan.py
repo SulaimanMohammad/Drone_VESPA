@@ -423,7 +423,8 @@ class Drone:
         if candidate in self.rec_candidate: # the sender of broadcast already sent msg to the current drone so it is part of the circle 
             # re-check the the droen around still have same situation and still can be border 
             if self.check_border_candidate_eligibility():
-                self.change_state_to(Border)    
+                self.change_state_to(Border)  
+                self.border_neighbors = self.save_occupied_spots() # The border drone will save the occupied spot for the next expansion 
         else: # if drone doesnt have the candidate or the sourounding has changed 
             self.change_state_to(Free)
 
@@ -629,8 +630,8 @@ class Drone:
             if item not in self.rec_propagation_indicator:
                 self.rec_propagation_indicator.append(item)
 
-    # positionX , positionY are the coordinates from the sink 
-    # format: _.xx 2 decimal
+    # PositionX , positionY are the coordinates from the sink 
+    # Format: _.xx 2 decimal
     def update_location(self, dir):
         x=  DIR_xy_distance_VECTORS[dir][0]
         y= DIR_xy_distance_VECTORS[dir][1]
@@ -713,7 +714,6 @@ class Drone:
         if observe:
             self.check_num_drones_in_neigbors()
 
-        self.border_neighbors = self.save_occupied_spots()
         self.dominated_direction= self.count_element_occurrences()
         # Define a dictionary to map directions to the corresponding spots_to_check_for_border values
         direction_to_check_map = {
@@ -782,7 +782,6 @@ class Drone:
 
         # move int th lace and couver it to check if there is target or not 
     
-
     def first_exapnsion (self, vehicle):
         random_dir = int(random.randint(1, 6)) # 0 not include because it should not be in the sink
         self.direction_taken.append( random_dir)
