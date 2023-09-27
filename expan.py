@@ -507,7 +507,12 @@ class Drone:
         # recieve message 
         # send Ack 
         pass
-    
+
+    def clear_buffer(self):
+        # read the buffer until it is empty 
+        # while xbee_device.get_queue_length() > 0:
+        #     xbee_device.read_data() 
+        pass
        
 
     '''
@@ -750,7 +755,7 @@ class Drone:
         # Ensure the drone is the only one in its spot, even if this check is done implicitly before in waiting time.
 
         while self.spot["drones_in"] > 1:
-            wait_and_hover(vehicle, 10)
+            wait_and_hover(vehicle, movement_time)
             self.check_num_drones_in_neigbors()
         
         if self.border_candidate :
@@ -807,10 +812,9 @@ class Drone:
                     angle, distance = self.convert_spot_angle_distance(destination_spot)
                     move_body_PID(vehicle,angle, distance)
                     self.update_location(destination_spot)
-                    # after steady and hover 
-                    # start observing the location
-                    # after arriving ( send )
-            else: # another should move 
+                    # Arrive to steady state and hover then start observing the location
+                    wait_and_hover(vehicle, 5) 
+            else: 
                 wait_and_hover(vehicle,movement_time) # Wait untile the elected drone to leave to next stop.
                 continue # do all the steps again escape update location because no movement done yet 
                 '''Go to another iteration to redo all process because there is possibility that the spots around have changed'''
@@ -819,21 +823,22 @@ class Drone:
             print("checking for update the state")
             self.is_it_Owner()
         
-        # Before initiating the border procedure, it's important to wait for some time toensures that the drone is alone in its spot.
+        # Before initiating the border procedure, it's important to wait for some time to ensures that the drone is alone in its spot.
         # This step eliminates the possibility of erroneously considering a drone as a border-candidate when another drone in the same spot is about to move.
         wait_and_hover(vehicle, sync_time) 
 
-        self.Forme_border(vehicle)# will not return until the drones receive bordcast of forming border
+        self.Forme_border(vehicle)# will not return until the drones receive boradcast of forming border
+
         self.rec_propagation_indicator=[] # rest this indecator for the next iteration 
         self.xbee_receive_message_thread.join() # stop listening to message
         
         # Time guarantees that all drones begin the searching procedure simultaneously and synchronized.
         wait_and_hover(vehicle, sync_time) 
 
-        self.search_for_target() # find if there is target in the area or not 
-        #the drone will never do to the second phase before finihing the search and the update 
-      
+        self.search_for_target() # This is blocking until the end of movement 
+              
         self.phase= Span_header
-        #TODO here the drones should wait in loop until reciving a brodcast of finishing the expanshion 
-        # TODO snce the broadcast is continueing but the retriving stopped so a message will be left
-            # there is need to empty the buferre before the next phase to avoid any surplus
+        
+        # Since broadcast messages might still be circulating while retrieval has stopped, there could be leftover messages in the buffer.
+        # It's essential to clear the buffer before the next phase to prevent any surplus.
+        self.clear_buffer()
