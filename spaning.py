@@ -299,17 +299,11 @@ def build_path(self):
                 # send message to a drone that had Id= send_msg_drone_id
     
 
-# each drone needs to save the irrmovable drones around so it can send messages to it as a path 
-# recive all the neigboor including the state of each 
-# if the current drone is irremovable then send message to the drone close to the sink 
-# you can find the close one by chekcing the distance 
-# the message here will include the id of the dron in subject 
+def spanining ( self, vehicle ): 
+    #Stay hovering while spanning is done 
+    hover(vehicle)
 
-# each droen should svar the id of the drone for the path to sink and for the path to border 
-
-def spanining ( self): 
-
-    #rthis will be done through demand message 
+    #this will be done through demand message 
     self.check_drones_in_neigboors() # update neigboors after the finish of expansion 
                                      # here you need to safe the id of the drone that is neigboor , ask for data 
 
@@ -345,9 +339,5 @@ def spanining ( self):
         # send the end of the phase from your side to every one around 
 
     xbee_thread.join() # this top at the end of he phase because no need to use mutex anymore 
-    
+    set_to_move(vehicle) # Drone can move now in the balancing phase 
 
-
-# the drone that recive the message with parallel listening 
-# the message in this way will be recived and save the message in variable like a buffer
-# because the drone can recive the message while the drone is searching to build a path
