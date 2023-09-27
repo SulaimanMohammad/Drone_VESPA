@@ -767,11 +767,11 @@ class Drone:
             #means that the drone is sourounded in the expansion direction it can be set as free 
             self.change_state_to(Free)
             self.direction_taken=[] # reset the direction taken for the nex expansion 
+        
+        hover(vehicle) # Hovering while the forming border is done 
 
         # wait until the border procesdure is finished 
-        while not self.Forming_Border_Broadcast_REC.is_set():
-           hover(vehicle)
-        
+        self.Forming_Border_Broadcast_REC.wait()
         set_to_move(vehicle)
         self.Forming_Border_Broadcast_REC.clear() # reset for the next expansion 
 
