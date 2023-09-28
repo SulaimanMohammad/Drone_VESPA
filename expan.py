@@ -118,6 +118,7 @@ class Drone:
         self.drone_id_to_border
         self. min_distance_dicts=[] # nigboor close to the sink 
         self.border_neighbors=[] # contains the spots that are occupied while forming the border
+        self.allowed_spots=[]
         self.direction_taken=[]  # direction path (spots) that are taken in the phase 
         self.neighbor_list = []  # list that contains the 6 neighbors around the current location
         self.rec_propagation_indicator=[]
@@ -563,15 +564,20 @@ class Drone:
         denom= 4.0 * self.neighbor_list[0]["distance"] # 4*distance of s0 from sink 
         self.findMinDistances_niegboor()
         for s in self.neighbor_list:
-            if s["drones_in"] == 0 : # free spot 
-                s["priority"]= s["distance"]* C /denom
-                #print("s["name"],s["priority"] )
-
-            else: # s is occupied 
-                if s["name"] in self.min_distance_dicts: #close to sink 
-                    s["priority"]= float("inf") 
-                else: # random float between [w*c+eps, w+1*c[
-                    s["priority"]= random.uniform(s["drones_in"]* C + eps, (s["drones_in"]+1)*C)
+            if  s["name"] not in self.allowed_spots:
+                if s["drones_in"] == 0 : # free spot 
+                    s["priority"]= s["distance"]* C /denom
+                    
+                else: # s is occupied 
+                    if s["name"] in self.min_distance_dicts: #close to sink 
+                        s["priority"]= float("inf") 
+                    else: # random float between [w*c+eps, w+1*c[
+                        s["priority"]= random.uniform(s["drones_in"]* C + eps, (s["drones_in"]+1)*C)
+            else:
+                s["priority"]= float("inf")
+        
+        if self.allowed_spots: #This constraint should be used only one time after the balancing to avoid going behind the border again
+            self.allowed_spots=[]
 
     # find the neighbor have to go to and save it in direction_taken
     def find_priority(self): 
@@ -594,8 +600,6 @@ class Drone:
                 return i  # Return index if a match is found
         return -1  # Return -1 if no match is found
     
-    def allowed_direction(self):
-        pass
     
     '''
     -------------------------------------------------------------------------------------
