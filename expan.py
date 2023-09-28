@@ -421,7 +421,6 @@ class Drone:
             # re-check the the droen around still have same situation and still can be border 
             if self.check_border_candidate_eligibility():
                 self.change_state_to(Border)  
-                self.border_neighbors = self.save_occupied_spots() # The border drone will save the occupied spot for the next expansion 
         else: # if drone doesnt have the candidate or the sourounding has changed 
             self.change_state_to(Free)
 
@@ -701,11 +700,6 @@ class Drone:
 
         # If there are multiple occurrences of the maximum frequency, choose randomly
         return random.choice(max_indices)        
-    
-    # This function saves the spots that are occupied regarless if it is in the dominated direction or not 
-    def save_occupied_spots(self):
-        occupied_spots = [int(spot["name"][1:]) for spot in self.neighbor_list if spot["drones_in"] != 0]
-        return occupied_spots
     
     def check_border_candidate_eligibility(self, observe=True):
         self.border_candidate=False  
