@@ -84,10 +84,14 @@ Border=2
 Irremovable= 3 
 Irremovable_boarder=4 
 
+Demand_header= "D"
+Reponse_header= "R"
+
 Expan_header= "E"
 Arrival_header= "A"
 Inherit_header= "I" 
 Forming_border_header= "F"
+
 Span_header= "S"
 Balance_header= "B"
 
@@ -296,9 +300,9 @@ class Drone:
         # Convert back to float
         return value / multiplier  # Assuming multiplier = 100
     
-    def build_spot_info_message(self):
+    def build_spot_info_message(self, header):
         # Start message with 'E'
-        message = Arrival_header.encode()
+        message = header.encode()
 
         # Encode positionX and positionY
         message += self.encode_float_to_int(self.positionX)
@@ -321,7 +325,7 @@ class Drone:
 
     def decode_spot_info_message(self,message):
         # Starting index after the header
-        index = len(Arrival_header.encode()) # =1 
+        index = 1 #All headers are 1 byte
         
         # Decode positionX
         positionX_encoded = message[index:index+2] if len(message) - index == 6 else message[index:index+4]
@@ -643,7 +647,7 @@ class Drone:
         self.calculate_neighbors_distance_sink()
     
     def update_candidate_spot_info_to_neighbors(self):
-        msg= self.build_spot_info_message()
+        msg= self.build_spot_info_message(Arrival_header)
         self.send_msg(msg)   
 
     def spot_info_update_neighbors_list(self, positionX, positionY, state, id_rec):
@@ -829,13 +833,14 @@ class Drone:
         self.Forme_border(vehicle)# will not return until the drones receive boradcast of forming border
 
         self.rec_propagation_indicator=[] # rest this indecator for the next iteration 
+        self.direction_taken=[] #rest this taken path for the next iteration
         self.xbee_receive_message_thread.join() # stop listening to message
         
         # Time guarantees that all drones begin the searching procedure simultaneously and synchronized.
         wait_and_hover(vehicle, sync_time) 
 
         self.search_for_target() # This is blocking until the end of movement 
-              
+             
         self.phase= Span_header
         
         # Since broadcast messages might still be circulating while retrieval has stopped, there could be leftover messages in the buffer.
@@ -860,3 +865,4 @@ class Drone:
             self.change_state_to(Irremovable)
         else: # State is Free
             self.expan_border_search(vehicle)
+# old border can be free by using the saved occupied spot in it to see if it i still border ot not 
