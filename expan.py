@@ -599,6 +599,13 @@ class Drone:
                 return i  # Return index if a match is found
         return -1  # Return -1 if no match is found
     
+    def move_to_spot(self,vehicle, destination_spot):
+        angle, distance = self.convert_spot_angle_distance(destination_spot)
+        move_body_PID(vehicle,angle, distance)
+        self.update_location(destination_spot)
+        self.clear_buffer() # need to clear the bufer from message received on the road 
+        # Arrive to steady state and hover then start observing the location
+        wait_and_hover(vehicle, 1) 
     
     '''
     -------------------------------------------------------------------------------------
@@ -807,12 +814,7 @@ class Drone:
                 if destination_spot != 0: # it means movement otherwise it is hovering 
                     print ("go to S", destination_spot)
                     self.direction_taken.append( destination_spot)
-                    angle, distance = self.convert_spot_angle_distance(destination_spot)
-                    move_body_PID(vehicle,angle, distance)
-                    self.update_location(destination_spot)
-                    self.clear_buffer() # need to clear the bufer from message received on the road 
-                    # Arrive to steady state and hover then start observing the location
-                    wait_and_hover(vehicle, 1) 
+                    self.move_to_spot(vehicle, destination_spot)
             else: 
                 wait_and_hover(vehicle,movement_time) # Wait untile the elected drone to leave to next stop.
                 continue # do all the steps again escape update location because no movement done yet 
@@ -846,12 +848,8 @@ class Drone:
     def first_exapnsion (self, vehicle):
 
         random_dir = int(random.randint(1, 6)) # 0 not include because it should not be in the sink
-        self.direction_taken.append( random_dir)
-        angle, distance = self.convert_spot_angle_distance(random_dir)
-        move_body_PID(vehicle,angle, distance)
-        calculate_relative_pos(vehicle)
-        self.update_location(random_dir)
-        wait_and_hover(vehicle, 5)
+        self.direction_taken.append( random_dir)        
+        self.move_to_spot(vehicle, random_dir)
         self.expan_border_search(vehicle)
 
     def further_expansion (self,vehicle):

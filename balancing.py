@@ -70,11 +70,8 @@ def balancing(self, vehicle):
             self.neighbors_list_updated.wait()
             self.neighbors_list_updated.clear()
             border_found, spot_to_go = search_going_to_border(self)
-            # Move 
-            self.direction_taken.append( spot_to_go)
-            angle, distance = self.convert_spot_angle_distance(spot_to_go)
-            move_body_PID(vehicle,angle, distance)
-            self.update_location(spot_to_go)
+            # Move             
+            self.move_to_spot(vehicle, spot_to_go)
 
 
 
