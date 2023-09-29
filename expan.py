@@ -503,7 +503,7 @@ class Drone:
                         continue 
                 
             else: 
-                print(" Undefined header")
+                print(" Undefined header or empty buffer")
 
     def clear_buffer(self):
         # read the buffer until it is empty 
@@ -810,8 +810,9 @@ class Drone:
                     angle, distance = self.convert_spot_angle_distance(destination_spot)
                     move_body_PID(vehicle,angle, distance)
                     self.update_location(destination_spot)
+                    self.clear_buffer() # need to clear the bufer from message received on the road 
                     # Arrive to steady state and hover then start observing the location
-                    wait_and_hover(vehicle, 5) 
+                    wait_and_hover(vehicle, 1) 
             else: 
                 wait_and_hover(vehicle,movement_time) # Wait untile the elected drone to leave to next stop.
                 continue # do all the steps again escape update location because no movement done yet 
