@@ -142,7 +142,9 @@ class Drone:
     ----------------------------- Communication ---------------------------------
     -------------------------------------------------------------------------------------
     '''
- 
+    def build_data_demand_message(self):
+        return Demand_header.encode() + b'\n' 
+    
     #Return the byte count necessary to represent max ID.
     def determine_max_byte_size (slef,number):
         if number <= 0xFF:  # 1 byte
@@ -441,7 +443,7 @@ class Drone:
     def handel_broken_into_spot(self, msg):
         if self.border_candidate== True: 
             positionX, positionY, state, id_rec= self.decode_spot_info_message(msg)
-            self.spot_info_update_neighbors_list(positionX, positionY, state, id_rec) # No need to mutex since the drone is in border_candidate only in it was Owner and reserved spot
+            self.update_neighbors_list(positionX, positionY, state, id_rec) # No need to mutex since the drone is in border_candidate only in it was Owner and reserved spot
             self.check_border_candidate_eligibility(observe=False) # use only the upddated list and see if the current drone still candidate 
             if self.border_candidate == False: # changed due to 6 neigbors filled 
                 self.change_state_to(Free) # Has 6 neighbors                
@@ -502,13 +504,6 @@ class Drone:
                 
             else: 
                 print(" Undefined header")
-    
-    def start_observing(self):
-        #send a demand 
-        # set a timer 
-        # recieve message 
-        # send Ack 
-        pass
 
     def clear_buffer(self):
         # read the buffer until it is empty 
@@ -650,26 +645,26 @@ class Drone:
         msg= self.build_spot_info_message(Arrival_header)
         self.send_msg(msg)   
 
-    def spot_info_update_neighbors_list(self, positionX, positionY, state, id_rec):
-        
-        #Check if the id_rec of the drone is already in neighbor_list
-        for s in self.neighbor_list:
-            if id_rec in s["drones_in_id"]:
-
-                # Find the index of the drone_id
-                idx = s['drones_in_id'].index(id_rec)
-                
-                # Remove from drones_in_id and states
-                s['drones_in_id'].pop(idx)
-                s['states'].pop(idx)
-                
-                # Decrement drones_in count
-                s['drones_in'] -= 1
+    def update_neighbors_list(self, positionX, positionY, state, id_rec):
 
         s_index= self.find_relative_spot(positionX, positionY)
-        
         # Check if index is valid ( index between 0 and 6 )
         if 0 <= s_index <= self.num_neigbors+1:
+
+            #Check if the id_rec of the drone is already in neighbor_list
+            for s in self.neighbor_list:
+                if id_rec in s["drones_in_id"] and int(s["name"][1:]) != s_index : # The drone was in another neighborhood spot 
+
+                    # Find the index of the drone_id
+                    idx = s['drones_in_id'].index(id_rec)
+                    
+                    # Remove from drones_in_id and states
+                    s['drones_in_id'].pop(idx)
+                    s['states'].pop(idx)
+                    
+                    # Decrement drones_in count
+                    s['drones_in'] -= 1
+            
             # Retrieve the corresponding spot
             s = self.neighbor_list[s_index] 
 
