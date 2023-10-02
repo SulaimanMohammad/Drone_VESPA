@@ -93,6 +93,8 @@ Inherit_header= "I"
 Forming_border_header= "F"
 
 Span_header= "S"
+
+Local_balance_header="L" 
 Balance_header= "B"
 
 
@@ -156,7 +158,7 @@ class Drone:
         else:
             return 4  # max 4 bytes
 
-    def build_border_message(self, propagation_indicator ,target_ids, candidate):
+    def build_border_message(self, header, propagation_indicator ,target_ids, candidate):
     
         # Determine max byte count for numbers
         max_byte_count = max(
@@ -166,7 +168,7 @@ class Drone:
                             )
             
         # Start message with 'F', followed by max byte count and then the length of the propagation_indicator
-        message = Forming_border_header.encode() + struct.pack('>BB', max_byte_count, len(propagation_indicator))
+        message = header.encode() + struct.pack('>BB', max_byte_count, len(propagation_indicator))
     
         # Add each number to the message using determined byte count
         for num in propagation_indicator:
@@ -248,7 +250,7 @@ class Drone:
                 all_neigbors_id.extend(s["drones_in_id"]) # add the id of all the niegbors including the current 
             
             new_propagation_indicator, new_targets_ids= self.calculate_propagation_indicator_target( propagation_indicator,targets_ids)
-            msg= self.build_border_message(new_propagation_indicator,new_targets_ids, candidate) # as you see the candidate is resent as it was recived 
+            msg= self.build_border_message(Forming_border_header, new_propagation_indicator,new_targets_ids, candidate) # as you see the candidate is resent as it was recived 
             self.send_msg(msg)
         
         else: # it is not in the tagreted ids then do nothing ( drop the message)
@@ -262,7 +264,7 @@ class Drone:
         Note: since the message will be sent to all the drone around , but rememeber the ones that already received 
         it will not recieved it again and th reason is the flag that end the listener is raised and no reading of buffer will be performed
         '''
-        msg= self.build_border_message([-1] ,[-1],candidate) # as you see the candidate is resent as it was recived 
+        msg= self.build_border_message(Forming_border_header, [-1] ,[-1],candidate) # as you see the candidate is resent as it was recived 
         self.send_msg(msg)
         
     def send_msg(self,msg):
@@ -415,7 +417,7 @@ class Drone:
     def circle_completed(self):
         if self.check_border_candidate_eligibility():
             self.change_state_to(Border)
-            Broadcast_Msg= self.build_border_message([-1] ,[-1], self.id)
+            Broadcast_Msg= self.build_border_message(Forming_border_header,[-1] ,[-1], self.id)
             self.send_msg(Broadcast_Msg)
             self.Forming_Border_Broadcast_REC.set() # to end the the loop 
         else: 
@@ -749,7 +751,7 @@ class Drone:
             target_ids.extend(s["drones_in_id"]) # add the id of all the niegbors including the current 
         # At the beginning  propagation_indicator and target_ids are the same in the source of the message 
         propagation_indicator= target_ids
-        Msg= self.build_border_message(propagation_indicator, target_ids, self.id)
+        Msg= self.build_border_message(Forming_border_header,propagation_indicator, target_ids, self.id)
         self.send_msg(Msg)
 
     def Forme_border(self, vehicle):
