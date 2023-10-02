@@ -236,7 +236,7 @@ class Drone:
 
         return new_target_ids, new_propagation_indicator
 
-    def forward_border_message(self, propagation_indicator, targets_ids, candidate):
+    def forward_border_message(self, header, propagation_indicator, targets_ids, candidate):
         ''' 
         The drone that receives the message will check target_ids, if it is included then it will forward the message 
         The message is forwarded to the neigbor drones that have ids are not in the recieved targets_ids and in the propagation_indicator
@@ -250,13 +250,13 @@ class Drone:
                 all_neigbors_id.extend(s["drones_in_id"]) # add the id of all the niegbors including the current 
             
             new_propagation_indicator, new_targets_ids= self.calculate_propagation_indicator_target( propagation_indicator,targets_ids)
-            msg= self.build_border_message(Forming_border_header, new_propagation_indicator,new_targets_ids, candidate) # as you see the candidate is resent as it was recived 
+            msg= self.build_border_message(header, new_propagation_indicator,new_targets_ids, candidate) # as you see the candidate is resent as it was recived 
             self.send_msg(msg)
         
         else: # it is not in the tagreted ids then do nothing ( drop the message)
             return 
     
-    def forward_broadcast_message(self,candidate):
+    def forward_broadcast_message(self,header,candidate):
         ''' 
         Build and send messgaes to all the niegbors and since only it is a broadcast 
         then propagation_indicator, targets_ids both are [-1].
@@ -264,7 +264,7 @@ class Drone:
         Note: since the message will be sent to all the drone around , but rememeber the ones that already received 
         it will not recieved it again and th reason is the flag that end the listener is raised and no reading of buffer will be performed
         '''
-        msg= self.build_border_message(Forming_border_header, [-1] ,[-1],candidate) # as you see the candidate is resent as it was recived 
+        msg= self.build_border_message(header, [-1] ,[-1],candidate) # as you see the candidate is resent as it was recived 
         self.send_msg(msg)
         
     def send_msg(self,msg):
@@ -440,7 +440,7 @@ class Drone:
                 if candidate not in self.rec_candidate:
                     self.rec_candidate.append(candidate) # add the received id to the list so when a Broadcast from the same id is recicved that means a full circle include the current drone is completed
                 self.rec_propagation_indicator= rec_propagation_indicator # change the propagation_indicator means message from opposite direction has arrived
-                self.forward_border_message(rec_propagation_indicator, target_ids, candidate) 
+                self.forward_border_message(Forming_border_header, rec_propagation_indicator, target_ids, candidate) 
 
     def handel_broken_into_spot(self, msg):
         if self.border_candidate== True: 
@@ -488,7 +488,7 @@ class Drone:
                         self.border_broadcast_respond(candidate)
                      
                     # Here any drone in any state needs to forward the boradcast message and rise ending flag  
-                    self.forward_broadcast_message(candidate) 
+                    self.forward_broadcast_message(Forming_border_header,candidate) 
                     self.Forming_Border_Broadcast_REC.set()
 
                 
@@ -745,13 +745,13 @@ class Drone:
         
         return self.border_candidate
 
-    def Fire_bordr_msg(self): 
+    def Fire_border_msg(self, header): 
         target_ids=[]
         for s in self.neighbor_list:
             target_ids.extend(s["drones_in_id"]) # add the id of all the niegbors including the current 
         # At the beginning  propagation_indicator and target_ids are the same in the source of the message 
         propagation_indicator= target_ids
-        Msg= self.build_border_message(Forming_border_header,propagation_indicator, target_ids, self.id)
+        Msg= self.build_border_message(header,propagation_indicator, target_ids, self.id)
         self.send_msg(Msg)
 
     def Forme_border(self, vehicle):
@@ -768,7 +768,7 @@ class Drone:
         if self.border_candidate :
             self.update_candidate_spot_info_to_neighbors() # Useful if the drone arrived and filled a spot made others sourounded 
             '''launch a message circulation for current candidat'''
-            self.Fire_bordr_msg()
+            self.Fire_border_msg(Forming_border_header)
 
         else: 
             #means that the drone is sourounded in the expansion direction it can be set as free 
@@ -833,6 +833,7 @@ class Drone:
         self.Forme_border(vehicle)# will not return until the drones receive boradcast of forming border
 
         self.rec_propagation_indicator=[] # rest this indecator for the next iteration 
+        self.rec_candidate=[]
         self.direction_taken=[] #rest this taken path for the next iteration
         self.xbee_receive_message_thread.join() # stop listening to message
         
