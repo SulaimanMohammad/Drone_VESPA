@@ -147,6 +147,18 @@ class Drone:
     def build_data_demand_message(self):
         return Demand_header.encode() + b'\n' 
     
+    def creat_target_list(self, header):
+        target_ids=[]
+        if header==Balance_header: # Targets are only the border ones 
+            for s in self.neighbor_list:
+                if 'border' in s['states']:
+                    border_indices = [idx for idx, state in enumerate(s['states']) if state == 'border']
+                    target_ids.extend([s['drones_in_id'][idx] for idx in border_indices])
+        else:
+            for s in self.neighbor_list:
+                target_ids.extend(s["drones_in_id"]) # add the id of all the niegbors including the current 
+        return target_ids
+  
     #Return the byte count necessary to represent max ID.
     def determine_max_byte_size (slef,number):
         if number <= 0xFF:  # 1 byte
@@ -245,9 +257,7 @@ class Drone:
         '''
         if self.id in targets_ids: # the current drone is in the targeted ids
             
-            all_neigbors_id=[]
-            for s in self.neighbor_list:
-                all_neigbors_id.extend(s["drones_in_id"]) # add the id of all the niegbors including the current 
+            targets_ids= self.creat_target_list(header)
             
             new_propagation_indicator, new_targets_ids= self.calculate_propagation_indicator_target( propagation_indicator,targets_ids)
             msg= self.build_border_message(header, new_propagation_indicator,new_targets_ids, candidate) # as you see the candidate is resent as it was recived 
@@ -746,9 +756,7 @@ class Drone:
         return self.border_candidate
 
     def Fire_border_msg(self, header): 
-        target_ids=[]
-        for s in self.neighbor_list:
-            target_ids.extend(s["drones_in_id"]) # add the id of all the niegbors including the current 
+        target_ids= self.creat_target_list(header)
         # At the beginning  propagation_indicator and target_ids are the same in the source of the message 
         propagation_indicator= target_ids
         Msg= self.build_border_message(header,propagation_indicator, target_ids, self.id)
