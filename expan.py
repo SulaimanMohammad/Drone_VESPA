@@ -147,7 +147,7 @@ class Drone:
     def build_data_demand_message(self):
         return Demand_header.encode() + b'\n' 
     
-    def creat_target_list(self, header):
+    def create_target_list(self, header):
         target_ids=[]
         if header==Balance_header: # Targets are only the border ones 
             for s in self.neighbor_list:
