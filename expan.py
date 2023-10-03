@@ -84,18 +84,21 @@ Border=2
 Irremovable= 3 
 Irremovable_boarder=4 
 
+#Exchanging data Headers 
 Demand_header= "D"
 Reponse_header= "R"
-
+# Expansion Headers 
 Expan_header= "E"
 Arrival_header= "A"
 Inherit_header= "I" 
 Forming_border_header= "F"
-
+#Spanning Headers 
 Span_header= "S"
-
-Local_balance_header="L" 
+# Blancing Headers 
+Local_balance_header="L"
+Guidance_header= "G"
 Balance_header= "B"
+
 
 
 '''
@@ -789,6 +792,15 @@ class Drone:
         self.Forming_Border_Broadcast_REC.wait()
         set_to_move(vehicle)
         self.Forming_Border_Broadcast_REC.clear() # reset for the next expansion 
+    
+    # This function saves the spots that are occupied for the next expansion
+    def save_occupied_spots(self):
+        # save occupied spot sould be only for the free drone or irremovable, The border drone will save the occupied spot for the next expansion 
+        self.allowed_spots=[]
+        for s in self.neighbor_list:
+            # Check if 'free' or 'irremovable' is in the states  except's0'
+            if (s['name'] != 's0') and (Free in s['states'] or Irremovable in s['states']):
+                self.allowed_spots.append(s['name'])
 
     def search_for_target(self): # find if there is target in the area or not 
         
