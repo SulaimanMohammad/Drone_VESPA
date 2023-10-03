@@ -615,6 +615,7 @@ class Drone:
         return -1  # Return -1 if no match is found
     
     def move_to_spot(self,vehicle, destination_spot):
+        self.direction_taken.append( destination_spot)
         angle, distance = self.convert_spot_angle_distance(destination_spot)
         move_body_PID(vehicle,angle, distance)
         self.update_location(destination_spot)
@@ -784,8 +785,7 @@ class Drone:
         else: 
             #means that the drone is sourounded in the expansion direction it can be set as free 
             self.change_state_to(Free)
-            self.direction_taken=[] # reset the direction taken for the nex expansion 
-        
+    
         hover(vehicle) # Hovering while the forming border is done 
 
         # wait until the border procesdure is finished 
@@ -834,7 +834,6 @@ class Drone:
             if elected_id== self.id: # current drone is elected to move
                 if destination_spot != 0: # it means movement otherwise it is hovering 
                     print ("go to S", destination_spot)
-                    self.direction_taken.append( destination_spot)
                     self.move_to_spot(vehicle, destination_spot)
             else: 
                 wait_and_hover(vehicle,movement_time) # Wait untile the elected drone to leave to next stop.
