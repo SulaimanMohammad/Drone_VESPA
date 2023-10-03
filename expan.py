@@ -815,7 +815,6 @@ class Drone:
     ----------------------------------- Main functions ----------------------------------
     -------------------------------------------------------------------------------------
     '''
-
     def expan_border_search(self,vehicle):
         # Lance a thread to read messages continuously 
         self.xbee_receive_message_thread = threading.Thread(target=self.receive_message, args=(self,)) #pass the function reference and arguments separately to the Thread constructor.
@@ -865,9 +864,9 @@ class Drone:
         wait_and_hover(vehicle, sync_time) 
 
         self.search_for_target() # This is blocking until the end of movement 
-             
-        self.phase= Span_header
-        
+
+        if self.state==Irremovable or self.state== Irremovable_boarder:
+            hover(vehicle)        
         # Since broadcast messages might still be circulating while retrieval has stopped, there could be leftover messages in the buffer.
         # It's essential to clear the buffer before the next phase to prevent any surplus.
         self.clear_buffer()
