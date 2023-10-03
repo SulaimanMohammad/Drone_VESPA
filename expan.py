@@ -144,7 +144,7 @@ class Drone:
 
     '''
     -------------------------------------------------------------------------------------
-    ----------------------------- Communication ---------------------------------
+    ---------------------------------- Communication ------------------------------------
     -------------------------------------------------------------------------------------
     '''
     def build_data_demand_message(self):
@@ -857,6 +857,10 @@ class Drone:
         self.direction_taken=[] #rest this taken path for the next iteration
         self.xbee_receive_message_thread.join() # stop listening to message
         
+        # save the spots they are occupied to dont back to them in the next expansion when they are released
+        if self.state==Border:
+           self.save_occupied_spots() 
+
         # Time guarantees that all drones begin the searching procedure simultaneously and synchronized.
         wait_and_hover(vehicle, sync_time) 
 
