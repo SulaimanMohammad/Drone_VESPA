@@ -19,6 +19,7 @@ class Boarder_Timer:
                         break
                 time.sleep(0.5)               
         border_listener.join() # stop listenning
+        border_t.local_balancing.clear()
         self.end_of_balancing.clear() 
 
     def time_up(border_t,self):
@@ -284,6 +285,10 @@ def balancing(self, vehicle):
         # This message will be read by the border drone and its niegbor
         data_msg= self.build_spot_info_message(Arrival_header)
         self.send_msg(data_msg)
+    
+    self.end_of_balancing.wait()
+    self.end_of_balancing.clear() 
+    
 
 
 
