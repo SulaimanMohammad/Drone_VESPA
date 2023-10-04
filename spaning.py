@@ -5,81 +5,19 @@ import threading
 import time
 
 
-def compute_checksum(data):
-    """Compute the modulo-256 sum of the bytes in the data."""
-    return sum(data) % 256
-
-def build_message(self, numbers):
-    # start with 'M' character
-    message = self.phase.encode() #b'E' for example 
-    
-    # convert the float to an integer using the known multiplier
-    encoded_float = int(numbers[0] * multiplier) # multiplier = 100 from expan 
-
-    if encoded_float <= 65535 : 
-        message += struct.pack('>H', encoded_float)
-    else:
-        message += struct.pack('>I', encoded_float)
-        
-    # Encode the remaining numbers
-    message += struct.pack('>H', numbers[1])
-    message += struct.pack('>B', numbers[2])
-    message += struct.pack('>H', numbers[3])
-    message += struct.pack('>B', numbers[4])
-    
-    # Compute and append the checksum
-    checksum = compute_checksum(message[1:])
-    message += bytes([checksum])
-    
-    # End with '\n' character
+def build_target_message(self, target_id):
+    max_byte_count = self.determine_max_byte_size(target_id)
+    message = Spanning_header.encode() + struct.pack('>B', max_byte_count)    
+    message += target_id.to_bytes(max_byte_count, 'big')
     message += b'\n'
-    
     return message
 
-def decode_message(message):
-    # Check start and end of the message
-    if not ( message.startswith(b'E') or message.startswith(b'S') or message.startswith(b'B') ) or not message.endswith(b'\n'):
-        raise ValueError("Invalid message format")
-    
-    # Verify the checksum
-    if not compute_checksum(message[1:-2]) == message[-2]:
-        raise ValueError("Invalid checksum")
-    
-    phase = message[0:1].decode()
-
-    message= message[1:-1]
-    
-    ''' 
-    Float value (2 bytes or 4 bytes, depending on its size)
-    An integer (2 bytes)
-    A byte (1 byte)
-    Another integer (2 bytes)
-    Another byte (1 byte)
-    Checksum (1 byte)
-    '''
-     # Deduce the size of the float representation
-    float_size = len(message) - 2 - 1 - 2 - 1 - 1 # Subtracting sizes of other 
-    
-    # check the size of first number to know how to decode 
-    if float_size <= 2:
-        encoded_float, = struct.unpack('>H', message[:2])
-    else:
-        encoded_float, = struct.unpack('>I', message[:4])
-    
-    first_num = encoded_float / multiplier
-    
-    # Decode the remaining numbers
-    offset = float_size
-    second_num, = struct.unpack('>H', message[offset:offset+2])
-    offset += 2
-    third_num = message[offset]
-    offset += 1
-    fourth_num, = struct.unpack('>H', message[offset:offset+2])
-    offset += 2
-    fifth_num = message[offset]
-    
-    return [phase , first_num, second_num, third_num, fourth_num, fifth_num]
-
+def decode_target_message(self,message):    
+    max_byte_count = struct.unpack('>B', message[1:2])[0]
+    target_id_start = 2
+    target_id_end = target_id_start + max_byte_count
+    target_id = int.from_bytes(message[target_id_start:target_id_end], 'big')
+    return target_id
 
 
 class Sink_Timer:
@@ -144,13 +82,14 @@ def sink_listener(self,sink_t, timeout):
             positionX, positionY, state, id_value= self.decode_spot_info_message(msg)
             self.update_neighbors_list(positionX, positionY, state, id_value )
             self.neighbors_list_updated.set()
-            
-        id_rec=0 
-        if id_rec != self.id: 
-            print("Message received!")
-            with sink_t.lock_sink:  # Acquire the lock
-                sink_t.message_counter += 1
-                sink_t.remaining_time = sink_t.timeout
+
+        if msg.startswith(Spanning_header.encode()) and msg.endswith(b'\n'):
+            id_rec= self.decode_target_message(msg)
+            if id_rec != self.id: 
+                print("Message received!")
+                with sink_t.lock_sink:  # Acquire the lock
+                    sink_t.message_counter += 1
+                    sink_t.remaining_time = sink_t.timeout
     
     sink_t.end_of_spanning.clear() # reset so the next spanning the listenning loop will be activated  
 
@@ -193,28 +132,29 @@ def xbee_listener(self):
             self.update_neighbors_list(positionX, positionY, state, id_value )
             self.neighbors_list_updated.set()
 
+        if msg.startswith(Spanning_header.encode()) and msg.endswith(b'\n'):
+            id_rec= self.decode_target_message(msg)
+            if id_rec == self.id : 
+                #that means one of the neigboor is irremovable and sent a taged message
+                # This means that this current drone should change it is current state 
+                with lock:
+                    if self.state== Border: 
+                        self.change_state(Irremovable_boarder)
+                        self.neighbor_list[id_rec]['state']=Irremovable_boarder # here you update the value
+                    else: 
+                        self.change_state(Irremovable)
+                        self.neighbor_list[id_rec]['state']=Irremovable# here you update the value
+                    listener_current_updated_irremovable.set() # flag that the state was changed to irremovable 
 
-        if id_msg == self.id : 
-            #that means one of the neigboor is irremovable and sent a taged message
-            # This means that this current drone should change it is current state 
-            with lock:
-                if self.state== Border: 
-                    self.change_state(Irremovable_boarder)
-                    self.neighbor_list[id_msg]['state']=Irremovable_boarder # here you update the value
-                else: 
-                    self.change_state(Irremovable)
-                    self.neighbor_list[id_msg]['state']=Irremovable# here you update the value
-                listener_current_updated_irremovable.set() # flag that the state was changed to irremovable 
+            else: # the recieved msg refer to changes in state to irrremovable in one of the nighbors
+                # Signal that we want to write
+                listener_neighbor_update_state.set()
+                with lock:
+                    self.neighbor_list[id_rec]['state']=1 # here you update the value
+                listener_neighbor_update_state.clear()  # Clear the flag
 
-        else: # the recieved msg refer to changes in state to irrremovable in one of the nighbors
-            # Signal that we want to write
-            listener_neighbor_update_state.set()
-            with lock:
-                self.neighbor_list[id_msg]['state']=1 # here you update the value
-            listener_neighbor_update_state.clear()  # Clear the flag
-
-        if id_msg ==-127: # it is the message sent by the sink announcing the end of spanning phase
-            listener_end_of_spanning.set()
+            if id_rec ==-127: # it is the message sent by the sink announcing the end of spanning phase
+                listener_end_of_spanning.set()
 
 
 # since the 6 neighbors has 2 different regions one close to sink and one in opposit 
@@ -312,24 +252,28 @@ def find_close_neigboor_2border(self):
 
 def build_path(self):
 
-    #if (self.state== Irremovable) or (self.state == Irremovable_boarder):
-        send_msg_drone_id= self.find_close_neigboor_2sink() 
-        if send_msg_drone_id != -1 : # there is no irremovable send msg to a drone close to sink to make it irremovable 
-            self.drone_id_to_sink=send_msg_drone_id # save the id of the drone for future use to connect to sink
+    send_msg_drone_id= self.find_close_neigboor_2sink() 
+    if send_msg_drone_id != -1 : # there is no irremovable send msg to a drone close to sink to make it irremovable 
+        self.drone_id_to_sink=send_msg_drone_id # save the id of the drone for future use to connect to sink
+        # send message to a drone that had Id= send_msg_drone_id
+        msg= self.build_target_message(send_msg_drone_id)
+        self.send_msg(msg)
+    
+    if self.state != Irremovable_boarder:  # it is irrmovable doesnt belong to boarder no need to check (self.state != " irremovable- border" ) 
+        send_msg_drone_id= self.find_close_neigboor_2border()  # since it doesnt belong to border then find to path to border 
+        if send_msg_drone_id != -1 : # there is no irremovable send msg to a drone to make it irremovable 
+            self.drone_id_to_border= send_msg_drone_id # save the drone id that is the path to the border from the current one 
             # send message to a drone that had Id= send_msg_drone_id
+            msg= self.build_target_message(send_msg_drone_id)
+            self.send_msg(msg)
         
-        if self.state != Irremovable_boarder:  # it is irrmovable doesnt belong to boarder no need to check (self.state != " irremovable- border" ) 
-            send_msg_drone_id= self.find_close_neigboor_2border()  # since it doesnt belong to border then find to path to border 
-            if send_msg_drone_id != -1 : # there is no irremovable send msg to a drone to make it irremovable 
-                self.drone_id_to_border= send_msg_drone_id # save the drone id that is the path to the border from the current one 
-                # send message to a drone that had Id= send_msg_drone_id
     
 
 def spanining ( self, vehicle ): 
-    #Stay hovering while spanning is done 
+    #Stay hovering while spanning communication 
     hover(vehicle)
 
-    # update neigboors after the finish of expansion 
+    # Update neigboors info after the end of expansion 
     self.build_data_demand_message()
     self.neighbors_list_updated.wait()
     self.neighbors_list_updated.clear()
@@ -346,14 +290,13 @@ def spanining ( self, vehicle ):
     
     else: 
         if not listener_neighbor_update_state.is_set():
-            # Acquire the lock to read the shared dictionary            
-            # the drone is free 
-            # wait for turning to a irremovable by another drone that build a path or wait broadcast from sink of finihing spannng
+            # Free drone wait for msg to become irremovable by another drone or wait broadcast from sink of finihing Spainning
             if self.state== Free or self.state== Border:
                 # Wait for xbee_listener to signal that state has been changed ( doesn't keep the CPU busy.)
                 while not listener_current_updated_irremovable.is_set() or ( not listener_end_of_spanning.is_set()):
                     time.sleep(0.1)
-                listener_current_updated_irremovable.clear() # need to clear it for the next spanning 
+                listener_current_updated_irremovable.clear() # need to be cleared for the next spanning 
+        
         if not listener_neighbor_update_state.is_set():
             # for the rest of the drones 
             if (self.state== Irremovable) or (self.state == Irremovable_boarder): 
@@ -362,7 +305,6 @@ def spanining ( self, vehicle ):
         listener_end_of_spanning.wait() # wait until reciving end to finish this phase , Note if the end detected in Free then this will not wait because it is already seen 
         listener_end_of_spanning.clear()
 
-        # send the end of the phase from your side to every one around 
 
     xbee_thread.join() # this top at the end of he phase because no need to use mutex anymore 
     set_to_move(vehicle) # Drone can move now in the balancing phase 
