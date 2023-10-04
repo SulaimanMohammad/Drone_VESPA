@@ -26,10 +26,10 @@ def interrupt(signal_num, frame):
 create_log_file(os.path.dirname(os.path.abspath(__file__)),  os.path.splitext(os.path.basename(__file__))[0]) 
 global vehicle
 
-#vehicle = connect (parse_connect(), wait_ready=False) # for simulation 
-vehicle = connect("/dev/serial0", baud= 921600,  wait_ready=False,rate=10) # for raspberry pi
+vehicle = connect (parse_connect(), wait_ready=False) # for simulation 
+#vehicle = connect("/dev/serial0", baud= 921600,  wait_ready=False,rate=10) # for raspberry pi
 #vehicle = connect("/dev/ttyUSB0", baud= 57600,  wait_ready=False, rate=10) #for telemetry 
-vehicle.wait_ready(True, raise_exception=False) # for raspberry pi & telemetry only 
+#vehicle.wait_ready(True, raise_exception=False) # for raspberry pi & telemetry only 
 signal.signal(signal.SIGINT, interrupt)
 
 set_a(3)
@@ -39,29 +39,26 @@ drone= Drone(0.0,0.0,2) # drone at the sink
 arm_and_takeoff(vehicle,drone.hight)
 print( "Takeoff and wait 2 sec")
 
-vehicle.mode    = VehicleMode("LOITER") #loiter mode and hover in your place 
-time.sleep(2)
-vehicle.mode     = VehicleMode("GUIDED")
+#loiter mode and hover in your place 
+vehicle.wait_and_hover(2)
 
 set_data_rate(vehicle, 20)
 
-distance=4
-angl_dir= 0#-45
+distance= 2
+angl_dir= 90#-45
 
 # angle dir in degree 
-move_body_PID(vehicle,angl_dir, distance)
+move_body_PID(vehicle,angl_dir, distance,1)
 
-vehicle.mode    = VehicleMode("LOITER") #loiter mode and hover in your place 
-time.sleep(2)
-vehicle.mode     = VehicleMode("GUIDED")
+vehicle.wait_and_hover(2)
 
 print( "move to the other direction")
 
-angl_dir= -180#135
-move_body_PID(vehicle,angl_dir, distance)
+# angl_dir= -180#135
+# move_body_PID(vehicle,angl_dir, distance,1)
 
 
-write_log_message(f" Coming Home")
+# write_log_message(f" Coming Home")
 vehicle.mode = VehicleMode ("LAND")
 time.sleep(2) 
 
