@@ -40,7 +40,9 @@ arm_and_takeoff(vehicle,drone.hight)
 print( "Takeoff and wait 2 sec")
 
 #loiter mode and hover in your place 
-vehicle.wait_and_hover(2)
+vehicle.mode    = VehicleMode("LOITER") #loiter mode and hover in your place 
+time.sleep(2)
+vehicle.mode     = VehicleMode("GUIDED")
 
 set_data_rate(vehicle, 20)
 
@@ -50,7 +52,9 @@ angl_dir= 90#-45
 # angle dir in degree 
 move_body_PID(vehicle,angl_dir, distance,1)
 
-vehicle.wait_and_hover(2)
+vehicle.mode    = VehicleMode("LOITER") #loiter mode and hover in your place 
+time.sleep(2)
+vehicle.mode     = VehicleMode("GUIDED")
 
 print( "move to the other direction")
 
