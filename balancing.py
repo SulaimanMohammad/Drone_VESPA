@@ -90,7 +90,7 @@ def build_local_movement_message(self, target_id, destination):
     # Add the target_id to the message using the determined byte count
     message += target_id.to_bytes(max_byte_count, 'big')
     
-    # Append the destination to the message ( 1 bute becausee it is spot 0-6 )
+    # Append the destination to the message ( 1 byte becausee it is spot 0-6 )
     message += destination.to_bytes(1, 'big')
     
     # End with '\n'
@@ -276,6 +276,7 @@ def balancing(self, vehicle):
         self.xbee_receive_message_thread.start()
         brder_found= False
         while border_found == False : # no border in the nieghbor
+            #TODO need to wait until getting all the data from all the drones so many data retriving from buffer 
             self.build_data_demand_message()
             self.neighbors_list_updated.wait()
             self.neighbors_list_updated.clear()

@@ -251,7 +251,7 @@ def find_close_neigboor_2border(self):
   
 
 def build_path(self):
-
+    # Irremovable_boarder and Irremovable needs to build bath to the sink 
     send_msg_drone_id= self.find_close_neigboor_2sink() 
     if send_msg_drone_id != -1 : # there is no irremovable send msg to a drone close to sink to make it irremovable 
         self.drone_id_to_sink=send_msg_drone_id # save the id of the drone for future use to connect to sink

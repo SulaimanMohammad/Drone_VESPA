@@ -93,7 +93,7 @@ Arrival_header= "A"
 Inherit_header= "I" 
 Forming_border_header= "F"
 #Spanning Headers 
-Span_header= "S"
+Spanning_header= "S"
 # Blancing Headers 
 Local_balance_header="L"
 Guidance_header= "G"
