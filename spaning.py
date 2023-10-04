@@ -130,7 +130,21 @@ def sink_listener(self,sink_t, timeout):
     and based on that it will be considered as a message to complet the path  
      
     '''
-    while not sink_t.end_of_spanning.is_set(): # the end is not reached , keep listenning 
+    while not sink_t.end_of_spanning.is_set(): # the end is not reached , keep listenning
+        msg= self.retrive_msg_from_buffer() 
+        
+        # Receiving message asking for data 
+        if msg == Demand_header.encode() + b'\n':
+            data_msg= self.build_spot_info_message(Reponse_header) # Build message that contains all data
+            self.send_msg(data_msg)
+
+        # Receiving message containing data     
+        if msg.startswith(Reponse_header.encode()) and msg.endswith(b'\n'):
+            self.neighbors_list_updated = threading.Event()
+            positionX, positionY, state, id_value= self.decode_spot_info_message(msg)
+            self.update_neighbors_list(positionX, positionY, state, id_value )
+            self.neighbors_list_updated.set()
+            
         id_rec=0 
         if id_rec != self.id: 
             print("Message received!")
@@ -165,11 +179,23 @@ def xbee_listener(self):
     '''
     # Keep litining until reciving a end of the phase 
     while not listener_end_of_spanning.is_set(): 
-        # modify any new value ( of the status ) in lock( mutex to avoid race condition)
-        id_msg=0
+        msg= self.retrive_msg_from_buffer() 
+        
+        # Receiving message asking for data 
+        if msg == Demand_header.encode() + b'\n':
+            data_msg= self.build_spot_info_message(Reponse_header) # Build message that contains all data
+            self.send_msg(data_msg)
+
+        # Receiving message containing data     
+        if msg.startswith(Reponse_header.encode()) and msg.endswith(b'\n'):
+            self.neighbors_list_updated = threading.Event()
+            positionX, positionY, state, id_value= self.decode_spot_info_message(msg)
+            self.update_neighbors_list(positionX, positionY, state, id_value )
+            self.neighbors_list_updated.set()
+
 
         if id_msg == self.id : 
-            #that means on of the neigboor is irremovable and sent a taged message
+            #that means one of the neigboor is irremovable and sent a taged message
             # This means that this current drone should change it is current state 
             with lock:
                 if self.state== Border: 
@@ -303,10 +329,10 @@ def spanining ( self, vehicle ):
     #Stay hovering while spanning is done 
     hover(vehicle)
 
-    #this will be done through demand message 
-    self.check_drones_in_neigboors() # update neigboors after the finish of expansion 
-                                     # here you need to safe the id of the drone that is neigboor , ask for data 
-
+    # update neigboors after the finish of expansion 
+    self.build_data_demand_message()
+    self.neighbors_list_updated.wait()
+    self.neighbors_list_updated.clear()
 
 
     # since a lock is introduced then the drone will not read a old value after any update it will see it 
