@@ -402,7 +402,7 @@ def on_velocity(self, attribute_name, value):
     # If this is not the first event, print the time difference
     if last_event_time is not None:
         interval_between_events = current_time - last_event_time
-        #print(f"Time between two events: {interval_between_events} seconds")
+        print(f"Time between two events: {interval_between_events} seconds")
 
     # Update the last event time
     last_event_time = current_time
@@ -411,6 +411,7 @@ def on_velocity(self, attribute_name, value):
     velocity_components = value
     # Convert string values to float
     velocity_listener = [float(v) for v in velocity_components]
+    print(velocity_listener)
     new_velocity_data.set()
 
 def set_yaw_PID(self, yaw_angle, yaw_speed, direction, relative=False):
@@ -504,7 +505,6 @@ def set_yaw_to_dir_PID(self, target_yaw, relative=True, max_yaw_speed=20):
     time.sleep(1.5)
     self.mode     = VehicleMode("GUIDED")
 
-
 def ned_to_body(self,velocity_vec):
     # Retrieve the vehicle's roll, pitch, and yaw angles
     roll = normalize_roll(self.attitude.roll)
@@ -538,7 +538,6 @@ def ned_to_body(self,velocity_vec):
     V_body = np.dot(R_ned_to_body, V_ned)
     
     return V_body
-
 
 def move_body_PID(self, angl_dir, distance,max_velocity=2): #max_velocity=2
     # Set mode to GUIDED
@@ -623,12 +622,12 @@ def move_body_PID(self, angl_dir, distance,max_velocity=2): #max_velocity=2
         new_velocity_data.wait()
         
         print( "---------------------------------------------------------------------")
-        if remaining_distance < distance*( 1-0.2) and (time.time() - start_control_timer > 0.1):
-            #desired_vel_x= desired_vel_x*( 1-0.2)
-            reduction= k*velocity_current_x*remaining_distance 
-            desired_vel_x=desired_vel_x-reduction
-            acc=False
-            desired_vel_x = max(desired_vel_x, 0.1)
+        # if remaining_distance < distance*( 1-0.2) and (time.time() - start_control_timer > 0.1):
+        #     #desired_vel_x= desired_vel_x*( 1-0.2)
+        #     reduction= k*velocity_current_x*remaining_distance 
+        #     desired_vel_x=desired_vel_x-reduction
+        #     acc=False
+        #     desired_vel_x = max(desired_vel_x, 0.1)
 
         # # Get current yaw
         yaw_current = self.attitude.yaw
@@ -690,7 +689,6 @@ def move_body_PID(self, angl_dir, distance,max_velocity=2): #max_velocity=2
         if (time.time() - start_control_timer > 0.05):    
             # Send control to the drone 
             print("     controle        ")
-            print( "velocity_x", velocity_x, "velocity_y",velocity_y)
             send_control_body(self, velocity_x, velocity_y, altitude_rate)
             start_control_timer= time.time()
         
@@ -706,7 +704,9 @@ def move_body_PID(self, angl_dir, distance,max_velocity=2): #max_velocity=2
         # Clear the event so we can wait for the next update
         new_velocity_data.clear()
     
+    print("         STOP Start          ")
     send_control_body(self, 0, 0, 0) # stop 
+    time.sleep(2)
     self.remove_attribute_listener('velocity', on_velocity)
 
 def convert_angle_to_set_dir(self, angle): 
