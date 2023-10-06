@@ -66,10 +66,10 @@ def on_velocity(self, attribute_name, value):
 create_log_file(os.path.dirname(os.path.abspath(__file__)),  os.path.splitext(os.path.basename(__file__))[0]) 
 global vehicle
 
-vehicle = connect (parse_connect(), wait_ready=False, rate=15) # for simulation 
-#vehicle = connect("/dev/serial0", baud= 921600,  wait_ready=False) # for raspberry pi
+#vehicle = connect (parse_connect(), wait_ready=False, rate=15) # for simulation 
+vehicle = connect("/dev/serial0", baud= 921600,  wait_ready=False) # for raspberry pi
 #vehicle = connect("/dev/ttyUSB0", baud= 57600,  wait_ready=False, rate=10) #for telemetry 
-#vehicle.wait_ready(True, raise_exception=False) # for raspberry pi & telemetry only 
+vehicle.wait_ready(True, raise_exception=False) # for raspberry pi & telemetry only 
 signal.signal(signal.SIGINT, interrupt)
 
 set_a(3)
@@ -80,9 +80,9 @@ arm_and_takeoff(vehicle,drone.hight)
 logger.write( "Takeoff and wait 2 sec")
 
 #loiter mode and hover in your place 
-# vehicle.mode    = VehicleMode("LOITER") #loiter mode and hover in your place 
-# time.sleep(2)
-# vehicle.mode     = VehicleMode("GUIDED")
+vehicle.mode    = VehicleMode("LOITER") #loiter mode and hover in your place 
+time.sleep(2)
+vehicle.mode     = VehicleMode("GUIDED")
 
 set_data_rate(vehicle, 20)
 
