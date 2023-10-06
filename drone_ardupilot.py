@@ -512,8 +512,7 @@ def ned_to_body(self,velocity_vec):
     #yaw = normalize_yaw(self.attitude.yaw)
     yaw= math.radians( normalize_angle(math.degrees(self.attitude.yaw)))
 
-    print( "        yaw", math.degrees(yaw), "pitch", math.degrees(pitch), "roll", math.degrees(roll))
-
+    #print( "        yaw", math.degrees(yaw), "pitch", math.degrees(pitch), "roll", math.degrees(roll))
     Vx_ned=velocity_vec[0]
     Vy_ned=velocity_vec[1]
     Vz_ned=velocity_vec[2]
@@ -539,7 +538,41 @@ def ned_to_body(self,velocity_vec):
     
     return V_body
 
-def move_body_PID(self, angl_dir, distance,max_velocity=2): #max_velocity=2
+def get_desired_speed(current_speed, remaining_distance,max_acceleration, max_deceleration, max_speed):
+    # # Calculate stopping distance
+    # stopping_distance = (current_speed**2) / (2 * max_deceleration)
+    
+    # # Calculate distance needed to reach max_speed from current_speed
+    # distance_to_max_speed = (max_speed**2 - current_speed**2) / (2 * max_acceleration)
+    
+    # # Check if drone is within deceleration zone or doesn't have enough distance to accelerate and then decelerate
+    # if remaining_distance <= stopping_distance + distance_to_max_speed:
+    #     # Deceleration Phase: Adjust speed to ensure smooth stopping
+    #     desired_speed = max(0, math.sqrt(2 * max_deceleration * remaining_distance))
+    # else:
+    #     # Acceleration Phase: Calculate the feasible speed increase within the next time step
+    #     feasible_speed_increase = max_acceleration * 0.5
+    #     desired_speed = min(max_speed, current_speed + feasible_speed_increase)
+
+    # return desired_speed
+    max_stop_speed = math.sqrt(2 * max_deceleration * remaining_distance)
+    
+    # Ensure the drone does not exceed the predefined maximum speed
+    max_stop_speed = min(max_stop_speed, max_speed)
+    
+    # Calculate the time required to accelerate to max_stop_speed
+    time_to_accelerate = (max_stop_speed - current_speed) / max_acceleration
+    
+    # Calculate the distance required to accelerate to max_stop_speed
+    distance_to_accelerate = current_speed * time_to_accelerate + 0.5 * max_acceleration * time_to_accelerate**2
+    
+    # If there's not enough distance to accelerate to max_stop_speed, recalculate it considering the available distance
+    if distance_to_accelerate > remaining_distance:
+        max_stop_speed = current_speed + math.sqrt(2 * max_acceleration * remaining_distance)
+    
+    return max_stop_speed
+
+def move_body_PID(self, angl_dir, distance, max_acceleration= 0.7, max_deceleration= 0.29  , max_velocity=2.5): #max_velocity=2
     # Set mode to GUIDED
     if self.mode != "GUIDED":
         self.mode = VehicleMode("GUIDED")
@@ -602,7 +635,7 @@ def move_body_PID(self, angl_dir, distance,max_velocity=2): #max_velocity=2
     pid_yaw.sample_time = 1 # Update interval in seconds
 
 
-    desired_vel_x = velocity_direction* max_velocity
+    desired_vel_x = velocity_direction* get_desired_speed(0, distance,max_acceleration, max_deceleration, max_velocity) 
     desired_vel_y=0.0
     desired_vel_z=0.0
 
@@ -622,14 +655,7 @@ def move_body_PID(self, angl_dir, distance,max_velocity=2): #max_velocity=2
         new_velocity_data.wait()
         
         print( "---------------------------------------------------------------------")
-        # if remaining_distance < distance*( 1-0.2) and (time.time() - start_control_timer > 0.1):
-        #     #desired_vel_x= desired_vel_x*( 1-0.2)
-        #     reduction= k*velocity_current_x*remaining_distance 
-        #     desired_vel_x=desired_vel_x-reduction
-        #     acc=False
-        #     desired_vel_x = max(desired_vel_x, 0.1)
-
-        # # Get current yaw
+        
         yaw_current = self.attitude.yaw
         current_yaw = normalize_angle(math.degrees(yaw_current))
         error = (desired_yaw - current_yaw)
@@ -656,7 +682,8 @@ def move_body_PID(self, angl_dir, distance,max_velocity=2): #max_velocity=2
         velocity_current_y=(velocity_body[1])
         velocity_current_z=(velocity_body[2])
 
-
+       
+        print("desired_vel_x= " , desired_vel_x)
         # X velocity error and PID control
         error_vel_x = desired_vel_x - velocity_current_x
         integral_vel_x += error_vel_x
@@ -686,7 +713,8 @@ def move_body_PID(self, angl_dir, distance,max_velocity=2): #max_velocity=2
         
         
         #if (time.time() - start_control_timer > 0.5) or (abs(error_vel_x) > abs(error_vel_x_prev) and acc==True ) or (abs(error_vel_x) < abs(error_vel_x_prev) and acc==False ) or abs(velocity_y -desired_vel_y) > 0.1 or abs(altitude_rate- desired_vel_z)> 0.5:
-        if (time.time() - start_control_timer > 0.05):    
+        if (time.time() - start_control_timer > 0.1):
+            desired_vel_x= get_desired_speed(velocity_current_x, remaining_distance,max_acceleration, max_deceleration, max_velocity)    
             # Send control to the drone 
             print("     controle        ")
             send_control_body(self, velocity_x, velocity_y, altitude_rate)
@@ -694,8 +722,8 @@ def move_body_PID(self, angl_dir, distance,max_velocity=2): #max_velocity=2
         
         remaining_distance= remaining_distance - (float(interval_between_events* abs( (velocity_current_x + previous_velocity_x)/2.0 )))
         
-        print( "\n vx ",velocity_current_x , "vy",velocity_current_y, "vz",velocity_current_z ,"yaw error= ",error, "current alt= ", current_altitude  )
-        print( "time", time.time() - start_time , "distance left : ",remaining_distance, "dis speed", desired_vel_x,"\n\n" )
+        print( "\nvx ",velocity_current_x , "vy",velocity_current_y, "vz",velocity_current_z ,"yaw error= ",error, "current alt= ", current_altitude  )
+        print( "time", time.time() - start_time , "distance left : ",remaining_distance, "dis speed", desired_vel_x,"\n" )
         
         # save data for the next iteration 
         error_vel_x_prev = error_vel_x
@@ -706,7 +734,6 @@ def move_body_PID(self, angl_dir, distance,max_velocity=2): #max_velocity=2
     
     print("         STOP Start          ")
     send_control_body(self, 0, 0, 0) # stop 
-    time.sleep(2)
     self.remove_attribute_listener('velocity', on_velocity)
 
 def convert_angle_to_set_dir(self, angle): 
