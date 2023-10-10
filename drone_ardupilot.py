@@ -326,6 +326,39 @@ def set_altitude(self, target_altitude):
     # Command the vehicle to go to the target location
     self.simple_goto(target_location)
 
+def check_mode(self):
+    # Set mode to GUIDED
+    if self.mode != "GUIDED":
+        self.mode = VehicleMode("GUIDED")
+    
+def get_acceleration():
+    # Get the directory where the script is located
+    script_directory = os.path.dirname(os.path.abspath(__file__))
+
+    # Change the working directory to the script directory
+    os.chdir(script_directory)
+    print(f"Current working directory: {os.getcwd()}")
+
+    with open('Accel.txt', 'r') as file:
+        for line in file:
+            # Check if line contains max_acceleration
+            if "max_acceleration" in line:
+                max_acceleration = float(line.split('=')[1].strip())
+            # Check if line contains max_deceleration
+            elif "max_deceleration" in line:
+                max_deceleration = float(line.split('=')[1].strip())
+    # Output the extracted values
+    print(f"Max Acceleration: {max_acceleration}")
+    print(f"Max Deceleration: {max_deceleration}")
+    
+    return max_acceleration,max_deceleration 
+
+def set_get_acceleration(max_acceleration, max_deceleration): 
+    # Open the file in write mode and write the new values
+    with open('Accel.txt', 'w') as file:
+        file.write(f'max_acceleration = {max_acceleration}\n')
+        file.write(f'max_deceleration = {max_deceleration}\n')
+
 
 '''
 yaw values are fluctuating around 0 and 365 degrees, which is very close to the north direction (0 degrees) 
@@ -538,64 +571,70 @@ def ned_to_body(self,velocity_vec):
     
     return V_body
 
-def get_desired_speed(current_speed, remaining_distance,max_acceleration, max_deceleration, max_speed):
-    # # Calculate stopping distance
-    # stopping_distance = (current_speed**2) / (2 * max_deceleration)
+def get_desired_speed(current_speed, remaining_distance, max_acceleration, max_deceleration, max_speed, safety_margin=0.8):
+    # Deceleration phase calculations with safety margin
+    decel_time = max_speed / (max_deceleration * safety_margin)
+    decel_distance = max_speed * decel_time - 0.5 * (max_deceleration * safety_margin) * decel_time**2
     
-    # # Calculate distance needed to reach max_speed from current_speed
-    # distance_to_max_speed = (max_speed**2 - current_speed**2) / (2 * max_acceleration)
+    # Check if we should start decelerating
+    if remaining_distance <= decel_distance:
+        # If within deceleration distance, calculate desired speed for smooth stop
+        desired_speed = (2 * max_deceleration * remaining_distance)**0.5
+    else:
+        # If not within deceleration distance, aim for max speed
+        # Optionally, scale the desired speed based on remaining distance
+        scaling_factor = min(1, remaining_distance / (decel_distance * 2))  # Example scaling factor, adjust as needed
+        desired_speed = max_speed * scaling_factor
     
-    # # Check if drone is within deceleration zone or doesn't have enough distance to accelerate and then decelerate
-    # if remaining_distance <= stopping_distance + distance_to_max_speed:
-    #     # Deceleration Phase: Adjust speed to ensure smooth stopping
-    #     desired_speed = max(0, math.sqrt(2 * max_deceleration * remaining_distance))
-    # else:
-    #     # Acceleration Phase: Calculate the feasible speed increase within the next time step
-    #     feasible_speed_increase = max_acceleration * 0.5
-    #     desired_speed = min(max_speed, current_speed + feasible_speed_increase)
+    return desired_speed
 
-    # return desired_speed
-    max_stop_speed = math.sqrt(2 * max_deceleration * remaining_distance)
-    
-    # Ensure the drone does not exceed the predefined maximum speed
-    max_stop_speed = min(max_stop_speed, max_speed)
-    
-    # Calculate the time required to accelerate to max_stop_speed
-    time_to_accelerate = (max_stop_speed - current_speed) / max_acceleration
-    
-    # Calculate the distance required to accelerate to max_stop_speed
-    distance_to_accelerate = current_speed * time_to_accelerate + 0.5 * max_acceleration * time_to_accelerate**2
-    
-    # If there's not enough distance to accelerate to max_stop_speed, recalculate it considering the available distance
-    if distance_to_accelerate > remaining_distance:
-        max_stop_speed = current_speed + math.sqrt(2 * max_acceleration * remaining_distance)
-    
-    return max_stop_speed
+def calculate_acceleration(v1_y, v2_y, delta_t):
+    return (v2_y - v1_y) / delta_t
 
-def move_body_PID(self, angl_dir, distance, max_acceleration= 0.7, max_deceleration= 0.29  , max_velocity=2.5): #max_velocity=2
-    # Set mode to GUIDED
-    if self.mode != "GUIDED":
-        self.mode = VehicleMode("GUIDED")
+def exponential_smoothing(a_est, a_y, alpha):
+    return alpha * a_y + (1 - alpha) * a_est
 
-    roll = self.attitude.roll
-    pitch = self.attitude.pitch
+def update_acceleration_estimate(estimated_acceleration, current_velocity, previous_velocity_x, dt):
+    alpha = 0.5  # Smoothing factor, adjust as needed
+    if dt: 
+        a_y = calculate_acceleration(previous_velocity_x, current_velocity, dt)
+        estimated_acceleration = exponential_smoothing(estimated_acceleration, a_y, alpha)
+        
+    return estimated_acceleration
 
-    global velocity_listener
-    velocity_listener=0
-    global interval_between_events
-    interval_between_events=0
-    global last_event_time
-    last_event_time=None
-
-    
-    [ angl_dir, velocity_direction ]= convert_angle_to_set_dir(self, angl_dir)
-    set_yaw_to_dir_PID( self, angl_dir)
-
-    # PID gains for yaw, X, and Y control
+def hold_yaw_PID(self, desired_yaw):
+    # PID controller for yaw
     Kp_yaw = 0.25
     Ki_yaw = 0.03
     Kd_yaw = 0.05
+    max_yaw_speed=5
+    pid_yaw = PID(Kp_yaw, Ki_yaw, Kd_yaw, setpoint=desired_yaw)
+    pid_yaw.output_limits = (-max_yaw_speed, max_yaw_speed)  # Assuming you set a max_yaw_speed variable
+    pid_yaw.sample_time = 1 # Update interval in seconds
 
+    yaw_current = self.attitude.yaw
+    current_yaw = normalize_angle(math.degrees(yaw_current))
+    error = (desired_yaw - current_yaw)
+    error = normalize_angle(desired_yaw - current_yaw)
+
+    # Correcting error if it's shorter to turn the other way
+    if error > 180:
+        error -= 360
+    elif error < -180:
+        error += 360
+
+    # Get the PID output
+    yaw_speed = pid_yaw(error)
+    
+    # Determine the direction (clockwise or counterclockwise)
+    direction_yaw = 1 if error >= 0 else -1
+
+    # Send the yaw command
+    set_yaw_PID(self, abs(error), abs(yaw_speed), direction_yaw)
+    print("yaw error=",error )
+
+def velocity_PID(desired_vel_x, velocity_body_vector):
+    # PID gains for yaw, X, and Y control
     Kp_vel_x = 1.2
     Ki_vel_x = 0.02
     Kd_vel_x = 0.01
@@ -604,8 +643,6 @@ def move_body_PID(self, angl_dir, distance, max_acceleration= 0.7, max_decelerat
     Ki_vel_y = 0.02
     Kd_vel_y = 0.01
 
-
-    # PID gains for altitude control
     Kp_vel_z = 0.6
     Ki_vel_z = 0.03
     Kd_vel_z = 0.01
@@ -613,68 +650,92 @@ def move_body_PID(self, angl_dir, distance, max_acceleration= 0.7, max_decelerat
     # Errors and previous errors for PID control
     error_vel_x_prev = 0
     error_vel_y_prev = 0
+    error_alt_prev = 0
 
     integral_vel_x = 0
     integral_vel_y = 0
-
-    # Errors and previous errors for altitude PID control
-    error_alt_prev = 0
     integral_vel_z = 0
-    desired_vel_z = 0
 
-    # Desired yaw and velocities
-    desired_yaw = normalize_angle(angl_dir) # baed on the direction  needed 
-    print ( "DEs yaw in Deg ", desired_yaw , " in rad",math.radians(desired_yaw) )
-    
-
-    
-    # PID controller for yaw
-    max_yaw_speed=5
-    pid_yaw = PID(Kp_yaw, Ki_yaw, Kd_yaw, setpoint=desired_yaw)
-    pid_yaw.output_limits = (-max_yaw_speed, max_yaw_speed)  # Assuming you set a max_yaw_speed variable
-    pid_yaw.sample_time = 1 # Update interval in seconds
-
-
-    desired_vel_x = velocity_direction* get_desired_speed(0, distance,max_acceleration, max_deceleration, max_velocity) 
     desired_vel_y=0.0
     desired_vel_z=0.0
 
-    self.add_attribute_listener('velocity', on_velocity)
-    
-    start_time = time.time()
 
-    send_control_body(self, desired_vel_x, desired_vel_y, 0)
-   
+    velocity_current_x=(velocity_body_vector[0])
+    velocity_current_y=(velocity_body_vector[1])
+    velocity_current_z=(velocity_body_vector[2])
+    
+    # X velocity error and PID control
+    error_vel_x = desired_vel_x - velocity_current_x
+    integral_vel_x += error_vel_x
+    derivative_vel_x = error_vel_x - error_vel_x_prev
+
+    velocity_x = velocity_current_x+ Kp_vel_x * error_vel_x + Ki_vel_x * integral_vel_x + Kd_vel_x * derivative_vel_x
+    # save data for the next iteration 
+    error_vel_x_prev = error_vel_x
+
+    # Y velocity error and PID control
+    error_vel_y = desired_vel_y - velocity_current_y
+    integral_vel_y += error_vel_y
+    derivative_vel_y = error_vel_y - error_vel_y_prev
+
+    velocity_y = velocity_current_y + Kp_vel_y * error_vel_y + Ki_vel_y * integral_vel_y + Kd_vel_y * derivative_vel_y
+    error_vel_y_prev = error_vel_y
+
+    # Altitude error and PID control
+    error_vel_z = desired_vel_z - velocity_current_z
+    integral_vel_z += error_vel_z
+    derivative_vel_z = error_vel_z - error_alt_prev
+
+    velocity_z = velocity_current_z +Kp_vel_z * error_vel_z + Ki_vel_z * integral_vel_z + Kd_vel_z * derivative_vel_z
+    error_alt_prev = error_vel_z
+
+    return velocity_x, velocity_y, velocity_z
+
+def move_body_PID(self, angl_dir, distance, max_acceleration= 0.1, max_deceleration= 0.1 , max_velocity=2): #max_velocity=2
+     
+    global velocity_listener
+    velocity_listener=0
+    global interval_between_events
+    interval_between_events=0
+    global last_event_time
+    last_event_time=None
+
     previous_velocity_x=0 
     remaining_distance= distance 
     velocity_current_x=0
-    k=0.1
     start_control_timer=0
-    acc=True
+    PID_time=0
+    previous_desired_vel_x=0
+    estimated_acceleration=1
+
+    check_mode(self) 
+    #max_acceleration,max_deceleration= get_acceleration()
+    
+    [ angl_dir, velocity_direction ]= convert_angle_to_set_dir(self, angl_dir)
+    set_yaw_to_dir_PID( self, angl_dir)
+    
+    # Desired yaw and velocities
+    desired_vel_x = velocity_direction* get_desired_speed(0, distance,max_acceleration, max_deceleration, max_velocity) 
+    desired_vel_z = 0
+    desired_vel_y=0
+    desired_yaw = normalize_angle(angl_dir) # baed on the direction  needed 
+
+    self.add_attribute_listener('velocity', on_velocity)
+    
+
+    start_time = time.time()
+    send_control_body(self, desired_vel_x, desired_vel_y, desired_vel_z)     
     while remaining_distance >= 0.1:
+    
         new_velocity_data.wait()
-        
-        print( "---------------------------------------------------------------------")
-        
-        yaw_current = self.attitude.yaw
-        current_yaw = normalize_angle(math.degrees(yaw_current))
-        error = (desired_yaw - current_yaw)
-        error = normalize_angle(desired_yaw - current_yaw)
 
-        # Correcting error if it's shorter to turn the other way
-        if error > 180:
-            error -= 360
-        elif error < -180:
-            error += 360
+        hold_yaw_PID(self, desired_yaw)
 
-        # Get the PID output
-        yaw_speed = pid_yaw(error)
-        
-        # Determine the direction (clockwise or counterclockwise)
-        direction_yaw = 1 if error >= 0 else -1
+        previous_desired_vel_x = desired_vel_x
+        desired_vel_x = get_desired_speed(velocity_current_x, remaining_distance, max_acceleration, max_deceleration, max_velocity)
 
-        # Send the yaw command
-        set_yaw_PID(self, abs(error), abs(yaw_speed), direction_yaw)
+        # if remaining_distance < 0.5*0.5/max_deceleration:
+        #     desired_vel_x=0.5
 
         # Get current velocities from NED frame to body 
         velocity_body   =ned_to_body(self,velocity_listener )
@@ -682,60 +743,47 @@ def move_body_PID(self, angl_dir, distance, max_acceleration= 0.7, max_decelerat
         velocity_current_y=(velocity_body[1])
         velocity_current_z=(velocity_body[2])
 
-       
-        print("desired_vel_x= " , desired_vel_x)
-        # X velocity error and PID control
-        error_vel_x = desired_vel_x - velocity_current_x
-        integral_vel_x += error_vel_x
-        derivative_vel_x = error_vel_x - error_vel_x_prev
-
-        velocity_x = velocity_current_x+ Kp_vel_x * error_vel_x + Ki_vel_x * integral_vel_x + Kd_vel_x * derivative_vel_x
-        
-
-        # Y velocity error and PID control
-        error_vel_y = desired_vel_y - velocity_current_y
-        integral_vel_y += error_vel_y
-        derivative_vel_y = error_vel_y - error_vel_y_prev
-
-        velocity_y = velocity_current_y + Kp_vel_y * error_vel_y + Ki_vel_y * integral_vel_y + Kd_vel_y * derivative_vel_y
-        error_vel_y_prev = error_vel_y
-
-        # Altitude error and PID control
-        error_vel_z = desired_vel_z - velocity_current_z
-        integral_vel_z += error_vel_z
-        derivative_vel_z = error_vel_z - error_alt_prev
-
-        altitude_rate = velocity_current_z +Kp_vel_z * error_vel_z + Ki_vel_z * integral_vel_z + Kd_vel_z * derivative_vel_z
-        error_alt_prev = error_vel_z
+        if velocity_current_x >= desired_vel_x* 0.95 :
+            time_elaps = time.time() - PID_time
+            if time_elaps > (desired_vel_x/estimated_acceleration)/4.0:
+                PID_time=time.time()
+                velocity_x, velocity_y, velocity_z= velocity_PID(desired_vel_x, velocity_body)
+        else:
+            velocity_x= desired_vel_x
+            velocity_y=0
+            velocity_z=0
+            if previous_desired_vel_x <= desired_vel_x and velocity_current_x < desired_vel_x* 0.95:
+                max_acceleration= update_acceleration_estimate(max_acceleration, velocity_current_x, previous_velocity_x, interval_between_events)
+                estimated_acceleration= max_acceleration
+            elif  previous_desired_vel_x > desired_vel_x and velocity_current_x < desired_vel_x* 0.95: 
+                max_deceleration= abs(update_acceleration_estimate(max_deceleration, velocity_current_x, previous_velocity_x, interval_between_events))
+                estimated_acceleration= max_deceleration
         
         # Check the current altitude
         current_altitude = self.location.global_relative_frame.alt
-        
-        
-        #if (time.time() - start_control_timer > 0.5) or (abs(error_vel_x) > abs(error_vel_x_prev) and acc==True ) or (abs(error_vel_x) < abs(error_vel_x_prev) and acc==False ) or abs(velocity_y -desired_vel_y) > 0.1 or abs(altitude_rate- desired_vel_z)> 0.5:
+
+        # Send control to the drone reguraly 
         if (time.time() - start_control_timer > 0.1):
-            desired_vel_x= get_desired_speed(velocity_current_x, remaining_distance,max_acceleration, max_deceleration, max_velocity)    
-            # Send control to the drone 
-            print("     controle        ")
-            send_control_body(self, velocity_x, velocity_y, altitude_rate)
+            send_control_body(self, velocity_x, velocity_y, velocity_z)
             start_control_timer= time.time()
         
         remaining_distance= remaining_distance - (float(interval_between_events* abs( (velocity_current_x + previous_velocity_x)/2.0 )))
+        # save the current for next iteration to calculate the traveld distance 
+        previous_velocity_x= velocity_current_x 
         
-        print( "\nvx ",velocity_current_x , "vy",velocity_current_y, "vz",velocity_current_z ,"yaw error= ",error, "current alt= ", current_altitude  )
+        print( "---------------------------------------------------------------------")
+        print("desired_vel_x= " , desired_vel_x)
+        print( "\nvx ",velocity_current_x , "vy",velocity_current_y, "vz",velocity_current_z, "current alt= ", current_altitude  )
         print( "time", time.time() - start_time , "distance left : ",remaining_distance, "dis speed", desired_vel_x,"\n" )
-        
-        # save data for the next iteration 
-        error_vel_x_prev = error_vel_x
-        previous_velocity_x= velocity_current_x # save the current for next iteration 
-        
         # Clear the event so we can wait for the next update
         new_velocity_data.clear()
-    
-    print("         STOP Start          ")
-    send_control_body(self, 0, 0, 0) # stop 
-    self.remove_attribute_listener('velocity', on_velocity)
 
+    
+    # Arrive to destination stop  
+    send_control_body(self, 0, 0, 0) 
+    self.remove_attribute_listener('velocity', on_velocity)
+    
+    
 def convert_angle_to_set_dir(self, angle): 
     '''
     supppose you want the drone to have yaw -90 and move forward in respect to -90 yaw 
