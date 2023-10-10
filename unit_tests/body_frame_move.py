@@ -40,23 +40,29 @@ arm_and_takeoff(vehicle,drone.hight)
 print( "Takeoff and wait 2 sec")
 
 #loiter mode and hover in your place 
-# vehicle.mode    = VehicleMode("LOITER") #loiter mode and hover in your place 
-# time.sleep(2)
-# vehicle.mode     = VehicleMode("GUIDED")
+vehicle.mode    = VehicleMode("LOITER") #loiter mode and hover in your place 
+time.sleep(1)
+vehicle.mode     = VehicleMode("GUIDED")
 
 set_data_rate(vehicle, 20)
 
-distance=2
+distance=1
 angl_dir= 90#-45
 
-# angle dir in degree 
-move_body_PID(vehicle,angl_dir, distance)
+try:
+    # angle dir in degree 
+    move_body_PID(vehicle,angl_dir, distance)
+except Exception as e:
+    print(f"An error occurred: {str(e)}")
+    vehicle.mode = VehicleMode ("LAND")
+    time.sleep(2) 
+    vehicle.close()
+
 vehicle.mode    = VehicleMode("LOITER") #loiter mode and hover in your place 
 time.sleep(2)
 vehicle.mode     = VehicleMode("GUIDED")
 
-print( "move to the other direction")
-
+# print( "move to the other direction")
 # angl_dir= -180#135
 # move_body_PID(vehicle,angl_dir, distance,1)
 
