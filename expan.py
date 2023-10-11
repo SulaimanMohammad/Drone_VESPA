@@ -701,6 +701,14 @@ class Drone:
         else:
             print("Invalid index provided")
 
+    # Change information about the state of one of neighbors 
+    def update_state_in_neighbors_list( self, id, state):
+        for s in self.neighbor_list:
+            if id in s["drones_in_id"]:
+                # Find the index of the drone_id and changr the state 
+                idx = s['drones_in_id'].index(id)
+                s['states'][idx]= state 
+                
 
     '''
     -------------------------------------------------------------------------------------
