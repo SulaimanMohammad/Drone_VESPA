@@ -101,11 +101,8 @@ def spanning_sink(self):
  
 
 
-# Lock for the shared dictionary
-lock = threading.Lock()
 
 # Event flag to signal that xbee_listener wants to write
-listener_neighbor_update_state = threading.Event()
 listener_current_updated_irremovable = threading.Event()
 listener_end_of_spanning = threading.Event()
 
@@ -153,9 +150,7 @@ def xbee_listener(self):
                 listener_current_updated_irremovable.set() # Flag that the state was changed to irremovable 
             
             else: # Recieved msg refer to changes in state to irrremovable in one of the nighbors
-                listener_neighbor_update_state.set()
                 self.update_state_in_neighbors_list(id_rec, Irremovable) 
-                listener_neighbor_update_state.clear() 
 
             if id_rec ==-127: # Message sent by the sink announcing the end of spanning phase
                 listener_end_of_spanning.set()
@@ -167,9 +162,10 @@ def find_close_neigboor_2sink(self):
     neighbor_irremovable= None
     filtered_neighbors= None
 
-    # the search should be only in the neighbor_list but since it contains also the data of s0 ( current drone)
-    # Because we need to find min of occupied distance, we should remove the s0 from the list 
-    neighbor_list_no_s0= self.neighbor_list[1:]
+    # The search should be only in the neighbor_list but since it contains also the data of s0 (current spot)
+    # But because we need to find min of occupied distance, we should remove the s0 from the list 
+    with self.lock:
+        neighbor_list_no_s0= self.neighbor_list[1:]
 
     # Sort the neighbor_list based on the distance
     sorted_neighbors = sorted(neighbor_list_no_s0, key=lambda x: x['distance'])
@@ -177,82 +173,60 @@ def find_close_neigboor_2sink(self):
     # Extract the first 3 elements with the minimum distances
     three_min_neighbors = sorted_neighbors[:3]
 
-    # Filter the neighbor_list for objects with "drones_in" > 0 as it contains a drone in 
-    # it is done after sorting because we need the occupied of the 3 minimum , ( if it is done before it would be minimum distance of occupied spots)
+    # Filter the neighbor_list with minimum distance the spot should be occupied "drones_in" > 0  
     filtered_neighbors = [neighbor for neighbor in three_min_neighbors if neighbor["drones_in"] > 0]
     
-    if filtered_neighbors is not None:  # there are occupied neighbors
+    if filtered_neighbors is not None:  # There are occupied neighbors
         # Find the neighbor with id of the drone that is irremovable or it is sink ( distance =0 )
-        # if you arrive to irremovable or there is no need to send message
-        
-        # here a mutex needed in this operation to read  the state is already changed 
-        
-        # lock prioirty fo the state
-        # Check if xbee_listener wants to write
-        if not listener_neighbor_update_state.is_set():
-            # Acquire the lock to read the shared dictionary
-            with lock:
-                neighbor_irremovable = next((neighbor for neighbor in filtered_neighbors if ( neighbor['state'] == Irremovable) ), None) # no need to check for or neighbor['distance'] == 0 because the sink is already irremovable 
+        # if you arrive to irremovable 
+
+        with self.lock:
+            neighbor_irremovable = next((neighbor for neighbor in filtered_neighbors if ( neighbor['state'] == Irremovable) ), None) # no need to check for or neighbor['distance'] == 0 because the sink is already irremovable 
 
         if neighbor_irremovable== None:
             return min(filtered_neighbors, key=lambda x: x["distance"])["id"] # retuen the id of the drone 
         else: 
             return -1
-    else: # the case of no occupied neighbors around is very possible after further expansion
-        # check if the neighbors drones are preivious border 
-        # befor this function is called all niegbor data are updates    
-            # at the same time the neighbors drones contains in neighbor_list info of its own neighbor
-            # so the each drone in this pahse need to check if it has a drone was a border
-        # notice the earch here for all niegbors 
-        # "border -irremovable" because it can turn to only irrmovable if it is not part of the border    
+    else: 
+        # The case of no occupied neighbors close to sink around is very possible after further expansion
+        # Check if any of the neighbors drones are preivious border 
+        with self.lock:
+            drone_previous_border = [neighbor for neighbor in self.neighbor_list if ( neighbor["drones_in"] > 0 and neighbor["previous_state"]== Border or neighbor["previous_state"]== Irremovable_boarder ) ] 
         
-        # checking for previous need lock also because it is related to the chnages of sate 
-        if not listener_neighbor_update_state.is_set():
-            # Acquire the lock to read the shared dictionary
-            with lock:
-                drone_previous_border = [neighbor for neighbor in self.neighbor_list if ( neighbor["drones_in"] > 0 and neighbor["previous_state"]== Border or neighbor["previous_state"]== Irremovable_boarder ) ] 
-        
-        # if there are many drones had a state border befor chose the one closer to sink 
+        # If there are many drones had a state border befor chose the one closer to sink 
         if drone_previous_border>1: 
             return min(drone_previous_border, key=lambda x: x["distance"])["id"]
         elif drone_previous_border==1:
             return drone_previous_border["id"]
 
-        #nohthing found then connect to the border it is not possible 
-        # after the further exapnsion, the drones will be close to the old border 
-        # it is necessary to find a free drone or previous border 
-        # TODO check of it 
+        # Founding no drone it is not possible, after the further exapnsion, the drones will be close to the old border 
   
 def find_close_neigboor_2border(self):
     neighbor_irremovable= None
-     
-    neighbor_list_no_s0= self.neighbor_list[1:]
+    
+    with self.lock:  
+        neighbor_list_no_s0= self.neighbor_list[1:]
 
     # Sort the neighbor_list based on the distance
     sorted_neighbors = sorted(neighbor_list_no_s0 , key=lambda x: x['distance'],reverse=True)
 
-    # Extract the first 3 elements with the max distances ( close to the border)
+    # Extract the first 3 elements with the max distances (close to the border)
     three_max_neighbors = sorted_neighbors[:3]
 
     # Filter the neighbor_list for objects with "drones_in" > 0 as it contains a drone in 
     filtered_neighbors = [neighbor for neighbor in three_max_neighbors if neighbor["drones_in"] > 0]
     
     # Find the neighbor with drone that is irremovable or irremovable- border because 
-    # if you arrive to irremovable or irremovable-border there is no need to send message
-    # here a mutex needed in this operation to read  the state is already changed 
-    
-    # Check if xbee_listener wants to write( messag is recived)
-    if not listener_neighbor_update_state.is_set():
-        # Acquire the lock to read the shared dictionary
-        with lock:     
-            neighbor_irremovable = next((neighbor for neighbor in filtered_neighbors if ( neighbor['state'] == Irremovable or neighbor['state'] == Irremovable_boarder) ), None)
+    # if there is a irremovable or irremovable-border there is no need to send message
+    # Here a mutex needed in this operation to read  the state
+    with self.lock:     
+        neighbor_irremovable = next((neighbor for neighbor in filtered_neighbors if ( neighbor['state'] == Irremovable or neighbor['state'] == Irremovable_boarder) ), None)
 
-    if neighbor_irremovable== None: # if it doesnt exist check what is closest to the sink 
+    if neighbor_irremovable== None: # No irremovable found, check what is the closest to the sink 
         return max(filtered_neighbors, key=lambda x: x["distance"])["id"] # retuen the id of the drone 
-    else: # there is a irremovable drone in occupied neighbors
+    else: # There is a irremovable drone in occupied neighbors
         return -1
   
-
 def build_path(self):
     # Irremovable_boarder and Irremovable needs to build bath to the sink 
     send_msg_drone_id= self.find_close_neigboor_2sink() 
@@ -270,8 +244,6 @@ def build_path(self):
             msg= self.build_target_message(send_msg_drone_id)
             self.send_msg(msg)
         
-    
-
 def spanining ( self, vehicle ): 
     #Stay hovering while spanning communication 
     hover(vehicle)
@@ -290,18 +262,17 @@ def spanining ( self, vehicle ):
         self.spanning_sink()
     
     else: 
-        if not listener_neighbor_update_state.is_set():
-            # Free drone wait for msg to become irremovable by another drone or wait broadcast from sink of finihing Spainning
-            if self.state== Free or self.state== Border:
-                # Wait for xbee_listener to signal that state has been changed ( doesn't keep the CPU busy.)
-                while not listener_current_updated_irremovable.is_set() or ( not listener_end_of_spanning.is_set()):
-                    time.sleep(1)
-                listener_current_updated_irremovable.clear() # need to be cleared for the next spanning 
+
+        # Free drone wait for msg to become irremovable by another drone or wait broadcast from sink of finihing Spainning
+        if self.state== Free or self.state== Border:
+            # Wait for xbee_listener to signal that state has been changed ( doesn't keep the CPU busy.)
+            while not listener_current_updated_irremovable.is_set() or ( not listener_end_of_spanning.is_set()):
+                time.sleep(1)
+            listener_current_updated_irremovable.clear() # need to be cleared for the next spanning 
         
-        if not listener_neighbor_update_state.is_set():
-            # for the rest of the drones 
-            if (self.state== Irremovable) or (self.state == Irremovable_boarder): 
-                self.build_path()
+        # For Irremovables and Free drones that were changed  
+        if (self.state== Irremovable) or (self.state == Irremovable_boarder): 
+            self.build_path()
 
         listener_end_of_spanning.wait() # wait until reciving end to finish this phase , Note if the end detected in Free then this will not wait because it is already seen 
         listener_end_of_spanning.clear()
