@@ -140,7 +140,8 @@ class Drone:
         for i in range(1, self.num_neigbors+1):
             s = {"name": "s" + str(i), "distance": 0, "priority": 0,"drones_in": 0,"drones_in_id":[] , "states": [], "previous_state": []}
             self.neighbor_list.append(s)
-        self.lock = threading.Lock()
+        self.lock_state = threading.Lock()
+        self.lock_neighbor_list = threading.Lock()
 
     '''
     -------------------------------------------------------------------------------------
@@ -629,15 +630,15 @@ class Drone:
     -------------------------------------------------------------------------------------
     '''
     def get_state(self):
-        with self.lock:
+        with self.lock_state:
             return self.state
         
     def write_state(self, state):
-        with self.lock:
+        with self.lock_state:
             self.state= state
 
     def change_state_to( self, new_state):
-        with self.lock:
+        with self.lock_state:
             self.previous_state= self.state # save the preivious state 
             self.state= new_state # change the state     
     
@@ -713,7 +714,7 @@ class Drone:
     # Change information about the state of one of neighbors 
     def update_state_in_neighbors_list( self, id, state):
         # Lock to avoid any data race since there are two threads ( main , xbee)
-        with self.lock: 
+        with self.lock_neighbor_list: 
             for s in self.neighbor_list:
                 if id in s["drones_in_id"]:
                     # Find the index of the drone_id and changr the state 

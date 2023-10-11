@@ -61,7 +61,7 @@ class Sink_Timer:
 
 def sink_listener(self,sink_t, timeout):
     '''
-    if a path to sink is contructed a drone of the niegboor wil become irremovable 
+    if a path to sink is constructed a drone of the niegboor wil become irremovable 
     when a drone became irremovable it will send message contains its id to all around 
 
     The sink listener check that message contains S- id different than id of sink 
@@ -105,7 +105,6 @@ def spanning_sink(self):
 # Event flag to signal that xbee_listener wants to write
 listener_current_updated_irremovable = threading.Event()
 listener_end_of_spanning = threading.Event()
-
 def xbee_listener(self):
     '''
     1-If the header refer to data demand (build the message that contains the data and send it)
@@ -164,7 +163,7 @@ def find_close_neigboor_2sink(self):
 
     # The search should be only in the neighbor_list but since it contains also the data of s0 (current spot)
     # But because we need to find min of occupied distance, we should remove the s0 from the list 
-    with self.lock:
+    with self.lock_neighbor_list:
         neighbor_list_no_s0= self.neighbor_list[1:]
 
     # Sort the neighbor_list based on the distance
@@ -185,7 +184,7 @@ def find_close_neigboor_2sink(self):
         # Find the neighbor with id of the drone that is irremovable or it is sink ( distance =0 )
         # if you arrive to irremovable 
 
-        with self.lock:
+        with self.lock_neighbor_list:
             neighbor_irremovable = next((neighbor for neighbor in filtered_neighbors if ( neighbor['state'] == Irremovable) ), None) # no need to check for or neighbor['distance'] == 0 because the sink is already irremovable 
 
         if neighbor_irremovable== None:
@@ -195,7 +194,7 @@ def find_close_neigboor_2sink(self):
     else: 
         # The case of no occupied neighbors close to sink around is very possible after further expansion
         # Check if any of the neighbors drones are preivious border 
-        with self.lock:
+        with self.lock_neighbor_list:
             drone_previous_border = [neighbor for neighbor in self.neighbor_list if ( neighbor["drones_in"] > 0 and neighbor["previous_state"]== Border or neighbor["previous_state"]== Irremovable_boarder ) ] 
         
         # If there are many drones had a state border befor chose the one closer to sink 
@@ -209,7 +208,7 @@ def find_close_neigboor_2sink(self):
 def find_close_neigboor_2border(self):
     neighbor_irremovable= None
     
-    with self.lock:  
+    with self.lock_neighbor_list:  
         neighbor_list_no_s0= self.neighbor_list[1:]
 
     reference_distance = self.neighbor_list[0]['distance']
@@ -228,7 +227,7 @@ def find_close_neigboor_2border(self):
     # Find the neighbor with drone that is irremovable or irremovable- border because 
     # if there is a irremovable or irremovable-border there is no need to send message
     # Here a mutex needed in this operation to read  the state
-    with self.lock:     
+    with self.lock_neighbor_list:     
         neighbor_irremovable = next((neighbor for neighbor in filtered_neighbors if ( neighbor['state'] == Irremovable or neighbor['state'] == Irremovable_boarder) ), None)
 
     if neighbor_irremovable== None: # No irremovable found, check what is the closest to the sink 
