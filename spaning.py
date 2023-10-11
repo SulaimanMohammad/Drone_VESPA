@@ -222,8 +222,7 @@ def find_close_neigboor_2sink(self):
         # after the further exapnsion, the drones will be close to the old border 
         # it is necessary to find a free drone or previous border 
         # TODO check of it 
-
-
+  
 def find_close_neigboor_2border(self):
     neighbor_irremovable= None
      
@@ -296,7 +295,7 @@ def spanining ( self, vehicle ):
             if self.state== Free or self.state== Border:
                 # Wait for xbee_listener to signal that state has been changed ( doesn't keep the CPU busy.)
                 while not listener_current_updated_irremovable.is_set() or ( not listener_end_of_spanning.is_set()):
-                    time.sleep(0.1)
+                    time.sleep(1)
                 listener_current_updated_irremovable.clear() # need to be cleared for the next spanning 
         
         if not listener_neighbor_update_state.is_set():
@@ -309,5 +308,7 @@ def spanining ( self, vehicle ):
 
 
     xbee_thread.join() # this top at the end of he phase because no need to use mutex anymore 
-    set_to_move(vehicle) # Drone can move now in the balancing phase 
+    
+    if self.state == Free:
+        set_to_move(vehicle) # only free Drone can move now in the balancing phase 
 
