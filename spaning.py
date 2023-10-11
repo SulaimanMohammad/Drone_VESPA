@@ -146,17 +146,15 @@ def xbee_listener(self):
         if msg.startswith(Spanning_header.encode()) and msg.endswith(b'\n'):
             id_rec= self.decode_target_message(msg)
             if id_rec == self.id : 
-                with lock:
-                    if self.state== Border: 
-                        self.change_state(Irremovable_boarder)
-                    else: 
-                        self.change_state(Irremovable)
-                    listener_current_updated_irremovable.set() # Flag that the state was changed to irremovable 
+                if self.state== Border: 
+                    self.change_state(Irremovable_boarder)
+                else: 
+                    self.change_state(Irremovable)
+                listener_current_updated_irremovable.set() # Flag that the state was changed to irremovable 
             
             else: # Recieved msg refer to changes in state to irrremovable in one of the nighbors
                 listener_neighbor_update_state.set()
-                with lock:
-                    self.update_state_in_neighbors_list(id_rec, Irremovable) 
+                self.update_state_in_neighbors_list(id_rec, Irremovable) 
                 listener_neighbor_update_state.clear() 
 
             if id_rec ==-127: # Message sent by the sink announcing the end of spanning phase
