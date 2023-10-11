@@ -111,12 +111,17 @@ listener_end_of_spanning = threading.Event()
 
 def xbee_listener(self):
     '''
-    1- check that the message starts with S ( for spanning ) otherwise ignore and relance spaning 
-    2- check in the message what is the data ( it should be id )
-    3- extract the id and save it in id_msg and the state of the sender that it should be usually irremovabe 
-        The reason is that the messages in this pahse are sent only if the drone is irremovable 
+    1-If the header refer to data demand (build the message that contains the data and send it)
+    2- Header refers to data receive it, then decode the message and update the information of the neighbour 
+    3- Header is Spanning (Header to build the path to sink and border)
+        * decode the message 
+        * if the message conatins the id of the current drone thnen it is targeted to be part of the path (Irremovable) by one of neighbour.
+            - change the state and rise flag that the drone changed its state
+        * if the message contains another id, this referes that the owner of this id changed its state to (Irremovable) and must update the local info about this drone.
+          that is important so the current drone check if any neighbour is part of the path so the process will stop.
+        * if the id= -127 that refers to the brodcast of ending the spanning phase 
     '''
-    # Keep litining until reciving a end of the phase 
+    # Keep listening until reciving a end of the phase 
     while not listener_end_of_spanning.is_set(): 
         msg= self.retrive_msg_from_buffer() 
         
@@ -128,32 +133,33 @@ def xbee_listener(self):
         # Receiving message containing data     
         if msg.startswith(Reponse_header.encode()) and msg.endswith(b'\n'):
             self.neighbors_list_updated = threading.Event()
-            positionX, positionY, state, id_value= self.decode_spot_info_message(msg)
-            self.update_neighbors_list(positionX, positionY, state, id_value )
-            self.neighbors_list_updated.set()
+            time.sleep(1) # Wait to have all msgs 
+            # Retrive all the reponse messages then rise the flage that all is received 
+            while msg.startswith(Reponse_header.encode()):
+                positionX, positionY, state, id_value= self.decode_spot_info_message(msg)
+                self.update_neighbors_list(positionX, positionY, state, id_value )
+                msg= self.retrive_msg_from_buffer()
 
+            self.neighbors_list_updated.set()
+        
+        # Message of building the path 
         if msg.startswith(Spanning_header.encode()) and msg.endswith(b'\n'):
             id_rec= self.decode_target_message(msg)
             if id_rec == self.id : 
-                #that means one of the neigboor is irremovable and sent a taged message
-                # This means that this current drone should change it is current state 
                 with lock:
                     if self.state== Border: 
                         self.change_state(Irremovable_boarder)
-                        self.neighbor_list[id_rec]['state']=Irremovable_boarder # here you update the value
                     else: 
                         self.change_state(Irremovable)
-                        self.neighbor_list[id_rec]['state']=Irremovable# here you update the value
-                    listener_current_updated_irremovable.set() # flag that the state was changed to irremovable 
-
-            else: # the recieved msg refer to changes in state to irrremovable in one of the nighbors
-                # Signal that we want to write
+                    listener_current_updated_irremovable.set() # Flag that the state was changed to irremovable 
+            
+            else: # Recieved msg refer to changes in state to irrremovable in one of the nighbors
                 listener_neighbor_update_state.set()
                 with lock:
-                    self.neighbor_list[id_rec]['state']=1 # here you update the value
-                listener_neighbor_update_state.clear()  # Clear the flag
+                    self.update_state_in_neighbors_list(id_rec, Irremovable) 
+                listener_neighbor_update_state.clear() 
 
-            if id_rec ==-127: # it is the message sent by the sink announcing the end of spanning phase
+            if id_rec ==-127: # Message sent by the sink announcing the end of spanning phase
                 listener_end_of_spanning.set()
 
 
@@ -273,16 +279,14 @@ def spanining ( self, vehicle ):
     #Stay hovering while spanning communication 
     hover(vehicle)
 
-    # Update neigboors info after the end of expansion 
+    xbee_thread = threading.Thread(target=xbee_listener, args=(self,))
+    xbee_thread.start()
+
+    # Update neigboors info after the end of expansion and wait the data to be recived
+    # Needed to find what neigbour that became irremvable due to finding target 
     self.build_data_demand_message()
     self.neighbors_list_updated.wait()
     self.neighbors_list_updated.clear()
-
-
-    # since a lock is introduced then the drone will not read a old value after any update it will see it 
-    # this shuld be different from only normal lisenting because it cotains listener
-    xbee_thread = threading.Thread(target=xbee_listener, args=(self,)) #pass the function reference and arguments separately to the Thread constructor.
-    xbee_thread.start()
 
     # for the sink drone TODO the sink is responsable of ending the phase  
     if self.spot['distance']==0: # if the drone is sink ( leader of the termination of the spaning phase)
