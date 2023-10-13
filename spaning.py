@@ -112,8 +112,8 @@ def sink_listener(self,sink_t, timeout):
         # Receiving message containing data     
         if msg.startswith(Reponse_header.encode()) and msg.endswith(b'\n'):
             self.neighbors_list_updated = threading.Event()
-            positionX, positionY, state, id_value= self.decode_spot_info_message(msg)
-            self.update_neighbors_list(positionX, positionY, state, id_value )
+            positionX, positionY, state, previous_state,id_value= self.decode_spot_info_message(msg)
+            self.update_neighbors_list(positionX, positionY, state, previous_state,id_value)
             self.neighbors_list_updated.set()
 
         if msg.startswith(Spanning_header.encode()) and msg.endswith(b'\n'):
@@ -170,10 +170,9 @@ def xbee_listener(self):
             time.sleep(1) # Wait to have all msgs 
             # Retrive all the reponse messages then rise the flage that all is received 
             while msg.startswith(Reponse_header.encode()):
-                positionX, positionY, state, id_value= self.decode_spot_info_message(msg)
-                self.update_neighbors_list(positionX, positionY, state, id_value )
+                positionX, positionY, state, previous_state,id_value= self.decode_spot_info_message(msg)
+                self.update_neighbors_list(positionX, positionY, state, previous_state,id_value)
                 msg= self.retrive_msg_from_buffer()
-
             self.neighbors_list_updated.set()
         
         # Message of building the path 

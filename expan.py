@@ -284,12 +284,6 @@ class Drone:
     def send_msg(self,msg):
         #TODO deal with sending boradcasting 
         pass
-
-    def send_demand(self): 
-        # the drone will send message to demand the data
-        # this mssage contains only way to ask data 
-        # the message will be recived from all the drones are in the range of commuinication 
-        pass 
     
     def retrive_msg_from_buffer(self):
         # device is the object of Xbee connection 
@@ -332,6 +326,7 @@ class Drone:
         
         # Encode state 
         message += struct.pack('>B', self.state)
+        message += struct.pack('>B', self.previous_state)
 
         # Append the id itself
         message += self.id.to_bytes(max_byte_count, 'big')
@@ -355,8 +350,10 @@ class Drone:
         positionY = self.decode_int_to_float(positionY_encoded)
         index += len(positionY_encoded)
         
-        # Decode state
+         # Decode state and previous_state
         state = struct.unpack('>B', message[index:index+1])[0]
+        index += 1
+        previous_state = struct.unpack('>B', message[index:index+1])[0]
         index += 1
 
         # Decode max_byte_count for id
@@ -366,7 +363,7 @@ class Drone:
         # Decode self.id
         id_value = int.from_bytes(message[index:index+max_byte_count], 'big')
 
-        return positionX, positionY, state, id_value
+        return positionX, positionY, state, previous_state, id_value
 
     def build_inherit_message(self,id_rec):
         # Start message with 'I'
@@ -458,7 +455,7 @@ class Drone:
 
     def handel_broken_into_spot(self, msg):
         if self.border_candidate== True: 
-            positionX, positionY, state, id_rec= self.decode_spot_info_message(msg)
+            positionX, positionY, state, previous_state,id_rec= self.decode_spot_info_message(msg)
             self.update_neighbors_list(positionX, positionY, state, id_rec) # No need to mutex since the drone is in border_candidate only in it was Owner and reserved spot
             self.check_border_candidate_eligibility(observe=False) # use only the upddated list and see if the current drone still candidate 
             if self.border_candidate == False: # changed due to 6 neigbors filled 
@@ -678,36 +675,40 @@ class Drone:
         msg= self.build_spot_info_message(Arrival_header)
         self.send_msg(msg)   
 
-    def update_neighbors_list(self, positionX, positionY, state, id_rec):
+    def update_neighbors_list(self, positionX, positionY, state, previous_state, id_rec):
 
         s_index= self.find_relative_spot(positionX, positionY)
         # Check if index is valid ( index between 0 and 6 )
         if 0 <= s_index <= self.num_neigbors+1:
 
-            #Check if the id_rec of the drone is already in neighbor_list
+            # Check if the id_rec of the drone is already in neighbor_list 
             for s in self.neighbor_list:
-                if id_rec in s["drones_in_id"] and int(s["name"][1:]) != s_index : # The drone was in another neighborhood spot 
-
-                    # Find the index of the drone_id
-                    idx = s['drones_in_id'].index(id_rec)
+                if id_rec in s["drones_in_id"]:
+                    # The drone was in another neighborhood spot
+                    if int(s["name"][1:]) != s_index : 
+                        # Find the index of the drone_id
+                        idx = s['drones_in_id'].index(id_rec)
+                        # Remove from drones_in_id and states
+                        s['drones_in_id'].pop(idx)
+                        s['states'].pop(idx)
+                        s['previous_state'].pop(idx)
+                        # Decrement drones_in count
+                        s['drones_in'] -= 1
+                    else: # The id of drone is in the same spot just update the satates
+                       s['states']= state
+                       s['previous_state']=previous_state
+                       return  # Exit the function 
                     
-                    # Remove from drones_in_id and states
-                    s['drones_in_id'].pop(idx)
-                    s['states'].pop(idx)
-                    
-                    # Decrement drones_in count
-                    s['drones_in'] -= 1
-            
+            # If the ID of drone doesnt exist at all or it was deleted after was in another neighborhood spot
             # Retrieve the corresponding spot
             s = self.neighbor_list[s_index] 
-
             # Append drone_id to drones_in_id and state_rec to states
             s['drones_in_id'].append(id_rec)
             s['states'].append(state)
-            
+            s['previous_state'].append(previous_state)
             # Increment drones_in count
             s['drones_in'] += 1
-
+            
         else:
             print("Invalid index provided")
 
