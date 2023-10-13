@@ -41,15 +41,17 @@ class Sink_Timer:
             time.sleep(0.5)
 
     def time_up(sink_t,self):
-        #Called when the timer reaches its timeout without being reset.
+        # Called when the timer reaches its timeout without being reset.
         print("Time's up! ")
         
-        if sink_t.message_counter==0: #if no message received # the sink it is already irremovable 
-            send_msg_drone_id= self.find_close_neigboor_2border()  # since it doesnt belong to border then find to path to border 
-            if send_msg_drone_id != -1 : # there is no irremovable send msg to a drone to make it irremovable 
-                # send message to a drone that had Id= send_msg_drone_id
-                pass
-        else: # if you already have  message and path is constructed then brodcast end of spanning 
+        # No message received, thus the sink must build path to the border 
+        if sink_t.message_counter==0: 
+            target_id= self.find_close_neigboor_2border() 
+            if target_id != -1 : # No irremovable send msg to a drone to make it irremovable 
+                # Send message to a drone that had Id= target_id
+                msg= self.build_target_message(target_id)
+                self.send_msg(msg)
+        else: # If drone already have  message and path is constructed then brodcast end of spanning 
             # broadcast the end of spanning 
             # Here to brodcast the end of the pahse 
             # the message contains -127 as id to confirm that is end of pahse   
@@ -64,7 +66,7 @@ def sink_listener(self,sink_t, timeout):
     if a path to sink is constructed a drone of the niegboor wil become irremovable 
     when a drone became irremovable it will send message contains its id to all around 
 
-    The sink listener check that message contains S- id different than id of sink 
+    The sink listener check that message id different than id of sink 
     and based on that it will be considered as a message to complet the path  
      
     '''
@@ -90,8 +92,9 @@ def sink_listener(self,sink_t, timeout):
                 with sink_t.lock_sink:  # Acquire the lock
                     sink_t.message_counter += 1
                     sink_t.remaining_time = sink_t.timeout
-    
-    sink_t.end_of_spanning.clear() # reset so the next spanning the listenning loop will be activated  
+   
+    # Reset so the next spanning the listenning loop will be activated  
+    sink_t.end_of_spanning.clear() 
 
 
 def spanning_sink(self):
@@ -99,8 +102,6 @@ def spanning_sink(self):
     sink_proess = Sink_Timer()
     sink_proess.run()
  
-
-
 
 # Event flag to signal that xbee_listener wants to write
 listener_current_updated_irremovable = threading.Event()
@@ -187,9 +188,12 @@ def find_close_neigboor_2sink(self):
         with self.lock_neighbor_list:
             neighbor_irremovable = next((neighbor for neighbor in filtered_neighbors if ( neighbor['state'] == Irremovable) ), None) # no need to check for or neighbor['distance'] == 0 because the sink is already irremovable 
 
+        # No irremovable found 
         if neighbor_irremovable== None:
             return min(filtered_neighbors, key=lambda x: x["distance"])["id"] # retuen the id of the drone 
         else: 
+            # irremovable found, save it
+            self.drone_id_to_sink= neighbor_irremovable[0] #chose one of them if there are many
             return -1
     else: 
         # The case of no occupied neighbors close to sink around is very possible after further expansion
@@ -233,23 +237,23 @@ def find_close_neigboor_2border(self):
     if neighbor_irremovable== None: # No irremovable found, check what is the closest to the sink 
         return max(filtered_neighbors, key=lambda x: x["distance"])["id"] # Retuen the id of the drone 
     else: # There is a irremovable drone in occupied neighbors
-        return -1
+        self.drone_id_to_border= neighbor_irremovable[0]
   
 def build_path(self):
     # Irremovable_boarder and Irremovable needs to build bath to the sink 
-    send_msg_drone_id= self.find_close_neigboor_2sink() 
-    if send_msg_drone_id != -1 : # there is no irremovable send msg to a drone close to sink to make it irremovable 
-        self.drone_id_to_sink=send_msg_drone_id # save the id of the drone for future use to connect to sink
-        # send message to a drone that had Id= send_msg_drone_id
-        msg= self.build_target_message(send_msg_drone_id)
+    target_id= self.find_close_neigboor_2sink() 
+    if target_id != -1 : # there is no irremovable send msg to a drone close to sink to make it irremovable 
+        self.drone_id_to_sink=target_id # save the id of the drone for future use to connect to sink
+        # send message to a drone that had Id= target_id
+        msg= self.build_target_message(target_id)
         self.send_msg(msg)
     
     if self.state != Irremovable_boarder:  # it is irrmovable doesnt belong to boarder no need to check (self.state != " irremovable- border" ) 
-        send_msg_drone_id= self.find_close_neigboor_2border()  # since it doesnt belong to border then find to path to border 
-        if send_msg_drone_id != -1 : # there is no irremovable send msg to a drone to make it irremovable 
-            self.drone_id_to_border= send_msg_drone_id # save the drone id that is the path to the border from the current one 
-            # send message to a drone that had Id= send_msg_drone_id
-            msg= self.build_target_message(send_msg_drone_id)
+        target_id= self.find_close_neigboor_2border()  # since it doesnt belong to border then find to path to border 
+        if target_id != -1 : # there is no irremovable send msg to a drone to make it irremovable 
+            self.drone_id_to_border= target_id # save the drone id that is the path to the border from the current one 
+            # send message to a drone that had Id= target_id
+            msg= self.build_target_message(target_id)
             self.send_msg(msg)
         
 def spanining ( self, vehicle ): 
@@ -270,7 +274,6 @@ def spanining ( self, vehicle ):
         self.spanning_sink()
     
     else: 
-
         # Free drone wait for msg to become irremovable by another drone or wait broadcast from sink of finihing Spainning
         if self.state== Free or self.state== Border:
             # Wait for xbee_listener to signal that state has been changed ( doesn't keep the CPU busy.)
@@ -281,12 +284,13 @@ def spanining ( self, vehicle ):
         # For Irremovables and Free drones that were changed  
         if (self.state== Irremovable) or (self.state == Irremovable_boarder): 
             self.build_path()
-
-        listener_end_of_spanning.wait() # wait until reciving end to finish this phase , Note if the end detected in Free then this will not wait because it is already seen 
+        
+        # Wait until reciving end to finish this phase 
+        listener_end_of_spanning.wait() 
         listener_end_of_spanning.clear()
-
-
-    xbee_thread.join() # this top at the end of he phase because no need to use mutex anymore 
+        
+        # Stop listener
+        xbee_thread.join()  
     
     if self.state == Free:
         set_to_move(vehicle) # only free Drone can move now in the balancing phase 
