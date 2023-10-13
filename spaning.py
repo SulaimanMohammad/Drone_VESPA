@@ -4,22 +4,56 @@ import sys
 import threading
 import time
 
+'''
+-------------------------------------------------------------------------------------
+---------------------------------- Communication ------------------------------------
+-------------------------------------------------------------------------------------
+'''
+Border_sink_confirm= -1
+spanning_terminator=-127 
 
-def build_target_message(self, target_id):
+def build_target_message(self,target_id, data=0):
     max_byte_count = self.determine_max_byte_size(target_id)
     message = Spanning_header.encode() + struct.pack('>B', max_byte_count)    
     message += target_id.to_bytes(max_byte_count, 'big')
+    
+    data_byte_size = self.determine_max_byte_size(data)
+    data_bytes = data.to_bytes(data_byte_size, 'big')
+    message += struct.pack('>B', data_byte_size) 
+    message += data_bytes  
+    
     message += b'\n'
     return message
 
-def decode_target_message(self,message):    
-    max_byte_count = struct.unpack('>B', message[1:2])[0]
-    target_id_start = 2
+def decode_target_message(message):
+    # Extract max_byte_count and target_id
+    max_byte_count = struct.unpack('>B', message[2:3])[0]
+    target_id_start = 3
     target_id_end = target_id_start + max_byte_count
     target_id = int.from_bytes(message[target_id_start:target_id_end], 'big')
-    return target_id
+    
+    # Extract the data size and data
+    data_size_start = target_id_end
+    data_size_end = data_size_start + 1  # Since data size is stored in 1 byte
+    data_size = struct.unpack('>B', message[data_size_start:data_size_end])[0]
+    
+    # Extract and convert the data bytes to integer
+    data_start = data_size_end
+    data_end = data_start + data_size
+    data_bytes = message[data_start:data_end]
+    data = int.from_bytes(data_bytes, 'big')
+    
+    return target_id, data
 
+def forward_confirm_msg(self):
+    msg_border_sink= self.build_target_message(self.drone_id_to_sink,Border_sink_confirm)
+    self.send_msg(msg_border_sink)
 
+'''
+-------------------------------------------------------------------------------------
+---------------------------------- Sink Procedure------------------------------------
+-------------------------------------------------------------------------------------
+'''
 class Sink_Timer:
     def __init__(sink_t,self,timeout=10):
         sink_t.timeout = timeout
@@ -43,7 +77,7 @@ class Sink_Timer:
     def time_up(sink_t,self):
         # Called when the timer reaches its timeout without being reset.
         print("Time's up! ")
-        
+        self.change_state(Irremovable) # The sink will always be irremovable 
         # No message received, thus the sink must build path to the border 
         if sink_t.message_counter==0: 
             target_id= self.find_close_neigboor_2border() 
@@ -51,15 +85,12 @@ class Sink_Timer:
                 # Send message to a drone that had Id= target_id
                 msg= self.build_target_message(target_id)
                 self.send_msg(msg)
-        else: # If drone already have  message and path is constructed then brodcast end of spanning 
-            # broadcast the end of spanning 
-            # Here to brodcast the end of the pahse 
-            # the message contains -127 as id to confirm that is end of pahse   
-            #   after the time is up ' waiting time '
-            # the message here should contains a ref to sink when it is arrive to border, it should come back to the sink 
-            sink_t.end_of_spanning.set() # flag to tell listener that it is the end 
-            sink_listener.join() # stop listenning 
 
+        # If drone already have message and path is constructed then it needs to wait the message flow from border to sink 
+        # and if the sink needed to constrcut the path starting from itself , still need wait a message from border to come back   
+        sink_t.end_of_spanning.wait() 
+        sink_t.end_of_spanning.clear() 
+        sink_listener.join() 
 
 def sink_listener(self,sink_t, timeout):
     '''
@@ -86,23 +117,29 @@ def sink_listener(self,sink_t, timeout):
             self.neighbors_list_updated.set()
 
         if msg.startswith(Spanning_header.encode()) and msg.endswith(b'\n'):
-            id_rec= self.decode_target_message(msg)
-            if id_rec != self.id: 
-                print("Message received!")
-                with sink_t.lock_sink:  # Acquire the lock
-                    sink_t.message_counter += 1
-                    sink_t.remaining_time = sink_t.timeout
-   
-    # Reset so the next spanning the listenning loop will be activated  
-    sink_t.end_of_spanning.clear() 
-
-
+            id_rec,data = self.decode_target_message(msg)
+            if id_rec == self.id: 
+                if data ==0:
+                    with sink_t.lock_sink:  # Acquire the lock
+                        sink_t.message_counter += 1
+                        sink_t.remaining_time = sink_t.timeout
+                # Data refere that the message came from border so path constructed 
+                elif data== Border_sink_confirm:
+                    # Sink sends the end of spanning
+                    end_msg= self.build_target_message(spanning_terminator)
+                    self.send_msg(end_msg)
+                    sink_t.end_of_spanning.set()
+                    
 def spanning_sink(self):
     # initialize a timer that will be rest after reciving new message 
     sink_proess = Sink_Timer()
     sink_proess.run()
- 
 
+'''
+-------------------------------------------------------------------------------------
+------------------------------------ Build path -------------------------------------
+-------------------------------------------------------------------------------------
+'''
 # Event flag to signal that xbee_listener wants to write
 listener_current_updated_irremovable = threading.Event()
 listener_end_of_spanning = threading.Event()
@@ -112,7 +149,7 @@ def xbee_listener(self):
     2- Header refers to data receive it, then decode the message and update the information of the neighbour 
     3- Header is Spanning (Header to build the path to sink and border)
         * decode the message 
-        * if the message conatins the id of the current drone thnen it is targeted to be part of the path (Irremovable) by one of neighbour.
+        * if the message conatins the id of the current drone then it is targeted to be part of the path (Irremovable) by one of neighbour.
             - change the state and rise flag that the drone changed its state
         * if the message contains another id, this referes that the owner of this id changed its state to (Irremovable) and must update the local info about this drone.
           that is important so the current drone check if any neighbour is part of the path so the process will stop.
@@ -141,20 +178,26 @@ def xbee_listener(self):
         
         # Message of building the path 
         if msg.startswith(Spanning_header.encode()) and msg.endswith(b'\n'):
-            id_rec= self.decode_target_message(msg)
-            if id_rec == self.id : 
-                if self.state== Border: 
-                    self.change_state(Irremovable_boarder)
-                else: 
-                    self.change_state(Irremovable)
-                listener_current_updated_irremovable.set() # Flag that the state was changed to irremovable 
+            id_rec, data= self.decode_target_message(msg)
+            
+            if id_rec == self.id :
+                if data==0:
+                    if self.state== Border: 
+                        self.change_state(Irremovable_boarder)
+                    else: 
+                        self.change_state(Irremovable)
+                    listener_current_updated_irremovable.set() # Flag that the state was changed to irremovable 
+                elif data == Border_sink_confirm: 
+                    # It's a meaage flow from border to sink to verfiry the path and end the pahse
+                    # verfiy if became already irremovable drone (part of the path)
+                    if (self.state == Irremovable):
+                        self.forward_confirm_msg()
+
+            elif id_rec == spanning_terminator: # Message sent by the sink announcing the end of spanning phase
+                listener_end_of_spanning.set()
             
             else: # Recieved msg refer to changes in state to irrremovable in one of the nighbors
                 self.update_state_in_neighbors_list(id_rec, Irremovable) 
-
-            if id_rec ==-127: # Message sent by the sink announcing the end of spanning phase
-                listener_end_of_spanning.set()
-
 
 # since the 6 neighbors has 2 different regions one close to sink and one in opposit 
 # check the 3 neighbors that are close to the sink to know if any is irremovable
@@ -238,26 +281,25 @@ def find_close_neigboor_2border(self):
         return max(filtered_neighbors, key=lambda x: x["distance"])["id"] # Retuen the id of the drone 
     else: # There is a irremovable drone in occupied neighbors
         self.drone_id_to_border= neighbor_irremovable[0]
+        return -1 
   
 def build_path(self):
     # Irremovable_boarder and Irremovable needs to build bath to the sink 
     target_id= self.find_close_neigboor_2sink() 
-    if target_id != -1 : # there is no irremovable send msg to a drone close to sink to make it irremovable 
+    if target_id != -1 : # No irremovable around send msg to a drone close to sink to make it irremovable 
         self.drone_id_to_sink=target_id # save the id of the drone for future use to connect to sink
-        # send message to a drone that had Id= target_id
         msg= self.build_target_message(target_id)
         self.send_msg(msg)
     
     if self.state != Irremovable_boarder:  # it is irrmovable doesnt belong to boarder no need to check (self.state != " irremovable- border" ) 
         target_id= self.find_close_neigboor_2border()  # since it doesnt belong to border then find to path to border 
-        if target_id != -1 : # there is no irremovable send msg to a drone to make it irremovable 
-            self.drone_id_to_border= target_id # save the drone id that is the path to the border from the current one 
-            # send message to a drone that had Id= target_id
+        if target_id != -1 : 
+            self.drone_id_to_border= target_id 
             msg= self.build_target_message(target_id)
             self.send_msg(msg)
         
 def spanining ( self, vehicle ): 
-    #Stay hovering while spanning communication 
+    # Stay hovering while spanning communication 
     hover(vehicle)
 
     xbee_thread = threading.Thread(target=xbee_listener, args=(self,))
@@ -284,6 +326,10 @@ def spanining ( self, vehicle ):
         # For Irremovables and Free drones that were changed  
         if (self.state== Irremovable) or (self.state == Irremovable_boarder): 
             self.build_path()
+        
+        # Send a message that will travel from border to sink and that will annouce end of the pahse 
+        if self.state== Irremovable_boarder: 
+            self.forward_confirm_msg()
         
         # Wait until reciving end to finish this phase 
         listener_end_of_spanning.wait() 

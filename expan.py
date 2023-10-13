@@ -823,11 +823,8 @@ class Drone:
                 self.allowed_spots.append(s['name'])
 
     def search_for_target(self): # find if there is target in the area or not 
-        
-        if self.spot["disance"]==0 and self.state==Owner:  #the drone that is sink should be always itrremvable but it should be first Owner 
-            self.change_state_to(Irremovable)
-
-        # move int th lace and couver it to check if there is target or not 
+        # move in the place and couver it to check if there is target or not 
+        pass
     
 
     '''
