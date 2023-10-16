@@ -46,8 +46,9 @@ def decode_target_message(message):
     return target_id, data
 
 def forward_confirm_msg(self):
-    msg_border_sink= self.build_target_message(self.drone_id_to_sink,Border_sink_confirm)
-    self.send_msg(msg_border_sink)
+    for id in self.drone_id_to_sink:
+        msg_border_sink= self.build_target_message(id,Border_sink_confirm)
+        self.send_msg(msg_border_sink)
 
 def get_neighbours_info(self):
     self.neighbors_list_updated = threading.Event()
@@ -102,7 +103,7 @@ class Sink_Timer:
             target_id= self.find_close_neigboor_2border() 
             if target_id != -1 : # No irremovable send msg to a drone to make it irremovable 
                 # Send message to a drone that had Id= target_id
-                self.drone_id_to_border=target_id 
+                append_id_to_path( self.drone_id_to_border, target_id ) 
                 msg= self.build_target_message(target_id)
                 self.send_msg(msg)
 
@@ -346,7 +347,9 @@ def spanining ( self, vehicle ):
             self.build_path()
         
         # Send a message that will travel from border to sink and that will annouce end of the pahse 
-        if self.state== Irremovable_boarder: 
+        if self.state== Irremovable_boarder:
+            while not self.drone_id_to_sink: # wait until list not empty 
+                time.sleep(1)
             self.forward_confirm_msg()
         
         # Wait until reciving end to finish this phase 
