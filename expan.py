@@ -123,8 +123,8 @@ class Drone:
         self.phase= Expan_header
         self.spots_to_check_for_border=[]
         self.rec_candidate=[] # contains ids of drone that fired a messaging circle 
-        self.drone_id_to_sink
-        self.drone_id_to_border
+        self.drone_id_to_sink=[]
+        self.drone_id_to_border=[]
         self. min_distance_dicts=[] # nigboor close to the sink 
         self.border_neighbors=[] # contains the spots that are occupied while forming the border
         self.allowed_spots=[]
