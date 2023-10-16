@@ -587,7 +587,7 @@ def get_desired_speed(current_speed, remaining_distance, max_acceleration, max_d
         scaling_factor = min(1, remaining_distance / (decel_distance * 2))  # Example scaling factor, adjust as needed
         desired_speed = max_speed*scaling_factor
     
-    return round(desired_speed,2)
+    return round(desired_speed,1)
     
 def calculate_acceleration(v1_y, v2_y, delta_t):
     return (v2_y - v1_y) / delta_t
@@ -596,7 +596,7 @@ def exponential_smoothing(a_est, a_y, alpha):
     return alpha * a_y + (1 - alpha) * a_est
 
 def update_acceleration_estimate(estimated_acceleration, current_velocity, previous_velocity_x, dt):
-    alpha = 0.2  # Smoothing factor, adjust as needed
+    alpha = 0.5  # Smoothing factor, adjust as needed
     if dt: 
         a_y = calculate_acceleration(previous_velocity_x, current_velocity, dt)
         estimated_acceleration = exponential_smoothing(estimated_acceleration, a_y, alpha)
@@ -723,12 +723,9 @@ def move_body_PID(self, angl_dir, distance, max_acceleration=0.5, max_decelerati
 
     self.add_attribute_listener('velocity', on_velocity)
     
-    some_threshold = 0.1
-    some_velocity_threshold=0.05
-    update_interval = 0.2
+    some_velocity_threshold=0.08
     velocity_updated=False
     start_time = time.time()
-    last_update_time = time.time()
     send_control_body(self, desired_vel_x, desired_vel_y, desired_vel_z)     
     while remaining_distance >= 0.1:
         print( "---------------------------------------------------------------------")
@@ -746,12 +743,6 @@ def move_body_PID(self, angl_dir, distance, max_acceleration=0.5, max_decelerati
         # Separate conditions for updating desired_vel_x during acceleration and deceleration
         is_accelerating = previous_velocity_x < velocity_current_x 
         is_decelerating = previous_velocity_x > velocity_current_x 
-
-        # Update condition for acceleration
-        should_update_accel = is_accelerating and (time.time() - last_update_time > update_interval)
-        
-        # Update condition for deceleration (might be different from acceleration)
-        should_update_decel = is_decelerating and (abs(velocity_current_x - desired_vel_x) < some_threshold)
         
         # Additional condition: Only update desired_vel_x if current velocity is close enough to the previous desired_vel_x
         is_close_to_desired = abs(velocity_current_x - desired_vel_x) < some_velocity_threshold
@@ -761,27 +752,24 @@ def move_body_PID(self, angl_dir, distance, max_acceleration=0.5, max_decelerati
             print("update called", "velocity_current_x", velocity_current_x ,"desired_vel_x", desired_vel_x)
             previous_desired_vel_x = desired_vel_x
             desired_vel_x = get_desired_speed(velocity_current_x, remaining_distance, max_acceleration, max_deceleration, max_velocity)            
-            last_update_time = time.time()
             velocity_updated=True
     
-
-        if is_accelerating and velocity_current_x >= desired_vel_x* 0.95 or (is_decelerating and velocity_current_x <= desired_vel_x* 0.95) or velocity_updated:
-            time_elaps = time.time() - PID_time
-            if time_elaps > (desired_vel_x/estimated_acceleration)/2:
-                PID_time=time.time()
-                velocity_x, velocity_y, velocity_z= velocity_PID(desired_vel_x, velocity_body)
-                print("PID called")
-                velocity_updated=False
+        time_elaps = time.time() - PID_time
+        if is_accelerating and velocity_current_x >= desired_vel_x or (is_decelerating and velocity_current_x <= desired_vel_x) or velocity_updated or time_elaps > (desired_vel_x/estimated_acceleration)/2:
+            PID_time=time.time()
+            velocity_x, velocity_y, velocity_z= velocity_PID(desired_vel_x, velocity_body)
+            print("PID called")
+            velocity_updated=False
 
         else:
             velocity_x= desired_vel_x
             velocity_y=0
             velocity_z=0
-            if previous_desired_vel_x <= desired_vel_x and velocity_current_x < desired_vel_x :
+            if previous_desired_vel_x <= desired_vel_x*0.99 and velocity_current_x < desired_vel_x :
                 print( "                    Calcul ACC")
                 max_acceleration= update_acceleration_estimate(max_acceleration, velocity_current_x, previous_velocity_x, interval_between_events)
                 estimated_acceleration= max_acceleration
-            elif  previous_desired_vel_x > desired_vel_x and velocity_current_x > desired_vel_x : 
+            elif previous_desired_vel_x > desired_vel_x and velocity_current_x > desired_vel_x : 
                 print( "                    Calcul DEAC")
                 max_deceleration= update_acceleration_estimate(max_deceleration, velocity_current_x, previous_velocity_x, interval_between_events)
                 estimated_acceleration= max_deceleration
@@ -793,7 +781,8 @@ def move_body_PID(self, angl_dir, distance, max_acceleration=0.5, max_decelerati
         current_altitude = self.location.global_relative_frame.alt
 
         # Send control to the drone reguraly 
-        if (time.time() - start_control_timer > 0.1):
+        if (time.time() - start_control_timer > 0.2):
+            print("desired_vel_x= " , desired_vel_x)
             send_control_body(self, velocity_x, velocity_y, velocity_z)
             start_control_timer= time.time()
         
@@ -801,8 +790,6 @@ def move_body_PID(self, angl_dir, distance, max_acceleration=0.5, max_decelerati
         # save the current for next iteration to calculate the traveld distance 
         previous_velocity_x= velocity_current_x 
         
-        
-        print("desired_vel_x= " , desired_vel_x)
         print( "\nvx ",velocity_current_x , "vy",velocity_current_y, "vz",velocity_current_z, "current alt= ", current_altitude  )
         print( "time", time.time() - start_time , "distance left : ",remaining_distance, "dis speed", desired_vel_x,"\n" )
         
