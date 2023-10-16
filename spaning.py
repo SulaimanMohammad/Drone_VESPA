@@ -306,7 +306,8 @@ def spanining ( self, vehicle ):
 
     # Update neigboors info after the end of expansion and wait the data to be recived
     # Needed to find what neigbour that became irremvable due to finding target 
-    self.build_data_demand_message()
+    demand_msg= self.build_data_demand_message()
+    self.send_msg(demand_msg)
     self.neighbors_list_updated.wait()
     self.neighbors_list_updated.clear()
 
@@ -326,6 +327,7 @@ def spanining ( self, vehicle ):
         if (self.state== Irremovable) or (self.state == Irremovable_boarder): 
             self.build_path()
         
+
         # Send a message that will travel from border to sink and that will annouce end of the pahse 
         if self.state== Irremovable_boarder: 
             self.forward_confirm_msg()
