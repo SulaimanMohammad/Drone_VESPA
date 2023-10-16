@@ -49,6 +49,16 @@ def forward_confirm_msg(self):
     msg_border_sink= self.build_target_message(self.drone_id_to_sink,Border_sink_confirm)
     self.send_msg(msg_border_sink)
 
+def get_neighbours_info(self):
+    self.neighbors_list_updated = threading.Event()
+    time.sleep(1) # Wait to have all msgs 
+    # Retrive all the reponse messages then rise the flage that all is received 
+    while msg.startswith(Reponse_header.encode()):
+        positionX, positionY, state, previous_state,id_value= self.decode_spot_info_message(msg)
+        self.update_neighbors_list(positionX, positionY, state, previous_state,id_value)
+        msg= self.retrive_msg_from_buffer()
+    self.neighbors_list_updated.set()
+
 '''
 -------------------------------------------------------------------------------------
 ---------------------------------- Sink Procedure------------------------------------
@@ -83,9 +93,10 @@ class Sink_Timer:
             target_id= self.find_close_neigboor_2border() 
             if target_id != -1 : # No irremovable send msg to a drone to make it irremovable 
                 # Send message to a drone that had Id= target_id
+                self.drone_id_to_border=target_id 
                 msg= self.build_target_message(target_id)
                 self.send_msg(msg)
-
+                
         # If drone already have message and path is constructed then it needs to wait the message flow from border to sink 
         # and if the sink needed to constrcut the path starting from itself , still need wait a message from border to come back   
         sink_t.end_of_spanning.wait() 
@@ -111,10 +122,7 @@ def sink_listener(self,sink_t, timeout):
 
         # Receiving message containing data     
         if msg.startswith(Reponse_header.encode()) and msg.endswith(b'\n'):
-            self.neighbors_list_updated = threading.Event()
-            positionX, positionY, state, previous_state,id_value= self.decode_spot_info_message(msg)
-            self.update_neighbors_list(positionX, positionY, state, previous_state,id_value)
-            self.neighbors_list_updated.set()
+            self.get_neighbours_info()
 
         if msg.startswith(Spanning_header.encode()) and msg.endswith(b'\n'):
             id_rec,data = self.decode_target_message(msg)
@@ -166,19 +174,11 @@ def xbee_listener(self):
 
         # Receiving message containing data     
         if msg.startswith(Reponse_header.encode()) and msg.endswith(b'\n'):
-            self.neighbors_list_updated = threading.Event()
-            time.sleep(1) # Wait to have all msgs 
-            # Retrive all the reponse messages then rise the flage that all is received 
-            while msg.startswith(Reponse_header.encode()):
-                positionX, positionY, state, previous_state,id_value= self.decode_spot_info_message(msg)
-                self.update_neighbors_list(positionX, positionY, state, previous_state,id_value)
-                msg= self.retrive_msg_from_buffer()
-            self.neighbors_list_updated.set()
+            self.get_neighbours_info()
         
         # Message of building the path 
         if msg.startswith(Spanning_header.encode()) and msg.endswith(b'\n'):
-            id_rec, data= self.decode_target_message(msg)
-            
+            id_rec, data= self.decode_target_message(msg)           
             if id_rec == self.id :
                 if data==0:
                     if self.state== Border: 
@@ -328,6 +328,7 @@ def spanining ( self, vehicle ):
             self.build_path()
         
 
+        #TODO this should not be done unless there is a drone irremovable arounf ( in other meaning if it is from the sink then a message shoul arrive to the neigbors )
         # Send a message that will travel from border to sink and that will annouce end of the pahse 
         if self.state== Irremovable_boarder: 
             self.forward_confirm_msg()
