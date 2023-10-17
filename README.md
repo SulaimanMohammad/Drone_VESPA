@@ -89,7 +89,7 @@ The impact of this procedure is twofold: if a broadcast message arrives from a s
 ## Spanning UML 
 UML for the communication in the spanning phase of VESPA
 
-![Alt text](https://github.com/SulaimanMohammad/Drone_VESPA/blob/main/UML/spanning_process.drawio.svg)
+![Alt text](https://raw.githubusercontent.com/SulaimanMohammad/Drone_VESPA/main/UML/spanning_process.drawio.svg)
 
 
 ## How to find tagret in the region of the drone
