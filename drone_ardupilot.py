@@ -592,14 +592,14 @@ def get_desired_speed(current_speed, remaining_distance, max_acceleration, max_d
 def calculate_acceleration(v1_y, v2_y, delta_t):
     return (v2_y - v1_y) / delta_t
 
-def exponential_smoothing(a_est, a_y, alpha):
-    return alpha * a_y + (1 - alpha) * a_est
+def exponential_smoothing(estimated_acceleration, a_observed, alpha):
+    return alpha * a_observed + (1 - alpha) * estimated_acceleration
 
 def update_acceleration_estimate(estimated_acceleration, current_velocity, previous_velocity_x, dt):
-    alpha = 0.5  # Smoothing factor, adjust as needed
+    alpha = 0.5  # Smoothing factor
     if dt: 
-        a_y = calculate_acceleration(previous_velocity_x, current_velocity, dt)
-        estimated_acceleration = exponential_smoothing(estimated_acceleration, a_y, alpha)
+        a_observed = calculate_acceleration(previous_velocity_x, current_velocity, dt)
+        estimated_acceleration = exponential_smoothing(estimated_acceleration, a_observed, alpha)
         
     return estimated_acceleration
 
@@ -731,8 +731,6 @@ def move_body_PID(self, angl_dir, distance, max_acceleration=0.5, max_decelerati
         print( "---------------------------------------------------------------------")
 
         new_velocity_data.wait()
-
-        hold_yaw_PID(self, desired_yaw)
         
         # Get current velocities from NED frame to body 
         velocity_body   =ned_to_body(self,velocity_listener )
@@ -758,21 +756,22 @@ def move_body_PID(self, angl_dir, distance, max_acceleration=0.5, max_decelerati
         if is_accelerating and velocity_current_x >= desired_vel_x or (is_decelerating and velocity_current_x <= desired_vel_x) or velocity_updated or time_elaps > (desired_vel_x/estimated_acceleration)/2:
             PID_time=time.time()
             velocity_x, velocity_y, velocity_z= velocity_PID(desired_vel_x, velocity_body)
+            hold_yaw_PID(self, desired_yaw)
             print("PID called")
             velocity_updated=False
-
         else:
             velocity_x= desired_vel_x
             velocity_y=0
             velocity_z=0
-            if previous_desired_vel_x <= desired_vel_x*0.99 and velocity_current_x < desired_vel_x :
-                print( "                    Calcul ACC")
-                max_acceleration= update_acceleration_estimate(max_acceleration, velocity_current_x, previous_velocity_x, interval_between_events)
-                estimated_acceleration= max_acceleration
-            elif previous_desired_vel_x > desired_vel_x and velocity_current_x > desired_vel_x : 
-                print( "                    Calcul DEAC")
-                max_deceleration= update_acceleration_estimate(max_deceleration, velocity_current_x, previous_velocity_x, interval_between_events)
-                estimated_acceleration= max_deceleration
+
+        if previous_desired_vel_x <= desired_vel_x*0.99 and velocity_current_x < desired_vel_x :
+            print( "                    Calcul ACC")
+            max_acceleration= update_acceleration_estimate(max_acceleration, velocity_current_x, previous_velocity_x, interval_between_events)
+            estimated_acceleration= max_acceleration
+        elif previous_desired_vel_x > desired_vel_x and velocity_current_x > desired_vel_x : 
+            print( "                    Calcul DEAC")
+            max_deceleration= update_acceleration_estimate(max_deceleration, velocity_current_x, previous_velocity_x, interval_between_events)
+            estimated_acceleration= abs(max_deceleration) #Need to be used to detmin when PID will be called
             
         
         
