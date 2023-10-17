@@ -51,7 +51,7 @@ def forward_confirm_msg(self):
         self.send_msg(msg_border_sink)
 
 def get_neighbours_info(self):
-    self.neighbors_list_updated = threading.Event()
+    self.neighbors_list_updated = threading.Event()#TODO change to the init of class 
     time.sleep(1) # Wait to have all msgs 
     # Retrive all the reponse messages then rise the flage that all is received 
     while msg.startswith(Reponse_header.encode()):
@@ -211,6 +211,8 @@ def xbee_listener(self):
                         self.forward_confirm_msg()
 
             elif id_rec == spanning_terminator: # Message sent by the sink announcing the end of spanning phase
+                end_msg= self.build_target_message(spanning_terminator)
+                self.send_msg(end_msg)
                 listener_end_of_spanning.set()
             
             else: # Recieved msg refer to changes in state to irrremovable in one of the nighbors
@@ -348,7 +350,7 @@ def spanining ( self, vehicle ):
         
         # Send a message that will travel from border to sink and that will annouce end of the pahse 
         if self.state== Irremovable_boarder:
-            while not self.drone_id_to_sink: # wait until list not empty 
+            while not self.drone_id_to_sink: # wait until list not empty # TODO check the neugbor list for irrmovable 
                 time.sleep(1)
             self.forward_confirm_msg()
         
