@@ -58,11 +58,11 @@ Note: since any message will be received by all the nodes in the range, thus the
 - if the id of the node is not in the targets_id in the message then the message will be ignored
 - if the id of the sender is in the Propagation Indicator then the message will be ignored that due to the fact that the message came from the same center of hexagon
 
-![Alt text](https://github.com/SulaimanMohammad/Drone_VESPA/blob/main/.exp/forming_border.png)
+![Alt text](https://raw.githubusercontent.com/SulaimanMohammad/Drone_VESPA/main/UML/Forming_border_communication.drawio.svg)
 
 #### Breaking into a spot in front of border candidate
 
-![Alt text](https://github.com/SulaimanMohammad/Drone_VESPA/blob/main/.exp/breaking_into_spot.png)
+![Alt text](https://raw.githubusercontent.com/SulaimanMohammad/Drone_VESPA/main/UML/breaking_into_spot.drawio.svg)
 
 Suppose drone 15 is located in the same spot as drone 13. In this scenario, drone 13 considers itself to be Owner since it has claimed the spot.
 
