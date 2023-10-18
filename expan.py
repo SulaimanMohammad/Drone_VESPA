@@ -142,6 +142,7 @@ class Drone:
             self.neighbor_list.append(s)
         self.lock_state = threading.Lock()
         self.lock_neighbor_list = threading.Lock()
+        self.neighbors_list_updated = threading.Event()
 
     '''
     -------------------------------------------------------------------------------------
@@ -150,6 +151,21 @@ class Drone:
     '''
     def build_data_demand_message(self):
         return Demand_header.encode() + b'\n' 
+    
+    def demand_neighbors_info(self):
+        demand_msg= self.build_data_demand_message()
+        self.send_msg(demand_msg)
+        self.neighbors_list_updated.wait()
+        self.neighbors_list_updated.clear()
+    
+    def get_neighbors_info(self):
+        time.sleep(1) # Wait to have all msgs 
+        # Retrive all the reponse messages then rise the flage that all is received 
+        while msg.startswith(Reponse_header.encode()):
+            positionX, positionY, state, previous_state,id_value= self.decode_spot_info_message(msg)
+            self.update_neighbors_list(positionX, positionY, state, previous_state,id_value)
+            msg= self.retrive_msg_from_buffer()
+        self.neighbors_list_updated.set()
     
     def create_target_list(self, header):
         target_ids=[]

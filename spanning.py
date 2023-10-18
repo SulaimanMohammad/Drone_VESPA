@@ -50,16 +50,6 @@ def forward_confirm_msg(self):
         msg_border_sink= self.build_target_message(id,Border_sink_confirm)
         self.send_msg(msg_border_sink)
 
-def get_neighbours_info(self):
-    self.neighbors_list_updated = threading.Event()#TODO change to the init of class 
-    time.sleep(1) # Wait to have all msgs 
-    # Retrive all the reponse messages then rise the flage that all is received 
-    while msg.startswith(Reponse_header.encode()):
-        positionX, positionY, state, previous_state,id_value= self.decode_spot_info_message(msg)
-        self.update_neighbors_list(positionX, positionY, state, previous_state,id_value)
-        msg= self.retrive_msg_from_buffer()
-    self.neighbors_list_updated.set()
-
 def append_id_to_path(list_to_append, ids):
     # If ids is a single integer, convert it to a list
     if isinstance(ids, int):
@@ -84,12 +74,8 @@ class Sink_Timer:
         sink_t.message_thread.start()
         sink_t.end_of_spanning= threading.Event()
 
-        # Needed to find what neigbour that became irremvable due to finding target 
-        demand_msg= self.build_data_demand_message()
-        self.send_msg(demand_msg)
-        self.neighbors_list_updated.wait()
-        self.neighbors_list_updated.clear()
-
+        # Needed to find what neigbour that became irremvable due to finding target
+        self.demand_neighbors_info() 
     def run(sink_t, self):
         while True:
             with sink_t.lock_sink:  # Acquire the lock
@@ -138,7 +124,7 @@ def sink_listener(self,sink_t, timeout):
 
         # Receiving message containing data     
         if msg.startswith(Reponse_header.encode()) and msg.endswith(b'\n'):
-            self.get_neighbours_info()
+            self.get_neighbors_info()
 
         if msg.startswith(Spanning_header.encode()) and msg.endswith(b'\n'):
             id_rec,data = self.decode_target_message(msg)
@@ -195,7 +181,7 @@ def xbee_listener(self):
 
         # Receiving message containing data     
         if msg.startswith(Reponse_header.encode()) and msg.endswith(b'\n'):
-            self.get_neighbours_info()
+            self.get_neighbors_info()
         
         # Message of building the path 
         if msg.startswith(Spanning_header.encode()) and msg.endswith(b'\n'):
@@ -337,10 +323,7 @@ def spanining ( self, vehicle ):
 
         # Update neigboors info after the end of expansion and wait the data to be recived
         # Needed to find what neigbour that became irremvable due to finding target 
-        demand_msg= self.build_data_demand_message()
-        self.send_msg(demand_msg)
-        self.neighbors_list_updated.wait()
-        self.neighbors_list_updated.clear()
+        self.demand_neighbors_info()
 
         # Free drone wait for msg to become irremovable by another drone or wait broadcast from sink of finihing Spainning
         if self.state== Free or self.state== Border:
