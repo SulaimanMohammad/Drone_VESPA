@@ -84,6 +84,12 @@ class Sink_Timer:
         sink_t.message_thread.start()
         sink_t.end_of_spanning= threading.Event()
 
+        # Needed to find what neigbour that became irremvable due to finding target 
+        demand_msg= self.build_data_demand_message()
+        self.send_msg(demand_msg)
+        self.neighbors_list_updated.wait()
+        self.neighbors_list_updated.clear()
+
     def run(sink_t, self):
         while True:
             with sink_t.lock_sink:  # Acquire the lock
@@ -322,21 +328,20 @@ def spanining ( self, vehicle ):
     # Stay hovering while spanning communication 
     hover(vehicle)
 
-    xbee_thread = threading.Thread(target=xbee_listener, args=(self,))
-    xbee_thread.start()
-
-    # Update neigboors info after the end of expansion and wait the data to be recived
-    # Needed to find what neigbour that became irremvable due to finding target 
-    demand_msg= self.build_data_demand_message()
-    self.send_msg(demand_msg)
-    self.neighbors_list_updated.wait()
-    self.neighbors_list_updated.clear()
-
-    # for the sink drone TODO the sink is responsable of ending the phase  
     if self.spot['distance']==0: # if the drone is sink ( leader of the termination of the spaning phase)
         self.spanning_sink()
     
-    else: 
+    else:
+        xbee_thread = threading.Thread(target=xbee_listener, args=(self,))
+        xbee_thread.start()
+
+        # Update neigboors info after the end of expansion and wait the data to be recived
+        # Needed to find what neigbour that became irremvable due to finding target 
+        demand_msg= self.build_data_demand_message()
+        self.send_msg(demand_msg)
+        self.neighbors_list_updated.wait()
+        self.neighbors_list_updated.clear()
+
         # Free drone wait for msg to become irremovable by another drone or wait broadcast from sink of finihing Spainning
         if self.state== Free or self.state== Border:
             # Wait for xbee_listener to signal that state has been changed ( doesn't keep the CPU busy.)
@@ -359,7 +364,8 @@ def spanining ( self, vehicle ):
         listener_end_of_spanning.clear()
         
         # Stop listener
-        xbee_thread.join()  
+        xbee_thread.join() 
+        self.clear_buffer()
     
     if self.state == Free:
         set_to_move(vehicle) # only free Drone can move now in the balancing phase 
