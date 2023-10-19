@@ -692,39 +692,38 @@ class Drone:
         self.send_msg(msg)   
 
     def update_neighbors_list(self, positionX, positionY, state, previous_state, id_rec):
-
+        
         s_index= self.find_relative_spot(positionX, positionY)
         # Check if index is valid ( index between 0 and 6 )
         if 0 <= s_index <= self.num_neigbors+1:
-
-            # Check if the id_rec of the drone is already in neighbor_list 
-            for s in self.neighbor_list:
-                if id_rec in s["drones_in_id"]:
-                    # The drone was in another neighborhood spot
-                    if int(s["name"][1:]) != s_index : 
-                        # Find the index of the drone_id
-                        idx = s['drones_in_id'].index(id_rec)
-                        # Remove from drones_in_id and states
-                        s['drones_in_id'].pop(idx)
-                        s['states'].pop(idx)
-                        s['previous_state'].pop(idx)
-                        # Decrement drones_in count
-                        s['drones_in'] -= 1
-                    else: # The id of drone is in the same spot just update the satates
-                       s['states']= state
-                       s['previous_state']=previous_state
-                       return  # Exit the function 
+            with self.lock_neighbor_list: 
+                # Check if the id_rec of the drone is already in neighbor_list 
+                for s in self.neighbor_list:
+                    if id_rec in s["drones_in_id"]:
+                        # The drone was in another neighborhood spot
+                        if int(s["name"][1:]) != s_index : 
+                            # Find the index of the drone_id
+                            idx = s['drones_in_id'].index(id_rec)
+                            # Remove from drones_in_id and states
+                            s['drones_in_id'].pop(idx)
+                            s['states'].pop(idx)
+                            s['previous_state'].pop(idx)
+                            # Decrement drones_in count
+                            s['drones_in'] -= 1
+                        else: # The id of drone is in the same spot just update the satates
+                            s['states']= state
+                            s['previous_state']=previous_state
+                            return  # Exit the function 
                     
-            # If the ID of drone doesnt exist at all or it was deleted after was in another neighborhood spot
-            # Retrieve the corresponding spot
-            s = self.neighbor_list[s_index] 
-            # Append drone_id to drones_in_id and state_rec to states
-            s['drones_in_id'].append(id_rec)
-            s['states'].append(state)
-            s['previous_state'].append(previous_state)
-            # Increment drones_in count
-            s['drones_in'] += 1
-            
+                # If the ID of drone doesnt exist at all or it was deleted after was in another neighborhood spot
+                # Retrieve the corresponding spot
+                s = self.neighbor_list[s_index] 
+                # Append drone_id to drones_in_id and state_rec to states
+                s['drones_in_id'].append(id_rec)
+                s['states'].append(state)
+                s['previous_state'].append(previous_state)
+                # Increment drones_in count
+                s['drones_in'] += 1  
         else:
             print("Invalid index provided")
 
