@@ -1,5 +1,91 @@
 from expan import *
 
+'''
+-------------------------------------------------------------------------------------
+---------------------------------- Communication ------------------------------------
+-------------------------------------------------------------------------------------
+'''
+
+def build_local_movement_message(self, target_id, destination):
+    max_byte_count = self.determine_max_byte_size(target_id)
+    # Start the message with the header and the max byte count for target_id
+    message = Local_balance_header.encode() + struct.pack('>B', max_byte_count)
+    # Add the target_id to the message using the determined byte count
+    message += target_id.to_bytes(max_byte_count, 'big')
+    # Append the destination to the message ( 1 byte becausee it is spot 0-6 )
+    message += destination.to_bytes(1, 'big')
+    message += b'\n'
+    return message
+
+def decode_local_movement_message(self, message):
+    max_byte_count = struct.unpack('>B', message[1:2])[0]  # Dereferenced the tuple to get the value
+    # Extract target_id using max byte count
+    target_id_start = 2
+    target_id_end = target_id_start + max_byte_count
+    target_id = int.from_bytes(message[target_id_start:target_id_end], 'big')
+    # Extract the destination
+    destination = int.from_bytes(message[target_id_end:target_id_end+1], 'big')  # Since destination is always one byte
+    return target_id, destination
+
+def lead_local_balancing(self):
+    # Extract the 'free' drone IDs in s0
+    s0 = next(station for station in self.neighbor_list if station['name'] == 's0')
+    s0_free_ids = sorted([s0['drones_in_id'][idx] for idx, state in enumerate(s0['states']) if state == Free])
+    # Identify all stations with the "border" state
+    border_stations = [station for station in  self.neighbor_list if Border or Irremovable_boarder in station['states']]
+    moves = []
+    # For each "border" station, calculate the difference in the number of "free" states with s0
+    for station in border_stations:
+        station_free_count = sum(1 for state in station['states'] if state == Free)
+        diff = len(s0_free_ids) - station_free_count
+        
+        # If s0 has more 'free' drones than the "border" station by more than 1, move the smallest "free" drone ID
+        while diff > 1 and s0_free_ids:
+            drone_id_to_move = s0_free_ids.pop(0)  # Get the smallest "free" drone ID
+            destination_number = station['name'][1:]  # Extract the number after "s"
+            moves.append((drone_id_to_move, destination_number))
+            diff -= 1
+    
+    return moves
+
+def build_shared_allowed_spots_message(self):
+    # Extract data of S0 current spot
+    s0 = next(station for station in self.neighbor_list if station['name'] == 's0')
+    # Create a list to store the IDs of drones with 'free' state in s0
+    targets_id = [drone_id for drone_id, state in zip(s0['drones_in_id'], s0['states']) if state == Free]
+    max_byte_count_targets = max(self.determine_max_byte_size(num) for num in targets_id)
+    # Start message with 'G', max byte count for targets_id, followed by the length of targets_id
+    message = Guidance_header.encode() 
+    message += struct.pack('>BB', max_byte_count_targets, len(targets_id))
+    for num in targets_id:
+        message += num.to_bytes(max_byte_count_targets, 'big')
+    # Add length of allowed_spots
+    message += struct.pack('>B', len(self.allowed_spots))
+    for num in self.allowed_spots:
+        message += num.to_bytes(1, 'big')
+    message += b'\n'
+    
+    return message
+
+def decode_shared_allowed_spots_message(message):
+    max_byte_count_targets, targets_id_length = struct.unpack('>BB', message[1:3])
+    # Determine the start and end indices for the target_id
+    targets_id_indices = [(i * max_byte_count_targets + 3, (i + 1) * max_byte_count_targets + 3) for i in range(targets_id_length)]
+    targets_id = [int.from_bytes(message[start:end], 'big') for start, end in targets_id_indices]
+    allowed_spots_start = targets_id_indices[-1][1]
+    allowed_spots_length = struct.unpack('>B', message[allowed_spots_start:allowed_spots_start + 1])[0]
+    # Determine the start and end indices for the guidance numbers
+    allowed_spots_indices = [(i + allowed_spots_start + 1, i + allowed_spots_start + 2) for i in range(allowed_spots_length)]
+    # Extract the numbers in guidance_list and convert to string with "S" prefix
+    allowed_spots = ["S" + str(int.from_bytes(message[start:end], 'big')) for start, end in allowed_spots_indices]
+    return targets_id, allowed_spots
+
+'''
+-------------------------------------------------------------------------------------
+---------------------------------- Border Procedure------------------------------------
+-------------------------------------------------------------------------------------
+'''
+
 class Boarder_Timer:
     def __init__(border_t,self,timeout=2*movement_time):
         border_t.timeout = timeout
@@ -30,7 +116,6 @@ class Boarder_Timer:
         self.send_msg(message) 
         self.Fire_border_msg(Balance_header)
 
-'''---------------------------------- Communication Border drone------------------------------------'''
 def border_listener(self,border_t, timeout):
     while not self.end_of_balancing.is_set(): # the end is not reached , keep listenning 
         
@@ -84,114 +169,11 @@ def border_listener(self,border_t, timeout):
                         # Do anything but wait for end of the expansion broadcast
                         continue
                 
-def build_local_movement_message(self, target_id, destination):
-
-    # Determine max byte count for numbers
-    max_byte_count = self.determine_max_byte_size(target_id)
-    
-    # Start the message with the header and the max byte count for target_id
-    message = Local_balance_header.encode() + struct.pack('>B', max_byte_count)
-    
-    # Add the target_id to the message using the determined byte count
-    message += target_id.to_bytes(max_byte_count, 'big')
-    
-    # Append the destination to the message ( 1 byte becausee it is spot 0-6 )
-    message += destination.to_bytes(1, 'big')
-    
-    # End with '\n'
-    message += b'\n'
-    
-    return message
-
-def decode_local_movement_message(self, message):
-
-    # Extract max byte count for target_id
-    max_byte_count = struct.unpack('>B', message[1:2])[0]  # Dereferenced the tuple to get the value
-    
-    # Extract target_id using max byte count
-    target_id_start = 2
-    target_id_end = target_id_start + max_byte_count
-    target_id = int.from_bytes(message[target_id_start:target_id_end], 'big')
-    
-    # Extract the destination
-    destination = int.from_bytes(message[target_id_end:target_id_end+1], 'big')  # Since destination is always one byte
-    
-    return target_id, destination
-
-def lead_local_balancing(self):
-    # Extract the 'free' drone IDs in s0
-    s0 = next(station for station in self.neighbor_list if station['name'] == 's0')
-    s0_free_ids = sorted([s0['drones_in_id'][idx] for idx, state in enumerate(s0['states']) if state == Free])
-    
-    # Identify all stations with the "border" state
-    border_stations = [station for station in  self.neighbor_list if Border or Irremovable_boarder in station['states']]
-    
-    moves = []
-    
-    # For each "border" station, calculate the difference in the number of "free" states with s0
-    for station in border_stations:
-        station_free_count = sum(1 for state in station['states'] if state == Free)
-        diff = len(s0_free_ids) - station_free_count
-        
-        # If s0 has more 'free' drones than the "border" station by more than 1, move the smallest "free" drone ID
-        while diff > 1 and s0_free_ids:
-            drone_id_to_move = s0_free_ids.pop(0)  # Get the smallest "free" drone ID
-            destination_number = station['name'][1:]  # Extract the number after "s"
-            moves.append((drone_id_to_move, destination_number))
-            diff -= 1
-    
-    return moves
-
-def build_shared_allowed_spots_message(self):
-    
-    # Extract data of S0 current spot
-    s0 = next(station for station in self.neighbor_list if station['name'] == 's0')
-
-    # Create a list to store the IDs of drones with 'free' state in s0
-    targets_id = [drone_id for drone_id, state in zip(s0['drones_in_id'], s0['states']) if state == Free]
-
-    max_byte_count_targets = max(self.determine_max_byte_size(num) for num in targets_id)
-    
-    # Start message with 'G', max byte count for targets_id, followed by the length of targets_id
-    message = Guidance_header.encode() 
-    message += struct.pack('>BB', max_byte_count_targets, len(targets_id))
-    
-    for num in targets_id:
-        message += num.to_bytes(max_byte_count_targets, 'big')
-    
-    # Add length of allowed_spots
-    message += struct.pack('>B', len(self.allowed_spots))
-    
-    for num in self.allowed_spots:
-        message += num.to_bytes(1, 'big')
-    
-    message += b'\n'
-    
-    return message
-
-def decode_shared_allowed_spots_message(message):
-    # Extract max byte count for target_id and its length
-    max_byte_count_targets, targets_id_length = struct.unpack('>BB', message[1:3])
-    
-    # Determine the start and end indices for the target_id
-    targets_id_indices = [(i * max_byte_count_targets + 3, (i + 1) * max_byte_count_targets + 3) for i in range(targets_id_length)]
-    
-    # Extract target_id from message
-    targets_id = [int.from_bytes(message[start:end], 'big') for start, end in targets_id_indices]
-    
-    # Extract the length of nums (guidance list)
-    allowed_spots_start = targets_id_indices[-1][1]
-    allowed_spots_length = struct.unpack('>B', message[allowed_spots_start:allowed_spots_start + 1])[0]
-    
-    # Determine the start and end indices for the guidance numbers
-    allowed_spots_indices = [(i + allowed_spots_start + 1, i + allowed_spots_start + 2) for i in range(allowed_spots_length)]
-    
-    # Extract the numbers in guidance_list and convert to string with "S" prefix
-    allowed_spots = ["S" + str(int.from_bytes(message[start:end], 'big')) for start, end in allowed_spots_indices]
-    
-    return targets_id, allowed_spots
-
-'''---------------------------------- Communication Free drone-------------------------------------'''
+'''
+-------------------------------------------------------------------------------------
+------------------------------- Free drone Procedure --------------------------------
+-------------------------------------------------------------------------------------
+'''
 def communication_balancing_free_drones(self,vehicle):
     while not self.end_of_balancing.is_set(): # the end is not reached , keep listenning 
         msg= self.retrive_msg_from_buffer() 
@@ -236,7 +218,6 @@ def communication_balancing_free_drones(self,vehicle):
             else: # nothing to do if it is not broadcast 
                 continue
 
-'''------------------------------------- Movement Free drone --------------------------------------'''
 def search_to_border(self):
     border_found=False
     
@@ -267,17 +248,18 @@ def search_to_border(self):
         max_distance_spot = max(self.neighbor_list, key=lambda x: x['distance'])
         return border_found, int(max_distance_spot['name'][1:]) 
 
+
 def balancing(self, vehicle):
+
     # Border is the chef of the spot 
     if self.state== Border or Irremovable_boarder:
         hover(vehicle) # hover while all the commuinication and balancing done 
         border_process=Boarder_Timer()
         border_process.run()
         set_to_move(vehicle)
-
     
-    if self.state == Free: 
-        self.xbee_receive_message_thread = threading.Thread(target=self.communication_balancing, args=(self,vehicle,)) #pass the function reference and arguments separately to the Thread constructor.
+    elif self.state == Free: 
+        self.xbee_receive_message_thread = threading.Thread(target=communication_balancing_free_drones, args=(self,vehicle,)) #pass the function reference and arguments separately to the Thread constructor.
         self.xbee_receive_message_thread.start()
         border_found= False
         while border_found == False : # no border in the nieghbor
