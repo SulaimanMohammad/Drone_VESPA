@@ -106,17 +106,19 @@ class Boarder_Timer:
                     border_t.time_up(border_t,self)
                     break
             time.sleep(0.5)               
-        border_listener.join() # stop listenning
-        border_t.local_balancing.clear()
-        self.end_of_balancing.clear() 
-
+        
     def time_up(border_t,self):
         #Called when the timer reaches its timeout without being reset.
         print("Time's up! ")
-        border_t.local_balancing.set() # flag to tell identify local balancing
+        border_t.local_balancing.set() # flag to identify local balancing
+        # Need to be sent in this stage,the thread of listining of free drone would joined after completing the circle 
         message= self. build_shared_allowed_spots_message()
         self.send_msg(message) 
         self.Fire_border_msg(Balance_header)
+        self.end_of_balancing.wait()
+        border_t.local_balancing.clear()
+        self.end_of_balancing.clear() 
+        border_listener.join() # stop listenning
 
 def border_listener(self,border_t, timeout):
     while not self.end_of_balancing.is_set(): # the end is not reached , keep listenning 
