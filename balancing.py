@@ -95,15 +95,14 @@ class Boarder_Timer:
         self.end_of_balancing= threading.Event()
 
     def run(border_t, self):
-        while not self.end_of_balancing.is_set():
-            while True: 
-                with border_t.lock_sink:  # Acquire the lock
-                    border_t.remaining_time -= 0.5
-                    print(f"Remaining time: {border_t.remaining_time:.2f} seconds")
-                    if border_t.remaining_time <= 0:
-                        border_t.time_up(border_t,self)
-                        break
-                time.sleep(0.5)               
+        while True: 
+            with border_t.lock_sink:  # Acquire the lock
+                border_t.remaining_time -= 0.5
+                print(f"Remaining time: {border_t.remaining_time:.2f} seconds")
+                if border_t.remaining_time <= 0:
+                    border_t.time_up(border_t,self)
+                    break
+            time.sleep(0.5)               
         border_listener.join() # stop listenning
         border_t.local_balancing.clear()
         self.end_of_balancing.clear() 
@@ -185,16 +184,12 @@ def communication_balancing_free_drones(self,vehicle):
 
         # Receiving message containing data     
         if msg.startswith(Reponse_header.encode()) and msg.endswith(b'\n'):
-            self.neighbors_list_updated = threading.Event()
-            positionX, positionY, state, id_value= self.decode_spot_info_message(msg)
-            self.update_neighbors_list(positionX, positionY, state, id_value )
-            self.neighbors_list_updated.set()
+           self.get_neighbors_info()
 
         if msg.startswith(Arrival_header.encode()) and msg.endswith(b'\n'):
             # This can be recived in case of drone arrive to the current spot or another border neigbors
             positionX, positionY, state, id_value= self.decode_spot_info_message(msg)
             self.update_neighbors_list(positionX, positionY, state, id_value )
-            # No neighbors_list_updated.set() is needed here because that should be raised only after adking data 
 
         # Recieve message from the border to move 
         if msg.startswith(Local_balance_header.encode()) and msg.endswith(b'\n'):
