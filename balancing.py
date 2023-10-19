@@ -82,7 +82,7 @@ def decode_shared_allowed_spots_message(message):
 
 '''
 -------------------------------------------------------------------------------------
----------------------------------- Border Procedure------------------------------------
+---------------------------------- Border Procedure ---------------------------------
 -------------------------------------------------------------------------------------
 '''
 
@@ -270,7 +270,10 @@ def balancing(self, vehicle):
         # This message will be read by the border drone and its niegbor
         data_msg= self.build_spot_info_message(Arrival_header)
         self.send_msg(data_msg)
-        
+    
+    # rest this indecator for the next use in the border formation
+    self.rec_propagation_indicator=[]  
+    self.rec_candidate=[]   
     self.direction_taken=[]
     self.end_of_balancing.wait()
     self.end_of_balancing.clear() 
