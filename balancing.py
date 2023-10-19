@@ -40,6 +40,10 @@ def border_listener(self,border_t, timeout):
         if msg == Demand_header.encode() + b'\n':
             data_msg= self.build_spot_info_message(Reponse_header) # Build message that contains all data
             self.send_msg(data_msg)
+        
+        # Receiving message containing data     
+        if msg.startswith(Reponse_header.encode()) and msg.endswith(b'\n'):
+            self.get_neighbors_info()
 
         if msg.startswith(Arrival_header.encode()) and msg.endswith(b'\n'):
             # This can be recived in case of drone arrive to the current spot or another border neigbors
@@ -274,7 +278,7 @@ def balancing(self, vehicle):
     if self.state == Free: 
         self.xbee_receive_message_thread = threading.Thread(target=self.communication_balancing, args=(self,vehicle,)) #pass the function reference and arguments separately to the Thread constructor.
         self.xbee_receive_message_thread.start()
-        brder_found= False
+        border_found= False
         while border_found == False : # no border in the nieghbor
             #TODO need to wait until getting all the data from all the drones so many data retriving from buffer 
             self.build_data_demand_message()
