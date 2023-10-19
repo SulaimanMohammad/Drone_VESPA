@@ -51,7 +51,8 @@ def border_listener(self,border_t, timeout):
             self.update_neighbors_list(positionX, positionY, state, id_value )
             border_t.remaining_time = border_t.timeout     
             id, destination= self.lead_local_balancing()
-            self.build_local_movement_message(id, destination)
+            msg= self.build_local_movement_message(id, destination)
+            self.send_msg(msg)
 
         if msg.startswith(Balance_header.encode()) and msg.endswith(b'\n'):
             
@@ -280,10 +281,7 @@ def balancing(self, vehicle):
         self.xbee_receive_message_thread.start()
         border_found= False
         while border_found == False : # no border in the nieghbor
-            #TODO need to wait until getting all the data from all the drones so many data retriving from buffer 
-            self.build_data_demand_message()
-            self.neighbors_list_updated.wait()
-            self.neighbors_list_updated.clear()
+            self.demand_neighbors_info()
             border_found, spot_to_go = search_to_border(self)
             # Move             
             self.move_to_spot(vehicle, spot_to_go)
