@@ -159,6 +159,12 @@ class Drone:
         self.neighbors_list_updated.clear()
     
     def get_neighbors_info(self):
+        '''
+        In case The demand functoin is done becuse a message with different headr between the respons msg 
+        then the thi function will set again the flag 
+        but since the demand doesnt exit then need to be sure it is always cleared befoe use''' 
+        if self.neighbors_list_updated.is_set():
+            self.neighbors_list_updated.clear() 
         time.sleep(1) # Wait to have all msgs 
         # Retrive all the reponse messages then rise the flage that all is received 
         while msg.startswith(Reponse_header.encode()):
