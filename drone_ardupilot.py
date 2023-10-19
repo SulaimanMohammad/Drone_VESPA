@@ -764,11 +764,11 @@ def move_body_PID(self, angl_dir, distance, max_acceleration=0.5, max_decelerati
             velocity_y=0
             velocity_z=0
 
-        if previous_desired_vel_x < desired_vel_x and velocity_current_x < desired_vel_x and previous_velocity_x < velocity_current_x:
+        if previous_desired_vel_x < desired_vel_x and velocity_current_x < desired_vel_x and previous_velocity_x <= velocity_current_x:
             print( "                    Calcul ACC")
             max_acceleration= update_acceleration_estimate(max_acceleration, velocity_current_x, previous_velocity_x, interval_between_events)
             estimated_acceleration= max_acceleration
-        elif previous_desired_vel_x > desired_vel_x and velocity_current_x > desired_vel_x and previous_velocity_x > velocity_current_x: 
+        elif previous_desired_vel_x > desired_vel_x and velocity_current_x > desired_vel_x and previous_velocity_x >= velocity_current_x: 
             print( "                    Calcul DEAC")
             max_deceleration= update_acceleration_estimate(max_deceleration, velocity_current_x, previous_velocity_x, interval_between_events)
             estimated_acceleration= abs(max_deceleration) #Need to be used to detmin when PID will be called
@@ -795,10 +795,9 @@ def move_body_PID(self, angl_dir, distance, max_acceleration=0.5, max_decelerati
         # Clear the event so we can wait for the next update
         new_velocity_data.clear()
 
-    save_acceleration(max_acceleration, max_deceleration)
-    
     # Arrive to destination stop  
-    send_control_body(self, 0, 0, 0) 
+    send_control_body(self, 0, 0, 0)
+    save_acceleration(max_acceleration, max_deceleration)
     self.remove_attribute_listener('velocity', on_velocity)
     
     
