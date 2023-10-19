@@ -28,21 +28,24 @@ def decode_local_movement_message(self, message):
     return target_id, destination
 
 def lead_local_balancing(self):
-    # Extract the 'free' drone IDs in s0
-    s0 = next(station for station in self.neighbor_list if station['name'] == 's0')
-    s0_free_ids = sorted([s0['drones_in_id'][idx] for idx, state in enumerate(s0['states']) if state == Free])
-    # Identify all spot with the "border" state
-    border_stations = [station for station in  self.neighbor_list if Border or Irremovable_boarder in station['states']]
+    with self.lock_neighbor_list:
+        # Extract the 'free' drone IDs in s0
+        s0 = next(spot for spot in self.neighbor_list if spot['name'] == 's0')
+        s0_free_ids = sorted([s0['drones_in_id'][idx] for idx, state in enumerate(s0['states']) if state == Free])
+        # List of neighbors without S0 the current spot 
+        neighbor_list_no_s0= self.neighbor_list[1:]
+        # Identify all spot with the "border" state but out of the s0 ( the current spot)
+        border_spots = [spot for spot in  neighbor_list_no_s0 if Border or Irremovable_boarder in spot['states']]
     moves = []
     # For each "border" spot, calculate the difference in the number of "free" states with s0
-    for station in border_stations:
-        station_free_count = sum(1 for state in station['states'] if state == Free)
-        diff = len(s0_free_ids) - station_free_count
+    for spot in border_spots:
+        spot_free_count = sum(1 for state in spot['states'] if state == Free)
+        diff = len(s0_free_ids) - spot_free_count
         
         # If s0 has more 'free' drones than the "border" spot by more than 1, move the smallest "free" drone ID
         while diff > 1 and s0_free_ids:
             drone_id_to_move = s0_free_ids.pop(0)  # Get the smallest "free" drone ID
-            destination_number = station['name'][1:]  # Extract the number after "s"
+            destination_number = spot['name'][1:]  # Extract the number after "s"
             moves.append((drone_id_to_move, destination_number)) # append tuple of id , destination 
             diff -= 1
     
@@ -50,7 +53,7 @@ def lead_local_balancing(self):
 
 def build_shared_allowed_spots_message(self):
     # Extract data of S0 current spot
-    s0 = next(station for station in self.neighbor_list if station['name'] == 's0')
+    s0 = next(spot for spot in self.neighbor_list if spot['name'] == 's0')
     # Create a list to store the IDs of drones with 'free' state in s0
     targets_id = [drone_id for drone_id, state in zip(s0['drones_in_id'], s0['states']) if state == Free]
     max_byte_count_targets = max(self.determine_max_byte_size(num) for num in targets_id)
@@ -118,7 +121,7 @@ class Boarder_Timer:
 def border_listener(self,border_t, timeout):
     while not self.end_of_balancing.is_set(): # the end is not reached , keep listenning 
         msg= self.retrive_msg_from_buffer() 
-        
+
         # if a drone asked the info it shouls be send, but no need to recive respond 
         if msg == Demand_header.encode() + b'\n':
             data_msg= self.build_spot_info_message(Reponse_header) # Build message that contains all data
