@@ -108,9 +108,10 @@ class Sink_Timer:
 def sink_listener(self,sink_t, timeout):
     '''
     if a path to sink is constructed a drone of the niegboor wil become irremovable 
-    when a drone became irremovable it will send message contains its id to all around 
+    when a drone became irremovable it will send message contains its id to all around
+    And try to find how to arrive to the sink if it is found then message will be sent to it conatins sink id. 
 
-    The sink listener check that message id different than id of sink 
+    The sink listener check that message id= id of sink 
     and based on that it will be considered as a message to complet the path  
      
     '''
@@ -236,11 +237,11 @@ def find_close_neigboor_2sink(self):
     filtered_neighbors = [neighbor for neighbor in three_min_neighbors if neighbor["drones_in"] > 0]
     
     if filtered_neighbors is not None:  # There are occupied neighbors
-        # Find the neighbor with id of the drone that is irremovable or it is sink ( distance =0 )
+        # Find the neighbor with id of the drone that is irremovable 
         # if you arrive to irremovable 
 
         with self.lock_neighbor_list:
-            neighbor_irremovable = next((neighbor for neighbor in filtered_neighbors if ( neighbor['state'] == Irremovable) ), None) # no need to check for or neighbor['distance'] == 0 because the sink is already irremovable 
+            neighbor_irremovable = next((neighbor for neighbor in filtered_neighbors if ( neighbor['state'] == Irremovable) ), None)
 
         # No irremovable found 
         if neighbor_irremovable== None:
@@ -261,7 +262,7 @@ def find_close_neigboor_2sink(self):
         elif drone_previous_border==1:
             return drone_previous_border["id"]
 
-        # Founding no drone it is not possible, after the further exapnsion, the drones will be close to the old border 
+        # Founding no drone it is not possible, after the further exapnsion, the drones will be between the old border an dthe new one 
   
 def find_close_neigboor_2border(self):
     neighbor_irremovable= None
@@ -338,7 +339,7 @@ def spanining ( self, vehicle ):
         
         # Send a message that will travel from border to sink and that will annouce end of the pahse 
         if self.state== Irremovable_boarder:
-            while not self.drone_id_to_sink: # wait until list not empty # TODO check the neugbor list for irrmovable 
+            while not self.drone_id_to_sink: # wait until list not empty 
                 time.sleep(1)
             self.forward_confirm_msg()
         
