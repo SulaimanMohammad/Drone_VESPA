@@ -5,7 +5,7 @@ from expan import *
 ---------------------------------- Communication ------------------------------------
 -------------------------------------------------------------------------------------
 '''
-
+balancing_terminator=-1
 def build_local_movement_message(self, target_id, destination):
     max_byte_count = self.determine_max_byte_size(target_id)
     # Start the message with the header and the max byte count for target_id
@@ -149,14 +149,14 @@ def border_listener(self,border_t, timeout):
             # The border drone will respon to the message only if it is in local balancing otherwise drop it 
             if border_t.local_balancing.is_set():
                 # End of the balancing broadcast msg
-                if len(target_ids)==1 and target_ids[0]==-1 and rec_propagation_indicator[0]==-1 :                         
+                if len(target_ids)==1 and target_ids[0]==balancing_terminator and rec_propagation_indicator[0]==balancing_terminator:                         
                     # Here any drone in any state needs to forward the boradcast message and rise ending flag  
                     self.forward_broadcast_message(Balance_header,candidate) 
                     self.end_of_balancing.set()
                 
                 elif self.id in  target_ids: # the drone respond only if it is targeted
                     if candidate == self.id: # the message recived contains the id of the drone means the message came back  
-                        Broadcast_Msg= self.build_border_message(Balance_header,[-1] ,[-1], self.id)
+                        Broadcast_Msg= self.build_border_message(Balance_header,[balancing_terminator] ,[balancing_terminator], self.id)
                         self.send_msg(Broadcast_Msg)
                         self.end_of_balancing.set() 
                         
@@ -209,7 +209,7 @@ def communication_balancing_free_drones(self,vehicle):
         # It is needed in case of reciving the message of ending 
         if msg.startswith(Balance_header.encode()) and msg.endswith(b'\n'):
             rec_propagation_indicator, target_ids, sender, candidate= self.decode_border_message(msg)
-            if len(target_ids)==1 and target_ids[0]==-1 and rec_propagation_indicator[0]==-1 :                         
+            if len(target_ids)==1 and target_ids[0]==balancing_terminator and rec_propagation_indicator[0]==balancing_terminator :                         
                 # Free drones doesnt forward they just rise the flag 
                 self.end_of_balancing.set()
             else: # nothing to do if it is not broadcast 
@@ -261,7 +261,7 @@ def balancing(self, vehicle):
         border_found= False
         while border_found == False : # no border in the nieghbor
             self.demand_neighbors_info()
-            border_found, spot_to_go = search_to_border(self)
+            border_found, spot_to_go = self.search_to_border()
             # Move             
             self.move_to_spot(vehicle, spot_to_go)
         # This message will be read by the border drone and its niegbor
