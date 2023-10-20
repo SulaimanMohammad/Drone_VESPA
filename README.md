@@ -20,7 +20,7 @@
 ## Scripts Map 
 - "drone_ardupilot.py": API to move take off, and move the drone 
 - "unit_tests" contains implementation of drone_ardupilot 
-- "expan.py", "spaning.py" are the pahses in VESPA Algoithm 
+- "expan.py", "spanning.py" and "balancing.py" are the pahses in VESPA Algoithm 
     To see more about this algorithm check the [simulation here](https://github.com/SulaimanMohammad/self-organized-uav)
 
 
@@ -91,6 +91,10 @@ UML for the communication in the spanning phase of VESPA
 
 ![Alt text](https://raw.githubusercontent.com/SulaimanMohammad/Drone_VESPA/main/UML/spanning_process.drawio.svg)
 
+
+## Balancing phase
+UML for the communication in the Balancing phase of VESPA
+![Alt text](https://raw.githubusercontent.com/SulaimanMohammad/Drone_VESPA/main/UML/balancing_process.drawio.svg)
 
 ## How to find tagret in the region of the drone
 The drone will scan the region by taking a hexagon path with length depends on the camera setting.
