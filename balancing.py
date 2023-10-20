@@ -250,10 +250,8 @@ def balancing(self, vehicle):
 
     # Border is the chef of the spot 
     if self.state== Border or Irremovable_boarder:
-        hover(vehicle) # hover while all the commuinication and balancing done 
         border_process=Boarder_Timer()
         border_process.run()
-        set_to_move(vehicle)
     
     elif self.state == Free: 
         self.xbee_receive_message_thread = threading.Thread(target=communication_balancing_free_drones, args=(self,vehicle,)) #pass the function reference and arguments separately to the Thread constructor.

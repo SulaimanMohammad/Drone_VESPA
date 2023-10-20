@@ -635,13 +635,14 @@ class Drone:
         return -1  # Return -1 if no match is found
     
     def move_to_spot(self,vehicle, destination_spot):
+        set_to_move(vehicle)
         self.direction_taken.append( destination_spot)
         angle, distance = self.convert_spot_angle_distance(destination_spot)
         move_body_PID(vehicle,angle, distance)
         self.update_location(destination_spot)
         self.clear_buffer() # need to clear the bufer from message received on the road 
         # Arrive to steady state and hover then start observing the location
-        wait_and_hover(vehicle, 1) 
+        hover(vehicle)
     
     '''
     -------------------------------------------------------------------------------------
@@ -816,7 +817,7 @@ class Drone:
         # Ensure the drone is the only one in its spot, even if this check is done implicitly before in waiting time.
 
         while self.spot["drones_in"] > 1:
-            wait_and_hover(vehicle, movement_time)
+            time.sleep(movement_time)
             self.check_num_drones_in_neigbors()
         
         if self.border_candidate :
@@ -827,9 +828,7 @@ class Drone:
         else: 
             #means that the drone is sourounded in the expansion direction it can be set as free 
             self.change_state_to(Free)
-    
-        hover(vehicle) # Hovering while the forming border is done 
-
+            
         # wait until the border procesdure is finished 
         self.Forming_Border_Broadcast_REC.wait()
         set_to_move(vehicle)
@@ -875,7 +874,7 @@ class Drone:
                     print ("go to S", destination_spot)
                     self.move_to_spot(vehicle, destination_spot)
             else: 
-                wait_and_hover(vehicle,movement_time) # Wait untile the elected drone to leave to next stop.
+                time.sleep(movement_time) # Wait untile the elected drone to leave to next stop.
                 continue # do all the steps again escape update location because no movement done yet 
                 '''Go to another iteration to redo all process because there is possibility that the spots around have changed'''
 
@@ -885,7 +884,8 @@ class Drone:
         
         # Before initiating the border procedure, it's important to wait for some time to ensures that the drone is alone in its spot.
         # This step eliminates the possibility of erroneously considering a drone as a border-candidate when another drone in the same spot is about to move.
-        wait_and_hover(vehicle, sync_time) 
+        time.sleep(sync_time)
+        
 
         self.Forme_border(vehicle)# will not return until the drones receive boradcast of forming border
 
@@ -899,12 +899,10 @@ class Drone:
            self.save_occupied_spots() 
 
         # Time guarantees that all drones begin the searching procedure simultaneously and synchronized.
-        wait_and_hover(vehicle, sync_time) 
+        time.sleep(sync_time)
 
         self.search_for_target() # This is blocking until the end of movement 
 
-        if self.state==Irremovable or self.state== Irremovable_boarder:
-            hover(vehicle)        
         # Since broadcast messages might still be circulating while retrieval has stopped, there could be leftover messages in the buffer.
         # It's essential to clear the buffer before the next phase to prevent any surplus.
         self.clear_buffer()

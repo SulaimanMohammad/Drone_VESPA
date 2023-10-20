@@ -311,9 +311,7 @@ def build_path(self):
             msg= self.build_target_message(target_id)
             self.send_msg(msg)
         
-def spanining ( self, vehicle ): 
-    # Stay hovering while spanning communication 
-    hover(vehicle)
+def spanining ( self): 
 
     if self.spot['distance']==0: # if the drone is sink ( leader of the termination of the spaning phase)
         self.spanning_sink()
@@ -350,7 +348,4 @@ def spanining ( self, vehicle ):
         # Stop listener
         xbee_thread.join() 
         self.clear_buffer()
-    
-    if self.state == Free:
-        set_to_move(vehicle) # only free Drone can move now in the balancing phase 
 
