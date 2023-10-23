@@ -60,6 +60,25 @@ def parse_connect():
     # Connect to the Vehicle (in this case a simulator running the same computer)
     return connection_string
 
+def check_gps_fix(self):
+    while not self.is_armable:
+        print("Waiting for the vehicle to become armable...")
+        time.sleep(1)
+
+    print("Checking GPS status...")
+
+    # Get the GPS fix type
+    fix_type = self.gps_0.fix_type
+
+    # Get the number of satellites
+    num_satellites = self.gps_0.satellites_visible
+
+    if fix_type >= 3 and num_satellites >= 8:
+        print("GPS is working and providing valid values.")
+    
+    return True
+            
+
 def arm_and_takeoff(self, aTargetAltitude):
     write_log_message (f"{get_current_function_name()} called:") 
 
