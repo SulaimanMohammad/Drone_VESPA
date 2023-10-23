@@ -134,37 +134,33 @@ def calculate_relative_pos(self):
         return [relative_x/3,relative_y/3, relative_z/3]
 
 # used in the intialized pahse and done only by the drone 0 on the sink 
-def new_coordinates(self, distance, bearing_deg):
+def new_coordinates(initial_longitude, initial_latitude,distance, bearing_deg):
+    EARTH_RADIUS = 6371000  # Approximate value for the Earth's radius
 
-    current_lat = self.location.global_relative_frame.lat
-    current_lon = self.location.global_relative_frame.lon
-    current_alt = self.location.global_relative_frame.alt
+  # Convert angle from degrees to radians
+    angle_radians = math.radians(bearing_deg)
+
     # Convert latitude and longitude from degrees to radians
-    lat_rad = math.radians(current_lat)
-    lon_rad = math.radians(current_lon)
-    
-    # Convert the bearing from degrees to radians
-    bearing_rad = math.radians(bearing_deg)
-    
-    # Earth's radius in kilometers
-    R = 6371.0
-    
-    # Convert the distance to radians
-    d_rad = distance / R
-    
-    # Calculate new latitude in radians
-    lat2_rad = math.asin(math.sin(lat_rad) * math.cos(d_rad) + 
-                         math.cos(lat_rad) * math.sin(d_rad) * math.cos(bearing_rad))
-    
-    # Calculate new longitude in radians
-    lon2_rad = lon_rad + math.atan2(math.sin(bearing_rad) * math.sin(d_rad) * math.cos(lat_rad), 
-                                    math.cos(d_rad) - math.sin(lat_rad) * math.sin(lat2_rad))
-    
-    # Convert the new latitude and longitude from radians back to degrees
-    lat2 = math.degrees(lat2_rad)
-    lon2 = math.degrees(lon2_rad)
-    
-    return lat2, lon2 
+    initial_longitude = math.radians(initial_longitude)
+    initial_latitude = math.radians(initial_latitude)
+
+    # Calculate the new latitude using the Haversine formula
+    new_latitude = math.asin(
+        math.sin(initial_latitude) * math.cos(distance / EARTH_RADIUS) +
+        math.cos(initial_latitude) * math.sin(distance / EARTH_RADIUS) * math.cos(angle_radians)
+    )
+
+    # Calculate the new longitude using the Haversine formula
+    new_longitude = initial_longitude + math.atan2(
+        math.sin(angle_radians) * math.sin(distance / EARTH_RADIUS) * math.cos(initial_latitude),
+        math.cos(distance / EARTH_RADIUS) - math.sin(initial_latitude) * math.sin(new_latitude)
+    )
+
+    # Convert the new latitude and longitude back to degrees
+    new_latitude = math.degrees(new_latitude)
+    new_longitude = math.degrees(new_longitude)
+
+    return new_longitude, new_latitude
 
 def send_ned_velocity(self, velocity_x, velocity_y, velocity_z, altitude,  duration):
     write_log_message (f"{get_current_function_name()} called:")
