@@ -12,7 +12,10 @@ from drone_ardupilot import *
 '''
 
 sq3=sqrt(3)
-a= 20 # drone range 
+a= 20 # drone range
+'''aim for a buffer zone. This ensures that even if there's a slight miscalculation in the range or 
+a sudden change in environmental conditions, there's some leeway before communication is lost.'''
+a=a*0.95
 C=100
 eps=20
 speed_of_drone=2 # 2 m/s 
@@ -20,7 +23,7 @@ movement_time= a*speed_of_drone*(1+ 0.2)  # add 20% of time for safty
 scanning_time= 10 # in second ( TODO function to the speed and size of a )
 sync_time= 10
 multiplier = 100
-
+defined_groundspeed=1
 DIR_VECTORS = [
     [0, 0],                             # s0 // don't move, stay
     [90, a],            # s1
@@ -70,21 +73,18 @@ formula_dict = {
 }
 
 
-'''
-phase= E expansion
-phase= F forming border
-phase= S Spaning  
-pahse= B balancing 
-This will be used in the message 
-'''
-
 Owner=0
 Free=1
 Border=2
 Irremovable= 3 
 Irremovable_boarder=4 
 
+'''
+These will be used in the building and decoding message 
+'''
 #Exchanging data Headers 
+Movement_command= "M"
+Calibration= "C" 
 Demand_header= "D"
 Reponse_header= "R"
 # Expansion Headers 
@@ -107,7 +107,7 @@ Balance_header= "B"
 -------------------------------------------------------------------------------------
 '''
 class Drone: 
-    def __init__(self, x,y,z):
+    def __init__(self, vehicle, x,y,z):
         self.positionX=x
         self.positionY=y
         self.distance_from_sink=0 # the distance of the drone from  the sink 
@@ -143,6 +143,10 @@ class Drone:
         self.lock_state = threading.Lock()
         self.lock_neighbor_list = threading.Lock()
         self.neighbors_list_updated = threading.Event()
+        self.start_expanding= threading.Event()
+        # Lance a thread to read messages continuously 
+        self.xbee_receive_message_thread = threading.Thread(target=self.receive_message, args=(self,vehicle)) #pass the function reference and arguments separately to the Thread constructor.
+        self.xbee_receive_message_thread.start()
 
     '''
     -------------------------------------------------------------------------------------
@@ -184,7 +188,49 @@ class Drone:
             for s in self.neighbor_list:
                 target_ids.extend(s["drones_in_id"]) # add the id of all the niegbors including the current 
         return target_ids
-  
+    
+    # Movement message are encoded using string beause they are done only once
+    # Thus it will not problem for efficiency 
+    def build_movement_command_message(self,id, s, float1, float2):
+        # Convert numbers to string and encode
+        id_str= str(id).encode()
+        s_str=str(s).encode()
+        float1_str = str(float1).encode()  
+        float2_str = str(float2).encode() 
+        # Construct message
+        message = Movement_command.encode() + id_str +b','+s_str+ b','+ float1_str + b',' + float2_str + b'\n'
+        return message
+
+    def decode_movement_command_message(self,message):
+        # Remove header and terminal
+        content = message[1:-1]
+        # Split by the comma to get floats
+        parts = content.split(b',')
+        id = int(parts[0])
+        s = int(parts[1])
+        float1 = float(parts[2])
+        float2 = float(parts[3])
+        return id, s, float1, float2
+    
+    def build_calibration_message(indicator, xbee_range):
+        # Encode numbers
+        num1_encoded = struct.pack('b', id)  # signed byte
+        num2_encoded = struct.pack('B', xbee_range)  # unsigned byte
+        
+        # Construct message
+        message = Calibration.encode + num1_encoded + num2_encoded + b'\n'
+        
+        return message
+    
+    
+    def decode_calibration_message(message):
+        # Check for valid header and terminator
+        # Extract the numbers
+        indicator = struct.unpack('b', message[1:2])[0]
+        xbee_range = struct.unpack('B', message[2:3])[0]
+        
+        return indicator, xbee_range
+
     #Return the byte count necessary to represent max ID.
     def determine_max_byte_size (slef,number):
         if number <= 0xFF:  # 1 byte
@@ -313,7 +359,9 @@ class Drone:
         # read untile the bufere is empty or retrive 7 msgs
         msg=" "
         if xbee_message is not None:
-            return msg  
+            return msg
+        else:
+            return None 
 
     def encode_float_to_int(self, value, multiplier=100):
         """Encodes a float as an integer with a given multiplier."""
@@ -492,17 +540,25 @@ class Drone:
             self.update_rec_candidate(new_rec_candidate_values)
             self.update_rec_propagation_indicator(new_rec_propagation_indicator_values)
 
-    def receive_message (self):
+    def receive_message (self,vehicle):
         self.Forming_Border_Broadcast_REC = threading.Event()
         
         while not self.Forming_Border_Broadcast_REC.is_set():
                       
             msg= self.retrive_msg_from_buffer() 
             time.slee(0.01) # wait to have msgs in the buffer
-
-            msg= b'F\x01\x07\x01\x02\x03\x04\x05\x06\x07\x00\n' #example of message F [1, 2, 3, 4, 5, 6, 7] 0
             
-            if msg.startswith(Expan_header.encode()) and msg.endswith(b'\n'):
+            if msg.startswith(Movement_command) and msg.endswith("\n"):
+                id, spot, lon, lat=self.decode_movement_command_message(msg)
+                if id==-1 and spot==-1 and lon==0 and lat==0: # mean all drone are in sky 
+                    self.start_expanding.set()
+                else: 
+                    self.initial_movement(vehicle,id, spot, lon, lat)
+
+            elif msg.startswith(Calibration) and msg.endswith("\n"):
+                self.calibration_ping_pong(vehicle, msg ) 
+
+            elif msg.startswith(Expan_header.encode()) and msg.endswith(b'\n'):
                 pass  
             
             elif msg.startswith(Arrival_header.encode()) and msg.endswith(b'\n'):
@@ -643,7 +699,86 @@ class Drone:
         self.clear_buffer() # need to clear the bufer from message received on the road 
         # Arrive to steady state and hover then start observing the location
         hover(vehicle)
+
+    def sink_movement_command(self,vehicle,id):
+        destination_spot_random = int(random.randint(1, 6)) 
+        angle, distance = self.convert_spot_angle_distance(destination_spot_random)
+        if check_gps_fix(vehicle): # GPS data are correct 
+            current_lat = vehicle.location.global_relative_frame.lat
+            current_lon = vehicle.location.global_relative_frame.lon
+            long, lat= new_coordinates(current_lon, current_lat, distance , angle)
+            msg= self.build_movement_command_message(id,destination_spot_random, long, lat)
+            self.send_msg(msg)
+            time.sleep((a/defined_groundspeed)+1 )# wait until arrival
+        else:
+            # It is command to drone to start,( 0,0) is null island where it is imposible to start from 
+            msg= self.build_movement_command_message(id,destination_spot_random, 0, 0)
     
+    def initial_movement(self,vehicle,id, spot, lon, lat):
+        if id !=0 and id==self.id: # drone is not sink and it is targeted
+            arm_and_takeoff(vehicle,self.hight)
+            if lon!=0 and lat!=0:
+                time.sleep(2)
+                point1 = LocationGlobalRelative(lat,lon ,self.hight)
+                vehicle.simple_goto( point1, groundspeed=defined_groundspeed)
+                # simple_goto will retuen after the command is sent, thus you need to sleep to give the drone time to move 
+                time.sleep((a/defined_groundspeed)+1 )
+                vehicle.mode    = VehicleMode("LOITER") #loiter mode and hover in your place 
+                time.sleep(1)
+                vehicle.mode     = VehicleMode("GUIDED")
+                self.direction_taken.append(spot)
+            else:
+                #use image to fly on the top of sink 
+                search_for_sink_tag(vehicle)
+                self.move_to_spot(vehicle, spot)
+            #loiter mode and hover in your place if it is before sleep then the drone will not move
+            angle, distance = self.convert_spot_angle_distance(spot)
+            set_yaw_to_dir_PID( vehicle, angle) # set the angle in the same direction taken since simple goto can include rotation 
+            if self.id==1: # only first drone does the range calibration
+                msg= self.build_calibration_message(1,0)
+                self.send_msg(msg)
+
+
+    def calibration_ping_pong(self, vehicle, msg ):
+        indicator, xbee_range= self.decode_calibration_message(msg)
+        if indicator==1 and xbee_range==0: # still calibrating
+            if self.id==0:# only the sink respond
+                respond_msg= self.build_calibration_message(1,0)
+                self.send_msg( respond_msg)
+            
+            elif self.id==1:
+                while True: 
+                    msg= self.build_calibration_message(1,0)
+                    self.send_msg(msg)
+                    time.sleep(1)
+                    rec_messge= self.retrive_msg_from_buffer()
+                    if rec_messge != None: # A message recived 
+                        if msg.startswith(Calibration.encode()) and msg.endswith(b'\n'):
+                            indicator, xbee_range= self.decode_calibration_message(rec_messge)
+                            if indicator==1 and xbee_range==0:
+                                set_to_move(vehicle)
+                                # move on the same angle with 1m 
+                                move_body_PID(vehicle,angle, 1)
+                                hover(vehicle)
+                                set_a(a+1)# increae a by 1
+                    else: # No message avilable 
+                        # Move to the opposit direction 
+                        angle= normalize_angle(angle -180) # Calculate the opposit angle 
+                        set_to_move(vehicle)
+                        # move on the same angle with 1m 
+                        move_body_PID(vehicle,angle, 1)
+                        hover(vehicle)
+                        set_a(a-1)# increae a by 1
+                        break
+                msg= self.build_calibration_message(-1,a)
+        elif indicator==-1 and xbee_range>0:
+            if self.id==0:
+                respond_msg= self.build_calibration_message(0,xbee_range)
+                self.send_msg(respond_msg)
+        elif indicator==0 and xbee_range>0:
+            set_a( xbee_range)
+            self.clear_buffer()
+                
     '''
     -------------------------------------------------------------------------------------
     -------------------------------- Update upon movement--------------------------------
@@ -854,9 +989,6 @@ class Drone:
     -------------------------------------------------------------------------------------
     '''
     def expan_border_search(self,vehicle):
-        # Lance a thread to read messages continuously 
-        self.xbee_receive_message_thread = threading.Thread(target=self.receive_message, args=(self,)) #pass the function reference and arguments separately to the Thread constructor.
-        self.xbee_receive_message_thread.start()
         self.check_Ownership()
         
         while self.state !=Owner:
@@ -908,12 +1040,24 @@ class Drone:
         self.clear_buffer()
 
     def first_exapnsion (self, vehicle):
-
-        random_dir = int(random.randint(1, 6)) # 0 not include because it should not be in the sink
-        self.direction_taken.append( random_dir)        
-        self.move_to_spot(vehicle, random_dir)
+        # First movement started by commands of the sink   
+        if self.id==0: #sink:
+            arm_and_takeoff(vehicle,self.hight)
+            time.sleep(2)
+            with open('Operational_Data.txt', 'r') as file:
+                for line in file:
+                    # Check if line contains max_acceleration
+                    if "drones_number" in line:
+                        drones_number = float(line.split('=')[1].strip())
+            for i in range(1,drones_number):
+                self.sink_movement_command(vehicle,i)
+            # The end send message referes that all in position 
+            msg= self.build_movement_command_message(-1,-1, 0, 0)
+            self.send_msg(msg)
+        else: 
+            self.start_expanding.wait()
         self.expan_border_search(vehicle)
-
+            
     def further_expansion (self,vehicle):
         if self.state == Border:
             self.change_state_to(Owner) # The border save it is own spot 
@@ -921,4 +1065,4 @@ class Drone:
             self.change_state_to(Irremovable)
         else: # State is Free
             self.expan_border_search(vehicle)
-# old border can be free by using the saved occupied spot in it to see if it i still border ot not 
+# old border can be free by using the saved occupied spot in it to see if it i still border ot not

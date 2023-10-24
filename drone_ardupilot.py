@@ -843,3 +843,6 @@ def hover(self):
 
 def set_to_move(self):
     self.mode     = VehicleMode("GUIDED")
+
+def search_for_sink_tag(slef):
+    pass 
