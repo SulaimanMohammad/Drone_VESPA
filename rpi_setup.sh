@@ -44,11 +44,6 @@ echo -e "\033[32m ------ Install git ------ \033[0m"
 # Install git
 sudo apt-get install -y git
 
-echo -e "\033[32m ------clone Drone_VESPA.git ------ \033[0m"
-# Clone the repository
-sudo git clone https://github.com/SulaimanMohammad/Drone_VESPA.git
-
-
 echo -e "\033[32m ------ Set the serial comm for the drone ------ \033[0m"
 # Run raspi-config in non-interactive mode to configure Serial UART
 # Enable Serial Port hardware
@@ -144,6 +139,9 @@ sudo insmod soft_uart.ko
 
 # Add the user to the dialout group
 sudo usermod -a -G dialout $USER
+
+echo -e "\033[32m ------Configure Drone_VESPA.git ------ \033[0m"
+./update_repo.sh
 
 echo "Installation and configuration complete. Time to REBOOT"
 echo -e "\033[32m *** Reboot Reconnect with ssh *** \033[0m"

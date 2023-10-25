@@ -57,3 +57,32 @@ if [ ! -d "log" ]; then
   mkdir log
   sudo chown -R $USER log
 fi
+
+# Set the id of the drone 
+# Get the hostname
+hostname=$(hostname)
+# Name of file where the id is set 
+output_file="/home/$PI_DRONE_DIR/Drone_VESPA/Operational_Data.txt"
+# Get just the filename from the output_file path
+output_filename=$(basename "$output_file")
+# Use regular expression to extract the number after "pi-drone"
+if [[ $hostname =~ pi-drone([0-9]+) ]]; then
+  number=${BASH_REMATCH[1]}
+else
+  number=""
+fi
+# Check if a number was found
+if [ -n "$number" ]; then
+  # Check if the file contains an "id=" line
+  if grep -q 'id=' "$output_file"; then
+    # Update the "id=" line with the new number
+    sed -i "s/id=[0-9]*/id=$number/" "$output_file"
+    echo "Updated id=$number in $output_filename"
+  else
+    # Append a new "id=" line to the file
+    echo "id=$number" >> "$output_file"
+    echo "Appended id=$number to $output_filename"
+  fi
+else
+  echo "No number found in the hostname."
+fi
