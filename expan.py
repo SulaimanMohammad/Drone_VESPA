@@ -24,35 +24,36 @@ scanning_time= 10 # in second ( TODO function to the speed and size of a )
 sync_time= 10
 multiplier = 100
 defined_groundspeed=1
+
 DIR_VECTORS = [
-    [0, 0],                             # s0 // don't move, stay
-    [90, a],            # s1
+    [0, 0],    # s0 // don't move, stay
+    [90, a],   # s1
     [30, a],   # s2
     [330, a],  # s3
-    [270, a],             # s4
-    [210, a], # s5
+    [270, a],  # s4
+    [210, a],  # s5
     [150, a]   # s6
 ]
 
 DIR_xy_distance_VECTORS = [
-    [0, 0],                             # s0 // don't move, stay
-    [(sq3 * a), 0],            # s1
-    [(sq3 / 2.0) * a, (3.0 / 2.0) * a],   # s2
-    [-(sq3 / 2) * a, (3.0 / 2.0) * a],  # s3
-    [-sq3 * a, 0],             # s4
+    [0, 0],                              # s0 // don't move, stay
+    [(sq3 * a), 0],                      # s1
+    [(sq3 / 2.0) * a, (3.0 / 2.0) * a],  # s2
+    [-(sq3 / 2) * a, (3.0 / 2.0) * a],   # s3
+    [-sq3 * a, 0],                       # s4
     [-(sq3 / 2.0) * a, -(3.0/ 2.0) * a], # s5
-    [(sq3 / 2.0) * a, -(3.0 / 2.0) * a]   # s6
+    [(sq3 / 2.0) * a, -(3.0 / 2.0) * a]  # s6
 ]
 
 def update_DIR_xy_distance_VECTORS():
     global DIR_xy_distance_VECTORS
     DIR_xy_distance_VECTORS = [
-    [0, 0],                             # s0 // don't move, stay
-    [(sq3 * a), 0],            # s1
+    [0, 0],                               # s0 // don't move, stay
+    [(sq3 * a), 0],                       # s1
     [(sq3 / 2.0) * a, (3.0 / 2.0) * a],   # s2
     [-(sq3 / 2.0) * a, (3.0 / 2.0) * a],  # s3
-    [-sq3 * a, 0],             # s4
-    [-(sq3 / 2.0) * a, -(3.0/ 2.0) * a], # s5
+    [-sq3 * a, 0],                        # s4
+    [-(sq3 / 2.0) * a, -(3.0/ 2.0) * a],  # s5
     [(sq3 / 2.0) * a, -(3.0 / 2.0) * a]   # s6
     ]
 
@@ -111,7 +112,6 @@ class Drone:
         self.positionX=x
         self.positionY=y
         self.distance_from_sink=0 # the distance of the drone from  the sink 
-        self.id=0
         self.hight=z
         self.state=1
         self.previous_state=1
@@ -131,6 +131,7 @@ class Drone:
         self.direction_taken=[]  # direction path (spots) that are taken in the phase 
         self.neighbor_list = []  # list that contains the 6 neighbors around the current location
         self.rec_propagation_indicator=[]
+        self.id=self.get_id()
         # init s0 and it will be part of the spots list 
         self.neighbor_list=[{"name": "s" + str(0), "distance": 0, "priority": 0, "drones_in": 1,"drones_in_id":[], "states": [] , "previous_state": []}]
         # save the first spot which is s0 the current place of the drone 
@@ -784,6 +785,14 @@ class Drone:
     -------------------------------- Update upon movement--------------------------------
     -------------------------------------------------------------------------------------
     '''
+    def get_id():
+        with open('Operational_Data.txt', 'r') as file:
+            for line in file:
+                # Check if line contains max_acceleration
+                if "id" in line:
+                    id = int(line.split('=')[1].strip())
+                return id
+
     def get_state(self):
         with self.lock_state:
             return self.state
