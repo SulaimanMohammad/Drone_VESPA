@@ -137,6 +137,9 @@ class Drone:
         # save the first spot which is s0 the current place of the drone 
         # spot is another name of s_list[0] so any changes will be seen in spot
         self.spot= self.neighbor_list[0]
+        self.spot["id"]=self.id
+        self.spot["states"]=self.state 
+        self.spot["previous_state"]=self.state
         self.num_neigbors = 6
         for i in range(1, self.num_neigbors+1):
             s = {"name": "s" + str(i), "distance": 0, "priority": 0,"drones_in": 0,"drones_in_id":[] , "states": [], "previous_state": []}
@@ -802,9 +805,11 @@ class Drone:
             self.state= state
 
     def change_state_to( self, new_state):
-        with self.lock_state:
-            self.previous_state= self.state # save the preivious state 
-            self.state= new_state # change the state     
+            with self.lock_state:
+                self.previous_state= self.state # save the preivious state 
+                self.spot["previous_state"][0]= self.state   
+                self.state= new_state # change the state 
+                self.spot["states"][0]= self.state     
     
     def check_Ownership(self):
         self.check_num_drones_in_neigbors()
