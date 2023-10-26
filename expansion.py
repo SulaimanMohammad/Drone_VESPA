@@ -1,9 +1,11 @@
-from VESPA_module import *
+from expan import * 
+
 '''
 -------------------------------------------------------------------------------------
 ---------------------------------- Communication ------------------------------------
 -------------------------------------------------------------------------------------
 '''
+
 # Movement message are encoded using string beause they are done only once
 # Thus it will not problem for efficiency 
 def build_movement_command_message(self,id, s, float1, float2):
@@ -48,9 +50,9 @@ def build_inherit_message(self,id_rec):
     max_byte_count = max([self.determine_max_byte_size(num) for num in self.rec_candidate]+ 
                             [self.determine_max_byte_size(id_rec)]+ 
                             [self.determine_max_byte_size(num) for num in self.rec_propagation_indicator]
-                            )  
+                            )
     #Add the length of rec_candidate list and size of representation of eeach element 
-    message += struct.pack('>BB', max_byte_count, len(self.rec_candidate)) 
+    message += struct.pack('>BB', max_byte_count, len(self.rec_candidate))
     # Add the element of the list with a max_byte_count byte representation 
     for num in self.rec_candidate:
         message += num.to_bytes(max_byte_count, 'big')
@@ -62,9 +64,9 @@ def build_inherit_message(self,id_rec):
     message +=id_rec.to_bytes(max_byte_count, 'big')
     message += b'\n'
     return message
-
+ 
 def decode_inherit_message(message):
-    index = len(Inherit_header.encode())  
+    index = len(Inherit_header.encode())
     # Extract max_byte_count and the length of rec_candidate list
     max_byte_count, rec_candidate_length = struct.unpack('>BB', message[index:index+2])
     index += 2
@@ -73,7 +75,7 @@ def decode_inherit_message(message):
     for _ in range(rec_candidate_length):
         num = int.from_bytes(message[index:index+max_byte_count], 'big')
         rec_candidate_values.append(num)
-        index += max_byte_count 
+        index += max_byte_count
     # Extract the length of rec_propagation_indicator list
     rec_propagation_indicator_length = struct.unpack('>B', message[index:index+1])[0]
     index += 1
@@ -87,11 +89,22 @@ def decode_inherit_message(message):
     id_rec = int.from_bytes(message[index:index+max_byte_count], 'big')
     return rec_candidate_values, rec_propagation_indicator_values, id_rec
 
+def handel_broken_into_spot(self, msg):
+    if self.border_candidate== True: 
+        positionX, positionY, state, previous_state,id_rec= self.decode_spot_info_message(msg)
+        self.update_neighbors_list(positionX, positionY, state, id_rec) # No need to mutex since the drone is in border_candidate only in it was Owner and reserved spot
+        self.check_border_candidate_eligibility(observe=False) # use only the upddated list and see if the current drone still candidate 
+        if self.border_candidate == False: # changed due to 6 neigbors filled 
+            self.change_state_to(Free) # Has 6 neighbors                
+            if not self.rec_candidate: # if the rec_candidate is not empty, means messages for border are already received 
+                msg=self.build_inherit_message(id_rec) # id_rec is the id of the drone hopped in 
+                self.send_msg(msg) 
+
 def handel_inheritence_message(self, msg):
-        new_rec_candidate_values, new_rec_propagation_indicator_values, id_rec= self.decode_inherit_message(msg)
-        if id_rec== self.id:
-            self.update_rec_candidate(new_rec_candidate_values)
-            self.update_rec_propagation_indicator(new_rec_propagation_indicator_values)
+    new_rec_candidate_values, new_rec_propagation_indicator_values, id_rec= self.decode_inherit_message(msg)
+    if id_rec== self.id:
+        self.update_rec_candidate(new_rec_candidate_values)
+        self.update_rec_propagation_indicator(new_rec_propagation_indicator_values)
 
 def receive_message (self,vehicle):
     self.Forming_Border_Broadcast_REC = threading.Event()
@@ -149,6 +162,7 @@ def receive_message (self,vehicle):
         else: 
             print(" Undefined header or empty buffer")
 
+    
 
 '''
 -------------------------------------------------------------------------------------
@@ -438,8 +452,10 @@ def expan_border_search(self,vehicle):
     self.check_Ownership()
     
     while self.state !=Owner:
+        
         self.check_num_drones_in_neigbors()
         self.set_priorities()
+
         # be carful it should not be move , it is set the psoition 
         # bcause move will use only the direction value as a movement from the current location 
         destination_spot= self.find_priority() 
@@ -453,15 +469,18 @@ def expan_border_search(self,vehicle):
             time.sleep(movement_time) # Wait untile the elected drone to leave to next stop.
             continue # do all the steps again escape update location because no movement done yet 
             '''Go to another iteration to redo all process because there is possibility that the spots around have changed'''
+
         calculate_relative_pos(vehicle)
         print("checking for update the state")
         self.check_Ownership()
+    
     # Before initiating the border procedure, it's important to wait for some time to ensures that the drone is alone in its spot.
     # This step eliminates the possibility of erroneously considering a drone as a border-candidate when another drone in the same spot is about to move.
     time.sleep(sync_time)
     
 
     self.Forme_border(vehicle)# will not return until the drones receive boradcast of forming border
+
     self.rec_propagation_indicator=[] # rest this indecator for the next iteration 
     self.rec_candidate=[]
     self.direction_taken=[] #rest this taken path for the next iteration
