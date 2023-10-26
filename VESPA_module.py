@@ -57,7 +57,7 @@ def update_DIR_xy_distance_VECTORS():
     [(sq3 / 2.0) * a, -(3.0 / 2.0) * a]   # s6
     ]
 
-def set_a( val):
+def set_a(val):
     global a
     a= val
     update_DIR_xy_distance_VECTORS() # changing of a should change the direction distances
@@ -132,6 +132,7 @@ class Drone:
         self.neighbor_list = []  # list that contains the 6 neighbors around the current location
         self.rec_propagation_indicator=[]
         self.id=self.get_id()
+        set_a(self.read_xbee_range()) # read last value of a and set it in the code  
         # init s0 and it will be part of the spots list
         self.neighbor_list=[{"name": "s" + str(0), "distance": 0, "priority": 0, "drones_in": 1,"drones_in_id":[], "states": [] , "previous_state": []}]
         # save the first spot which is s0 the current place of the drone
@@ -416,7 +417,7 @@ class Drone:
     -------------------------------- Update upon movement--------------------------------
     -------------------------------------------------------------------------------------
     '''
-    def get_id():
+    def get_id(self):
         with open('Operational_Data.txt', 'r') as file:
             for line in file:
                 # Check if line contains max_acceleration
@@ -424,6 +425,18 @@ class Drone:
                     id = int(line.split('=')[1].strip())
                 return id
 
+    def read_xbee_range(self):
+        with open('Operational_Data.txt', 'r') as file:
+            for line in file:
+                # Check if line contains max_acceleration
+                if "a" in line:
+                    xbee_range = int(line.split('=')[1].strip())
+                return xbee_range
+    
+    def update_xbee_range(self,new_a):
+        with open('Operational_Data.txt', 'w') as file:
+            file.write(f'a = {new_a}\n')
+ 
     def get_state(self):
         with self.lock_state:
             return self.state

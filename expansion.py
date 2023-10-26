@@ -29,7 +29,7 @@ def decode_movement_command_message(self,message):
 
 def build_calibration_message(indicator, xbee_range):
     # Encode numbers
-    num1_encoded = struct.pack('b', id)  # signed byte
+    num1_encoded = struct.pack('b', indicator)  # signed byte
     num2_encoded = struct.pack('B', xbee_range)  # unsigned byte
     # Construct message
     message = Calibration.encode + num1_encoded + num2_encoded + b'\n'
@@ -323,7 +323,8 @@ def calibration_ping_pong(self, vehicle, msg ):
             respond_msg= self.build_calibration_message(0,xbee_range)
             self.send_msg(respond_msg)
     elif indicator==0 and xbee_range>0:
-        set_a( xbee_range)
+        self.update_xbee_range(a)
+        set_a(a)
         self.clear_buffer()
 
 '''
