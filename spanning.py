@@ -118,14 +118,7 @@ def sink_listener(self,sink_t, timeout):
     while not sink_t.end_of_spanning.is_set(): # the end is not reached , keep listenning
         msg= self.retrive_msg_from_buffer() 
         
-        # Receiving message asking for data 
-        if msg == Demand_header.encode() + b'\n':
-            data_msg= self.build_spot_info_message(Reponse_header) # Build message that contains all data
-            self.send_msg(data_msg)
-
-        # Receiving message containing data     
-        if msg.startswith(Reponse_header.encode()) and msg.endswith(b'\n'):
-            self.get_neighbors_info()
+        self.exchange_neighbors_info_communication(msg)
 
         if msg.startswith(Spanning_header.encode()) and msg.endswith(b'\n'):
             id_rec,data = self.decode_target_message(msg)
@@ -175,14 +168,7 @@ def xbee_listener(self):
     while not listener_end_of_spanning.is_set(): 
         msg= self.retrive_msg_from_buffer() 
         
-        # Receiving message asking for data 
-        if msg == Demand_header.encode() + b'\n':
-            data_msg= self.build_spot_info_message(Reponse_header) # Build message that contains all data
-            self.send_msg(data_msg)
-
-        # Receiving message containing data     
-        if msg.startswith(Reponse_header.encode()) and msg.endswith(b'\n'):
-            self.get_neighbors_info()
+        self.exchange_neighbors_info_communication(msg)
         
         # Message of building the path 
         if msg.startswith(Spanning_header.encode()) and msg.endswith(b'\n'):

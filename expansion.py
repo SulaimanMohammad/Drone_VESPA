@@ -99,7 +99,8 @@ def receive_message (self,vehicle):
     while not self.Forming_Border_Broadcast_REC.is_set():
 
         msg= self.retrive_msg_from_buffer()
-        time.slee(0.01) # wait to have msgs in the buffer
+        
+        self.exchange_neighbors_info_communication(msg)
 
         if msg.startswith(Movement_command) and msg.endswith("\n"):
             id, spot, lon, lat=self.decode_movement_command_message(msg)
@@ -146,9 +147,6 @@ def receive_message (self,vehicle):
                     # Do anything but wait for end of the expansion broadcast
                     continue
 
-        else:
-            print(" Undefined header or empty buffer")
-
 
 '''
 -------------------------------------------------------------------------------------
@@ -173,24 +171,6 @@ def calculate_neighbors_distance_sink(self):
             s["distance"] = round(distance,2)
 
     self.distance_from_sink=self.spot["distance"] # where spot is the data of s0 the current position
-
-def check_num_drones_in_neigbors(self):
-    #TODO it is about sending signal and recive it to count the number in each spot
-    # The idea the drone will recive signal from the nigboors the signal is coordinates
-    #of each drone and compare it, and since all the movement on 6 nigbor and the reive about a
-    # thn the messages usally are only from niegboor
-    # so it will compare with the posssible coordiantes of
-    # nigboor with respect to the sink( because can not compare with respect to the drone that recive the signal)
-    # TODO in each of the spot s1-s6 creat x,y the coordinates with the respect to the sink then
-    # using x2+y2 find the distance
-        # no need for that because each drone will have it is own position calculated far from the sink
-
-    # here you need to use distance and compare it to know how to fill neighbor_list
-    for s in self.neighbor_list:
-        # for now i will have it from the Stdin
-        num_dron = int(input("\t Enter number of drone at "+s["name"]+" :"))
-        s["drones_in"] = int(num_dron)
-        # append the ids of each drone in the same spot to drones_in_id
 
 def findMinDistances_niegboor(self):
     min_distance = min(self.neighbor_list, key=lambda x: x["distance"])["distance"]

@@ -124,14 +124,7 @@ def border_listener(self,border_t, timeout):
     while not self.end_of_balancing.is_set(): # the end is not reached , keep listenning 
         msg= self.retrive_msg_from_buffer() 
 
-        # if a drone asked the info it shouls be send, but no need to recive respond 
-        if msg == Demand_header.encode() + b'\n':
-            data_msg= self.build_spot_info_message(Reponse_header) # Build message that contains all data
-            self.send_msg(data_msg)
-        
-        # Receiving message containing data     
-        if msg.startswith(Reponse_header.encode()) and msg.endswith(b'\n'):
-            self.get_neighbors_info()
+        self.exchange_neighbors_info_communication(msg)
 
         if msg.startswith(Arrival_header.encode()) and msg.endswith(b'\n'):
             # This can be recived in case of drone arrive to the current spot or another border neigbors
@@ -179,15 +172,8 @@ def communication_balancing_free_drones(self,vehicle):
     while not self.end_of_balancing.is_set(): # the end is not reached , keep listenning 
         msg= self.retrive_msg_from_buffer() 
         
-        # Receiving message asking for data 
-        if msg == Demand_header.encode() + b'\n':
-            data_msg= self.build_spot_info_message(Reponse_header) # Build message that contains all data
-            self.send_msg(data_msg)
-
-        # Receiving message containing data     
-        if msg.startswith(Reponse_header.encode()) and msg.endswith(b'\n'):
-           self.get_neighbors_info()
-
+        self.exchange_neighbors_info_communication(msg)
+        
         if msg.startswith(Arrival_header.encode()) and msg.endswith(b'\n'):
             # This can be recived in case of drone arrive to the current spot or another border neigbors
             positionX, positionY, state, id_value= self.decode_spot_info_message(msg)

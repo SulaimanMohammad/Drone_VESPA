@@ -182,6 +182,17 @@ class Drone:
             msg= self.retrive_msg_from_buffer()
         self.neighbors_list_updated.set()
 
+    def exchange_neighbors_info_communication(self,msg):
+        # Receiving message asking for data 
+        if msg.startswith(Demand_header.encode()) and msg.endswith(b'\n'):
+            data_msg= self.build_spot_info_message(Reponse_header) # Build message that contains all data
+            self.send_msg(data_msg)
+
+        # Receiving message containing data     
+        if msg.startswith(Reponse_header.encode()) and msg.endswith(b'\n'):
+            self.get_neighbors_info()
+
+
     def create_target_list(self, header):
         target_ids=[]
         if header==Balance_header: # Targets are only the border ones
@@ -301,6 +312,7 @@ class Drone:
         pass
 
     def retrive_msg_from_buffer(self):
+        time.slee(0.05) # wait to have msgs in the buffer
         # device is the object of Xbee connection
         xbee_message = device.read_data(0.02) #  0.02 timeout in seconds
         # read untile the bufere is empty or retrive 7 msgs
