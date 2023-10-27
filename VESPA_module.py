@@ -546,6 +546,16 @@ class Drone:
     -------------------------------- Movement -------------------------------
     -------------------------------------------------------------------------------------
     '''
+    def convert_spot_angle_distance(self, dir):
+        return DIR_VECTORS[dir][0], DIR_VECTORS[dir][1]
+
+    def find_relative_spot(self, x, y ):
+        for i, vector in enumerate(DIR_xy_distance_VECTORS):
+            if abs(self.positionX - (x + vector[0])) < 1e-9 and abs(self.positionY - (y + vector[1])) < 1e-9:
+                return i  # Return index if a match is found
+        return -1  # Return -1 if no match is found
+
+
     def move_to_spot(self,vehicle, destination_spot):
         set_to_move(vehicle)
         self.direction_taken.append( destination_spot)
@@ -555,3 +565,8 @@ class Drone:
         self.clear_buffer() # need to clear the bufer from message received on the road
         # Arrive to steady state and hover then start observing the location
         hover(vehicle)
+
+    
+    def search_for_target(self): # find if there is target in the area or not
+        # move in the place and couver it to check if there is target or not
+        pass
