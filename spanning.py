@@ -1,4 +1,4 @@
-from  expan import *
+from VESPA_module import *
 import struct
 import sys
 import threading
