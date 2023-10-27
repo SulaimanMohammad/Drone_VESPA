@@ -465,14 +465,10 @@ class Drone:
                 self.spot["states"][0]= self.state
 
     def check_Ownership(self):
-        self.check_num_drones_in_neigbors()
-         #if s0 where the drone is conatins only the drone ( droen Owner)
-         # the done as you see count itself at the spot
-         # the drone should be Owner to be free
+         # If s0 where the drone exist conatins only the drone (droen Owner)
         print("drone in s0", self.spot["drones_in"] )
         if self.spot["drones_in"]==1: # the drone is Owner
             self.change_state_to (Owner)
-        print("drone state in s0", self.state )
 
     def update_rec_candidate(self, new_rec_candidate):
         # Update without duplicates

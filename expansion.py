@@ -4,12 +4,11 @@ from VESPA_module import *
 ---------------------------------- Communication ------------------------------------
 -------------------------------------------------------------------------------------
 '''
-# Movement message are encoded using string beause they are done only once
-# Thus it will not problem for efficiency
-def build_movement_command_message(self,id, s, float1, float2):
+# Movement messages are encoded using string beause they are done only once, efficiency accepted
+def build_movement_command_message(self,id, spot, float1, float2):
     # Convert numbers to string and encode
     id_str= str(id).encode()
-    s_str=str(s).encode()
+    s_str=str(spot).encode()
     float1_str = str(float1).encode()
     float2_str = str(float2).encode()
     # Construct message
@@ -36,7 +35,6 @@ def build_calibration_message(indicator, xbee_range):
     return message
 
 def decode_calibration_message(message):
-    # Check for valid header and terminator
     # Extract the numbers
     indicator = struct.unpack('b', message[1:2])[0]
     xbee_range = struct.unpack('B', message[2:3])[0]
@@ -163,7 +161,6 @@ def calculate_neighbors_distance_sink(self):
     aDx = round((2*sq3) * self.positionX,2)
     Dy= round(self.positionY,2)
 
-    #TODO you should consider a situation what inside the formaula is negative
     for s in self.neighbor_list:
         formula = formula_dict.get(s["name"])
         if formula:
@@ -171,6 +168,10 @@ def calculate_neighbors_distance_sink(self):
             s["distance"] = round(distance,2)
 
     self.distance_from_sink=self.spot["distance"] # where spot is the data of s0 the current position
+
+def spatial_observation(self):
+    self.demand_neighbors_info() # return after gathering all info  
+    self.check_Ownership()
 
 def findMinDistances_niegboor(self):
     min_distance = min(self.neighbor_list, key=lambda x: x["distance"])["distance"]
@@ -416,10 +417,8 @@ def search_for_target(self): # find if there is target in the area or not
 -------------------------------------------------------------------------------------
 '''
 def expan_border_search(self,vehicle):
-    self.check_Ownership()
-
+    self.spatial_observation()
     while self.state !=Owner:
-        self.check_num_drones_in_neigbors()
         self.set_priorities()
         # be carful it should not be move , it is set the psoition
         # bcause move will use only the direction value as a movement from the current location
@@ -436,7 +435,7 @@ def expan_border_search(self,vehicle):
             '''Go to another iteration to redo all process because there is possibility that the spots around have changed'''
         calculate_relative_pos(vehicle)
         print("checking for update the state")
-        self.check_Ownership()
+        self.spatial_observation()
     # Before initiating the border procedure, it's important to wait for some time to ensures that the drone is alone in its spot.
     # This step eliminates the possibility of erroneously considering a drone as a border-candidate when another drone in the same spot is about to move.
     time.sleep(sync_time)
@@ -471,7 +470,7 @@ def first_exapnsion (self, vehicle):
                 # Check if line contains max_acceleration
                 if "drones_number" in line:
                     drones_number = float(line.split('=')[1].strip())
-        for i in range(1,drones_number):
+        for i in range(1,drones_number+1):
             self.sink_movement_command(vehicle,i)
         # The end send message referes that all in position
         msg= self.build_movement_command_message(-1,-1, 0, 0)
