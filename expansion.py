@@ -218,16 +218,6 @@ def find_relative_spot(self, x, y ):
             return i  # Return index if a match is found
     return -1  # Return -1 if no match is found
 
-def move_to_spot(self,vehicle, destination_spot):
-    set_to_move(vehicle)
-    self.direction_taken.append( destination_spot)
-    angle, distance = self.convert_spot_angle_distance(destination_spot)
-    move_body_PID(vehicle,angle, distance)
-    self.update_location(destination_spot)
-    self.clear_buffer() # need to clear the bufer from message received on the road
-    # Arrive to steady state and hover then start observing the location
-    hover(vehicle)
-
 def sink_movement_command(self,vehicle,id):
     destination_spot_random = int(random.randint(1, 6))
     angle, distance = self.convert_spot_angle_distance(destination_spot_random)
@@ -420,27 +410,21 @@ def expan_border_search(self,vehicle):
     self.spatial_observation()
     while self.state !=Owner:
         self.set_priorities()
-        # be carful it should not be move , it is set the psoition
-        # bcause move will use only the direction value as a movement from the current location
         destination_spot= self.find_priority()
-        #if self.spot["drones_in"]>1: # more than one drone in the current spot
         elected_id= self.neighbors_election()
-        if elected_id== self.id: # current drone is elected to move
-            if destination_spot != 0: # it means movement otherwise it is hovering
+        if elected_id== self.id: # current drone is elected one to move
+            if destination_spot != 0: # Movement to another spot not staying 
                 print ("go to S", destination_spot)
                 self.move_to_spot(vehicle, destination_spot)
         else:
             time.sleep(movement_time) # Wait untile the elected drone to leave to next stop.
-            continue # do all the steps again escape update location because no movement done yet
-            '''Go to another iteration to redo all process because there is possibility that the spots around have changed'''
         calculate_relative_pos(vehicle)
         print("checking for update the state")
         self.spatial_observation()
+
     # Before initiating the border procedure, it's important to wait for some time to ensures that the drone is alone in its spot.
     # This step eliminates the possibility of erroneously considering a drone as a border-candidate when another drone in the same spot is about to move.
     time.sleep(sync_time)
-
-
     self.Forme_border(vehicle)# will not return until the drones receive boradcast of forming border
     self.rec_propagation_indicator=[] # rest this indecator for the next iteration
     self.rec_candidate=[]

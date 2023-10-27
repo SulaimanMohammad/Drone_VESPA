@@ -540,3 +540,18 @@ class Drone:
                     # Find the index of the drone_id and changr the state
                     idx = s['drones_in_id'].index(id)
                     s['states'][idx]= state
+
+    '''
+    -------------------------------------------------------------------------------------
+    -------------------------------- Movement -------------------------------
+    -------------------------------------------------------------------------------------
+    '''
+    def move_to_spot(self,vehicle, destination_spot):
+        set_to_move(vehicle)
+        self.direction_taken.append( destination_spot)
+        angle, distance = self.convert_spot_angle_distance(destination_spot)
+        move_body_PID(vehicle,angle, distance)
+        self.update_location(destination_spot)
+        self.clear_buffer() # need to clear the bufer from message received on the road
+        # Arrive to steady state and hover then start observing the location
+        hover(vehicle)
