@@ -131,6 +131,7 @@ class Drone:
         self.direction_taken=[]  # direction path (spots) that are taken in the phase
         self.neighbor_list = []  # list that contains the 6 neighbors around the current location
         self.rec_propagation_indicator=[]
+        self.elected_id=None
         self.id=self.get_id()
         set_a(self.read_xbee_range()) # read last value of a and set it in the code  
         # init s0 and it will be part of the spots list
@@ -149,6 +150,7 @@ class Drone:
         self.lock_neighbor_list = threading.Lock()
         self.neighbors_list_updated = threading.Event()
         self.start_expanding= threading.Event()
+        self.elected_droen_arrived= threading.Event()
         # Lance a thread to read messages continuously
         self.xbee_receive_message_thread = threading.Thread(target=self.receive_message, args=(self,vehicle)) #pass the function reference and arguments separately to the Thread constructor.
         self.xbee_receive_message_thread.start()
@@ -405,18 +407,7 @@ class Drone:
                     self.rec_candidate.append(candidate) # add the received id to the list so when a Broadcast from the same id is recicved that means a full circle include the current drone is completed
                 self.rec_propagation_indicator= rec_propagation_indicator # change the propagation_indicator means message from opposite direction has arrived
                 self.forward_border_message(Forming_border_header, rec_propagation_indicator, target_ids, candidate)
-
-    def handel_broken_into_spot(self, msg):
-        if self.border_candidate== True:
-            positionX, positionY, state, previous_state,id_rec= self.decode_spot_info_message(msg)
-            self.update_neighbors_list(positionX, positionY, state, id_rec) # No need to mutex since the drone is in border_candidate only in it was Owner and reserved spot
-            self.check_border_candidate_eligibility(observe=False) # use only the upddated list and see if the current drone still candidate
-            if self.border_candidate == False: # changed due to 6 neigbors filled
-                self.change_state_to(Free) # Has 6 neighbors
-                if not self.rec_candidate: # if the rec_candidate is not empty, means messages for border are already received
-                    msg=self.build_inherit_message(id_rec) # id_rec is the id of the drone hopped in
-                    self.send_msg(msg)
-
+                
     def clear_buffer(self):
         # read the buffer until it is empty
         # while xbee_device.get_queue_length() > 0:

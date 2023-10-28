@@ -61,6 +61,25 @@ def build_inherit_message(self,id_rec):
     message += b'\n'
     return message
 
+def build_expan_elected(self,id):
+    # Determine max byte count for numbers
+    max_byte_count = self.determine_max_byte_size(id)
+    # Encode the header and the max byte count
+    message = Expan_header.encode() + struct.pack('>B', max_byte_count)
+    # Pack `id` based on max_byte_count
+    message += id.to_bytes(max_byte_count, byteorder='big')
+    message += b'\n'
+    return message
+   
+def decode_expan_elected(message): 
+    # Extract the max byte count
+    max_byte_count = struct.unpack('>B', message[1:2])[0]
+    # Extract the id using the appropriate byte count
+    id_start = 2
+    id_end = id_start + max_byte_count
+    elected_id = int.from_bytes(message[id_start:id_end], byteorder='big')
+    return elected_id
+
 def decode_inherit_message(message):
     index = len(Inherit_header.encode())
     # Extract max_byte_count and the length of rec_candidate list
@@ -85,19 +104,35 @@ def decode_inherit_message(message):
     id_rec = int.from_bytes(message[index:index+max_byte_count], 'big')
     return rec_candidate_values, rec_propagation_indicator_values, id_rec
 
+def handel_broken_into_spot(self, msg):
+    if self.border_candidate== True:
+        positionX, positionY, state, previous_state,id_rec= self.decode_spot_info_message(msg)
+        self.update_neighbors_list(positionX, positionY, state, previous_state,id_rec) # No need to mutex since the drone is in border_candidate only in it was Owner and reserved spot
+        self.check_border_candidate_eligibility(observe=False) # use only the upddated list and see if the current drone still candidate
+        if self.border_candidate == False: # changed due to 6 neigbors filled
+            self.change_state_to(Free) # Has 6 neighbors
+            if not self.rec_candidate: # if the rec_candidate is not empty, means messages for border are already received
+                msg=self.build_inherit_message(id_rec) # id_rec is the id of the drone hopped in
+                self.send_msg(msg)
+
 def handel_inheritence_message(self, msg):
         new_rec_candidate_values, new_rec_propagation_indicator_values, id_rec= self.decode_inherit_message(msg)
         if id_rec== self.id:
             self.update_rec_candidate(new_rec_candidate_values)
             self.update_rec_propagation_indicator(new_rec_propagation_indicator_values)
 
+def handel_elected_drone_arrivale(self,msg):
+    rec_id=self.decode_expan_elected(msg)
+    if rec_id==self.elected_id:
+        self.elected_droen_arrived.set()
+    
 def receive_message (self,vehicle):
     self.Forming_Border_Broadcast_REC = threading.Event()
 
     while not self.Forming_Border_Broadcast_REC.is_set():
 
         msg= self.retrive_msg_from_buffer()
-        
+
         self.exchange_neighbors_info_communication(msg)
 
         if msg.startswith(Movement_command) and msg.endswith("\n"):
@@ -111,7 +146,7 @@ def receive_message (self,vehicle):
             self.calibration_ping_pong(vehicle, msg )
 
         elif msg.startswith(Expan_header.encode()) and msg.endswith(b'\n'):
-            pass
+            self.handel_elected_drone_arrivale(msg)
 
         elif msg.startswith(Arrival_header.encode()) and msg.endswith(b'\n'):
             self.handel_broken_into_spot(msg)
@@ -127,14 +162,12 @@ def receive_message (self,vehicle):
             if len(target_ids)==1 and target_ids[0]==-1 and rec_propagation_indicator[0]==-1 :
                 if self.border_candidate==True:
                     self.border_broadcast_respond(candidate)
-
                 # Here any drone in any state needs to forward the boradcast message and rise ending flag
                 self.forward_broadcast_message(Forming_border_header,candidate)
                 self.Forming_Border_Broadcast_REC.set()
 
 
             elif self.id in  target_ids: # the drone respond only if it is targeted
-
                 if candidate == self.id: # the message recived contains the id of the drone means the message came back
                     self.circle_completed ()
 
@@ -315,7 +348,7 @@ def check_border_candidate_eligibility(self, observe=True):
     self.border_candidate=False
     # Collect the info about the drones around , and that can be ignored in case of drone arriver after election
     if observe:
-        self.check_num_drones_in_neigbors()
+        self.demand_neighbors_info()
     self.dominated_direction= self.count_element_occurrences()
     # Define a dictionary to map directions to the corresponding spots_to_check_for_border values
     direction_to_check_map = {
@@ -353,7 +386,7 @@ def Forme_border(self):
 
     while self.spot["drones_in"] > 1:
         time.sleep(movement_time)
-        self.check_num_drones_in_neigbors()
+        self.demand_neighbors_info()
 
     if self.border_candidate :
         self.update_candidate_spot_info_to_neighbors() # Useful if the drone arrived and filled a spot made others sourounded
@@ -387,13 +420,16 @@ def expan_border_search(self,vehicle):
     while self.state !=Owner:
         self.set_priorities()
         destination_spot= self.find_priority()
-        elected_id= self.neighbors_election()
-        if elected_id== self.id: # current drone is elected one to move
+        self.elected_id= self.neighbors_election()
+        if self.elected_id== self.id: # current drone is elected one to move
             if destination_spot != 0: # Movement to another spot not staying 
                 print ("go to S", destination_spot)
                 self.move_to_spot(vehicle, destination_spot)
         else:
-            time.sleep(movement_time) # Wait untile the elected drone to arrive to next spot.
+           # Wait untile the elected drone to arrive to next spot.
+           self.elected_droen_arrived.wait() 
+           self.elected_droen_arrived.clear()
+
         calculate_relative_pos(vehicle)
         print("checking for update the state")
         self.spatial_observation()
