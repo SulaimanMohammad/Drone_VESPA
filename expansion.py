@@ -444,6 +444,7 @@ def expan_border_search(self,vehicle):
     self.rec_propagation_indicator=[] # rest this indecator for the next iteration
     self.rec_candidate=[]
     self.direction_taken=[] #rest this taken path for the next iteration
+    self.elected_id=None     
     self.xbee_receive_message_thread.join() # stop listening to message
 
     # save the spots they are occupied to dont back to them in the next expansion when they are released
@@ -452,7 +453,6 @@ def expan_border_search(self,vehicle):
 
     # Time guarantees that all drones begin the searching procedure simultaneously and synchronized.
     time.sleep(sync_time)
-
     self.search_for_target() # This is blocking until the end of movement
 
     # Since broadcast messages might still be circulating while retrieval has stopped, there could be leftover messages in the buffer.
