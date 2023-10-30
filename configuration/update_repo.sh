@@ -5,7 +5,7 @@ PI_DRONE_DIR=$(ls /home | grep pi-drone)
 CLONE_PATH="/home/$PI_DRONE_DIR/Drone_VESPA"
 
 
-cp /home/$PI_DRONE_DIR/Drone_VESPA/update_repo.sh /home/$PI_DRONE_DIR
+cp /home/$PI_DRONE_DIR/Drone_VESPA/configuration/update_repo.sh /home/$PI_DRONE_DIR
 
 cd  /home/$PI_DRONE_DIR/
 
@@ -51,7 +51,7 @@ else
     echo "Diverged"
 fi
 
-cd /home/$PI_DRONE_DIR/Drone_VESPA/unit_tests
+cd /home/$PI_DRONE_DIR/Drone_VESPA/src/drone/unit_tests
 # Check if the "log" directory exists
 if [ ! -d "log" ]; then
   mkdir log
@@ -62,7 +62,7 @@ fi
 # Get the hostname
 hostname=$(hostname)
 # Name of file where the id is set 
-output_file="/home/$PI_DRONE_DIR/Drone_VESPA/Operational_Data.txt"
+output_file="/home/$PI_DRONE_DIR/Drone_VESPA/src/drone/Operational_Data.txt"
 # Get just the filename from the output_file path
 output_filename=$(basename "$output_file")
 # Use regular expression to extract the number after "pi-drone"
