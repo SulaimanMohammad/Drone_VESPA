@@ -425,6 +425,9 @@ def expan_border_search(self,vehicle):
             if destination_spot != 0: # Movement to another spot not staying 
                 print ("go to S", destination_spot)
                 self.move_to_spot(vehicle, destination_spot)
+                # After move_to_spot retuen it means arrivale 
+                movement_done_msg= self.build_expan_elected(self.id)
+                self.send_msg(movement_done_msg)
         else:
            # Wait untile the elected drone to arrive to next spot.
            self.elected_droen_arrived.wait() 
