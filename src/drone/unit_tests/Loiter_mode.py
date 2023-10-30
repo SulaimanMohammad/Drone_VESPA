@@ -8,7 +8,6 @@ import signal
 parent_directory = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 # Add the parent directory to sys.path
 sys.path.append(parent_directory)
-from expan import *
 from drone_ardupilot import *
 import math 
 
@@ -36,8 +35,8 @@ vehicle.wait_ready(True, raise_exception=False) # for raspberry pi & telemetry o
 signal.signal(signal.SIGINT, interrupt)
 vehicle.mode    = VehicleMode("STABILIZE")
 
-arm_and_takeoff(vehicle,2)
-# time.sleep(2)
+drone_hight=2 
+arm_and_takeoff(vehicle,drone_hight)
 
 # write_log_message(f" current_altitude= {vehicle.location.global_relative_frame.alt}")
 vehicle.mode    = VehicleMode("LOITER") #loiter mode and hover in your place 

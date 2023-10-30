@@ -7,7 +7,6 @@ import signal
 parent_directory = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 # Add the parent directory to sys.path
 sys.path.append(parent_directory)
-from expan import *
 from drone_ardupilot import *
 
 def interrupt(signal_num, frame):
@@ -60,17 +59,15 @@ def crash_message_handler(_, message):
             print("Emergency maneuver complete. Resuming normal flight.")
 
 
-set_a(3)
-drone= Drone(0.0,0.0,1.5) # drone at the sink 
-#set_home_to_zero(vehicle)
-arm_and_takeoff(vehicle,drone.hight)
+drone_hight=2 
+arm_and_takeoff(vehicle,drone_hight)
 print( "Takeoff and wait 2 sec")
 time.sleep(2)
 
 time_to_pass=2 
 x=3
 y=0
-move_to_poition(vehicle,x,y, drone.hight) # go 3m in X 
+move_to_poition(vehicle,x,y, drone_hight) # go 3m in X 
 print(" move on x to" ,x , " in speed of",  x/float(time_to_pass) )
 time.sleep(2)
 move_to_poition(vehicle,x,y, 0) # go 3m in X 
@@ -79,7 +76,7 @@ time.sleep(8)
 
 x=0
 y=0
-move_to_poition(vehicle,x,y, drone.hight) # go 3m in X 
+move_to_poition(vehicle,x,y, drone_hight) # go 3m in X 
 print(" move on x to" ,x , " in speed of",  x/float(time_to_pass) )
 time.sleep(10)
 

@@ -12,7 +12,6 @@ import signal
 parent_directory = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 # Add the parent directory to sys.path
 sys.path.append(parent_directory)
-from expan import *
 from drone_ardupilot import *
 
 def interrupt(signal_num, frame):
@@ -35,11 +34,8 @@ vehicle = connect("/dev/serial0", baud= 921600,  wait_ready=False,rate=10) # for
 vehicle.wait_ready(True, raise_exception=False) # for raspberry pi & telemetry only 
 signal.signal(signal.SIGINT, interrupt)
 
-set_a(3)
-
-drone= Drone(0.0,0.0,2) # drone at the sink 
-#set_home_to_zero(vehicle)
-arm_and_takeoff(vehicle,drone.hight)
+drone_hight=2 
+arm_and_takeoff(vehicle,drone_hight)
 print( "Takeoff and wait 2 sec")
 time.sleep(2)
 
@@ -51,7 +47,7 @@ current_lat = vehicle.location.global_relative_frame.lat
 current_lon = vehicle.location.global_relative_frame.lon
 # angle dir in degree 
 long, lat= new_coordinates(current_lon, current_lat, distance, angl_dir)
-point1 = LocationGlobalRelative( lat,long,drone.hight)
+point1 = LocationGlobalRelative( lat,long,drone_hight)
 vehicle.simple_goto( point1, groundspeed=defined_groundspeed)
 # simple_goto will retuen after the command is sent, thus you need to sleep to give the drone time to move 
 time.sleep( (distance/defined_groundspeed)+1 )
@@ -64,7 +60,7 @@ print( "move to the other direction")
 angl_dir= 270#135
 # angle dir in degree new_coordinates(vehicle, distance, angl_dir)
 long, lat= new_coordinates(current_lon, current_lat, distance, angl_dir)
-point2 = LocationGlobalRelative( lat,long,drone.hight)
+point2 = LocationGlobalRelative( lat,long,drone_hight)
 vehicle.simple_goto( point2, groundspeed=defined_groundspeed)
 
 time.sleep( (distance/defined_groundspeed)+1 ) 

@@ -9,7 +9,6 @@ import signal
 parent_directory = os.path.abspath(os.path.join(os.path.dirname(__file__), '../..'))
 # Add the parent directory to sys.path
 sys.path.append(parent_directory)
-from expan import *
 from drone_ardupilot import *
 
 
@@ -72,11 +71,8 @@ vehicle = connect("/dev/serial0", baud= 921600,  wait_ready=False) # for raspber
 vehicle.wait_ready(True, raise_exception=False) # for raspberry pi & telemetry only 
 signal.signal(signal.SIGINT, interrupt)
 
-set_a(3)
-
-drone= Drone(0.0,0.0,2) # drone at the sink 
-#set_home_to_zero(vehicle)
-arm_and_takeoff(vehicle,drone.hight)
+drone_hight=2 
+arm_and_takeoff(vehicle,drone_hight)
 logger.write( "Takeoff and wait 2 sec")
 
 #loiter mode and hover in your place 

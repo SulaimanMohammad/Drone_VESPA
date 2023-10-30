@@ -8,7 +8,6 @@ import signal
 parent_directory = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 # Add the parent directory to sys.path
 sys.path.append(parent_directory)
-from expan import *
 from drone_ardupilot import *
 
 def interrupt(signal_num, frame):
@@ -29,10 +28,9 @@ vehicle = connect("/dev/serial0", baud= 921600,  wait_ready=False,rate=10) # for
 vehicle.wait_ready(True, raise_exception=False) # for raspberry pi & telemetry only 
 signal.signal(signal.SIGINT, interrupt)
 
-set_a(3)
-#set_home_to_zero(vehicle)
-drone= Drone(0.0,0.0,3) # drone at the sink 
-arm_and_takeoff(vehicle, drone.hight)
+drone_hight=2 
+arm_and_takeoff(vehicle,drone_hight)
+
 time.sleep(5) # needed to stable and set EKF 
 
 #vehicle.groundspeed =5
@@ -41,13 +39,13 @@ print( "come move_to_poition 1")
 
 x=3
 y=0
-move_to_poition(vehicle,x,y,drone.hight) #need to set the ground velocity 
+move_to_poition(vehicle,x,y,drone_hight) #need to set the ground velocity 
 time.sleep(8)
 
 print( "come move_to_poition 2")
 x=0
 y=0
-move_to_poition(vehicle,x,y, drone.hight)
+move_to_poition(vehicle,x,y, drone_hight)
 time.sleep(8)
 
 x=3
