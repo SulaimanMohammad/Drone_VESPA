@@ -2,6 +2,21 @@
 
 cd "monitoring_interface"
 
+# Define the target directory name
+target_dir="PapaParse"
+
+# Check if the target directory exists
+if [ ! -d "$target_dir" ]; then
+    echo "$target_dir does not exist. Downloading and renaming PapaParse from GitHub..."
+    git clone https://github.com/mholt/PapaParse.git
+    # Rename the downloaded directory
+    mv PapaParse "$target_dir"
+
+    echo "Download and rename complete."
+else
+    echo "$target_dir already exists."
+fi
+
 # Function to find the next available port starting from a given port
 find_available_port() {
     local port=$1
