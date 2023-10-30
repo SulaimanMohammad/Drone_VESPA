@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VESPA Algorithm</title>
+    <style>
+        body , html {
+            height: 100%;
+            margin: 0;
+            font-family: Arial, sans-serif;
+        }
+
+        .header {
+            background-color: #0078d4;
+            color: #ffffff;
+            text-align: center;
+            padding: 20px;
+            padding-bottom: 1px; /* Increased bottom padding */
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .title-section {
+            text-align: left;
+        }
+
+
+
+        .logos {
+            display: flex;
+            gap: 20px;
+        }
+
+        .logos img {
+            height: 100px;
+        }
+
+        .title-and-logo {
+            display: flex;
+            align-items: center;
+            gap: 10px; /* Adjust the space between the title and the logo */
+        }
+
+        .title-logo {
+            height: 100px; /* Adjust based on your preference */
+        }
+
+
+        .tabs {
+            display: flex;
+            gap: 20px;
+            cursor: pointer;
+            padding: 10px 0;
+            justify-content: center;
+        }
+
+        .tab {
+            padding: 15px 50px;
+            background-color: #0078d4;
+            color: #ffffff;
+            border: none;
+            transition: background-color 0.3s;
+            font-size: 16px; /* Increase font size here */
+        }
+
+        .tab:hover {
+            background-color: #0058a4;
+        }
+
+        .content {
+            display: none;
+            height: calc(100% - 130px);
+            position: relative;
+        }
+
+        .content.active {
+            display: flex;
+        }
+
+        .monitoring-section {
+            width: 40%;
+            height: 80.5%;
+            overflow-y: auto;
+            border: 2px solid black;
+            position: absolute;
+            left: 0;
+            top: 0;
+            padding: 10px;
+            box-sizing: border-box;
+        }
+
+        .map-section {
+            width: 60%;
+            height: 80%;
+            border: 2px solid black;
+            position: absolute;
+            right: 0;
+            top: 0;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        table, th, td {
+            border: 1px solid black;
+        }
+
+        th, td {
+            padding: 8px;
+            text-align: left;
+        }
+
+        iframe {
+            width: 100%;
+            height: 100%;
+        }
+
+
+        .control-section {
+            margin: 20px;
+        }
+
+        .control-block {
+            margin-bottom: 20px;
+        }
+
+        .control-block label {
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        #commandText {
+            width: 200%;
+            margin-bottom: 10px;
+            height: 100px;
+        }
+
+        .input-group {
+            display: flex;
+            align-items: center;
+        }
+
+        #droneNumberInput {
+            flex-grow: 1;
+            margin-right: 10px;
+        }
+
+        button {
+            cursor: pointer;
+        }
+
+        /* Styles specific to the Communication tab's dynamic content box */
+        #communication .communication-dynamic-content {
+            position: absolute;
+            width: 45%;
+            height: 70%;
+            right: 7%;
+            top: 5%; /* Adjust this value based on your layout */
+            border: 2px solid #0078d4;
+            padding: 10px;
+            box-sizing: border-box;
+            overflow-y: auto;
+            background-color: white; /* Optional, for visibility */
+        }
+
+        #communication #clearTextButton {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            background-color: #0078d4;
+            color: white;
+            border: none;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="header">
+        <div class="title-section">
+        <div class="title-and-logo"> <!-- Flex container for title and logo -->
+            <img src="./logos/VESPA.png" alt="Logo" class="title-logo">
+        </div>
+                <p>Date: <span id="currentDate"></span> | Time: <span id="currentTime"></span> | Location: <span id="currentLocation"></span></p>
+
+        </div>
+        <div class="logos">
+            <img src="./logos/RSB.png" alt="Logo 1">
+            <img src="./logos/Logo_IMT_Atlantique.svg" alt="Logo 2">
+        </div>
+    </div>
+
+    <div class="tabs">
+        <button class="tab" onclick="showTab('monitoring')">Monitoring</button>
+        <button class="tab" onclick="showTab('communication')">Communication</button>
+    </div>
+
+    <div id="monitoring" class="content active">
+        <div class="main-content">
+            <div class="monitoring-section">
+                <h2>Target coordinates</h2>
+                <table id="monitoringTable">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Longitude</th>
+                            <th>Altitude</th>
+                            <th>Address</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Your dynamic table data will go here -->
+                    </tbody>
+                </table>
+            </div>
+            <div id="map" class="map-section">
+                <iframe src="https://www.google.com/maps/embed?pb=..." frameborder="0" style="border:0;" allowfullscreen="" aria-hidden="false" tabindex="0"></iframe>
+            </div>
+        </div>
+    </div>
+
+      <div id="communication" class="content">
+        <div class="control-section">
+            <div class="control-block">
+                <label for="commandText">Command</label>
+                <textarea id="commandText" placeholder="Enter command"></textarea>
+                <div class="input-group">
+                    <button id="executeButton" style="width: 100%;">Execute</button>
+                </div>
+            </div>
+
+            <div class="control-block">
+                <label for="droneNumberInput">Set number of drones</label>
+                <div class="input-group">
+                    <input type="number" id="droneNumberInput" placeholder="Number of drones" style="flex-grow: 1; margin-right: 10px;">
+                    <button id="setDroneButton">Set</button>
+                </div>
+
+                <!-- Dynamic Text Section for Communication Tab -->
+        <div class="communication-dynamic-content">
+            <button id="clearTextButton">Clear</button>
+            <div id="dynamicTextContent">
+                <!-- Dynamic text content will go here -->
+
+            </div>
+        </div>
+    </div>
+
+
+    <script>
+
+       function showTab(tabName) {
+            const contents = document.querySelectorAll('.content');
+            contents.forEach(content => {
+                content.style.display = 'none';
+            });
+            document.getElementById(tabName).style.display = 'flex';
+        }
+    </script>
+
+   <script>
+    function updateDateTimeLocation() {
+        const now = new Date();
+        const options = { year: 'numeric', month: 'long', day: 'numeric' };
+        document.getElementById("currentDate").innerText = now.toLocaleDateString("en-US", options);
+
+        const timeOptions = { hour: '2-digit', minute: '2-digit', second: '2-digit' };
+        document.getElementById("currentTime").innerText = now.toLocaleTimeString("en-US", timeOptions);
+
+        // Get user location
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(position => {
+                const lat = position.coords.latitude;
+                const lng = position.coords.longitude;
+                updateLocation(lat, lng);
+            });
+        } else {
+            document.getElementById("currentLocation").innerText = "Geolocation not supported";
+        }
+    }
+
+    function updateLocation(lat, lng) {
+        const geocodingApiUrl = `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=AIzaSyBIGgKzP9niRgNQJzCz-Fa3yMxIJmlvrgs`;
+
+        fetch(geocodingApiUrl)
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === "OK") {
+                    document.getElementById("currentLocation").innerText = data.results[0].formatted_address;
+                } else {
+                    document.getElementById("currentLocation").innerText = "Address not found";
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching address:', error);
+                document.getElementById("currentLocation").innerText = "Error fetching address";
+            });
+    }
+
+    updateDateTimeLocation();
+    setInterval(updateDateTimeLocation, 1000);
+</script>
+    <script src="PapaParse/papaparse.min.js"></script>
+    <script>
+        let map;
+
+        function initMap() {
+            map = new google.maps.Map(document.getElementById("map"), {
+                center: { lat: 48.1173, lng: -1.6778 }, // Rennes, France
+                zoom: 13,
+            });
+        }
+
+        function addMarker(coords) {
+            new google.maps.Marker({
+                position: coords,
+                map: map,
+            });
+        }
+    document.addEventListener("DOMContentLoaded", function() {
+        function clearTableRows() {
+            const tableBody = document.querySelector('#monitoring tbody');
+            tableBody.innerHTML = '';
+        }
+
+       function addTableRow(id, longitude, latitude, address) {
+        // Validation to check if the values are undefined
+        if (id === undefined || longitude === undefined || latitude === undefined) {
+            console.error("Undefined values found", id, longitude, latitude);
+            return; // Skip adding this row
+        }
+
+            const tableBody = document.querySelector('#monitoring tbody');
+    const row = document.createElement('tr');
+    row.innerHTML = `<td>${id}</td><td>${longitude}</td><td>${latitude}</td><td>${address}</td>`;
+    tableBody.appendChild(row);
+
+        }
+
+        function getAddressFromCoords(lat, lng, callback) {
+            const geocoder = new google.maps.Geocoder();
+            geocoder.geocode({ 'location': { lat: parseFloat(lat), lng: parseFloat(lng) } }, (results, status) => {
+                if (status === 'OK') {
+                    if (results[0]) {
+                        callback(results[0].formatted_address);
+                    } else {
+                        callback("No address found");
+                    }
+                } else {
+                    console.error('Geocoder failed due to: ' + status);
+                    callback("Error getting address");
+                }
+            });
+        }
+        function showTab(tabName) {
+            const contents = document.querySelectorAll('.content');
+            contents.forEach(content => {
+                content.style.display = 'none';
+            });
+            document.getElementById(tabName).style.display = 'flex';
+        }
+
+       function fetchCSVAndUpdate() {
+    Papa.parse('rennes_coordinates.csv', {
+        download: true,
+        header: true,
+        complete: function(results) {
+            clearTableRows();  // Clear the table before adding new rows
+            results.data.forEach(row => {
+                if (!row.id || !row.longitude || !row.latitude) {
+                    console.log('Skipping incomplete or empty row:', row);
+                    return; // Skip this iteration
+                }
+
+                // Fetch address and then add the row
+                getAddressFromCoords(parseFloat(row.latitude), parseFloat(row.longitude), function(address) {
+                    addTableRow(row.id, row.longitude, row.latitude, address);
+                    addMarker({ lat: parseFloat(row.latitude), lng: parseFloat(row.longitude) });
+                });
+            });
+            // Note: Map updates and other operations dependent on this data
+            // might need rethinking due to the asynchronous nature of geocoding requests.
+        }
+    });
+}
+
+            // Call the function to fetch CSV and update on load
+            fetchCSVAndUpdate();
+
+            // Optionally, refresh data at intervals
+            setInterval(fetchCSVAndUpdate, 30000); // Refresh every 30seconds, adjust as needed
+        });
+        // Google Maps script
+    </script>
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBIGgKzP9niRgNQJzCz-Fa3yMxIJmlvrgs&callback=initMap" async defer></script>
+
+</body>
+</html>
