@@ -1,4 +1,4 @@
-<img src="https://github.com/SulaimanMohammad/Drone_VESPA/blob/rearrange/monitoring_interface/logos/VSPA_original.png" width="150">
+<img src="https://github.com/SulaimanMohammad/Drone_VESPA/blob/rearrange/monitoring_interface/logos/VSPA_original.png" width="400">
 
 
 ## Setup Raspberry pi
