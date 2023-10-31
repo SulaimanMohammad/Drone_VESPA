@@ -41,16 +41,16 @@
 │       └── other_test...
 └── monitoring_interface
 ```
+- **VESPA**: it contains all the pahses of VESPA Algoithm 
+    To see more about this algorithm check the [**simulation here**](https://github.com/SulaimanMohammad/self-organized-uav)
 
-- Drone: "drone_ardupilot.py" API take off and move in specific angle and distance, 
+- **Drone**: "drone_ardupilot.py" API take off and move in specific angle and distance, 
          "Opertional_data" contains the acceleration and id drone and all data needed theough the algorithm 
           "unit_test": contains many tests to check the movement of the drone, also calibration directory that will move 
           the drone and measure the accelration and set it in Opertional_data to be a start point (optional)
-- VESPA: it contains all the pahses of VESPA Algoithm 
-    To see more about this algorithm check the [simulation here](https://github.com/SulaimanMohammad/self-organized-uav)
 
-- Configuration: It contains the bash to configure raspberry pi and also there is one script to get the hardware address of pixhawk  
-- monitoring_interface: contains the html file to see the locations of targets 
+- **Configuration**: It contains the bash to configure raspberry pi and also there is one script to get the hardware address of pixhawk  
+- **monitoring_interface**: contains the html file to see the locations of targets 
 
 ## Run tests 
 - All tests in unit_tests can be used to commuinicate with raspberry pi, telemetry and simulation 
