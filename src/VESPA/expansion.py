@@ -4,8 +4,8 @@ from VESPA_module import *
 ---------------------------------- Communication ------------------------------------
 -------------------------------------------------------------------------------------
 '''
-# Movement messages are encoded using string beause they are done only once, efficiency accepted
 def build_movement_command_message(self,id, spot, float1, float2):
+    # Movement messages are encoded using string beause they are done only once, efficiency accepted
     # Convert numbers to string and encode
     id_str= str(id).encode()
     s_str=str(spot).encode()
@@ -108,7 +108,7 @@ def handel_broken_into_spot(self, msg):
     if self.border_candidate== True:
         positionX, positionY, state, previous_state,id_rec= self.decode_spot_info_message(msg)
         self.update_neighbors_list(positionX, positionY, state, previous_state,id_rec) # No need to mutex since the drone is in border_candidate only in it was Owner and reserved spot
-        self.check_border_candidate_eligibility(observe=False) # use only the upddated list and see if the current drone still candidate
+        self.check_border_candidate_eligibility() # use only the updated list and see if the current drone still candidate
         if self.border_candidate == False: # changed due to 6 neigbors filled
             self.change_state_to(Free) # Has 6 neighbors
             if not self.rec_candidate: # if the rec_candidate is not empty, means messages for border are already received
@@ -185,21 +185,18 @@ def receive_message (self,vehicle):
 -------------------------------------------------------------------------------------
 '''
 
-# distance is _.xx 2 decimal
+# All float numbers are _.xx 2 decimal
 def calculate_neighbors_distance_sink(self):
-
     DxDy2 = round((self.positionX * self.positionX) + (self.positionY * self.positionY),2)
     DxDy3a2 = round(DxDy2 + 3 * a * a,2)
     sqDx = round(sq3 * self.positionX,2)
     aDx = round((2*sq3) * self.positionX,2)
     Dy= round(self.positionY,2)
-
     for s in self.neighbor_list:
         formula = formula_dict.get(s["name"])
         if formula:
             distance = eval(formula, {'sqrt': sqrt, 'DxDy2': DxDy2, 'DxDy3a2': DxDy3a2, 'a': a, 'aDx': aDx, 'sqDx': sqDx, 'Dy': Dy})
             s["distance"] = round(distance,2)
-
     self.distance_from_sink=self.spot["distance"] # where spot is the data of s0 the current position
 
 def spatial_observation(self):
@@ -209,7 +206,6 @@ def spatial_observation(self):
 def findMinDistances_niegboor(self):
     min_distance = min(self.neighbor_list, key=lambda x: x["distance"])["distance"]
     self.min_distance_dicts =[s["name"] for s in self.neighbor_list if s["distance"] == min_distance]
-    #self.min_distance_dicts = [s for s in self.neighbor_list if s["distance"] == min_distance]
 
 def set_priorities(self):
     denom= 4.0 * self.neighbor_list[0]["distance"] # 4*distance of s0 from sink
@@ -218,7 +214,6 @@ def set_priorities(self):
         if  s["name"] not in self.allowed_spots:
             if s["drones_in"] == 0 : # free spot
                 s["priority"]= s["distance"]* C /denom
-
             else: # s is occupied
                 if s["name"] in self.min_distance_dicts: #close to sink
                     s["priority"]= float("inf")
@@ -227,18 +222,15 @@ def set_priorities(self):
         else:
             s["priority"]= float("inf")
 
-    if self.allowed_spots: #This constraint should be used only one time after the balancing to avoid going behind the border again
+    if self.allowed_spots: # This constraint should be used only one time after the balancing to avoid going behind the border again
         self.allowed_spots=[]
 
-# find the neighbor have to go to and save it in direction_taken
 def find_priority(self):
     min_Priority = min(self.neighbor_list, key=lambda x: x["priority"])["priority"]
     spot_to_go =[s["name"] for s in self.neighbor_list if s["priority"] == min_Priority]
-    #print(int(self.Priority_to_go[0][1:])) #exteract only the number of nigboor
     return int(spot_to_go[0][1:])
 
 def neighbors_election(self):
-    # self.spot={"name": "s" + str(0), "distance": 0, "priority": 0, "drones_in": 1,"drones_in_id":[], "states": [] , "previous_state": 1, "phase": "E"}
     id_free = [id for id, state in zip(self.spot["drones_in_id"], self.spot["states"]) if state == Free]
     return min(id_free) # return the min id of a drone is in state Free
 
@@ -280,7 +272,6 @@ def initial_movement(self,vehicle,id, spot, lon, lat):
             msg= self.build_calibration_message(1,0)
             self.send_msg(msg)
 
-
 def calibration_ping_pong(self, vehicle, msg ):
     indicator, xbee_range= self.decode_calibration_message(msg)
     if indicator==1 and xbee_range==0: # still calibrating
@@ -310,7 +301,7 @@ def calibration_ping_pong(self, vehicle, msg ):
                     # move on the same angle with 1m
                     move_body_PID(vehicle,angle, 1)
                     hover(vehicle)
-                    set_a(a-1)# increae a by 1
+                    set_a(a-1)
                     break
             msg= self.build_calibration_message(-1,a)
     elif indicator==-1 and xbee_range>0:
@@ -330,7 +321,7 @@ def calibration_ping_pong(self, vehicle, msg ):
 def count_element_occurrences(self):
     # Find the maximum element in the direction_taken list
     max_element = 7  # s0 to s6
-    # Create a dictionary to store the frequencies, similar to hash map to count occurrences.
+    # Create a dictionary to store the frequencies, similar to hash map to count occurrences
     frequency_dict = {i: 0 for i in range(max_element + 1)}
     # Count the occurrences of each element
     for direction in self.direction_taken:
@@ -344,11 +335,8 @@ def count_element_occurrences(self):
     # If there are multiple occurrences of the maximum frequency, choose randomly
     return random.choice(max_indices)
 
-def check_border_candidate_eligibility(self, observe=True):
+def check_border_candidate_eligibility(self):
     self.border_candidate=False
-    # Collect the info about the drones around , and that can be ignored in case of drone arriver after election
-    if observe:
-        self.demand_neighbors_info()
     self.dominated_direction= self.count_element_occurrences()
     # Define a dictionary to map directions to the corresponding spots_to_check_for_border values
     direction_to_check_map = {
@@ -378,21 +366,11 @@ def Fire_border_msg(self, header):
     self.send_msg(Msg)
 
 def Forme_border(self):
-    # since border_neighbors is used only for border drone then no need for it
-    #self.border_neighbors=[] #erase border_neighbors because no need for it
     self.check_border_candidate_eligibility()
-
-    # Ensure the drone is the only one in its spot, even if this check is done implicitly before in waiting time.
-
-    while self.spot["drones_in"] > 1:
-        time.sleep(movement_time)
-        self.demand_neighbors_info()
-
     if self.border_candidate :
         self.update_candidate_spot_info_to_neighbors() # Useful if the drone arrived and filled a spot made others sourounded
         '''launch a message circulation for current candidat'''
         self.Fire_border_msg(Forming_border_header)
-
     else:
         #means that the drone is sourounded in the expansion direction it can be set as free
         self.change_state_to(Free)
@@ -401,21 +379,16 @@ def Forme_border(self):
     self.Forming_Border_Broadcast_REC.wait()
     self.Forming_Border_Broadcast_REC.clear() # reset for the next expansion
 
-# This function saves the spots that are occupied for the next expansion
-def save_occupied_spots(self):
-    # save occupied spot sould be only for the free drone or irremovable, The border drone will save the occupied spot for the next expansion
-    self.allowed_spots=[]
-    for s in self.neighbor_list:
-        # Check if 'free' or 'irremovable' is in the states  except's0'
-        if (s['name'] != 's0') and (Free in s['states'] or Irremovable in s['states']):
-            self.allowed_spots.append(s['name'])
+def save_unoccupied_spots_around_border(self):
+    # save spots that doesnt contains any drone from the point of border 
+    self.allowed_spots = [neighbor['name'] for neighbor in  self.neighbor_list if neighbor['drones_in'] == 0]
 
 '''
 -------------------------------------------------------------------------------------
 ----------------------------------- Main functions ----------------------------------
 -------------------------------------------------------------------------------------
 '''
-def expan_border_search(self,vehicle):
+def expand_and_form_border(self,vehicle):
     self.spatial_observation()
     while self.state !=Owner:
         self.set_priorities()
@@ -433,23 +406,28 @@ def expan_border_search(self,vehicle):
            self.elected_droen_arrived.wait() 
            self.elected_droen_arrived.clear()
 
-        calculate_relative_pos(vehicle)
         print("checking for update the state")
         self.spatial_observation()
 
-    # Before initiating the border procedure, it's important to wait for some time to ensures that the drone is alone in its spot.
-    # This step eliminates the possibility of erroneously considering a drone as a border-candidate when another drone in the same spot is about to move.
-    time.sleep(sync_time)
+    while not (all(neighbor['drones_in'] in [0, 1] for neighbor in self.neighbor_list) or
+               all(neighbor['drones_in'] > 0 for neighbor in self.neighbor_list)):
+        # Before initiating the border procedure, it's important to wait for some time to ensures that the drone is alone in its spot.
+        # This step eliminates the possibility of erroneously considering a drone as a border-candidate when another drone in the same spot is about to move.
+        time.sleep(sync_time)
+        self.demand_neighbors_info()
+
     self.Forme_border()# will not return until the drones receive boradcast of forming border
-    self.rec_propagation_indicator=[] # rest this indecator for the next iteration
+        
+    # Reset variables for the next iteration
+    self.rec_propagation_indicator=[] 
     self.rec_candidate=[]
-    self.direction_taken=[] #rest this taken path for the next iteration
+    self.direction_taken=[] 
     self.elected_id=None     
     self.xbee_receive_message_thread.join() # stop listening to message
 
-    # save the spots they are occupied to dont back to them in the next expansion when they are released
+    # save the spots they are unoccupied to dont back behind border in the next expansion
     if self.state==Border:
-        self.save_occupied_spots()
+        self.save_unoccupied_spots_around_border() 
 
     # Time guarantees that all drones begin the searching procedure simultaneously and synchronized.
     time.sleep(sync_time)
@@ -476,7 +454,7 @@ def first_exapnsion (self, vehicle):
         self.send_msg(msg)
     else:
         self.start_expanding.wait()
-    self.expan_border_search(vehicle)
+    self.expand_and_form_border(vehicle)
 
 def further_expansion (self,vehicle):
     if self.state == Border:
@@ -484,5 +462,4 @@ def further_expansion (self,vehicle):
     elif self.state == Irremovable_boarder:
         self.change_state_to(Irremovable)
     else: # State is Free
-        self.expan_border_search(vehicle)
-# old border can be free by using the saved occupied spot in it to see if it i still border ot not
+        self.expand_and_form_border(vehicle)

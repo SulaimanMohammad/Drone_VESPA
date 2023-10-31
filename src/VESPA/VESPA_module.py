@@ -134,8 +134,7 @@ class Drone:
         self.drone_id_to_sink=[]
         self.drone_id_to_border=[]
         self. min_distance_dicts=[] # nigboor close to the sink
-        self.border_neighbors=[] # contains the spots that are occupied while forming the border
-        self.allowed_spots=[]
+        self.allowed_spots=[]    # contains the spots that are not occupied while forming the border
         self.direction_taken=[]  # direction path (spots) that are taken in the phase
         self.neighbor_list = []  # list that contains the 6 neighbors around the current location
         self.rec_propagation_indicator=[]
@@ -481,12 +480,12 @@ class Drone:
             if item not in self.rec_propagation_indicator:
                 self.rec_propagation_indicator.append(item)
 
-    # PositionX , positionY are the coordinates from the sink
-    # Format: _.xx 2 decimal
     def update_location(self, dir):
+        # PositionX , positionY are the coordinates from the sink
+        # Format: _.xx 2 decimal
         x=  DIR_xy_distance_VECTORS[dir][0]
         y= DIR_xy_distance_VECTORS[dir][1]
-        self.positionX =round(self.positionX + x,2) #add the value not assign because it is movement
+        self.positionX =round(self.positionX + x,2) # Add the value not assign because it is movement
         self.positionY = round(self.positionY+ y ,2)
         # Find the distance of the neigboors at the new position
         self.calculate_neighbors_distance_sink()
@@ -530,8 +529,8 @@ class Drone:
         else:
             print("Invalid index provided")
 
-    # Change information about the state of one of neighbors
     def update_state_in_neighbors_list( self, id, state):
+        # Change information about the state of one of neighbors
         # Lock to avoid any data race since there are two threads ( main , xbee)
         with self.lock_neighbor_list:
             for s in self.neighbor_list:
@@ -554,7 +553,6 @@ class Drone:
                 return i  # Return index if a match is found
         return -1  # Return -1 if no match is found
 
-
     def move_to_spot(self,vehicle, destination_spot):
         set_to_move(vehicle)
         self.direction_taken.append( destination_spot)
@@ -565,7 +563,6 @@ class Drone:
         # Arrive to steady state and hover then start observing the location
         hover(vehicle)
 
-    
     def search_for_target(self): # find if there is target in the area or not
         # move in the place and couver it to check if there is target or not
         pass
