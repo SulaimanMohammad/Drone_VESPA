@@ -19,8 +19,6 @@ def interrupt(signal_num, frame):
         vehicle.close()
         sys.exit()
         
-
-create_log_file(os.path.dirname(os.path.abspath(__file__)),  os.path.splitext(os.path.basename(__file__))[0]) 
 global vehicle
 # vehicle = connect (parse_connect(), wait_ready=False) # for simulation 
 vehicle = connect("/dev/serial0", baud= 921600,  wait_ready=False,rate=10) # for raspberry p

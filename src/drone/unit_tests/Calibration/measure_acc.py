@@ -62,7 +62,7 @@ def on_velocity(self, attribute_name, value):
     logger.write(velocity_listener)
     new_velocity_data.set()
 
-create_log_file(os.path.dirname(os.path.abspath(__file__)),  os.path.splitext(os.path.basename(__file__))[0]) 
+create_log_file()
 global vehicle
 
 #vehicle = connect (parse_connect(), wait_ready=False, rate=15) # for simulation 

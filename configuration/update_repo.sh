@@ -51,10 +51,10 @@ else
     echo "Diverged"
 fi
 
-cd /home/$PI_DRONE_DIR/Drone_VESPA/src/drone/unit_tests
+cd /home/$PI_DRONE_DIR/Drone_VESPA/
 # Check if the "log" directory exists
 if [ ! -d "log" ]; then
-  mkdir log
+  mkdir mission_log
   sudo chown -R $USER log
 fi
 

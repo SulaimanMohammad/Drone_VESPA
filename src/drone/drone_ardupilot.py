@@ -18,19 +18,22 @@ from pymavlink import mavutil
 filename = " "
 directory= " "
 
-def create_log_file(dir,script_name ):
-    # Get the name of the script using this module
-    timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+def create_log_file(log_dir_name="mission_log", script_name="mission"):
+    base_dir=os.path.abspath(os.path.join(os.path.dirname(__file__), '../..'))
+    # Get the current timestamp
+    timestamp = datetime.datetime.now().strftime("%H-%M|%Y-%m-%d")
 
-    # Create the log file name
-    global filename
-    filename = f"{script_name}_{timestamp}.log"
-    
-    # Set the global directory variable
+    # Create the directory path for the new log
     global directory
-    directory = os.path.join(dir, 'log')
-    if not os.path.exists(directory): # if log doesnt exist then create it 
-        os.makedirs(directory)
+    directory = os.path.join(base_dir, log_dir_name, timestamp)
+    os.makedirs(directory, exist_ok=True)
+    
+    global filename
+    filename= "travel.log"
+   
+    log_file_path = os.path.join(directory, filename)
+
+    return log_file_path
 
 def open_log_file():
     # Get the absolute path of the log file
@@ -352,8 +355,7 @@ def get_acceleration():
 
     # Change the working directory to the script directory
     os.chdir(script_directory)
-    print(f"Current working directory: {os.getcwd()}")
-
+    
     with open('Operational_Data.txt', 'r') as file:
         for line in file:
             # Check if line contains max_acceleration

@@ -3,7 +3,15 @@ from math import sqrt
 import random
 import copy
 import struct
-from ..drone.drone_ardupilot import *
+import sys
+import os
+import threading
+import time
+# Get the parent directory path
+parent_directory = os.path.abspath(os.path.join(os.path.dirname(__file__), '../drone'))
+# Add the parent directory to sys.path
+sys.path.append(parent_directory)
+from drone_ardupilot import *
 
 '''
 -------------------------------------------------------------------------------------
