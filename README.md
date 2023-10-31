@@ -1,5 +1,4 @@
-<img src="https://github.com/SulaimanMohammad/Drone_VESPA/blob/rearrange/monitoring_interface/logos/VSPA_original.png" width="400">
-
+# Drone_VESPA
 
 ## Setup Raspberry pi
 - Connect raspberry pi to pixhawk using Telemetry 2 port
@@ -24,7 +23,7 @@
 ```
 
 ## Scripts Map
-.
+```
 ├── Configuration 
 ├── src /
 │   ├── VESPA/
@@ -41,6 +40,7 @@
 │       │   └── extract.py
 │       └── other_test...
 └── monitoring_interface
+```
 
 - Drone: "drone_ardupilot.py" API take off and move in specific angle and distance, 
          "Opertional_data" contains the acceleration and id drone and all data needed theough the algorithm 
