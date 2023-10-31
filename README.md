@@ -1,7 +1,8 @@
-# Drone_VESPA
+<img src="https://github.com/SulaimanMohammad/Drone_VESPA/blob/rearrange/monitoring_interface/logos/VSPA_original.png" width="1500">
+
 
 ## Setup Raspberry pi
-- Connect aspberry pi to pixhawk using Telemetry 2 port
+- Connect raspberry pi to pixhawk using Telemetry 2 port
 - Configure raspberry pi to be able to communicate with pixhawk 
 
 ```bash
@@ -11,30 +12,65 @@
 ```bash
         ./rpi_setup.sh
 ```
-- Check for updates, create logs directory, set permissions 
+- Create logs directory, set permissions 
 
 ```bash
         ./update_repo.sh
 ``` 
+- Monitoring the data from all the drones and also set variables
 
-## Scripts Map 
-- "drone_ardupilot.py": API to move take off, and move the drone 
-- "unit_tests" contains implementation of drone_ardupilot 
-- "expan.py", "spanning.py" and "balancing.py" are the pahses in VESPA Algoithm 
+```bash
+        ./monitoring.sh
+```
+
+## Scripts Map
+.
+├── Configuration 
+├── src /
+│   ├── VESPA/
+│   │   ├── VESPA_module.py
+│   │   ├── expansion.py
+│   │   ├── spanning.py 
+│   │   └── balancing.py
+│   ├── done 
+│   ├── drone_ardupilot.py
+│   ├── Opertional_data.text
+│   └── unit_test/
+│       ├── Calibration/
+│       │   ├── measure_acc.py
+│       │   └── extract.py
+│       └── other_test...
+└── monitoring_interface
+
+- Drone: "drone_ardupilot.py" API take off and move in specific angle and distance, 
+         "Opertional_data" contains the acceleration and id drone and all data needed theough the algorithm 
+          "unit_test": contains many tests to check the movement of the drone, also calibration directory that will move 
+          the drone and measure the accelration and set it in Opertional_data to be a start point (optional)
+- VESPA: it contains all the pahses of VESPA Algoithm 
     To see more about this algorithm check the [simulation here](https://github.com/SulaimanMohammad/self-organized-uav)
 
+- Configuration: It contains the bash to configure raspberry pi and also there is one script to get the hardware address of pixhawk  
+- monitoring_interface: contains the html file to see the locations of targets 
 
 ## Run tests 
 - All tests in unit_tests can be used to commuinicate with raspberry pi, telemetry and simulation 
-- The test used in the algorithm of VESPA is  body_frame_move.py 
+- The test used in the algorithm of VESPA is body_frame_move.py 
     - It uses the movement using Yaw , distance and PID 
-    
+    - To run it on physical drone after connecting with ssh to RP 
     ```bash
-        python3 body_frame_move.py
+        python body_frame_move.py
     ``` 
+    - In case of using STL simulation 
+        - launch the simulation, check the ip by writing output in mavlink terminal
+        - Edit connection methode in your tests [ vehicle = connect (parse_connect(), wait_ready=False) ]
+
+     ```bash
+        python body_frame_move.py --connect [your ip]
+    ```  
+
 
 ## Expansion phase
-Here you can have acess [expansion UML](https://SulaimanMohammad.github.io/Drone_VESPA/.exp/expansion.png)
+Here you can have acess [expansion UML](https://raw.githubusercontent.com/SulaimanMohammad/Drone_VESPA/main/UML/expansion.png)
 
 
 ### Forming border communication 
