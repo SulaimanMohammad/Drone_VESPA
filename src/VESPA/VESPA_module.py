@@ -12,7 +12,12 @@ parent_directory = os.path.abspath(os.path.join(os.path.dirname(__file__), '../d
 # Add the parent directory to sys.path
 sys.path.append(parent_directory)
 from drone_ardupilot import *
-
+from pathlib import Path
+# Current script directory
+current_dir = Path(__file__).resolve().parent
+# Path to the parent directory
+parent_dir = current_dir.parent
+Operational_Data_path = parent_dir / 'drone' / 'Operational_Data.txt'
 '''
 -------------------------------------------------------------------------------------
 ---------------------------------- Variables ----------------------------------------
@@ -428,24 +433,24 @@ class Drone:
     -------------------------------------------------------------------------------------
     '''
     def get_id(self):
-        with open('Operational_Data.txt', 'r') as file:
+        with open(Operational_Data_path, 'r') as file:
             for line in file:
                 # Check if line contains max_acceleration
                 if "id" in line:
-                    id = int(line.split('=')[1].strip())
-                return id
-
+                    read_id = int(line.split('=')[1].strip())
+                    return read_id
+                
     def read_xbee_range(self):
-        with open('Operational_Data.txt', 'r') as file:
+        with open(Operational_Data_path, 'r') as file:
             for line in file:
                 # Check if line contains max_acceleration
-                if "a" in line:
+                if "xbee_range" in line:
                     xbee_range = int(line.split('=')[1].strip())
-                return xbee_range
+                    return xbee_range
     
     def update_xbee_range(self,new_a):
-        with open('Operational_Data.txt', 'w') as file:
-            file.write(f'a = {new_a}\n')
+        with open(Operational_Data_path, 'w') as file:
+            file.write(f'xbee_range = {new_a}\n')
  
     def get_state(self):
         with self.lock_state:
