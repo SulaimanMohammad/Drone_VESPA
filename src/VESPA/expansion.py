@@ -1,4 +1,4 @@
-from VESPA_module import *
+from .VESPA_module import *
 '''
 -------------------------------------------------------------------------------------
 ---------------------------------- Communication ------------------------------------
@@ -126,7 +126,7 @@ def handel_elected_drone_arrivale(self,msg):
     if rec_id==self.elected_id:
         self.elected_droen_arrived.set()
     
-def receive_message (self,vehicle):
+def expansion_listener (self,vehicle):
     self.Forming_Border_Broadcast_REC = threading.Event()
 
     while not self.Forming_Border_Broadcast_REC.is_set():
@@ -437,6 +437,11 @@ def expand_and_form_border(self,vehicle):
     self.clear_buffer()
 
 def first_exapnsion (self, vehicle):
+    print(self.id)
+    # Lance a thread to read messages continuously
+    self.xbee_receive_message_thread = threading.Thread(target=expansion_listener, args=(self,vehicle)) #pass the function reference and arguments separately to the Thread constructor.
+    self.xbee_receive_message_thread.start()
+
     # First movement started by commands of the sink
     if self.id==0: #sink:
         arm_and_takeoff(vehicle,self.hight)
@@ -456,6 +461,10 @@ def first_exapnsion (self, vehicle):
     self.expand_and_form_border(vehicle)
 
 def further_expansion (self,vehicle):
+    # Lance a thread to read messages continuously
+    self.xbee_receive_message_thread = threading.Thread(target=expansion_listener, args=(self,vehicle)) #pass the function reference and arguments separately to the Thread constructor.
+    self.xbee_receive_message_thread.start()
+
     if self.state == Border:
         self.change_state_to(Owner) # The border save it is own spot
     elif self.state == Irremovable_boarder:

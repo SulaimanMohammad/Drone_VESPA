@@ -1,6 +1,7 @@
 max_acceleration = 0.7
 max_deceleration = -0.7
 xbee_range=13
+id=1
 C=100
 eps=20
 speed_of_drone=2 # 2 m/s

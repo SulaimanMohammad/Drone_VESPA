@@ -113,6 +113,7 @@ class Drone:
         self.drone_id_to_sink=0
         self.drone_id_to_border=0
         self.a=None
+        self.id=0
         self.border_candidate=False
         self.dominated_direction=0
         self.phase= Expan_header
@@ -146,9 +147,7 @@ class Drone:
         self.neighbors_list_updated = threading.Event()
         self.start_expanding= threading.Event()
         self.elected_droen_arrived= threading.Event()
-        # Lance a thread to read messages continuously
-        self.xbee_receive_message_thread = threading.Thread(target=self.receive_message, args=(self,vehicle)) #pass the function reference and arguments separately to the Thread constructor.
-        self.xbee_receive_message_thread.start()
+        
 
     '''
     -------------------------------------------------------------------------------------
@@ -309,7 +308,7 @@ class Drone:
         pass
 
     def retrive_msg_from_buffer(self):
-        time.slee(0.05) # wait to have msgs in the buffer
+        time.sleep(0.05) # wait to have msgs in the buffer
         # device is the object of Xbee connection
         xbee_message = device.read_data(0.02) #  0.02 timeout in seconds
         # read untile the bufere is empty or retrive 7 msgs
