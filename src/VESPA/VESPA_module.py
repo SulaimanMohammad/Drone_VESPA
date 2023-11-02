@@ -11,52 +11,23 @@ import time
 parent_directory = os.path.abspath(os.path.join(os.path.dirname(__file__), '../drone'))
 # Add the parent directory to sys.path
 sys.path.append(parent_directory)
-from drone_ardupilot import *
+from drone.drone_ardupilot import *
 from pathlib import Path
-# Current script directory
-current_dir = Path(__file__).resolve().parent
-# Path to the parent directory
-parent_dir = current_dir.parent
-Operational_Data_path = parent_dir / 'drone' / 'Operational_Data.txt'
+import re
+
 '''
 -------------------------------------------------------------------------------------
 ---------------------------------- Variables ----------------------------------------
 -------------------------------------------------------------------------------------
 '''
-
 sq3=sqrt(3)
-a= 20 # drone range
-'''aim for a buffer zone. This ensures that even if there's a slight miscalculation in the range or
-a sudden change in environmental conditions, there's some leeway before communication is lost.'''
-a=a*0.95
-C=100
-eps=20
-speed_of_drone=2 # 2 m/s
-movement_time= a*speed_of_drone*(1+ 0.2)  # add 20% of time for safty
-scanning_time= 10 # in second ( TODO function to the speed and size of a )
-sync_time= 10
-multiplier = 100
-defined_groundspeed=1
+a=13
+multiplier=100
 
-DIR_VECTORS = [
-    [0, 0],    # s0 // don't move, stay
-    [90, a],   # s1
-    [30, a],   # s2
-    [330, a],  # s3
-    [270, a],  # s4
-    [210, a],  # s5
-    [150, a]   # s6
-]
-
-DIR_xy_distance_VECTORS = [
-    [0, 0],                              # s0 // don't move, stay
-    [(sq3 * a), 0],                      # s1
-    [(sq3 / 2.0) * a, (3.0 / 2.0) * a],  # s2
-    [-(sq3 / 2) * a, (3.0 / 2.0) * a],   # s3
-    [-sq3 * a, 0],                       # s4
-    [-(sq3 / 2.0) * a, -(3.0/ 2.0) * a], # s5
-    [(sq3 / 2.0) * a, -(3.0 / 2.0) * a]  # s6
-]
+'''Dictionary to hold the variables 
+drones_number, id ,xbee_range, C, eps , speed_of_drone,  movement_time= a*speed_of_drone*(1+ 0.2)  
+scanning_time, sync_time, multiplier, defined_groundspeed '''
+global_vars = {}
 
 def update_DIR_xy_distance_VECTORS():
     global DIR_xy_distance_VECTORS
@@ -70,9 +41,22 @@ def update_DIR_xy_distance_VECTORS():
     [(sq3 / 2.0) * a, -(3.0 / 2.0) * a]   # s6
     ]
 
+    global DIR_VECTORS
+    DIR_VECTORS = [
+    [0, 0],    # s0 // don't move, stay
+    [90, a],   # s1
+    [30, a],   # s2
+    [330, a],  # s3
+    [270, a],  # s4
+    [210, a],  # s5
+    [150, a]   # s6
+    ]
+
 def set_a(val):
+    '''* 0.95 aim for a buffer zone. This ensures that even if there's a slight miscalculation in the range or
+    a sudden change in environmental conditions, there's some leeway before communication is lost.'''
     global a
-    a= val
+    a= val*0.95
     update_DIR_xy_distance_VECTORS() # changing of a should change the direction distances
 
 
@@ -113,8 +97,6 @@ Local_balance_header="L"
 Guidance_header= "G"
 Balance_header= "B"
 
-
-
 '''
 -------------------------------------------------------------------------------------
 ----------------------------- Calss members, init__ ---------------------------------
@@ -126,11 +108,11 @@ class Drone:
         self.positionY=y
         self.distance_from_sink=0 # the distance of the drone from  the sink
         self.hight=z
-        self.state=1
+        self.state=None
         self.previous_state=1
         self.drone_id_to_sink=0
         self.drone_id_to_border=0
-        self.a=a
+        self.a=None
         self.border_candidate=False
         self.dominated_direction=0
         self.phase= Expan_header
@@ -144,8 +126,9 @@ class Drone:
         self.neighbor_list = []  # list that contains the 6 neighbors around the current location
         self.rec_propagation_indicator=[]
         self.elected_id=None
-        self.id=self.get_id()
-        set_a(self.read_xbee_range()) # read last value of a and set it in the code  
+        self.read_vars_from_file() # Include set id and xbee range "a" 
+        # Set the variables globally
+        globals().update(global_vars)
         # init s0 and it will be part of the spots list
         self.neighbor_list=[{"name": "s" + str(0), "distance": 0, "priority": 0, "drones_in": 1,"drones_in_id":[], "states": [] , "previous_state": []}]
         # save the first spot which is s0 the current place of the drone
@@ -336,9 +319,9 @@ class Drone:
         else:
             return None
 
-    def encode_float_to_int(self, value, multiplier=100):
+    def encode_float_to_int(self, value, precision= multiplier):
         """Encodes a float as an integer with a given multiplier."""
-        encoded = int(value * multiplier)
+        encoded = int(value * precision)
         # Choose the format based on the size of the integer
         format_char = '>H' if encoded <= 65535 else '>I'
         return struct.pack(format_char, encoded)
@@ -432,25 +415,43 @@ class Drone:
     -------------------------------- Update upon movement--------------------------------
     -------------------------------------------------------------------------------------
     '''
-    def get_id(self):
+    def read_vars_from_file(self):
+        # Current script directory
+        current_dir = Path(__file__).resolve().parent
+        # Path to the parent directory
+        parent_dir = current_dir.parent
+        global Operational_Data_path
+        Operational_Data_path = parent_dir/'Operational_Data.txt'
+
         with open(Operational_Data_path, 'r') as file:
             for line in file:
-                # Check if line contains max_acceleration
-                if "id" in line:
-                    read_id = int(line.split('=')[1].strip())
-                    return read_id
-                
-    def read_xbee_range(self):
-        with open(Operational_Data_path, 'r') as file:
-            for line in file:
-                # Check if line contains max_acceleration
-                if "xbee_range" in line:
-                    xbee_range = int(line.split('=')[1].strip())
-                    return xbee_range
-    
+                match = re.match(r"(\w+)\s*=\s*([^#]+)", line)
+                if match:
+                    var_name, value = match.groups()
+                    if var_name in ["max_acceleration", "max_deceleration"]:
+                        continue
+                    if var_name == "id":
+                        self.id = int(value.strip())  # Set id to the object's attribute
+                    elif var_name == "xbee_range":
+                        set_a(int(value.strip()))  # Use set_a() for xbee_range
+                    else:
+                        try:
+                            global_vars[var_name] = eval(value.strip(), {}, global_vars)
+                        except NameError:
+                            global_vars[var_name] = value.strip()
+            
     def update_xbee_range(self,new_a):
+        new_content = []
+        with open(Operational_Data_path, 'r') as file:
+            for line in file:
+                if line.startswith('xbee_range'):
+                    new_content.append(f'xbee_range = {new_a}\n')
+                else:
+                    new_content.append(line)
+
+        # Write the updated content back to the file
         with open(Operational_Data_path, 'w') as file:
-            file.write(f'xbee_range = {new_a}\n')
+            file.writelines(new_content)
  
     def get_state(self):
         with self.lock_state:

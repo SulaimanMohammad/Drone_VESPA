@@ -185,7 +185,6 @@ def receive_message (self,vehicle):
 -------------------------------------------------------------------------------------
 '''
 
-# All float numbers are _.xx 2 decimal
 def calculate_neighbors_distance_sink(self):
     DxDy2 = round((self.positionX * self.positionX) + (self.positionY * self.positionY),2)
     DxDy3a2 = round(DxDy2 + 3 * a * a,2)
@@ -417,21 +416,21 @@ def expand_and_form_border(self,vehicle):
         self.demand_neighbors_info()
 
     self.Forme_border()# will not return until the drones receive boradcast of forming border
-        
+    
+    # Save the spots they are unoccupied to dont back behind border in the next expansion
+    if self.state==Border:
+        self.save_unoccupied_spots_around_border()     
+
+    # Time guarantees that all drones begin the searching procedure simultaneously and synchronized.
+    time.sleep(sync_time)
+    self.search_for_target() # This is blocking until the end of movement
+
     # Reset variables for the next iteration
     self.rec_propagation_indicator=[] 
     self.rec_candidate=[]
     self.direction_taken=[] 
     self.elected_id=None     
     self.xbee_receive_message_thread.join() # stop listening to message
-
-    # save the spots they are unoccupied to dont back behind border in the next expansion
-    if self.state==Border:
-        self.save_unoccupied_spots_around_border() 
-
-    # Time guarantees that all drones begin the searching procedure simultaneously and synchronized.
-    time.sleep(sync_time)
-    self.search_for_target() # This is blocking until the end of movement
 
     # Since broadcast messages might still be circulating while retrieval has stopped, there could be leftover messages in the buffer.
     # It's essential to clear the buffer before the next phase to prevent any surplus.
