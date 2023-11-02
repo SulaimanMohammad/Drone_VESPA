@@ -1,5 +1,11 @@
 max_acceleration = 0.7
 max_deceleration = -0.7
-drones_number=4
-id=1
 xbee_range=13
+C=100
+eps=20
+speed_of_drone=2 # 2 m/s
+# movement_time= a*speed_of_drone*(1+ 0.2)  # add 20% of time for safty
+scanning_time= 10 # in second (function to the speed and size of a )
+sync_time= 10
+multiplier = 100
+defined_groundspeed=1

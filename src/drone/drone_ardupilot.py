@@ -11,6 +11,7 @@ import inspect
 import numpy as np
 from simple_pid import PID
 import threading
+from pathlib import Path
 
 from dronekit import Command
 from pymavlink import mavutil
@@ -350,13 +351,14 @@ def check_mode(self):
         self.mode = VehicleMode("GUIDED")
     
 def get_acceleration():
-    # Get the directory where the script is located
-    script_directory = os.path.dirname(os.path.abspath(__file__))
-
-    # Change the working directory to the script directory
-    os.chdir(script_directory)
+    # Current script directory
+    current_dir = Path(__file__).resolve().parent
+    # Path to the parent directory
+    parent_dir = current_dir.parent
+    global Operational_Data_path
+    Operational_Data_path = parent_dir/'Operational_Data.txt'
     
-    with open('Operational_Data.txt', 'r') as file:
+    with open(Operational_Data_path, 'r') as file:
         for line in file:
             # Check if line contains max_acceleration
             if "max_acceleration" in line:
@@ -372,10 +374,20 @@ def get_acceleration():
 
 def save_acceleration(max_acceleration, max_deceleration): 
     # Open the file in write mode and write the new values
-    with open('Operational_Data.txt', 'w') as file:
-        file.write(f'max_acceleration = {max_acceleration}\n')
-        file.write(f'max_deceleration = {max_deceleration}\n')
+    new_content = []
+    with open(Operational_Data_path, 'r') as file:
+        for line in file:
+            if line.startswith('max_acceleration'):
+                new_content.append(f'max_acceleration = {max_acceleration}\n')
+            elif line.startswith('max_deceleration'):
+                new_content.append(f'max_deceleration = {max_deceleration}\n')
+            else:
+                new_content.append(line)
 
+    # Write the updated content back to the file
+    with open(Operational_Data_path, 'w') as file:
+        file.writelines(new_content)
+        
 
 '''
 yaw values are fluctuating around 0 and 365 degrees, which is very close to the north direction (0 degrees) 
