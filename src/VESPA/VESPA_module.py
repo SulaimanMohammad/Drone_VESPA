@@ -8,7 +8,7 @@ import os
 import threading
 import time
 # Get the parent directory path
-parent_directory = os.path.abspath(os.path.join(os.path.dirname(__file__), '../drone'))
+parent_directory = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 # Add the parent directory to sys.path
 sys.path.append(parent_directory)
 from drone.drone_ardupilot import *
@@ -92,6 +92,7 @@ Inherit_header= "I"
 Forming_border_header= "F"
 #Spanning Headers
 Spanning_header= "S"
+Target_coordinates_header= "T"
 # Blancing Headers
 Local_balance_header="L"
 Guidance_header= "G"
@@ -103,7 +104,7 @@ Balance_header= "B"
 -------------------------------------------------------------------------------------
 '''
 class Drone:
-    def __init__(self, vehicle, x,y,z):
+    def __init__(self, x,y,z):
         self.positionX=x
         self.positionY=y
         self.distance_from_sink=0 # the distance of the drone from  the sink
@@ -113,7 +114,8 @@ class Drone:
         self.drone_id_to_sink=0
         self.drone_id_to_border=0
         self.a=None
-        self.id=0
+        self.id=None
+        self.target_detected= False
         self.border_candidate=False
         self.dominated_direction=0
         self.phase= Expan_header
@@ -570,4 +572,8 @@ class Drone:
 
     def search_for_target(self): # find if there is target in the area or not
         # move in the place and couver it to check if there is target or not
-        pass
+        self.target_detected= True
+        if self.state == Border:
+            self.change_state_to(Irremovable_boarder)
+        else: 
+            self.change_state_to(Irremovable)
