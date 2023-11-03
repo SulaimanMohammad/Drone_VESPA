@@ -42,7 +42,15 @@ trap cleanup SIGINT SIGTERM
 # Find an available port starting from 8000
 PORT=$(find_available_port 8000)
 
-python -m http.server $PORT & SERVER_PID=$!
+PYTHON_CMD=$(command -v python3 || command -v python)
+
+if [ -z "$PYTHON_CMD" ]; then
+    echo "Neither python3 nor python could be found. Please install Python."
+    exit 1
+fi
+
+$PYTHON_CMD -m http.server $PORT & SERVER_PID=$!
+
 sleep 3
 
 # Open the URL in the default browser
