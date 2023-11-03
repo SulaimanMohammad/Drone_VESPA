@@ -147,8 +147,10 @@ class Drone:
         self.lock_state = threading.Lock()
         self.lock_neighbor_list = threading.Lock()
         self.neighbors_list_updated = threading.Event()
-        self.start_expanding= threading.Event()
-        self.elected_droen_arrived= threading.Event()
+        self.elected_droen_arrived= None    
+        self.Forming_Border_Broadcast_REC= None
+        self.start_expanding= None
+        self.end_of_balancin= None
         
 
     '''

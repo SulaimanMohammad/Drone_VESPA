@@ -17,7 +17,7 @@ def build_local_movement_message(self, target_id, destination):
     message += b'\n'
     return message
 
-def decode_local_movement_message(self, message):
+def decode_local_movement_message(message):
     max_byte_count = struct.unpack('>B', message[1:2])[0]  # Dereferenced the tuple to get the value
     # Extract target_id using max byte count
     target_id_start = 2
@@ -112,7 +112,7 @@ class Boarder_Timer:
         print("Time's up! ")
         border_t.local_balancing.set() # flag to identify local balancing
         # Need to be sent in this stage,the thread of listining of free drone would joined after completing the circle 
-        message= self. build_shared_allowed_spots_message()
+        message= build_shared_allowed_spots_message(self)
         self.send_msg(message) 
         self.Fire_border_msg(Balance_header)
         self.end_of_balancing.wait()
@@ -120,7 +120,7 @@ class Boarder_Timer:
         self.end_of_balancing.clear() 
         border_listener.join() # stop listenning
 
-def border_listener(self,border_t, timeout):
+def border_listener(self,border_t):
     while not self.end_of_balancing.is_set(): # the end is not reached , keep listenning 
         msg= self.retrive_msg_from_buffer() 
 
@@ -131,10 +131,10 @@ def border_listener(self,border_t, timeout):
             positionX, positionY, state, id_value= self.decode_spot_info_message(msg)
             self.update_neighbors_list(positionX, positionY, state, id_value )
             border_t.remaining_time = border_t.timeout     
-            all_moves= self.lead_local_balancing()
+            all_moves= lead_local_balancing(self)
             for move in all_moves:
                 id, destination = move  # Unpack the tuple
-                msg= self.build_local_movement_message(id, destination)
+                msg= build_local_movement_message(self, id, destination)
                 self.send_msg(msg)
 
         if msg.startswith(Balance_header.encode()) and msg.endswith(b'\n'):
@@ -231,7 +231,6 @@ def search_to_border(self):
         max_distance_spot = max(self.neighbor_list, key=lambda x: x['distance'])
         return border_found, int(max_distance_spot['name'][1:]) 
 
-
 def balancing(self, vehicle):
 
     # Border is the chef of the spot 
@@ -240,12 +239,12 @@ def balancing(self, vehicle):
         border_process.run()
     
     elif self.state == Free: 
-        self.xbee_receive_message_thread = threading.Thread(target=communication_balancing_free_drones, args=(self,vehicle,)) #pass the function reference and arguments separately to the Thread constructor.
-        self.xbee_receive_message_thread.start()
+        xbee_receive_message_thread = threading.Thread(target=communication_balancing_free_drones, args=(self,vehicle,)) #pass the function reference and arguments separately to the Thread constructor.
+        xbee_receive_message_thread.start()
         border_found= False
         while border_found == False : # no border in the nieghbor
             self.demand_neighbors_info()
-            border_found, spot_to_go = self.search_to_border()
+            border_found, spot_to_go = search_to_border(self)
             # Move             
             self.move_to_spot(vehicle, spot_to_go)
         # This message will be read by the border drone and its niegbor
@@ -258,6 +257,7 @@ def balancing(self, vehicle):
     self.rec_propagation_indicator=[]  
     self.rec_candidate=[]   
     self.direction_taken=[]
+    xbee_receive_message_thread.join()
     self.clear_buffer()
 
     

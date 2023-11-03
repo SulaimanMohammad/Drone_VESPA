@@ -4,7 +4,7 @@ from .VESPA_module import *
 ---------------------------------- Communication ------------------------------------
 -------------------------------------------------------------------------------------
 '''
-def build_movement_command_message(self,id, spot, float1, float2):
+def build_movement_command_message(id, spot, float1, float2):
     # Movement messages are encoded using string beause they are done only once, efficiency accepted
     # Convert numbers to string and encode
     id_str= str(id).encode()
@@ -15,7 +15,7 @@ def build_movement_command_message(self,id, spot, float1, float2):
     message = Movement_command.encode() + id_str +b','+s_str+ b','+ float1_str + b',' + float2_str + b'\n'
     return message
 
-def decode_movement_command_message(self,message):
+def decode_movement_command_message(message):
     # Remove header and terminal
     content = message[1:-1]
     # Split by the comma to get floats
@@ -61,25 +61,6 @@ def build_inherit_message(self,id_rec):
     message += b'\n'
     return message
 
-def build_expan_elected(self,id):
-    # Determine max byte count for numbers
-    max_byte_count = self.determine_max_byte_size(id)
-    # Encode the header and the max byte count
-    message = Expan_header.encode() + struct.pack('>B', max_byte_count)
-    # Pack `id` based on max_byte_count
-    message += id.to_bytes(max_byte_count, byteorder='big')
-    message += b'\n'
-    return message
-   
-def decode_expan_elected(message): 
-    # Extract the max byte count
-    max_byte_count = struct.unpack('>B', message[1:2])[0]
-    # Extract the id using the appropriate byte count
-    id_start = 2
-    id_end = id_start + max_byte_count
-    elected_id = int.from_bytes(message[id_start:id_end], byteorder='big')
-    return elected_id
-
 def decode_inherit_message(message):
     index = len(Inherit_header.encode())
     # Extract max_byte_count and the length of rec_candidate list
@@ -104,25 +85,44 @@ def decode_inherit_message(message):
     id_rec = int.from_bytes(message[index:index+max_byte_count], 'big')
     return rec_candidate_values, rec_propagation_indicator_values, id_rec
 
+def build_expan_elected(self,id):
+    # Determine max byte count for numbers
+    max_byte_count = self.determine_max_byte_size(id)
+    # Encode the header and the max byte count
+    message = Expan_header.encode() + struct.pack('>B', max_byte_count)
+    # Pack `id` based on max_byte_count
+    message += id.to_bytes(max_byte_count, byteorder='big')
+    message += b'\n'
+    return message
+   
+def decode_expan_elected(message): 
+    # Extract the max byte count
+    max_byte_count = struct.unpack('>B', message[1:2])[0]
+    # Extract the id using the appropriate byte count
+    id_start = 2
+    id_end = id_start + max_byte_count
+    elected_id = int.from_bytes(message[id_start:id_end], byteorder='big')
+    return elected_id
+
 def handel_broken_into_spot(self, msg):
     if self.border_candidate== True:
         positionX, positionY, state, previous_state,id_rec= self.decode_spot_info_message(msg)
         self.update_neighbors_list(positionX, positionY, state, previous_state,id_rec) # No need to mutex since the drone is in border_candidate only in it was Owner and reserved spot
-        self.check_border_candidate_eligibility() # use only the updated list and see if the current drone still candidate
+        check_border_candidate_eligibility(self) # use only the updated list and see if the current drone still candidate
         if self.border_candidate == False: # changed due to 6 neigbors filled
             self.change_state_to(Free) # Has 6 neighbors
             if not self.rec_candidate: # if the rec_candidate is not empty, means messages for border are already received
-                msg=self.build_inherit_message(id_rec) # id_rec is the id of the drone hopped in
+                msg= build_inherit_message(self, id_rec) # id_rec is the id of the drone hopped in
                 self.send_msg(msg)
 
 def handel_inheritence_message(self, msg):
-        new_rec_candidate_values, new_rec_propagation_indicator_values, id_rec= self.decode_inherit_message(msg)
+        new_rec_candidate_values, new_rec_propagation_indicator_values, id_rec= decode_inherit_message(msg)
         if id_rec== self.id:
             self.update_rec_candidate(new_rec_candidate_values)
             self.update_rec_propagation_indicator(new_rec_propagation_indicator_values)
 
 def handel_elected_drone_arrivale(self,msg):
-    rec_id=self.decode_expan_elected(msg)
+    rec_id=decode_expan_elected(msg)
     if rec_id==self.elected_id:
         self.elected_droen_arrived.set()
     
@@ -136,23 +136,23 @@ def expansion_listener (self,vehicle):
         self.exchange_neighbors_info_communication(msg)
 
         if msg.startswith(Movement_command) and msg.endswith("\n"):
-            id, spot, lon, lat=self.decode_movement_command_message(msg)
+            id, spot, lon, lat= decode_movement_command_message(msg)
             if id==-1 and spot==-1 and lon==0 and lat==0: # mean all drone are in sky
                 self.start_expanding.set()
             else:
-                self.initial_movement(vehicle,id, spot, lon, lat)
+                initial_movement(self, vehicle,id, spot, lon, lat)
 
         elif msg.startswith(Calibration) and msg.endswith("\n"):
-            self.calibration_ping_pong(vehicle, msg )
+            calibration_ping_pong(self, vehicle, msg )
 
         elif msg.startswith(Expan_header.encode()) and msg.endswith(b'\n'):
-            self.handel_elected_drone_arrivale(msg)
+            handel_elected_drone_arrivale(self, msg)
 
         elif msg.startswith(Arrival_header.encode()) and msg.endswith(b'\n'):
-            self.handel_broken_into_spot(msg)
+            handel_broken_into_spot(self, msg)
 
         elif msg.startswith(Inherit_header.encode()) and msg.endswith(b'\n'):
-            self.handel_inheritence_message(msg)
+            handel_inheritence_message(self, msg)
 
 
         elif msg.startswith(Forming_border_header.encode()) and msg.endswith(b'\n'): # message starts with F end with \n
@@ -208,7 +208,7 @@ def findMinDistances_niegboor(self):
 
 def set_priorities(self):
     denom= 4.0 * self.neighbor_list[0]["distance"] # 4*distance of s0 from sink
-    self.findMinDistances_niegboor()
+    findMinDistances_niegboor(self)
     for s in self.neighbor_list:
         if  s["name"] not in self.allowed_spots:
             if s["drones_in"] == 0 : # free spot
@@ -240,12 +240,12 @@ def sink_movement_command(self,vehicle,id):
         current_lat = vehicle.location.global_relative_frame.lat
         current_lon = vehicle.location.global_relative_frame.lon
         long, lat= new_coordinates(current_lon, current_lat, distance , angle)
-        msg= self.build_movement_command_message(id,destination_spot_random, long, lat)
+        msg= build_movement_command_message(id,destination_spot_random, long, lat)
         self.send_msg(msg)
         time.sleep((a/defined_groundspeed)+1 )# wait until arrival
     else:
         # It is command to drone to start,( 0,0) is null island where it is imposible to start from
-        msg= self.build_movement_command_message(id,destination_spot_random, 0, 0)
+        msg= build_movement_command_message(id,destination_spot_random, 0, 0)
 
 def initial_movement(self,vehicle,id, spot, lon, lat):
     if id !=0 and id==self.id: # drone is not sink and it is targeted
@@ -268,25 +268,25 @@ def initial_movement(self,vehicle,id, spot, lon, lat):
         angle, distance = self.convert_spot_angle_distance(spot)
         set_yaw_to_dir_PID( vehicle, angle) # set the angle in the same direction taken since simple goto can include rotation
         if self.id==1: # only first drone does the range calibration
-            msg= self.build_calibration_message(1,0)
+            msg= build_calibration_message(1,0)
             self.send_msg(msg)
 
 def calibration_ping_pong(self, vehicle, msg ):
-    indicator, xbee_range= self.decode_calibration_message(msg)
+    indicator, xbee_range= decode_calibration_message(msg)
     if indicator==1 and xbee_range==0: # still calibrating
         if self.id==0:# only the sink respond
-            respond_msg= self.build_calibration_message(1,0)
+            respond_msg= build_calibration_message(1,0)
             self.send_msg( respond_msg)
 
         elif self.id==1:
             while True:
-                msg= self.build_calibration_message(1,0)
+                msg= build_calibration_message(1,0)
                 self.send_msg(msg)
                 time.sleep(1)
                 rec_messge= self.retrive_msg_from_buffer()
                 if rec_messge != None: # A message recived
                     if msg.startswith(Calibration.encode()) and msg.endswith(b'\n'):
-                        indicator, xbee_range= self.decode_calibration_message(rec_messge)
+                        indicator, xbee_range= decode_calibration_message(rec_messge)
                         if indicator==1 and xbee_range==0:
                             set_to_move(vehicle)
                             # move on the same angle with 1m
@@ -302,10 +302,10 @@ def calibration_ping_pong(self, vehicle, msg ):
                     hover(vehicle)
                     set_a(a-1)
                     break
-            msg= self.build_calibration_message(-1,a)
+            msg= build_calibration_message(-1,a)
     elif indicator==-1 and xbee_range>0:
         if self.id==0:
-            respond_msg= self.build_calibration_message(0,xbee_range)
+            respond_msg= build_calibration_message(0,xbee_range)
             self.send_msg(respond_msg)
     elif indicator==0 and xbee_range>0:
         self.update_xbee_range(a)
@@ -336,7 +336,7 @@ def count_element_occurrences(self):
 
 def check_border_candidate_eligibility(self):
     self.border_candidate=False
-    self.dominated_direction= self.count_element_occurrences()
+    self.dominated_direction= count_element_occurrences(self)
     # Define a dictionary to map directions to the corresponding spots_to_check_for_border values
     direction_to_check_map = {
         1: [1, 2, 6],
@@ -365,11 +365,11 @@ def Fire_border_msg(self, header):
     self.send_msg(Msg)
 
 def Forme_border(self):
-    self.check_border_candidate_eligibility()
+    check_border_candidate_eligibility(self)
     if self.border_candidate :
         self.update_candidate_spot_info_to_neighbors() # Useful if the drone arrived and filled a spot made others sourounded
         '''launch a message circulation for current candidat'''
-        self.Fire_border_msg(Forming_border_header)
+        Fire_border_msg(self, Forming_border_header)
     else:
         #means that the drone is sourounded in the expansion direction it can be set as free
         self.change_state_to(Free)
@@ -388,17 +388,17 @@ def save_unoccupied_spots_around_border(self):
 -------------------------------------------------------------------------------------
 '''
 def expand_and_form_border(self,vehicle):
-    self.spatial_observation()
+    spatial_observation(self)
     while self.state !=Owner:
-        self.set_priorities()
-        destination_spot= self.find_priority()
-        self.elected_id= self.neighbors_election()
+        set_priorities(self)
+        destination_spot= find_priority(self)
+        self.elected_id= neighbors_election(self)
         if self.elected_id== self.id: # current drone is elected one to move
             if destination_spot != 0: # Movement to another spot not staying 
                 print ("go to S", destination_spot)
                 self.move_to_spot(vehicle, destination_spot)
                 # After move_to_spot retuen it means arrivale 
-                movement_done_msg= self.build_expan_elected(self.id)
+                movement_done_msg= build_expan_elected(self, self.id)
                 self.send_msg(movement_done_msg)
         else:
            # Wait untile the elected drone to arrive to next spot.
@@ -406,7 +406,7 @@ def expand_and_form_border(self,vehicle):
            self.elected_droen_arrived.clear()
 
         print("checking for update the state")
-        self.spatial_observation()
+        spatial_observation(self)
 
     while not (all(neighbor['drones_in'] in [0, 1] for neighbor in self.neighbor_list) or
                all(neighbor['drones_in'] > 0 for neighbor in self.neighbor_list)):
@@ -415,11 +415,11 @@ def expand_and_form_border(self,vehicle):
         time.sleep(sync_time)
         self.demand_neighbors_info()
 
-    self.Forme_border()# will not return until the drones receive boradcast of forming border
+    Forme_border(self)# will not return until the drones receive boradcast of forming border
     
     # Save the spots they are unoccupied to dont back behind border in the next expansion
     if self.state==Border:
-        self.save_unoccupied_spots_around_border()     
+        save_unoccupied_spots_around_border(self)     
 
     # Time guarantees that all drones begin the searching procedure simultaneously and synchronized.
     time.sleep(sync_time)
@@ -430,18 +430,14 @@ def expand_and_form_border(self,vehicle):
     self.rec_candidate=[]
     self.direction_taken=[] 
     self.elected_id=None     
-    self.xbee_receive_message_thread.join() # stop listening to message
-
-    # Since broadcast messages might still be circulating while retrieval has stopped, there could be leftover messages in the buffer.
-    # It's essential to clear the buffer before the next phase to prevent any surplus.
-    self.clear_buffer()
+    
 
 def first_exapnsion (self, vehicle):
-    print(self.id)
     # Lance a thread to read messages continuously
-    self.xbee_receive_message_thread = threading.Thread(target=expansion_listener, args=(self,vehicle)) #pass the function reference and arguments separately to the Thread constructor.
-    self.xbee_receive_message_thread.start()
-
+    xbee_receive_message_thread = threading.Thread(target=expansion_listener, args=(self,vehicle)) #pass the function reference and arguments separately to the Thread constructor.
+    xbee_receive_message_thread.start()
+    self.start_expanding= threading.Event()
+    self.elected_droen_arrived= threading.Event()
     # First movement started by commands of the sink
     if self.id==0: #sink:
         arm_and_takeoff(vehicle,self.hight)
@@ -452,22 +448,32 @@ def first_exapnsion (self, vehicle):
                 if "drones_number" in line:
                     drones_number = float(line.split('=')[1].strip())
         for i in range(1,drones_number+1):
-            self.sink_movement_command(vehicle,i)
+            sink_movement_command(self,vehicle,i)
         # The end send message referes that all in position
-        msg= self.build_movement_command_message(-1,-1, 0, 0)
+        msg= build_movement_command_message(-1,-1, 0, 0)
         self.send_msg(msg)
     else:
         self.start_expanding.wait()
-    self.expand_and_form_border(vehicle)
+    expand_and_form_border(self, vehicle)
+
+    xbee_receive_message_thread.join() # stop listening to message
+    # Since broadcast messages might still be circulating while retrieval has stopped, there could be leftover messages in the buffer.
+    # It's essential to clear the buffer before the next phase to prevent any surplus.
+    self.clear_buffer()
 
 def further_expansion (self,vehicle):
     # Lance a thread to read messages continuously
-    self.xbee_receive_message_thread = threading.Thread(target=expansion_listener, args=(self,vehicle)) #pass the function reference and arguments separately to the Thread constructor.
-    self.xbee_receive_message_thread.start()
-
+    xbee_receive_message_thread = threading.Thread(target=expansion_listener, args=(self,vehicle)) #pass the function reference and arguments separately to the Thread constructor.
+    xbee_receive_message_thread.start()
+    self.elected_droen_arrived= threading.Event()
+    
     if self.state == Border:
         self.change_state_to(Owner) # The border save it is own spot
     elif self.state == Irremovable_boarder:
         self.change_state_to(Irremovable)
     else: # State is Free
         self.expand_and_form_border(vehicle)
+    
+    xbee_receive_message_thread.join() 
+    self.clear_buffer()
+
