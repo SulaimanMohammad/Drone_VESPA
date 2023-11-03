@@ -17,28 +17,27 @@ from dronekit import Command
 from pymavlink import mavutil
 # Declare global variables for logs 
 filename = " "
-directory= " "
 
 def create_log_file(log_dir_name="mission_log", script_name="mission"):
     base_dir=os.path.abspath(os.path.join(os.path.dirname(__file__), '../..'))
     # Get the current timestamp
+    global timestamp 
     timestamp = datetime.datetime.now().strftime("%H-%M|%Y-%m-%d")
 
     # Create the directory path for the new log
-    global directory
-    directory = os.path.join(base_dir, log_dir_name, timestamp)
-    os.makedirs(directory, exist_ok=True)
-    
+    global log_directory
+    log_directory = os.path.join(base_dir, log_dir_name, timestamp)
+    os.makedirs(log_directory, exist_ok=True)
     global filename
     filename= "travel.log"
-   
-    log_file_path = os.path.join(directory, filename)
+    log_file_path = os.path.join(log_directory, filename)
 
-    return log_file_path
+def get_log_filr_directory():
+    return log_directory
 
 def open_log_file():
     # Get the absolute path of the log file
-    log_file_path = os.path.join(directory, filename)
+    log_file_path = os.path.join(log_directory, filename)
     # Open the log file
     return open(log_file_path, 'a') # dont use "w" because it remove all what was before after each open
 
