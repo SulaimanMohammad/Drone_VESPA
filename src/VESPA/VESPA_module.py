@@ -219,6 +219,25 @@ class Drone:
             for s in self.neighbor_list:
                 target_ids.extend(s["drones_in_id"]) # add the id of all the niegbors including the current
         return target_ids
+    
+    def choose_spot_right_handed(self):
+        # Start from index 1 to skip 's0'
+        neighbors_without_s0 = self.neighbor_list[1:]
+        
+        # If s1 has drones_in > 0, choose the last spot with drones_in > 0 before any drones_in = 0
+        if neighbors_without_s0[0]["drones_in"] > 0:
+            last_non_zero_index = 0
+            for index, neighbor in enumerate(neighbors_without_s0):
+                if neighbor["drones_in"] == 0:
+                    break
+                last_non_zero_index = index
+            return neighbors_without_s0[last_non_zero_index]["drones_in_id"]
+        else:
+            # If s1 has drones_in = 0, choose the first spot with drones_in > 0
+            for neighbor in neighbors_without_s0:
+                if neighbor["drones_in"] > 0:
+                    return neighbor["drones_in_id"]
+            
 
     #Return the byte count necessary to represent max ID.
     def determine_max_byte_size (slef,number):
