@@ -21,7 +21,7 @@ import re
 -------------------------------------------------------------------------------------
 '''
 sq3=sqrt(3)
-a=13
+a=20
 multiplier=100
 
 '''Dictionary to hold the variables 
@@ -40,7 +40,6 @@ def update_DIR_xy_distance_VECTORS():
     [-(sq3 / 2.0) * a, -(3.0/ 2.0) * a],  # s5
     [(sq3 / 2.0) * a, -(3.0 / 2.0) * a]   # s6
     ]
-
     global DIR_VECTORS
     DIR_VECTORS = [
     [0, 0],    # s0 // don't move, stay
@@ -53,12 +52,27 @@ def update_DIR_xy_distance_VECTORS():
     ]
 
 def set_a(val):
-    '''* 0.95 aim for a buffer zone. This ensures that even if there's a slight miscalculation in the range or
+    ''' a* 0.95 aim for a buffer zone. This ensures that even if there's a slight miscalculation in the range or
     a sudden change in environmental conditions, there's some leeway before communication is lost.'''
     global a
     a= val*0.95
     update_DIR_xy_distance_VECTORS() # changing of a should change the direction distances
 
+def calculate_spots_coordinates(x,y):
+    # Your spots coordinates list
+    spots_coordinates = []
+    for i in range(1, 7):
+        s = {"name": "s" + str(i), "x": 0, "y": 0, "drones_in": 0, "distance":0}
+        spots_coordinates.append(s)
+
+    # Now, update the spots_coordinates with values from DIR_xy_distance_VECTORS
+    for i, spot in enumerate(spots_coordinates, start=1):
+        vector = DIR_xy_distance_VECTORS[i]
+        spot['x'], spot['y'] = round(x+vector[0],2), round(y+vector[1],2)
+        spot["distance"]=sqrt( spot['x']*spot['x']+ spot['y']* spot['y'])
+    # Print the result to verify
+    for spot in spots_coordinates:
+        print(spot)
 
 formula_dict = {
     "s0": "sqrt(DxDy2)",
@@ -179,6 +193,7 @@ class Drone:
         while msg.startswith(Reponse_header.encode()):
             positionX, positionY, state, previous_state,id_value= self.decode_spot_info_message(msg)
             self.update_neighbors_list(positionX, positionY, state, previous_state,id_value)
+            self.calculate_neighbors_distance_sink()
             msg= self.retrive_msg_from_buffer()
         self.neighbors_list_updated.set()
 
@@ -418,6 +433,20 @@ class Drone:
     -------------------------------- Update upon movement--------------------------------
     -------------------------------------------------------------------------------------
     '''
+    def calculate_neighbors_distance_sink(self):
+        DxDy2 = round((self.positionX * self.positionX) + (self.positionY * self.positionY),2)
+        DxDy3a2 = round(DxDy2 + 3 * a * a,2)
+        sqDx = round(sq3 * self.positionX,2)
+        aDx = round((2*sq3) * self.positionX,2)
+        Dy= round(self.positionY,2)
+        for s in self.neighbor_list:
+            formula = formula_dict.get(s["name"])
+            if formula:
+                distance = eval(formula, {'sqrt': sqrt, 'DxDy2': DxDy2, 'DxDy3a2': DxDy3a2, 'a': a, 'aDx': aDx, 'sqDx': sqDx, 'Dy': Dy})
+                s["distance"] = round(distance,2)
+        self.distance_from_sink=self.spot["distance"] # where spot is the data of s0 the current position
+
+
     def read_vars_from_file(self):
         # Current script directory
         current_dir = Path(__file__).resolve().parent

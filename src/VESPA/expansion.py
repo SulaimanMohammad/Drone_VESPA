@@ -184,23 +184,8 @@ def expansion_listener (self,vehicle):
 -------------------------------- Movement calculation -------------------------------
 -------------------------------------------------------------------------------------
 '''
-
-def calculate_neighbors_distance_sink(self):
-    DxDy2 = round((self.positionX * self.positionX) + (self.positionY * self.positionY),2)
-    DxDy3a2 = round(DxDy2 + 3 * a * a,2)
-    sqDx = round(sq3 * self.positionX,2)
-    aDx = round((2*sq3) * self.positionX,2)
-    Dy= round(self.positionY,2)
-    for s in self.neighbor_list:
-        formula = formula_dict.get(s["name"])
-        if formula:
-            distance = eval(formula, {'sqrt': sqrt, 'DxDy2': DxDy2, 'DxDy3a2': DxDy3a2, 'a': a, 'aDx': aDx, 'sqDx': sqDx, 'Dy': Dy})
-            s["distance"] = round(distance,2)
-    self.distance_from_sink=self.spot["distance"] # where spot is the data of s0 the current position
-
 def spatial_observation(self):
     self.demand_neighbors_info() # return after gathering all info 
-    calculate_neighbors_distance_sink(self)
     self.check_Ownership()
 
 def findMinDistances_niegboor(self):
@@ -359,7 +344,7 @@ def check_border_candidate_eligibility(self):
     return self.border_candidate
 
 def Fire_border_msg(self, header):
-    target_ids= self.creat_target_list(header)
+    target_ids= create_target_list(self,header)
     # At the beginning  propagation_indicator and target_ids are the same in the source of the message
     propagation_indicator= target_ids
     Msg= self.build_border_message(header,propagation_indicator, target_ids, self.id)
