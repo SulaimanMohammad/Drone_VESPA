@@ -303,6 +303,7 @@ def calibration_ping_pong(self, vehicle, msg ):
 --------------------------------- Forming the border---------------------------------
 -------------------------------------------------------------------------------------
 '''
+
 def count_element_occurrences(self):
     # Find the maximum element in the direction_taken list
     max_element = 7  # s0 to s6
@@ -344,11 +345,18 @@ def check_border_candidate_eligibility(self):
     return self.border_candidate
 
 def Fire_border_msg(self, header):
-    target_ids= create_target_list(self,header)
+    target_ids= self.create_target_list(header)
     # At the beginning  propagation_indicator and target_ids are the same in the source of the message
     propagation_indicator= target_ids
     Msg= self.build_border_message(header,propagation_indicator, target_ids, self.id)
     self.send_msg(Msg)
+
+    # Right-hand border forming
+    # Propagation_indicator and target_ids are the same in the source of the message
+    # propagation_indicator=  self.create_target_list(header)
+    # target_ids= self.choose_spot_right_handed()
+    # Msg= self.build_border_message(header,propagation_indicator, target_ids, self.id)
+    # self.send_msg(Msg)
 
 def Forme_border(self):
     check_border_candidate_eligibility(self)
