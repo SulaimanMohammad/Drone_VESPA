@@ -1,4 +1,5 @@
 from .VESPA_module import *
+
 '''
 -------------------------------------------------------------------------------------
 ---------------------------------- Communication ------------------------------------
@@ -157,7 +158,10 @@ def expansion_listener (self,vehicle):
 
         elif msg.startswith(Forming_border_header.encode()) and msg.endswith(b'\n'): # message starts with F end with \n
             rec_propagation_indicator, target_ids, sender, candidate= self.decode_border_message(msg)
-
+            
+            if sender in target_ids:
+                self.forming_border_msg_recived.set()
+            
             # End of the expansion broadcast msg
             if len(target_ids)==1 and target_ids[0]==-1 and rec_propagation_indicator[0]==-1 :
                 if self.border_candidate==True:
@@ -165,7 +169,6 @@ def expansion_listener (self,vehicle):
                 # Here any drone in any state needs to forward the boradcast message and rise ending flag
                 self.forward_broadcast_message(Forming_border_header,candidate)
                 self.Forming_Border_Broadcast_REC.set()
-
 
             elif self.id in  target_ids: # the drone respond only if it is targeted
                 if candidate == self.id: # the message recived contains the id of the drone means the message came back
@@ -345,11 +348,11 @@ def check_border_candidate_eligibility(self):
     return self.border_candidate
 
 def Fire_border_msg(self, header):
-    target_ids= self.create_target_list(header)
+    self.current_target_ids= self.create_target_list(header)
     # At the beginning  propagation_indicator and target_ids are the same in the source of the message
-    propagation_indicator= target_ids
-    Msg= self.build_border_message(header,propagation_indicator, target_ids, self.id)
-    self.send_msg(Msg)
+    propagation_indicator=  self.current_target_ids
+    Msg= self.build_border_message(header,propagation_indicator,  self.current_target_ids, self.id)
+    self.send_msg_border_upon_confirmation(Msg)
 
     # Right-hand border forming
     # Propagation_indicator and target_ids are the same in the source of the message

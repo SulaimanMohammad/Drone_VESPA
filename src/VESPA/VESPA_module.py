@@ -158,13 +158,17 @@ class Drone:
         for i in range(1, self.num_neigbors+1):
             s = {"name": "s" + str(i), "distance": 0, "priority": 0,"drones_in": 0,"drones_in_id":[] , "states": [], "previous_state": []}
             self.neighbor_list.append(s)
+        
+        self.current_target_ids=[]
         self.lock_state = threading.Lock()
         self.lock_neighbor_list = threading.Lock()
         self.neighbors_list_updated = threading.Event()
+        self.forming_border_msg_recived= threading.Event()
         self.elected_droen_arrived= None    
         self.Forming_Border_Broadcast_REC= None
         self.start_expanding= None
         self.end_of_balancin= None
+        
         
 
     '''
@@ -223,7 +227,7 @@ class Drone:
     def choose_spot_right_handed(self):
         # Start from index 1 to skip 's0'
         neighbors_without_s0 = self.neighbor_list[1:]
-        
+
         # If s1 has drones_in > 0, choose the last spot with drones_in > 0 before any drones_in = 0
         if neighbors_without_s0[0]["drones_in"] > 0:
             last_non_zero_index = 0
@@ -326,7 +330,7 @@ class Drone:
 
             new_propagation_indicator, new_targets_ids= self.calculate_propagation_indicator_target( propagation_indicator,targets_ids)
             msg= self.build_border_message(header, new_propagation_indicator,new_targets_ids, candidate) # as you see the candidate is resent as it was recived
-            self.send_msg(msg)
+            self.send_msg_border_upon_confirmation(msg)
         else: # it is not in the tagreted ids then do nothing ( drop the message)
             return
 
@@ -340,6 +344,13 @@ class Drone:
         '''
         msg= self.build_border_message(header, [-1] ,[-1],candidate) # as you see the candidate is resent as it was recived
         self.send_msg(msg)
+
+    def send_msg_border_upon_confirmation(self,msg):
+        # here the drone will keep sending until see the targets recives the message 
+        while not self.forming_border_msg_recived.is_set():
+            time.sleep(0.1)
+            self.send_msg(msg)
+        self.forming_border_msg_recived.clear()
 
     def send_msg(self,msg):
         #TODO deal with sending boradcasting
@@ -438,7 +449,7 @@ class Drone:
                 if candidate not in self.rec_candidate:
                     self.rec_candidate.append(candidate) # add the received id to the list so when a Broadcast from the same id is recicved that means a full circle include the current drone is completed
                 self.rec_propagation_indicator= rec_propagation_indicator # change the propagation_indicator means message from opposite direction has arrived
-                self.forward_border_message(Forming_border_header, rec_propagation_indicator, target_ids, candidate)
+                self.current_target_ids= self.forward_border_message(Forming_border_header, rec_propagation_indicator, target_ids, candidate)
                 
     def clear_buffer(self):
         # read the buffer until it is empty
