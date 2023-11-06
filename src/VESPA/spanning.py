@@ -1,4 +1,4 @@
-from VESPA_module import *
+from .VESPA_module import *
 import csv
 
 '''
