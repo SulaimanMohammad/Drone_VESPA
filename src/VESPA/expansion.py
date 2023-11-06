@@ -199,7 +199,8 @@ def calculate_neighbors_distance_sink(self):
     self.distance_from_sink=self.spot["distance"] # where spot is the data of s0 the current position
 
 def spatial_observation(self):
-    self.demand_neighbors_info() # return after gathering all info  
+    self.demand_neighbors_info() # return after gathering all info 
+    calculate_neighbors_distance_sink(self)
     self.check_Ownership()
 
 def findMinDistances_niegboor(self):
@@ -407,6 +408,7 @@ def expand_and_form_border(self,vehicle):
 
         print("checking for update the state")
         spatial_observation(self)
+        
 
     while not (all(neighbor['drones_in'] in [0, 1] for neighbor in self.neighbor_list) or
                all(neighbor['drones_in'] > 0 for neighbor in self.neighbor_list)):
