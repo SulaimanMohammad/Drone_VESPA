@@ -1,6 +1,6 @@
-<mxfile host="app.diagrams.net" modified="2023-09-21T09:57:49.287Z" agent="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/117.0.0.0 Safari/537.36" etag="9WhLYaYj5mXe5xQLzg0P" version="21.8.0" type="device">
+<mxfile host="app.diagrams.net" modified="2023-11-06T15:21:28.481Z" agent="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/117.0.0.0 Safari/537.36" etag="Vr8PYljeF2l21zQllmdd" version="22.0.8" type="device">
   <diagram name="Page-1" id="UTvJ4D6-7oFovwQiLVhX">
-    <mxGraphModel dx="5048" dy="2672" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+    <mxGraphModel dx="2520" dy="1498" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
@@ -412,7 +412,7 @@
         <mxCell id="IBZ0rPLe4Yo4xLdav0hi-135" value="&lt;b&gt;MSG Circled&amp;nbsp;&lt;br&gt;Border&#39;s detected&amp;nbsp;&lt;/b&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;" parent="IBZ0rPLe4Yo4xLdav0hi-139" vertex="1">
           <mxGeometry x="20" y="585" width="130" height="40" as="geometry" />
         </mxCell>
-        <mxCell id="IBZ0rPLe4Yo4xLdav0hi-136" value="&lt;font style=&quot;font-size: 9px;&quot;&gt;rec_propagation_indicator= [ 1,2,14]&lt;br style=&quot;border-color: var(--border-color);&quot;&gt;neighbours= [1,2,14,3]&lt;br style=&quot;border-color: var(--border-color);&quot;&gt;new_propagation_indicator =[ 1,2,14,3]&lt;br style=&quot;border-color: var(--border-color);&quot;&gt;target=[ 1,2,14]&lt;/font&gt;" style="shape=process;whiteSpace=wrap;html=1;backgroundOutline=1;size=0.05263157894736842;" parent="IBZ0rPLe4Yo4xLdav0hi-139" vertex="1">
+        <mxCell id="IBZ0rPLe4Yo4xLdav0hi-136" value="&lt;font style=&quot;font-size: 9px;&quot;&gt;rec_propagation_indicator= [ 1,2,14]&lt;br style=&quot;border-color: var(--border-color);&quot;&gt;neighbours= [1,2,14]&lt;br style=&quot;border-color: var(--border-color);&quot;&gt;new_propagation_indicator =[ 1,2,14]&lt;br style=&quot;border-color: var(--border-color);&quot;&gt;target=[ 1,2,14]&lt;/font&gt;" style="shape=process;whiteSpace=wrap;html=1;backgroundOutline=1;size=0.05263157894736842;" parent="IBZ0rPLe4Yo4xLdav0hi-139" vertex="1">
           <mxGeometry x="-20" y="420" width="180" height="90" as="geometry" />
         </mxCell>
         <mxCell id="IBZ0rPLe4Yo4xLdav0hi-138" value="REC" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;" parent="IBZ0rPLe4Yo4xLdav0hi-139" vertex="1">
