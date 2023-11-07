@@ -77,6 +77,20 @@ def append_id_to_path(list_to_append, ids):
         if id not in list_to_append:
             list_to_append.append(id)
 
+def path_around_exist(self):
+    with self.lock_neighbor_list:
+        neighbor_list_no_s0= self.neighbor_list[1:]
+
+    filtered_neighbors = [neighbor for neighbor in neighbor_list_no_s0 if neighbor["drones_in"] > 0]
+    
+    if filtered_neighbors is not None:  # There are occupied neighbors
+        with self.lock_neighbor_list:
+            neighbor_irremovable = next((neighbor for neighbor in filtered_neighbors if ( neighbor['state'] == Irremovable) ), None)
+    if neighbor_irremovable>0:
+        return True
+    else: 
+        return False
+
 '''
 -------------------------------------------------------------------------------------
 ---------------------------------- Sink Procedure------------------------------------
@@ -109,7 +123,7 @@ class Sink_Timer:
         print("Time's up! ")
         self.change_state(Irremovable) # The sink will always be irremovable 
         # No message received, thus the sink must build path to the border 
-        if sink_t.message_counter==0: 
+        if sink_t.message_counter==0 or (not path_around_exist(self)): 
             target_id= find_close_neigboor_2border(self) 
             if target_id != -1 : # No irremovable send msg to a drone to make it irremovable 
                 # Send message to a drone that had Id= target_id
@@ -406,7 +420,9 @@ def spanning(self, vehicle):
         listener_end_of_spanning.wait() 
         listener_end_of_spanning.clear()
         
-        # Stop listener
-        xbee_thread.join() 
-        self.clear_buffer()
+        if self.state == Free or self.state== Border:
+            # Stop listener
+            xbee_thread.join() 
+            self.clear_buffer()
+        
 
