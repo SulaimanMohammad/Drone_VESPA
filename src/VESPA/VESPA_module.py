@@ -195,6 +195,8 @@ class Drone:
             self.calculate_neighbors_distance_sink()
             msg= self.retrive_msg_from_buffer()
         self.neighbors_list_updated.set()
+        
+        return msg # since the message does not start with reponse then it should be treated in another way 
 
     def exchange_neighbors_info_communication(self,msg):
         # Receiving message asking for data 
@@ -204,7 +206,9 @@ class Drone:
 
         # Receiving message containing data     
         if msg.startswith(Reponse_header.encode()) and msg.endswith(b'\n'):
-            self.get_neighbors_info()
+            new_msg= self.get_neighbors_info()
+        
+        return new_msg 
             
 
 

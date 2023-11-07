@@ -62,6 +62,7 @@ def decode_target_message(message):
     
     return target_id, data
 
+# This func uses build_target_message but with data=!0 to be recognized as message to confirm the path 
 def forward_confirm_msg(self):
     for id in self.drone_id_to_sink:
         msg_border_sink= build_target_message(self,id,Border_sink_confirm)
@@ -135,7 +136,7 @@ def sink_listener(self,sink_t):
     while not sink_t.end_of_spanning.is_set(): # the end is not reached , keep listenning
         msg= self.retrive_msg_from_buffer() 
         
-        self.exchange_neighbors_info_communication(msg)
+        msg = self.exchange_neighbors_info_communication(msg)
 
         if msg.startswith(Spanning_header.encode()) and msg.endswith(b'\n'):
             id_rec,data = self.decode_target_message(msg)
@@ -219,7 +220,7 @@ def xbee_listener(self):
     while not listener_end_of_spanning.is_set(): 
         msg= self.retrive_msg_from_buffer() 
         
-        self.exchange_neighbors_info_communication(msg)
+        msg = self.exchange_neighbors_info_communication(msg)
         
         # Message of building the path 
         if msg.startswith(Spanning_header.encode()) and msg.endswith(b'\n'):

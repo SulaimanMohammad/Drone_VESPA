@@ -125,7 +125,7 @@ def border_listener(self,border_t):
     while not self.end_of_balancing.is_set(): # the end is not reached , keep listenning 
         msg= self.retrive_msg_from_buffer() 
 
-        self.exchange_neighbors_info_communication(msg)
+        msg = self.exchange_neighbors_info_communication(msg)
 
         if msg.startswith(Arrival_header.encode()) and msg.endswith(b'\n'):
             # This can be recived in case of drone arrive to the current spot or another border neigbors
@@ -173,7 +173,7 @@ def communication_balancing_free_drones(self,vehicle):
     while not self.end_of_balancing.is_set(): # the end is not reached , keep listenning 
         msg= self.retrive_msg_from_buffer() 
         
-        self.exchange_neighbors_info_communication(msg)
+        msg = self.exchange_neighbors_info_communication(msg)
         
         if msg.startswith(Arrival_header.encode()) and msg.endswith(b'\n'):
             # This can be recived in case of drone arrive to the current spot or another border neigbors

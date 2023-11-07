@@ -74,7 +74,7 @@ def expansion_listener (self,vehicle):
 
         msg= self.retrive_msg_from_buffer()
 
-        self.exchange_neighbors_info_communication(msg)
+        msg = self.exchange_neighbors_info_communication(msg)
 
         if msg.startswith(Movement_command) and msg.endswith("\n"):
             id, spot, lon, lat= decode_movement_command_message(msg)
