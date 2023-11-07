@@ -1,4 +1,6 @@
 from .VESPA_module import *
+from .form_border_one_direction import form_border_one_direction, start_msg_one_direction
+from .form_border_tow_direction import *
 
 '''
 -------------------------------------------------------------------------------------
@@ -41,54 +43,9 @@ def decode_calibration_message(message):
     xbee_range = struct.unpack('B', message[2:3])[0]
     return indicator, xbee_range
 
-def build_inherit_message(self,id_rec):
-    # Start message with 'I'
-    message = Inherit_header.encode()
-    max_byte_count = max([self.determine_max_byte_size(num) for num in self.rec_candidate]+
-                            [self.determine_max_byte_size(id_rec)]+
-                            [self.determine_max_byte_size(num) for num in self.rec_propagation_indicator]
-                            )
-    #Add the length of rec_candidate list and size of representation of eeach element
-    message += struct.pack('>BB', max_byte_count, len(self.rec_candidate))
-    # Add the element of the list with a max_byte_count byte representation
-    for num in self.rec_candidate:
-        message += num.to_bytes(max_byte_count, 'big')
-    #Add the length of rec_propagation_indicator list
-    message += struct.pack('>B', len(self.rec_propagation_indicator))
-    # Add the element of rec_propagation_indicator list with a max_byte_count byte representation
-    for num in self.rec_propagation_indicator:
-        message += num.to_bytes(max_byte_count, 'big')
-    message +=id_rec.to_bytes(max_byte_count, 'big')
-    message += b'\n'
-    return message
-
-def decode_inherit_message(message):
-    index = len(Inherit_header.encode())
-    # Extract max_byte_count and the length of rec_candidate list
-    max_byte_count, rec_candidate_length = struct.unpack('>BB', message[index:index+2])
-    index += 2
-    # Decode the numbers in rec_candidate
-    rec_candidate_values = []
-    for _ in range(rec_candidate_length):
-        num = int.from_bytes(message[index:index+max_byte_count], 'big')
-        rec_candidate_values.append(num)
-        index += max_byte_count
-    # Extract the length of rec_propagation_indicator list
-    rec_propagation_indicator_length = struct.unpack('>B', message[index:index+1])[0]
-    index += 1
-    # Decode the numbers in rec_propagation_indicator
-    rec_propagation_indicator_values = []
-    for _ in range(rec_propagation_indicator_length):
-        num = int.from_bytes(message[index:index+max_byte_count], 'big')
-        rec_propagation_indicator_values.append(num)
-        index += max_byte_count
-    # Decode id_rec
-    id_rec = int.from_bytes(message[index:index+max_byte_count], 'big')
-    return rec_candidate_values, rec_propagation_indicator_values, id_rec
-
-def build_expan_elected(self,id):
+def build_expan_elected(id):
     # Determine max byte count for numbers
-    max_byte_count = self.determine_max_byte_size(id)
+    max_byte_count = determine_max_byte_size(id)
     # Encode the header and the max byte count
     message = Expan_header.encode() + struct.pack('>B', max_byte_count)
     # Pack `id` based on max_byte_count
@@ -105,28 +62,11 @@ def decode_expan_elected(message):
     elected_id = int.from_bytes(message[id_start:id_end], byteorder='big')
     return elected_id
 
-def handel_broken_into_spot(self, msg):
-    if self.border_candidate== True:
-        positionX, positionY, state, previous_state,id_rec= self.decode_spot_info_message(msg)
-        self.update_neighbors_list(positionX, positionY, state, previous_state,id_rec) # No need to mutex since the drone is in border_candidate only in it was Owner and reserved spot
-        check_border_candidate_eligibility(self) # use only the updated list and see if the current drone still candidate
-        if self.border_candidate == False: # changed due to 6 neigbors filled
-            self.change_state_to(Free) # Has 6 neighbors
-            if not self.rec_candidate: # if the rec_candidate is not empty, means messages for border are already received
-                msg= build_inherit_message(self, id_rec) # id_rec is the id of the drone hopped in
-                self.send_msg(msg)
-
-def handel_inheritence_message(self, msg):
-        new_rec_candidate_values, new_rec_propagation_indicator_values, id_rec= decode_inherit_message(msg)
-        if id_rec== self.id:
-            self.update_rec_candidate(new_rec_candidate_values)
-            self.update_rec_propagation_indicator(new_rec_propagation_indicator_values)
-
 def handel_elected_drone_arrivale(self,msg):
     rec_id=decode_expan_elected(msg)
     if rec_id==self.elected_id:
         self.elected_droen_arrived.set()
-    
+
 def expansion_listener (self,vehicle):
     self.Forming_Border_Broadcast_REC = threading.Event()
 
@@ -154,10 +94,9 @@ def expansion_listener (self,vehicle):
 
         elif msg.startswith(Inherit_header.encode()) and msg.endswith(b'\n'):
             handel_inheritence_message(self, msg)
-
-
+            
         elif msg.startswith(Forming_border_header.encode()) and msg.endswith(b'\n'): # message starts with F end with \n
-            rec_propagation_indicator, target_ids, sender, candidate= self.decode_border_message(msg)
+            rec_propagation_indicator, target_ids, sender, candidate= decode_border_message(msg)
             
             if sender in target_ids:
                 self.forming_border_msg_recived.set()
@@ -165,23 +104,25 @@ def expansion_listener (self,vehicle):
             # End of the expansion broadcast msg
             if len(target_ids)==1 and target_ids[0]==-1 and rec_propagation_indicator[0]==-1 :
                 if self.border_candidate==True:
-                    self.border_broadcast_respond(candidate)
+                    border_broadcast_respond(self, candidate)
                 # Here any drone in any state needs to forward the boradcast message and rise ending flag
-                self.forward_broadcast_message(Forming_border_header,candidate)
+                forward_broadcast_message(self, Forming_border_header,candidate)
                 self.Forming_Border_Broadcast_REC.set()
 
             elif self.id in  target_ids: # the drone respond only if it is targeted
                 if candidate == self.id: # the message recived contains the id of the drone means the message came back
-                    self.circle_completed ()
-
+                    circle_completed (self)
                 else: # the current drone received a message from a candidate border so it needs to forward it
-                    self.find_msg_direction_forward(rec_propagation_indicator,target_ids,sender,candidate )
+                    find_msg_direction_forward(self,rec_propagation_indicator,target_ids,sender,candidate )
 
             else: # Drone is not targeted ( doesnt matter it it is free or candidate) thus it drops the message
                     # Do anything but wait for end of the expansion broadcast
                     continue
-
-
+            
+            # For right handed methode
+            # from .right_handed_border import form_border_right_hand
+            # form_border_one_direction(self, Forming_border_header, msg)
+            
 '''
 -------------------------------------------------------------------------------------
 -------------------------------- Movement calculation -------------------------------
@@ -301,6 +242,13 @@ def calibration_ping_pong(self, vehicle, msg ):
         set_a(a)
         self.clear_buffer()
 
+def send_msg_border_upon_confirmation(self,msg):
+    # here the drone will keep sending until see the targets recives the message 
+    while not self.forming_border_msg_recived.is_set():
+        time.sleep(0.1)
+        self.send_msg(msg)
+    self.forming_border_msg_recived.clear()
+
 '''
 -------------------------------------------------------------------------------------
 --------------------------------- Forming the border---------------------------------
@@ -351,15 +299,18 @@ def Fire_border_msg(self, header):
     self.current_target_ids= self.create_target_list(header)
     # At the beginning  propagation_indicator and target_ids are the same in the source of the message
     propagation_indicator=  self.current_target_ids
-    Msg= self.build_border_message(header,propagation_indicator,  self.current_target_ids, self.id)
-    self.send_msg_border_upon_confirmation(Msg)
+    Msg= build_border_message(header, self.id, propagation_indicator, self.current_target_ids, self.id)
+    send_msg_border_upon_confirmation(self, Msg)
 
     # Right-hand border forming
     # Propagation_indicator and target_ids are the same in the source of the message
     # propagation_indicator=  self.create_target_list(header)
     # target_ids= self.choose_spot_right_handed()
-    # Msg= self.build_border_message(header,propagation_indicator, target_ids, self.id)
+    # Msg= build_border_message(header, self.id,propagation_indicator, target_ids, self.id)
     # self.send_msg(Msg)
+
+    # Another Right-hand border forming without propagation_indicator
+    # start_msg_one_direction(self,header)
 
 def Forme_border(self):
     check_border_candidate_eligibility(self)
@@ -395,7 +346,7 @@ def expand_and_form_border(self,vehicle):
                 print ("go to S", destination_spot)
                 self.move_to_spot(vehicle, destination_spot)
                 # After move_to_spot retuen it means arrivale 
-                movement_done_msg= build_expan_elected(self, self.id)
+                movement_done_msg= build_expan_elected(self.id)
                 self.send_msg(movement_done_msg)
         else:
            # Wait untile the elected drone to arrive to next spot.
@@ -429,7 +380,6 @@ def expand_and_form_border(self,vehicle):
     self.direction_taken=[] 
     self.elected_id=None     
     
-
 def first_exapnsion (self, vehicle):
     # Lance a thread to read messages continuously
     xbee_receive_message_thread = threading.Thread(target=expansion_listener, args=(self,vehicle)) #pass the function reference and arguments separately to the Thread constructor.

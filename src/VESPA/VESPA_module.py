@@ -58,21 +58,16 @@ def set_a(val):
     a= val*0.95
     update_DIR_xy_distance_VECTORS() # changing of a should change the direction distances
 
-def calculate_spots_coordinates(x,y):
-    # Your spots coordinates list
-    spots_coordinates = []
-    for i in range(1, 7):
-        s = {"name": "s" + str(i), "x": 0, "y": 0, "drones_in": 0, "distance":0}
-        spots_coordinates.append(s)
-
-    # Now, update the spots_coordinates with values from DIR_xy_distance_VECTORS
-    for i, spot in enumerate(spots_coordinates, start=1):
-        vector = DIR_xy_distance_VECTORS[i]
-        spot['x'], spot['y'] = round(x+vector[0],2), round(y+vector[1],2)
-        spot["distance"]=sqrt( spot['x']*spot['x']+ spot['y']* spot['y'])
-    # Print the result to verify
-    for spot in spots_coordinates:
-        print(spot)
+#Return the byte count necessary to represent max ID.
+def determine_max_byte_size (number):
+    if number <= 0xFF:  # 1 byte
+        return 1
+    elif number <= 0xFFFF:  # 2 bytes
+        return 2
+    elif number <= 0xFFFFFF:  # 3 bytes
+        return 3
+    else:
+        return 4  # max 4 bytes
 
 formula_dict = {
     "s0": "sqrt(DxDy2)",
@@ -210,147 +205,8 @@ class Drone:
         # Receiving message containing data     
         if msg.startswith(Reponse_header.encode()) and msg.endswith(b'\n'):
             self.get_neighbors_info()
-
-
-    def create_target_list(self, header):
-        target_ids=[]
-        if header==Balance_header: # Targets are only the border ones
-            for s in self.neighbor_list:
-                if 'border' in s['states']:
-                    border_indices = [idx for idx, state in enumerate(s['states']) if state == 'border']
-                    target_ids.extend([s['drones_in_id'][idx] for idx in border_indices])
-        else:
-            for s in self.neighbor_list:
-                target_ids.extend(s["drones_in_id"]) # add the id of all the niegbors including the current
-        return target_ids
-    
-    def choose_spot_right_handed(self):
-        # Start from index 1 to skip 's0'
-        neighbors_without_s0 = self.neighbor_list[1:]
-
-        # If s1 has drones_in > 0, choose the last spot with drones_in > 0 before any drones_in = 0
-        if neighbors_without_s0[0]["drones_in"] > 0:
-            last_non_zero_index = 0
-            for index, neighbor in enumerate(neighbors_without_s0):
-                if neighbor["drones_in"] == 0:
-                    break
-                last_non_zero_index = index
-            return neighbors_without_s0[last_non_zero_index]["drones_in_id"]
-        else:
-            # If s1 has drones_in = 0, choose the first spot with drones_in > 0
-            for neighbor in neighbors_without_s0:
-                if neighbor["drones_in"] > 0:
-                    return neighbor["drones_in_id"]
             
 
-    #Return the byte count necessary to represent max ID.
-    def determine_max_byte_size (slef,number):
-        if number <= 0xFF:  # 1 byte
-            return 1
-        elif number <= 0xFFFF:  # 2 bytes
-            return 2
-        elif number <= 0xFFFFFF:  # 3 bytes
-            return 3
-        else:
-            return 4  # max 4 bytes
-
-    def build_border_message(self, header, propagation_indicator ,target_ids, candidate):
-
-        # Determine max byte count for numbers
-        max_byte_count = max(
-                            [self.determine_max_byte_size(num) for num in target_ids ]+
-                            [self.determine_max_byte_size(num) for num in propagation_indicator]+
-                            [self.determine_max_byte_size(candidate)]
-                            )
-
-        # Start message with 'F', followed by max byte count and then the length of the propagation_indicator
-        message = header.encode() + struct.pack('>BB', max_byte_count, len(propagation_indicator))
-
-        # Add each number to the message using determined byte count
-        for num in propagation_indicator:
-            message += num.to_bytes(max_byte_count, 'big')
-
-        message += struct.pack('>B',len(target_ids))
-        for num in target_ids:
-                message += num.to_bytes(max_byte_count, 'big')
-        # Append the sender using the determined byte count
-        message += self.id.to_bytes(max_byte_count, 'big')
-        # Append the candidate using the determined byte count
-        message += candidate.to_bytes(max_byte_count, 'big')
-        message += b'\n'
-        return message
-
-    def decode_border_message(message):
-        # Extract max byte count and lengths of the lists
-        max_byte_count, propagation_length = struct.unpack('>BB', message[1:3])
-        # Determine the start and end indices for the propagation_indicator numbers
-        indices = [(i * max_byte_count + 3, (i + 1) * max_byte_count + 3) for i in range(propagation_length)]
-        # Extract the numbers in propagation_indicator
-        propagation_indicator = [int.from_bytes(message[start:end], 'big') for start, end in indices]
-        # Extract the length of target_ids and then extract the numbers in target_ids
-        target_ids_length_position = 3 + max_byte_count * propagation_length
-        target_ids_length = struct.unpack('>B', message[target_ids_length_position:target_ids_length_position+1])[0]
-        # Determine the start and end indices for the target_ids numbers
-        target_ids_start = target_ids_length_position + 1
-        indices_target = [(i * max_byte_count + target_ids_start, (i + 1) * max_byte_count + target_ids_start) for i in range(target_ids_length)]
-        # Extract the numbers in target_ids
-        target_ids = [int.from_bytes(message[start:end], 'big') for start, end in indices_target]
-        # Extract the sender
-        sender_start = target_ids_start + max_byte_count * target_ids_length
-        sender = int.from_bytes(message[sender_start:sender_start+max_byte_count], 'big')
-        # Extract the candidate
-        candidate_start = sender_start + max_byte_count
-        candidate = int.from_bytes(message[candidate_start:candidate_start+max_byte_count], 'big')
-
-        return propagation_indicator, target_ids,sender, candidate
-
-    def calculate_propagation_indicator_target(self,rec_propagation_indicator, all_neighbor):
-        # Calculate the target
-        # the new target is found based on rec_propagation_indicator so for that we need to find the new one so the reciver can calculate its next target
-        # This retuen the unique values in all_neigbors_id that are not present in recieved rec_propagation_indicator
-        # rec_propagation_indicator = [0,1, 2, 3] , all_neigbors_id = [0,1,2,4,9] => [4,9]
-        new_target_ids= [item for item in rec_propagation_indicator if item not in all_neighbor]
-
-        # Calculated propagation_indicator
-        ''' (A ∩ B) ∪ (B - A) = B'''
-        # where A is received  propagation_indicator and B is all_neighbor of current drone
-        new_propagation_indicator= all_neighbor
-        return new_target_ids, new_propagation_indicator
-
-    def forward_border_message(self, header, propagation_indicator, targets_ids, candidate):
-        '''
-        The drone that receives the message will check target_ids, if it is included then it will forward the message
-        The message is forwarded to the neigbor drones that have ids are not in the recieved targets_ids and in the propagation_indicator
-        Propagation_indicator will help to prevent the messages to have targets from behind
-        If the drone is not in the targets then it will ignore the message
-        '''
-        if self.id in targets_ids: # the current drone is in the targeted ids
-
-            targets_ids= self.creat_target_list(header)
-
-            new_propagation_indicator, new_targets_ids= self.calculate_propagation_indicator_target( propagation_indicator,targets_ids)
-            msg= self.build_border_message(header, new_propagation_indicator,new_targets_ids, candidate) # as you see the candidate is resent as it was recived
-            self.send_msg_border_upon_confirmation(msg)
-        else: # it is not in the tagreted ids then do nothing ( drop the message)
-            return
-
-    def forward_broadcast_message(self,header,candidate):
-        '''
-        Build and send messgaes to all the niegbors and since only it is a broadcast
-        then propagation_indicator, targets_ids both are [-1].
-        The most important is the candidate that fired the broadcast, which is already recieved from neigbors
-        Note: since the message will be sent to all the drone around , but rememeber the ones that already received
-        it will not recieved it again and th reason is the flag that end the listener is raised and no reading of buffer will be performed
-        '''
-        msg= self.build_border_message(header, [-1] ,[-1],candidate) # as you see the candidate is resent as it was recived
-        self.send_msg(msg)
-
-    def send_msg_border_upon_confirmation(self,msg):
-        # here the drone will keep sending until see the targets recives the message 
-        while not self.forming_border_msg_recived.is_set():
-            time.sleep(0.1)
-            self.send_msg(msg)
-        self.forming_border_msg_recived.clear()
 
     def send_msg(self,msg):
         #TODO deal with sending boradcasting
@@ -422,35 +278,7 @@ class Drone:
         # Decode self.id
         id_value = int.from_bytes(message[index:index+max_byte_count], 'big')
         return positionX, positionY, state, previous_state, id_value
-  
-    def circle_completed(self):
-        if self.check_border_candidate_eligibility():
-            self.change_state_to(Border)
-            Broadcast_Msg= self.build_border_message(Forming_border_header,[-1] ,[-1], self.id)
-            self.send_msg(Broadcast_Msg)
-            self.Forming_Border_Broadcast_REC.set() # to end the the loop
-        else:
-            # the drone got new neigbors and became Free
-            if self.state != Free:
-                self.change_state_to(Free)
-
-    def border_broadcast_respond(self, candidate):
-        if candidate in self.rec_candidate: # the sender of broadcast already sent msg to the current drone so it is part of the circle
-            # re-check the the droen around still have same situation and still can be border
-            if self.check_border_candidate_eligibility():
-                self.change_state_to(Border)
-        else: # if drone doesnt have the candidate or the sourounding has changed
-            self.change_state_to(Free)
-
-    def find_msg_direction_forward(self,rec_propagation_indicator,target_ids,sender,candidate ):
-        # Only the drone that is candidate will forward messages , the Free or Owner no
-        if self.border_candidate == True:
-            if sender not in self.rec_propagation_indicator:
-                if candidate not in self.rec_candidate:
-                    self.rec_candidate.append(candidate) # add the received id to the list so when a Broadcast from the same id is recicved that means a full circle include the current drone is completed
-                self.rec_propagation_indicator= rec_propagation_indicator # change the propagation_indicator means message from opposite direction has arrived
-                self.current_target_ids= self.forward_border_message(Forming_border_header, rec_propagation_indicator, target_ids, candidate)
-                
+                  
     def clear_buffer(self):
         # read the buffer until it is empty
         # while xbee_device.get_queue_length() > 0:

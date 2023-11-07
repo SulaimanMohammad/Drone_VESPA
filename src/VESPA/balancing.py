@@ -1,13 +1,14 @@
 from .VESPA_module import *
-
+from .form_border_tow_direction import forward_border_message, build_border_message,forward_broadcast_message, decode_border_message
+from .expansion import Fire_border_msg
 '''
 -------------------------------------------------------------------------------------
 ---------------------------------- Communication ------------------------------------
 -------------------------------------------------------------------------------------
 '''
 balancing_terminator=-1
-def build_local_movement_message(self, target_id, destination):
-    max_byte_count = self.determine_max_byte_size(target_id)
+def build_local_movement_message(target_id, destination):
+    max_byte_count = determine_max_byte_size(target_id)
     # Start the message with the header and the max byte count for target_id
     message = Local_balance_header.encode() + struct.pack('>B', max_byte_count)
     # Add the target_id to the message using the determined byte count
@@ -114,7 +115,7 @@ class Boarder_Timer:
         # Need to be sent in this stage,the thread of listining of free drone would joined after completing the circle 
         message= build_shared_allowed_spots_message(self)
         self.send_msg(message) 
-        self.Fire_border_msg(Balance_header)
+        Fire_border_msg(Balance_header)
         self.end_of_balancing.wait()
         border_t.local_balancing.clear()
         self.end_of_balancing.clear() 
@@ -134,22 +135,22 @@ def border_listener(self,border_t):
             all_moves= lead_local_balancing(self)
             for move in all_moves:
                 id, destination = move  # Unpack the tuple
-                msg= build_local_movement_message(self, id, destination)
+                msg= build_local_movement_message(id, destination)
                 self.send_msg(msg)
 
         if msg.startswith(Balance_header.encode()) and msg.endswith(b'\n'):
-            rec_propagation_indicator, target_ids, sender, candidate= self.decode_border_message(msg) 
+            rec_propagation_indicator, target_ids, sender, candidate= decode_border_message(msg) 
             # The border drone will respon to the message only if it is in local balancing otherwise drop it 
             if border_t.local_balancing.is_set():
                 # End of the balancing broadcast msg
                 if len(target_ids)==1 and target_ids[0]==balancing_terminator and rec_propagation_indicator[0]==balancing_terminator:                         
                     # Here any drone in any state needs to forward the boradcast message and rise ending flag  
-                    self.forward_broadcast_message(Balance_header,candidate) 
+                    forward_broadcast_message(Balance_header,candidate) 
                     self.end_of_balancing.set()
                 
                 elif self.id in  target_ids: # the drone respond only if it is targeted
                     if candidate == self.id: # the message recived contains the id of the drone means the message came back  
-                        Broadcast_Msg= self.build_border_message(Balance_header,[balancing_terminator] ,[balancing_terminator], self.id)
+                        Broadcast_Msg= build_border_message(Balance_header,self.id,[balancing_terminator] ,[balancing_terminator], self.id)
                         self.send_msg(Broadcast_Msg)
                         self.end_of_balancing.set() 
                         
@@ -158,7 +159,7 @@ def border_listener(self,border_t):
                             if candidate not in self.rec_candidate:
                                 self.rec_candidate.append(candidate) # add the received id to the list so when a Broadcast from the same id is recicved that means a full circle include the current drone is completed
                             self.rec_propagation_indicator= rec_propagation_indicator # change the propagation_indicator means message from opposite direction has arrived
-                            self.forward_border_message(Balance_header, rec_propagation_indicator, target_ids, candidate) 
+                            forward_border_message(Balance_header, rec_propagation_indicator, target_ids, candidate) 
                 else: # Drone is not targeted ( doesnt matter it it is free or candidate) thus it drops the message 
                         # Do anything but wait for end of the expansion broadcast
                         continue
