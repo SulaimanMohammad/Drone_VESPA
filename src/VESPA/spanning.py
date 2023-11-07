@@ -134,8 +134,8 @@ class Sink_Timer:
         # If drone already have message and path is constructed then it needs to wait the message flow from border to sink 
         # and if the sink needed to constrcut the path starting from itself , still need wait a message from border to come back   
         sink_t.end_of_spanning.wait() 
-        sink_t.end_of_spanning.clear() 
-        sink_listener.join() 
+        sink_t.end_of_spanning.clear()
+        sink_t.message_thread.join() 
 
 def sink_listener(self,sink_t):
     '''
@@ -401,6 +401,8 @@ def spanning(self, vehicle):
         # For Irremovables and Free drones that were changed  
         if (self.state== Irremovable) or (self.state == Irremovable_boarder): 
             self.build_path()
+            # Time needed so the drone in the sink direction received msg,  changed its state and try to build its path 
+            time.sleep(2) 
             # Send message to the sink about the corrdinates 
             # Not all Irremovable found targets, irremovable can be only part of the path
             if self.target_detected:
@@ -420,9 +422,9 @@ def spanning(self, vehicle):
         listener_end_of_spanning.wait() 
         listener_end_of_spanning.clear()
         
-        if self.state == Free or self.state== Border:
-            # Stop listener
-            xbee_thread.join() 
-            self.clear_buffer()
+        
+        # Stop listener
+        xbee_thread.join() 
+        self.clear_buffer()
         
 
