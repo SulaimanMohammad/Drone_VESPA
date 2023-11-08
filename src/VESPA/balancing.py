@@ -90,6 +90,12 @@ def decode_shared_allowed_spots_message(message):
 -------------------------------------------------------------------------------------
 '''
 
+def send_lead_local_balancing_message(self, all_moves):
+    for move in all_moves:
+        id, destination = move  # Unpack the tuple
+        msg= build_local_movement_message(id, destination)
+        self.send_msg(msg)
+
 class Boarder_Timer:
     def __init__(border_t,self,timeout=2*movement_time):
         border_t.timeout = timeout
@@ -111,7 +117,13 @@ class Boarder_Timer:
     def time_up(border_t,self):
         #Called when the timer reaches its timeout without being reset.
         print("Time's up! ")
-        border_t.local_balancing.set() # flag to identify local balancing
+        # Ensure that balanced achived 
+        self.demand_neighbors_info()
+        all_moves= lead_local_balancing(self)
+        if all_moves: # there are drones need to be moved 
+            send_lead_local_balancing_message(self, all_moves)
+        else: 
+            border_t.local_balancing.set() # flag to identify local balancing
         # Need to be sent in this stage,the thread of listining of free drone would joined after completing the circle 
         message= build_shared_allowed_spots_message(self)
         self.send_msg(message) 
@@ -133,10 +145,7 @@ def border_listener(self,border_t):
             self.update_neighbors_list(positionX, positionY, state, id_value )
             border_t.remaining_time = border_t.timeout     
             all_moves= lead_local_balancing(self)
-            for move in all_moves:
-                id, destination = move  # Unpack the tuple
-                msg= build_local_movement_message(id, destination)
-                self.send_msg(msg)
+            send_lead_local_balancing_message(self, all_moves)
 
         if msg.startswith(Balance_header.encode()) and msg.endswith(b'\n'):
             rec_propagation_indicator, target_ids, sender, candidate= decode_border_message(msg) 
