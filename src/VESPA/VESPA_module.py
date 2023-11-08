@@ -481,3 +481,9 @@ class Drone:
             self.change_state_to(Irremovable_boarder)
         else: 
             self.change_state_to(Irremovable)
+
+    def return_home(self, vehicle):
+        if self.id==0: # Sink
+            time.sleep(10) 
+            # land 
+

@@ -190,7 +190,9 @@ def border_listener(self,border_t):
                             if candidate not in self.rec_candidate:
                                 self.rec_candidate.append(candidate) # add the received id to the list so when a Broadcast from the same id is recicved that means a full circle include the current drone is completed
                             self.rec_propagation_indicator= rec_propagation_indicator # change the propagation_indicator means message from opposite direction has arrived
+                            # Notic if the header is termination and the drone has 0 it means it will be already in local balance, so this section will not be entred unless it is 0 everywhere 
                             forward_border_message(header_in_use, rec_propagation_indicator, target_ids, candidate) 
+                            
                 else: # Drone is not targeted ( doesnt matter it it is free or candidate) thus it drops the message 
                         # Do anything but wait for end of the expansion broadcast
                         continue
@@ -289,8 +291,9 @@ def balancing(self, vehicle):
     self.rec_propagation_indicator=[]  
     self.rec_candidate=[]   
     self.direction_taken=[]
-    xbee_receive_message_thread.join()
     self.clear_buffer()
+    xbee_receive_message_thread.join()
+    
 
     
     
