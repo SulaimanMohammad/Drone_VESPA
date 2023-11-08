@@ -106,6 +106,7 @@ Target_coordinates_header= "T"
 Local_balance_header="L"
 Guidance_header= "G"
 Balance_header= "B"
+Algorithm_termination_header="O"
 
 '''
 -------------------------------------------------------------------------------------
@@ -159,10 +160,12 @@ class Drone:
         self.lock_neighbor_list = threading.Lock()
         self.neighbors_list_updated = threading.Event()
         self.forming_border_msg_recived= threading.Event()
+        self.VESPA_termination= threading.Event() 
         self.elected_droen_arrived= None    
         self.Forming_Border_Broadcast_REC= None
         self.start_expanding= None
         self.end_of_balancin= None
+
         
         
 
@@ -438,6 +441,14 @@ class Drone:
                     # Find the index of the drone_id and changr the state
                     idx = s['drones_in_id'].index(id)
                     s['states'][idx]= state
+    
+    def check_termination(self):
+        # if VESPA_termination is set that means the algorithm is done 
+        # This should be used in while loop where VESPA is applied when this flag is not set 
+        if self.VESPA_termination.is_set():
+            return False
+        else: 
+            return True
 
     '''
     -------------------------------------------------------------------------------------
