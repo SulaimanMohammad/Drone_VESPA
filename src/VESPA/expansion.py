@@ -243,7 +243,7 @@ def calibration_ping_pong(self, vehicle, msg ):
         self.clear_buffer()
 
 def send_msg_border_upon_confirmation(self,msg):
-    # here the drone will keep sending until see the targets recives the message 
+    # here the drone will keep sending until see the drone targets recives the message 
     while not self.forming_border_msg_recived.is_set():
         time.sleep(0.1)
         self.send_msg(msg)
@@ -402,26 +402,28 @@ def first_exapnsion (self, vehicle):
         self.send_msg(msg)
     else:
         self.start_expanding.wait()
+        self.start_expanding.clear()
     expand_and_form_border(self, vehicle)
-
-    xbee_receive_message_thread.join() # stop listening to message
+    
     # Since broadcast messages might still be circulating while retrieval has stopped, there could be leftover messages in the buffer.
     # It's essential to clear the buffer before the next phase to prevent any surplus.
     self.clear_buffer()
+    xbee_receive_message_thread.join() # stop listening to message
+    
 
 def further_expansion (self,vehicle):
     # Lance a thread to read messages continuously
     xbee_receive_message_thread = threading.Thread(target=expansion_listener, args=(self,vehicle)) #pass the function reference and arguments separately to the Thread constructor.
     xbee_receive_message_thread.start()
-    self.elected_droen_arrived= threading.Event()
     
     if self.state == Border:
         self.change_state_to(Owner) # The border save it is own spot
     elif self.state == Irremovable_boarder:
         self.change_state_to(Irremovable)
     else: # State is Free
-        self.expand_and_form_border(vehicle)
+        expand_and_form_border(self,vehicle)
     
-    xbee_receive_message_thread.join() 
     self.clear_buffer()
+    xbee_receive_message_thread.join() 
+    
 
