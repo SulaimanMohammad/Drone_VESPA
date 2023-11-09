@@ -181,10 +181,19 @@ def sink_listener(self,sink_t):
                 # All drones arounf the sink are to the border 
                 append_id_to_path( self.drone_id_to_border, id_rec)
 
-        if  msg.startswith(Target_coordinates_header.encode()) and msg.endswith(b'\n'):
+        elif  msg.startswith(Target_coordinates_header.encode()) and msg.endswith(b'\n'):
             id_target, sender_id, longitude,  latitude= decode_GPS_coordinates_message(msg)
             # Write the data in csv file
-            write_to_csv(sender_id,longitude,latitude) 
+            write_to_csv(sender_id,longitude,latitude)
+        
+        elif msg.startswith(Algorithm_termination_header.encode()) and msg.endswith(b'\n'):
+            for id in self.drone_id_to_border:
+                msg_border_sink= build_target_message(id,Algorithm_termination_header)
+                self.send_msg(msg_border_sink)
+            self.VESPA_termination.set()
+
+        else: 
+            continue
             
 
 def spanning_sink(self):
