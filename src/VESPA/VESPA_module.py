@@ -490,5 +490,8 @@ class Drone:
     def return_home(self, vehicle):
         if self.id==0: # Sink
             time.sleep(10) 
-            # land 
+            vehicle.mode = VehicleMode ("LAND")
+        else:
+            vehicle.mode = VehicleMode ("RTL")
+        vehicle.close() 
 
