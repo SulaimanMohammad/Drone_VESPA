@@ -472,7 +472,7 @@ class Drone:
             move_body_PID(vehicle,angle, distance)
         except Exception as e:
             print(f"An error occurred: {str(e)}")
-            vehicle.mode = VehicleMode ("LAND")
+            vehicle.mode = VehicleMode ("RTL")
             vehicle.close()
         self.update_location(destination_spot)
         self.clear_buffer() # need to clear the bufer from message received on the road
