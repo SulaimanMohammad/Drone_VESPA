@@ -1,0 +1,268 @@
+<mxfile host="app.diagrams.net" modified="2023-11-09T14:21:07.368Z" agent="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/117.0.0.0 Safari/537.36" etag="qnqGwP_T-CZpw1Gfdf52" version="22.1.0" type="device">
+  <diagram name="Page-1" id="yw-oz-n6WJp5QXOAgpq8">
+    <mxGraphModel dx="9433" dy="780" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="CFNLcl3D-IvTs62PjJtv-1" value="" style="group" vertex="1" connectable="0" parent="1">
+          <mxGeometry x="-4988" y="1981.5" width="928" height="289" as="geometry" />
+        </mxCell>
+        <mxCell id="CFNLcl3D-IvTs62PjJtv-2" value="" style="html=1;dashed=0;whiteSpace=wrap;" vertex="1" parent="CFNLcl3D-IvTs62PjJtv-1">
+          <mxGeometry x="8" y="39" width="920" height="250" as="geometry" />
+        </mxCell>
+        <mxCell id="CFNLcl3D-IvTs62PjJtv-3" value="find_relative_spot&lt;br&gt;return index" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="CFNLcl3D-IvTs62PjJtv-1">
+          <mxGeometry x="48" y="206.5" width="170" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="CFNLcl3D-IvTs62PjJtv-4" value="&lt;font style=&quot;font-size: 18px;&quot;&gt;spot_info_update_neighbors_list&lt;/font&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;" vertex="1" parent="CFNLcl3D-IvTs62PjJtv-1">
+          <mxGeometry width="280" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="CFNLcl3D-IvTs62PjJtv-5" value="Check the validity of index&amp;nbsp;" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="CFNLcl3D-IvTs62PjJtv-1">
+          <mxGeometry x="258" y="206.5" width="140" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="CFNLcl3D-IvTs62PjJtv-6" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="CFNLcl3D-IvTs62PjJtv-1" source="CFNLcl3D-IvTs62PjJtv-3" target="CFNLcl3D-IvTs62PjJtv-5">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="CFNLcl3D-IvTs62PjJtv-7" value="enter the corresponding index in&amp;nbsp;neighbor_list&lt;span style=&quot;background-color: initial;&quot;&gt;&amp;nbsp;&lt;/span&gt;" style="html=1;dashed=0;whiteSpace=wrap;" vertex="1" parent="CFNLcl3D-IvTs62PjJtv-1">
+          <mxGeometry x="438" y="202.5" width="175" height="69" as="geometry" />
+        </mxCell>
+        <mxCell id="CFNLcl3D-IvTs62PjJtv-8" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="CFNLcl3D-IvTs62PjJtv-1" source="CFNLcl3D-IvTs62PjJtv-5" target="CFNLcl3D-IvTs62PjJtv-7">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="CFNLcl3D-IvTs62PjJtv-9" value="Search in all the neighbors &quot;drones_in_id&quot;&lt;span style=&quot;background-color: initial;&quot;&gt;&amp;nbsp;if the id is there&amp;nbsp;&amp;nbsp;&lt;/span&gt;" style="html=1;dashed=0;whiteSpace=wrap;" vertex="1" parent="CFNLcl3D-IvTs62PjJtv-1">
+          <mxGeometry x="28" y="59" width="180" height="63" as="geometry" />
+        </mxCell>
+        <mxCell id="CFNLcl3D-IvTs62PjJtv-10" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="CFNLcl3D-IvTs62PjJtv-1" source="CFNLcl3D-IvTs62PjJtv-11">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="310.5" y="179" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="CFNLcl3D-IvTs62PjJtv-11" value="&amp;nbsp;Found" style="shape=rhombus;html=1;dashed=0;whiteSpace=wrap;perimeter=rhombusPerimeter;" vertex="1" parent="CFNLcl3D-IvTs62PjJtv-1">
+          <mxGeometry x="268" y="48.5" width="85" height="84" as="geometry" />
+        </mxCell>
+        <mxCell id="CFNLcl3D-IvTs62PjJtv-12" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="CFNLcl3D-IvTs62PjJtv-1" source="CFNLcl3D-IvTs62PjJtv-9" target="CFNLcl3D-IvTs62PjJtv-11">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="CFNLcl3D-IvTs62PjJtv-13" value="Find the index in &quot;drones_in_id&quot;&lt;span style=&quot;background-color: initial;&quot;&gt;&amp;nbsp;&lt;/span&gt;" style="html=1;dashed=0;whiteSpace=wrap;" vertex="1" parent="CFNLcl3D-IvTs62PjJtv-1">
+          <mxGeometry x="398" y="65.5" width="150" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="CFNLcl3D-IvTs62PjJtv-14" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="CFNLcl3D-IvTs62PjJtv-1" source="CFNLcl3D-IvTs62PjJtv-11" target="CFNLcl3D-IvTs62PjJtv-13">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="CFNLcl3D-IvTs62PjJtv-15" value="YES" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;" vertex="1" parent="CFNLcl3D-IvTs62PjJtv-1">
+          <mxGeometry x="348" y="59" width="50" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="CFNLcl3D-IvTs62PjJtv-16" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="CFNLcl3D-IvTs62PjJtv-1" target="CFNLcl3D-IvTs62PjJtv-3">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="858" y="105" />
+              <mxPoint x="858" y="179" />
+              <mxPoint x="28" y="179" />
+              <mxPoint x="28" y="236" />
+            </Array>
+            <mxPoint x="838" y="105.42857142857156" as="sourcePoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="CFNLcl3D-IvTs62PjJtv-17" value="Remove the Id from&amp;nbsp; &quot;drones_in_id&quot;&lt;br&gt;Remove state&amp;nbsp;&lt;br&gt;Decrease 1 from the corresponding spot" style="html=1;dashed=0;whiteSpace=wrap;" vertex="1" parent="CFNLcl3D-IvTs62PjJtv-1">
+          <mxGeometry x="588" y="59" width="250" height="65" as="geometry" />
+        </mxCell>
+        <mxCell id="CFNLcl3D-IvTs62PjJtv-18" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="CFNLcl3D-IvTs62PjJtv-1" source="CFNLcl3D-IvTs62PjJtv-13" target="CFNLcl3D-IvTs62PjJtv-17">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="CFNLcl3D-IvTs62PjJtv-19" value="Append the Id from&amp;nbsp; &quot;drones_in_id&quot;&lt;br&gt;Append state&amp;nbsp;&lt;br&gt;Increase 1 from the corresponding spot" style="html=1;dashed=0;whiteSpace=wrap;" vertex="1" parent="CFNLcl3D-IvTs62PjJtv-1">
+          <mxGeometry x="663" y="203.5" width="250" height="65" as="geometry" />
+        </mxCell>
+        <mxCell id="CFNLcl3D-IvTs62PjJtv-20" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="CFNLcl3D-IvTs62PjJtv-1" source="CFNLcl3D-IvTs62PjJtv-7" target="CFNLcl3D-IvTs62PjJtv-19">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="CFNLcl3D-IvTs62PjJtv-21" value="NO" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;" vertex="1" parent="CFNLcl3D-IvTs62PjJtv-1">
+          <mxGeometry x="313" y="132.5" width="40" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="CFNLcl3D-IvTs62PjJtv-22" value="&lt;font style=&quot;font-size: 18px;&quot;&gt;find_relative_spot&lt;/font&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry x="-4030" y="2008.5" width="160" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="CFNLcl3D-IvTs62PjJtv-23" value="" style="group" vertex="1" connectable="0" parent="1">
+          <mxGeometry x="-4020" y="2044" width="650" height="197.5" as="geometry" />
+        </mxCell>
+        <mxCell id="CFNLcl3D-IvTs62PjJtv-24" value="" style="html=1;dashed=0;whiteSpace=wrap;" vertex="1" parent="CFNLcl3D-IvTs62PjJtv-23">
+          <mxGeometry width="650" height="197.5" as="geometry" />
+        </mxCell>
+        <mxCell id="CFNLcl3D-IvTs62PjJtv-25" value="For each element (i)&amp;nbsp; of&amp;nbsp;&lt;br&gt;DIR_xy_distance_VECTORS" style="html=1;dashed=0;whiteSpace=wrap;" vertex="1" parent="CFNLcl3D-IvTs62PjJtv-23">
+          <mxGeometry x="10" y="18.63000000000011" width="172.5" height="71.75" as="geometry" />
+        </mxCell>
+        <mxCell id="CFNLcl3D-IvTs62PjJtv-26" value="For each element :&amp;nbsp;&lt;br&gt;&amp;nbsp;x- vector[0]&lt;br&gt;y- vector[1]" style="html=1;dashed=0;whiteSpace=wrap;" vertex="1" parent="CFNLcl3D-IvTs62PjJtv-23">
+          <mxGeometry x="230" y="14.75" width="145" height="81" as="geometry" />
+        </mxCell>
+        <mxCell id="CFNLcl3D-IvTs62PjJtv-27" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="CFNLcl3D-IvTs62PjJtv-23" source="CFNLcl3D-IvTs62PjJtv-25" target="CFNLcl3D-IvTs62PjJtv-26">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="CFNLcl3D-IvTs62PjJtv-28" value="equivalence" style="shape=rhombus;html=1;dashed=0;whiteSpace=wrap;perimeter=rhombusPerimeter;" vertex="1" parent="CFNLcl3D-IvTs62PjJtv-23">
+          <mxGeometry x="410" y="7.5" width="100" height="94" as="geometry" />
+        </mxCell>
+        <mxCell id="CFNLcl3D-IvTs62PjJtv-29" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="CFNLcl3D-IvTs62PjJtv-23" source="CFNLcl3D-IvTs62PjJtv-26" target="CFNLcl3D-IvTs62PjJtv-28">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="CFNLcl3D-IvTs62PjJtv-30" value="return -1" style="html=1;dashed=0;whiteSpace=wrap;" vertex="1" parent="CFNLcl3D-IvTs62PjJtv-23">
+          <mxGeometry x="410" y="132" width="100" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="CFNLcl3D-IvTs62PjJtv-31" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="CFNLcl3D-IvTs62PjJtv-23" source="CFNLcl3D-IvTs62PjJtv-28" target="CFNLcl3D-IvTs62PjJtv-30">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="CFNLcl3D-IvTs62PjJtv-32" value="return (i) that reprent spot&amp;nbsp;" style="html=1;dashed=0;whiteSpace=wrap;" vertex="1" parent="CFNLcl3D-IvTs62PjJtv-23">
+          <mxGeometry x="540" y="30.25" width="100" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="CFNLcl3D-IvTs62PjJtv-33" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="CFNLcl3D-IvTs62PjJtv-23" source="CFNLcl3D-IvTs62PjJtv-28" target="CFNLcl3D-IvTs62PjJtv-32">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="CFNLcl3D-IvTs62PjJtv-34" value="YES" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;" vertex="1" parent="CFNLcl3D-IvTs62PjJtv-23">
+          <mxGeometry x="490" y="20" width="50" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="CFNLcl3D-IvTs62PjJtv-35" value="NO" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;" vertex="1" parent="CFNLcl3D-IvTs62PjJtv-23">
+          <mxGeometry x="460" y="95" width="40" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="CFNLcl3D-IvTs62PjJtv-36" value="" style="group" vertex="1" connectable="0" parent="1">
+          <mxGeometry x="-5005" y="1590" width="360" height="112" as="geometry" />
+        </mxCell>
+        <mxCell id="CFNLcl3D-IvTs62PjJtv-37" value="" style="html=1;dashed=0;whiteSpace=wrap;" vertex="1" parent="CFNLcl3D-IvTs62PjJtv-36">
+          <mxGeometry x="10" y="32" width="350" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="CFNLcl3D-IvTs62PjJtv-38" value="build_spot_info_message" style="html=1;dashed=0;whiteSpace=wrap;" vertex="1" parent="CFNLcl3D-IvTs62PjJtv-36">
+          <mxGeometry x="20" y="47" width="150" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="CFNLcl3D-IvTs62PjJtv-39" value="send_msg" style="html=1;dashed=0;whiteSpace=wrap;" vertex="1" parent="CFNLcl3D-IvTs62PjJtv-36">
+          <mxGeometry x="250" y="47" width="100" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="CFNLcl3D-IvTs62PjJtv-40" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="CFNLcl3D-IvTs62PjJtv-36" source="CFNLcl3D-IvTs62PjJtv-38" target="CFNLcl3D-IvTs62PjJtv-39">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="CFNLcl3D-IvTs62PjJtv-41" value="&lt;font style=&quot;font-size: 18px;&quot;&gt;update_candidate_spot_info_to_neighbors&lt;/font&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;" vertex="1" parent="CFNLcl3D-IvTs62PjJtv-36">
+          <mxGeometry width="360" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="CFNLcl3D-IvTs62PjJtv-42" value="" style="group" vertex="1" connectable="0" parent="1">
+          <mxGeometry x="-5010" y="1721" width="230" height="150" as="geometry" />
+        </mxCell>
+        <mxCell id="CFNLcl3D-IvTs62PjJtv-43" value="" style="group" vertex="1" connectable="0" parent="CFNLcl3D-IvTs62PjJtv-42">
+          <mxGeometry width="230" height="150" as="geometry" />
+        </mxCell>
+        <mxCell id="CFNLcl3D-IvTs62PjJtv-44" value="Create message contains :&amp;nbsp;&lt;br&gt;&lt;div style=&quot;text-align: left;&quot;&gt;&lt;span style=&quot;background-color: initial;&quot;&gt;- Arrival_header=&quot;A&quot;&amp;nbsp;&lt;/span&gt;&lt;/div&gt;&lt;div style=&quot;text-align: left;&quot;&gt;&lt;span style=&quot;background-color: initial;&quot;&gt;- positionX, position Y&amp;nbsp;&lt;/span&gt;&lt;/div&gt;&lt;div style=&quot;text-align: left;&quot;&gt;&lt;span style=&quot;background-color: initial;&quot;&gt;- id of the drone&amp;nbsp;&lt;/span&gt;&lt;/div&gt;&lt;div style=&quot;text-align: left;&quot;&gt;&lt;span style=&quot;background-color: initial;&quot;&gt;- state of the drone&amp;nbsp;&amp;nbsp;&lt;/span&gt;&lt;/div&gt;" style="html=1;dashed=0;whiteSpace=wrap;" vertex="1" parent="CFNLcl3D-IvTs62PjJtv-43">
+          <mxGeometry x="15" y="30" width="200" height="120" as="geometry" />
+        </mxCell>
+        <mxCell id="CFNLcl3D-IvTs62PjJtv-45" value="&lt;font style=&quot;font-size: 18px;&quot;&gt;build_spot_info_message&lt;/font&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;" vertex="1" parent="CFNLcl3D-IvTs62PjJtv-43">
+          <mxGeometry width="230" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="CFNLcl3D-IvTs62PjJtv-46" value="" style="group" vertex="1" connectable="0" parent="1">
+          <mxGeometry x="-4755" y="1720" width="240" height="150" as="geometry" />
+        </mxCell>
+        <mxCell id="CFNLcl3D-IvTs62PjJtv-47" value="Take message and retuen&amp;nbsp; :&amp;nbsp;&lt;span style=&quot;background-color: initial; text-align: left;&quot;&gt;&amp;nbsp;&lt;/span&gt;&lt;br&gt;&lt;div style=&quot;text-align: left;&quot;&gt;&lt;span style=&quot;background-color: initial;&quot;&gt;- positionX, position Y&amp;nbsp;&lt;/span&gt;&lt;/div&gt;&lt;div style=&quot;text-align: left;&quot;&gt;&lt;span style=&quot;background-color: initial;&quot;&gt;- id of the drone&amp;nbsp;&lt;/span&gt;&lt;/div&gt;&lt;div style=&quot;text-align: left;&quot;&gt;&lt;span style=&quot;background-color: initial;&quot;&gt;- state of the drone&amp;nbsp;&amp;nbsp;&lt;/span&gt;&lt;/div&gt;" style="html=1;dashed=0;whiteSpace=wrap;" vertex="1" parent="CFNLcl3D-IvTs62PjJtv-46">
+          <mxGeometry x="15" y="30" width="200" height="120" as="geometry" />
+        </mxCell>
+        <mxCell id="CFNLcl3D-IvTs62PjJtv-48" value="&lt;font style=&quot;font-size: 18px;&quot;&gt;decode_spot_info_message&lt;/font&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;" vertex="1" parent="CFNLcl3D-IvTs62PjJtv-46">
+          <mxGeometry x="1" width="250" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="CFNLcl3D-IvTs62PjJtv-49" value="" style="group" vertex="1" connectable="0" parent="1">
+          <mxGeometry x="-4350" y="1600" width="300" height="130" as="geometry" />
+        </mxCell>
+        <mxCell id="CFNLcl3D-IvTs62PjJtv-50" value="" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="CFNLcl3D-IvTs62PjJtv-49">
+          <mxGeometry width="300" height="130" as="geometry" />
+        </mxCell>
+        <mxCell id="CFNLcl3D-IvTs62PjJtv-51" value="PositionX= PositionX + x&lt;br&gt;&amp;nbsp;PositionY= PositionY + Y" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="CFNLcl3D-IvTs62PjJtv-49">
+          <mxGeometry x="50" y="35" width="220" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="CFNLcl3D-IvTs62PjJtv-52" value="update_location&amp;nbsp;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;" vertex="1" parent="CFNLcl3D-IvTs62PjJtv-49">
+          <mxGeometry x="5" width="110" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="CFNLcl3D-IvTs62PjJtv-53" value="Distance x, y from the sink" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;" vertex="1" parent="CFNLcl3D-IvTs62PjJtv-49">
+          <mxGeometry x="80" y="100" width="160" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="CFNLcl3D-IvTs62PjJtv-54" value="" style="html=1;dashed=0;whiteSpace=wrap;" vertex="1" parent="1">
+          <mxGeometry x="-3700" y="1722.5" width="610" height="87.5" as="geometry" />
+        </mxCell>
+        <mxCell id="CFNLcl3D-IvTs62PjJtv-55" value="update_location&amp;nbsp;" style="rounded=0;whiteSpace=wrap;html=1;container=0;" vertex="1" parent="1">
+          <mxGeometry x="-3220" y="1737.5" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="CFNLcl3D-IvTs62PjJtv-56" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="CFNLcl3D-IvTs62PjJtv-57" target="CFNLcl3D-IvTs62PjJtv-55">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="CFNLcl3D-IvTs62PjJtv-57" value="Move the physical drone &lt;br&gt;( call from&amp;nbsp; ardupilot_drone)&amp;nbsp;&amp;nbsp;" style="html=1;dashed=0;whiteSpace=wrap;container=0;" vertex="1" parent="1">
+          <mxGeometry x="-3410" y="1735" width="165" height="65" as="geometry" />
+        </mxCell>
+        <mxCell id="CFNLcl3D-IvTs62PjJtv-58" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="CFNLcl3D-IvTs62PjJtv-59" target="CFNLcl3D-IvTs62PjJtv-57">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="CFNLcl3D-IvTs62PjJtv-59" value="covert spot name to &lt;br&gt;( angle , distance)&amp;nbsp;" style="html=1;dashed=0;whiteSpace=wrap;container=0;" vertex="1" parent="1">
+          <mxGeometry x="-3570" y="1742.5" width="130" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="CFNLcl3D-IvTs62PjJtv-60" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="CFNLcl3D-IvTs62PjJtv-61" target="CFNLcl3D-IvTs62PjJtv-59">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="CFNLcl3D-IvTs62PjJtv-61" value="save the taken_direction&amp;nbsp;" style="html=1;dashed=0;whiteSpace=wrap;" vertex="1" parent="1">
+          <mxGeometry x="-3690" y="1742.5" width="100" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="CFNLcl3D-IvTs62PjJtv-62" value="&lt;font style=&quot;font-size: 18px;&quot;&gt;move_to_spot&lt;/font&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry x="-3710" y="1685" width="140" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="CFNLcl3D-IvTs62PjJtv-63" value="" style="group" vertex="1" connectable="0" parent="1">
+          <mxGeometry x="-3700" y="1410" width="1140" height="190" as="geometry" />
+        </mxCell>
+        <mxCell id="CFNLcl3D-IvTs62PjJtv-64" value="" style="html=1;dashed=0;whiteSpace=wrap;" vertex="1" parent="CFNLcl3D-IvTs62PjJtv-63">
+          <mxGeometry x="10" y="40" width="1130" height="150" as="geometry" />
+        </mxCell>
+        <mxCell id="CFNLcl3D-IvTs62PjJtv-65" value="create flag&lt;br&gt;&amp;nbsp;neighbors_list_updated" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="CFNLcl3D-IvTs62PjJtv-63">
+          <mxGeometry x="20" y="79" width="130" height="58" as="geometry" />
+        </mxCell>
+        <mxCell id="CFNLcl3D-IvTs62PjJtv-66" value="wait until all msg arrives&amp;nbsp;" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="CFNLcl3D-IvTs62PjJtv-63">
+          <mxGeometry x="190" y="78" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="CFNLcl3D-IvTs62PjJtv-67" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="CFNLcl3D-IvTs62PjJtv-63" source="CFNLcl3D-IvTs62PjJtv-65" target="CFNLcl3D-IvTs62PjJtv-66">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="CFNLcl3D-IvTs62PjJtv-68" value="" style="html=1;dashed=0;whiteSpace=wrap;shape=mxgraph.dfd.loop" vertex="1" parent="CFNLcl3D-IvTs62PjJtv-63">
+          <mxGeometry x="340" y="50" width="545" height="130" as="geometry" />
+        </mxCell>
+        <mxCell id="CFNLcl3D-IvTs62PjJtv-69" value="Reponse_&lt;br&gt;header" style="shape=rhombus;html=1;dashed=0;whiteSpace=wrap;perimeter=rhombusPerimeter;" vertex="1" parent="CFNLcl3D-IvTs62PjJtv-63">
+          <mxGeometry x="375" y="60" width="80" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="CFNLcl3D-IvTs62PjJtv-70" value="Decode message&amp;nbsp;" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="CFNLcl3D-IvTs62PjJtv-63">
+          <mxGeometry x="480" y="80" width="110" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="CFNLcl3D-IvTs62PjJtv-71" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="CFNLcl3D-IvTs62PjJtv-63" source="CFNLcl3D-IvTs62PjJtv-69" target="CFNLcl3D-IvTs62PjJtv-70">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="CFNLcl3D-IvTs62PjJtv-72" value="update_neighbors_list&lt;br&gt;info of each spot" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="CFNLcl3D-IvTs62PjJtv-63">
+          <mxGeometry x="615" y="70" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="CFNLcl3D-IvTs62PjJtv-73" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="CFNLcl3D-IvTs62PjJtv-63" source="CFNLcl3D-IvTs62PjJtv-70" target="CFNLcl3D-IvTs62PjJtv-72">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="CFNLcl3D-IvTs62PjJtv-74" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="CFNLcl3D-IvTs62PjJtv-63" source="CFNLcl3D-IvTs62PjJtv-75" target="CFNLcl3D-IvTs62PjJtv-69">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="805" y="150" />
+              <mxPoint x="355" y="150" />
+              <mxPoint x="355" y="100" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="CFNLcl3D-IvTs62PjJtv-75" value="retrive another message&amp;nbsp;" style="html=1;dashed=0;whiteSpace=wrap;" vertex="1" parent="CFNLcl3D-IvTs62PjJtv-63">
+          <mxGeometry x="755" y="75" width="100" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="CFNLcl3D-IvTs62PjJtv-76" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="CFNLcl3D-IvTs62PjJtv-63" source="CFNLcl3D-IvTs62PjJtv-72" target="CFNLcl3D-IvTs62PjJtv-75">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="CFNLcl3D-IvTs62PjJtv-77" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.003;entryY=0.446;entryDx=0;entryDy=0;entryPerimeter=0;" edge="1" parent="CFNLcl3D-IvTs62PjJtv-63" source="CFNLcl3D-IvTs62PjJtv-66" target="CFNLcl3D-IvTs62PjJtv-68">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="CFNLcl3D-IvTs62PjJtv-78" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.64;entryDx=0;entryDy=0;entryPerimeter=0;" edge="1" parent="CFNLcl3D-IvTs62PjJtv-63" source="CFNLcl3D-IvTs62PjJtv-68" target="CFNLcl3D-IvTs62PjJtv-80">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="910" y="115" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="CFNLcl3D-IvTs62PjJtv-79" value="&lt;font style=&quot;font-size: 24px;&quot;&gt;get_neighbours_info&lt;/font&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;" vertex="1" parent="CFNLcl3D-IvTs62PjJtv-63">
+          <mxGeometry width="240" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="CFNLcl3D-IvTs62PjJtv-80" value="&lt;b&gt;neighbors_list_updated&lt;/b&gt;&lt;br&gt;Flag" style="shape=manualInput;whiteSpace=wrap;html=1;dashed=0;size=15;" vertex="1" parent="CFNLcl3D-IvTs62PjJtv-63">
+          <mxGeometry x="919" y="83" width="213" height="50" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

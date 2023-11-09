@@ -70,8 +70,7 @@
 
 
 ## Expansion phase
-Here you can have acess [expansion UML](https://raw.githubusercontent.com/SulaimanMohammad/Drone_VESPA/main/UML/expansion.png)
-
+![Alt text](https://raw.githubusercontent.com/SulaimanMohammad/Drone_VESPA/main/UML/expansion_process.drawio.svg)
 
 ### Forming border communication 
 **Propagation Indicator:** This represents the list that previous node used to construct the target. Essentially, it's the list of all neighbors of the previous node.
