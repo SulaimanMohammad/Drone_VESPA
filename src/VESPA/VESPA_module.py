@@ -468,7 +468,12 @@ class Drone:
         set_to_move(vehicle)
         self.direction_taken.append( destination_spot)
         angle, distance = self.convert_spot_angle_distance(destination_spot)
-        move_body_PID(vehicle,angle, distance)
+        try:
+            move_body_PID(vehicle,angle, distance)
+        except Exception as e:
+            print(f"An error occurred: {str(e)}")
+            vehicle.mode = VehicleMode ("LAND")
+            vehicle.close()
         self.update_location(destination_spot)
         self.clear_buffer() # need to clear the bufer from message received on the road
         # Arrive to steady state and hover then start observing the location
