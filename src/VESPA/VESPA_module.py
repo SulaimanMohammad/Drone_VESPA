@@ -90,23 +90,34 @@ Irremovable_boarder=4
 These will be used in the building and decoding message
 '''
 #Exchanging data Headers
-Movement_command= "M"
-Calibration= "C"
-Demand_header= "D"
-Reponse_header= "R"
+Movement_command= 'M'
+Calibration= 'C'
+Demand_header= 'D'
+Response_header= 'R'
 # Expansion Headers
-Expan_header= "E"
-Arrival_header= "A"
-Inherit_header= "I"
-Forming_border_header= "F"
+Expan_header= 'E'
+Arrival_header= 'A'
+Inherit_header= 'I'
+Forming_border_header= 'F'
 #Spanning Headers
-Spanning_header= "S"
-Target_coordinates_header= "T"
+Spanning_header= 'S'
+Target_coordinates_header= 'T'
 # Blancing Headers
-Local_balance_header="L"
-Guidance_header= "G"
-Balance_header= "B"
+Local_balance_header='L'
+Guidance_header= 'G'
+Balance_header= 'B'
 Algorithm_termination_header="O"
+
+# Create an array of headers
+headers = [
+    Movement_command, Calibration, Demand_header, Response_header,
+    Expan_header, Arrival_header, Inherit_header, Forming_border_header,
+    Spanning_header, Target_coordinates_header, Local_balance_header,
+    Guidance_header, Balance_header, Algorithm_termination_header
+]
+
+# Generate an array of ASCII values to be used in retiveing messages 
+headers_ascii_values = [ord(header) for header in headers]
 
 '''
 -------------------------------------------------------------------------------------
@@ -192,7 +203,7 @@ class Drone:
             self.neighbors_list_updated.clear()
         time.sleep(1) # Wait to have all msgs
         # Retrive all the reponse messages then rise the flage that all is received
-        while msg.startswith(Reponse_header.encode()):
+        while msg.startswith(Response_header.encode()):
             positionX, positionY, state, previous_state,id_value= self.decode_spot_info_message(msg)
             self.update_neighbors_list(positionX, positionY, state, previous_state,id_value)
             self.calculate_neighbors_distance_sink()
@@ -204,11 +215,11 @@ class Drone:
     def exchange_neighbors_info_communication(self,msg):
         # Receiving message asking for data 
         if msg.startswith(Demand_header.encode()) and msg.endswith(b'\n'):
-            data_msg= self.build_spot_info_message(Reponse_header) # Build message that contains all data
+            data_msg= self.build_spot_info_message(Response_header) # Build message that contains all data
             self.send_msg(data_msg)
 
         # Receiving message containing data     
-        if msg.startswith(Reponse_header.encode()) and msg.endswith(b'\n'):
+        if msg.startswith(Response_header.encode()) and msg.endswith(b'\n'):
             new_msg= self.get_neighbors_info()
         
         return new_msg 
@@ -253,7 +264,7 @@ class Drone:
         message += self.encode_float_to_int(self.positionX)
         message += self.encode_float_to_int(self.positionY)
         # Determine and append max byte count for self.id
-        max_byte_count = self.determine_max_byte_size(self.id)
+        max_byte_count = determine_max_byte_size(self.id)
         message += struct.pack('>B', max_byte_count)  # Note the single B format
         # Encode state
         message += struct.pack('>B', self.state)
