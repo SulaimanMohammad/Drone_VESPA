@@ -247,8 +247,11 @@ class Drone:
         """Encodes a float as an integer with a given multiplier."""
         encoded = int(value * precision)
         # Choose the format based on the size of the integer
-        format_char = '>H' if encoded <= 65535 else '>I'
-        return struct.pack(format_char, encoded)
+        if encoded <= 65535:
+            return struct.pack('>BH', 2, encoded)  # Length 2 bytes, value
+        else:
+            return struct.pack('>BI', 4, encoded)  # Length 4 bytes, value
+
 
     def decode_int_to_float(self, encoded_float):
         # Check the byte length to decide the format
