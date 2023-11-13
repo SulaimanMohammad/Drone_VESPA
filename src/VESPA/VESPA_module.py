@@ -263,43 +263,46 @@ class Drone:
         return value / multiplier  # Assuming multiplier = 100
 
     def build_spot_info_message(self, header):
-        # Start message with 'E'
         message = header.encode()
         # Encode positionX and positionY
         message += self.encode_float_to_int(self.positionX)
         message += self.encode_float_to_int(self.positionY)
-        # Determine and append max byte count for self.id
-        max_byte_count = determine_max_byte_size(self.id)
-        message += struct.pack('>B', max_byte_count)  # Note the single B format
         # Encode state
         message += struct.pack('>B', self.state)
         message += struct.pack('>B', self.previous_state)
-        # Append the id itself
+        # Determine and append max byte count for self.id
+        max_byte_count = determine_max_byte_size(self.id)
+        # Append the id 
+        message += struct.pack('>B', max_byte_count)        
         message += self.id.to_bytes(max_byte_count, 'big')
         message += b'\n'
         return message
 
     def decode_spot_info_message(self,message):
-        # Starting index after the header
-        index = 1 #All headers are 1 byte
-        # Decode positionX
-        positionX_encoded = message[index:index+2] if len(message) - index == 6 else message[index:index+4]
+        index = 1  # Header is 1 byte
+        # Decode length and positionX
+        lengthX = struct.unpack('>B', message[index:index+1])[0]
+        index += 1
+        positionX_encoded = message[index:index+lengthX]
         positionX = self.decode_int_to_float(positionX_encoded)
-        index += len(positionX_encoded)
-        # Decode positionY
-        positionY_encoded = message[index:index+2] if len(message) - index == 6 else message[index:index+4]
+        index += lengthX
+        # Decode length and positionY
+        lengthY = struct.unpack('>B', message[index:index+1])[0]
+        index += 1
+        positionY_encoded = message[index:index+lengthY]
         positionY = self.decode_int_to_float(positionY_encoded)
-        index += len(positionY_encoded)
-         # Decode state and previous_state
+        index += lengthY
+        # Decode state and previous_state
         state = struct.unpack('>B', message[index:index+1])[0]
         index += 1
         previous_state = struct.unpack('>B', message[index:index+1])[0]
         index += 1
-        # Decode max_byte_count for id
+        # Read byte for max_byte_count
         max_byte_count = struct.unpack('>B', message[index:index+1])[0]
         index += 1
-        # Decode self.id
+        # Decode the id
         id_value = int.from_bytes(message[index:index+max_byte_count], 'big')
+        index += max_byte_count
         return positionX, positionY, state, previous_state, id_value
                   
     def clear_buffer(self):
