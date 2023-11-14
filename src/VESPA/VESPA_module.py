@@ -96,6 +96,7 @@ Movement_command= 'M'
 Calibration= 'C'
 Demand_header= 'D'
 Response_header= 'R'
+ACK_header= "K"
 # Expansion Headers
 Expan_header= 'E'
 Arrival_header= 'A'
@@ -112,7 +113,7 @@ Algorithm_termination_header="O"
 
 # Create an array of headers
 headers = [
-    Movement_command, Calibration, Demand_header, Response_header,
+    Movement_command, Calibration, Demand_header, Response_header,ACK_header,
     Expan_header, Arrival_header, Inherit_header, Forming_border_header,
     Spanning_header, Target_coordinates_header, Local_balance_header,
     Guidance_header, Balance_header, Algorithm_termination_header
@@ -171,13 +172,15 @@ class Drone:
         self.current_target_ids=[]
         self.lock_state = threading.Lock()
         self.lock_neighbor_list = threading.Lock()
-        self.neighbors_list_updated = threading.Event()
+        self.demanders_received_data = threading.Event()
         self.forming_border_msg_recived= threading.Event()
         self.VESPA_termination= threading.Event() 
         self.elected_droen_arrived= None    
         self.Forming_Border_Broadcast_REC= None
         self.start_expanding= None
         self.end_of_balancin= None
+        self.demanders_list=[]
+
 
         
         
@@ -187,62 +190,124 @@ class Drone:
     ---------------------------------- Communication ------------------------------------
     -------------------------------------------------------------------------------------
     '''
-    def build_data_demand_message(self):
-        return Demand_header.encode() + b'\n'
 
+    def append_id_demanders_list(self,value):
+        if value not in self.demanders_list:
+            self.demanders_list.append(value)
+
+    def remove_id_demanders_list(self,value):
+        while value in  self.demanders_list:
+             self.demanders_list.remove(value)   
+
+    def initialize_timer(self):
+        self.remaining_time=5
+        while True:
+            self.remaining_time -= 0.1
+            #print(f"Remaining time: {self.remaining_time:.2f} seconds")
+            if self.remaining_time <= 0:
+                    break
+            time.sleep(0.1)
+
+    def reset_timer(self):
+        self.remaining_time=5
+
+    def resend_data(self):
+        if not self.demanders_received_data.is_set():
+                data_msg= self.build_spot_info_message(Response_header) 
+                self.send_msg(data_msg)
+        self.demanders_received_data.clear()
+
+    def build_data_demand_message(self):
+        message= Demand_header.encode()
+        max_byte_count = determine_max_byte_size(id)
+        message += struct.pack('>B', max_byte_count)
+        message += self.id.to_bytes(max_byte_count, 'big')
+        message += b'\n'
+        return message
+    
+    def decode_data_demand_message(encoded_message):
+        header_size = 1  
+        demand_header = encoded_message[:header_size].decode()
+        # Extract the max_byte_count which is the next byte after the header
+        max_byte_count = struct.unpack('>B', encoded_message[header_size:header_size+1])[0]
+        # Extract the ID using the max_byte_count
+        id_start_index = header_size + 1
+        id_end_index = id_start_index + max_byte_count
+        id_bytes = encoded_message[id_start_index:id_end_index]
+        id = int.from_bytes(id_bytes, 'big')
+        return id
+
+    
     def demand_neighbors_info(self):
+        # Send request 
         demand_msg= self.build_data_demand_message()
         self.send_msg(demand_msg)
-        self.neighbors_list_updated.wait()
-        self.neighbors_list_updated.clear()
+        
+        # wait for request , wait all requests and send only once 
+        self.initialize_timer()
+        if self.demanders_list: # there are drone demaneded 
+            data_msg= self.build_spot_info_message(Response_header) # Build message that contains all data
+            self.send_msg(data_msg)
+            # wait Ack from the demander and in case not all recived re-send 
+            self.initialize_timer()
+            self.resend_data()
+
+    def build_ACK_data_message(self, target_id):
+        message= ACK_header.encode()
+        max_byte_count = max([determine_max_byte_size(id)]+
+                            [determine_max_byte_size(target_id)])
+        message += struct.pack('>B', max_byte_count)
+        message += self.id.to_bytes(max_byte_count, 'big')
+        message+=target_id.to_bytes(max_byte_count, 'big')
+        message += b'\n'
+        return message
+    
+    def decode_ACK_data_message(encoded_message):
+        # Skip the header (1 byte)
+        content = encoded_message[1:]
+        # Extract the max_byte_count (1 byte)
+        max_byte_count = struct.unpack('>B', content[:1])[0]
+        # Calculate the start and end positions for id and target_id
+        id_start = 1
+        id_end = id_start + max_byte_count
+        target_id_start = id_end
+        target_id_end = target_id_start + max_byte_count
+        # Extract id and target_id
+        id_bytes = content[id_start:id_end]
+        target_id_bytes = content[target_id_start:target_id_end]
+        id = int.from_bytes(id_bytes, 'big')
+        target_id = int.from_bytes(target_id_bytes, 'big')
+        return id, target_id
+    
 
     def get_neighbors_info(self):
-        '''
-        In case The demand functoin is done becuse a message with different headr between the respons msg
-        then the thi function will set again the flag
-        but since the demand doesnt exit then need to be sure it is always cleared befoe use'''
-        if self.neighbors_list_updated.is_set():
-            self.neighbors_list_updated.clear()
-        time.sleep(1) # Wait to have all msgs
-        # Retrive all the reponse messages then rise the flage that all is received
-        while msg.startswith(Response_header.encode()):
-            positionX, positionY, state, previous_state,id_value= self.decode_spot_info_message(msg)
-            self.update_neighbors_list(positionX, positionY, state, previous_state,id_value)
-            self.calculate_neighbors_distance_sink()
-            msg= self.retrive_msg_from_buffer()
-        self.neighbors_list_updated.set()
-        
-        return msg # since the message does not start with reponse then it should be treated in another way 
+        positionX, positionY, state, previous_state,id_value= self.decode_spot_info_message(msg)
+        Ack_msg=self.build_ACK_data_message(id_value)
+        self.update_neighbors_list(positionX, positionY, state, previous_state,id_value)
+        self.calculate_neighbors_distance_sink()
+        self.send_msg(Ack_msg)
+
 
     def exchange_neighbors_info_communication(self,msg):
         # Receiving message asking for data 
         if msg.startswith(Demand_header.encode()) and msg.endswith(b'\n'):
-            data_msg= self.build_spot_info_message(Response_header) # Build message that contains all data
-            self.send_msg(data_msg)
+            id_need_data= self.decode_data_demand_message(msg)
+            self.append_id_demanders_list(id_need_data)
+            self.reset_timer(self)
+
+        if msg.startswith(ACK_header.encode()) and msg.endswith(b'\n'):
+                sender_id, target_id =self.decode_ACK_data_message(msg)
+                print( "ACK sender and taget_id", sender_id, target_id)
+                if target_id== id: 
+                    self.remove_id_demanders_list(sender_id)
+                    self.reset_timer()
+                if len(self.demanders_list)==0:
+                    self.demanders_received_data.set()
 
         # Receiving message containing data     
         if msg.startswith(Response_header.encode()) and msg.endswith(b'\n'):
-            new_msg= self.get_neighbors_info()
+            self.get_neighbors_info()
         
-        return new_msg 
-            
-
-
-    def send_msg(self,msg):
-        #TODO deal with sending boradcasting
-        pass
-
-    def retrive_msg_from_buffer(self):
-        time.sleep(0.05) # wait to have msgs in the buffer
-        # device is the object of Xbee connection
-        xbee_message = device.read_data(0.02) #  0.02 timeout in seconds
-        # read untile the bufere is empty or retrive 7 msgs
-        msg=" "
-        if xbee_message is not None:
-            return msg
-        else:
-            return None
-
     def encode_float_to_int(self, value, precision= multiplier):
         """Encodes a float as an integer with a given multiplier."""
         encoded = int(value * precision)
@@ -304,7 +369,22 @@ class Drone:
         id_value = int.from_bytes(message[index:index+max_byte_count], 'big')
         index += max_byte_count
         return positionX, positionY, state, previous_state, id_value
-                  
+
+    def send_msg(self,msg):
+        #TODO deal with sending boradcasting
+        pass
+
+    def retrive_msg_from_buffer(self):
+        time.sleep(0.05) # wait to have msgs in the buffer
+        # device is the object of Xbee connection
+        xbee_message = device.read_data(0.02) #  0.02 timeout in seconds
+        # read untile the bufere is empty or retrive 7 msgs
+        msg=" "
+        if xbee_message is not None:
+            return msg
+        else:
+            return None
+
     def clear_buffer(self):
         # read the buffer until it is empty
         # while xbee_device.get_queue_length() > 0:
