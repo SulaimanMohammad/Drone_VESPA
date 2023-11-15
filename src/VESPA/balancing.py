@@ -101,7 +101,7 @@ def send_lead_local_balancing_message(self, all_moves):
     for move in all_moves:
         id, destination = move  # Unpack the tuple
         msg= build_local_movement_message(id, destination)
-        self.send_msg(msg)
+        send_msg(msg)
     time.sleep(movement_time)    
 
 class Boarder_Timer:
@@ -138,7 +138,7 @@ class Boarder_Timer:
             border_t.local_balancing.set() # flag to identify local balancing
             # Need to be sent in this stage,the thread of listining of free drone would joined after completing the circle 
             message= build_shared_allowed_spots_message(self)
-            self.send_msg(message) 
+            send_msg(message) 
             Fire_border_msg(Balance_header)
 
         self.end_of_balancing.wait()
@@ -148,9 +148,9 @@ class Boarder_Timer:
 
 def border_listener(self,border_t):
     while not self.end_of_balancing.is_set(): # the end is not reached , keep listenning 
-        msg= self.retrive_msg_from_buffer() 
+        msg= self.retrieve_msg_from_buffer() 
 
-        msg = self.exchange_neighbors_info_communication(msg)
+        self.exchange_neighbors_info_communication(msg)
 
         if msg.startswith(Arrival_header.encode()) and msg.endswith(b'\n'):
             # This can be recived in case of drone arrive to the current spot or another border neigbors
@@ -180,7 +180,7 @@ def border_listener(self,border_t):
                 elif self.id in  target_ids: # the drone respond only if it is targeted
                     if candidate == self.id: # the message recived contains the id of the drone means the message came back  
                         Broadcast_Msg= build_border_message(header_in_use,self.id,[balancing_terminator] ,[balancing_terminator], self.id)
-                        self.send_msg(Broadcast_Msg)
+                        send_msg(Broadcast_Msg)
                         if header_in_use== header_in_use:
                             self.VESPA_termination.set()
                         self.end_of_balancing.set() 
@@ -204,9 +204,9 @@ def border_listener(self,border_t):
 '''
 def communication_balancing_free_drones(self,vehicle):
     while not self.end_of_balancing.is_set(): # the end is not reached , keep listenning 
-        msg= self.retrive_msg_from_buffer() 
+        msg= self.retrieve_msg_from_buffer() 
         
-        msg = self.exchange_neighbors_info_communication(msg)
+        self.exchange_neighbors_info_communication(msg)
         
         if msg.startswith(Arrival_header.encode()) and msg.endswith(b'\n'):
             # This can be recived in case of drone arrive to the current spot or another border neigbors
@@ -219,7 +219,7 @@ def communication_balancing_free_drones(self,vehicle):
             if rec_id == self.id: # Current drone is targeted
                 self.move_to_spot(vehicle, destination)
                 data_msg= self.build_spot_info_message(Arrival_header)
-                self.send_msg(data_msg)
+                send_msg(data_msg)
 
         if msg.startswith(Guidance_header.encode()) and msg.endswith(b'\n'):
             targets_id, allowed_spots= decode_shared_allowed_spots_message(msg)
@@ -283,7 +283,7 @@ def balancing(self, vehicle):
             self.move_to_spot(vehicle, spot_to_go)
         # This message will be read by the border drone and its niegbor
         data_msg= self.build_spot_info_message(Arrival_header)
-        self.send_msg(data_msg)
+        send_msg(data_msg)
         self.end_of_balancing.wait()
         self.end_of_balancing.clear() 
     

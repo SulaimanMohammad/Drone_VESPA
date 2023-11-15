@@ -1,8 +1,8 @@
 from .VESPA_module import *
-from .expansion import check_border_candidate_eligibility , send_msg_border_upon_confirmation
+# from .expansion import check_border_candidate_eligibility , send_msg_border_upon_confirmation
 import struct
 import time 
-from .VESPA_module import determine_max_byte_size
+from .VESPA_module import *
 Expan_header= "E"
 Arrival_header= "A"
 Inherit_header= "I"
@@ -118,7 +118,7 @@ def forward_broadcast_message(self,header,candidate):
     it will not recieved it again and th reason is the flag that end the listener is raised and no reading of buffer will be performed
     '''
     msg= build_border_message_right_handed(self, header,[-1],candidate) # as you see the candidate is resent as it was recived
-    self.send_msg(msg)
+    send_msg(msg)
 
 def border_broadcast_respond(self, candidate):
     if candidate in self.rec_candidate: # the sender of broadcast already sent msg to the current drone so it is part of the circle

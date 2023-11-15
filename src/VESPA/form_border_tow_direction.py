@@ -1,7 +1,7 @@
-from .expansion import check_border_candidate_eligibility, send_msg_border_upon_confirmation
+# from .expansion import check_border_candidate_eligibility, send_msg_border_upon_confirmation
 import struct
 import time 
-from .VESPA_module import determine_max_byte_size
+from .VESPA_module import *
 Expan_header= "E"
 Arrival_header= "A"
 Inherit_header= "I"
@@ -118,13 +118,13 @@ def forward_broadcast_message(self,header,candidate):
     it will not recieved it again and th reason is the flag that end the listener is raised and no reading of buffer will be performed
     '''
     msg= build_border_message( header,self.id, [-1] ,[-1],candidate) # as you see the candidate is resent as it was recived
-    self.send_msg(msg)
+    send_msg(msg)
             
 def circle_completed(self):
         if check_border_candidate_eligibility(self):
             self.change_state_to(Border)
             Broadcast_Msg= build_border_message(Forming_border_header,self.id, [-1] ,[-1], self.id)
-            self.send_msg(Broadcast_Msg)
+            send_msg(Broadcast_Msg)
             self.Forming_Border_Broadcast_REC.set() # to end the the loop
         else:
             # the drone got new neigbors and became Free
@@ -202,7 +202,7 @@ def handel_broken_into_spot(self, msg):
             self.change_state_to(Free) # Has 6 neighbors
             if not self.rec_candidate: # if the rec_candidate is not empty, means messages for border are already received
                 msg= build_inherit_message(self, id_rec) # id_rec is the id of the drone hopped in
-                self.send_msg(msg)
+                send_msg(msg)
 
 def handel_inheritence_message(self, msg):
         new_rec_candidate_values, new_rec_propagation_indicator_values, id_rec= decode_inherit_message(msg)

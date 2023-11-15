@@ -11,16 +11,19 @@ import time
 parent_directory = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 # Add the parent directory to sys.path
 sys.path.append(parent_directory)
+from Xbee_module.xbee_usb import *
 from drone.drone_ardupilot import *
 from pathlib import Path
 import re
+from .headers import * 
+
 
 '''
 -------------------------------------------------------------------------------------
 ---------------------------------- Variables ----------------------------------------
 -------------------------------------------------------------------------------------
 '''
-sq3=sqrt(3)
+sq3=1.73
 a=20
 multiplier=100
 
@@ -28,7 +31,7 @@ multiplier=100
 drones_number, id ,xbee_range, C, eps , speed_of_drone,  movement_time= a*speed_of_drone*(1+ 0.2)  
 scanning_time, sync_time, multiplier, defined_groundspeed '''
 global_vars = {}
-
+global DIR_xy_distance_VECTORS
 def update_DIR_xy_distance_VECTORS():
     global DIR_xy_distance_VECTORS
     DIR_xy_distance_VECTORS = [
@@ -55,11 +58,11 @@ def set_a(val):
     ''' a* 0.95 aim for a buffer zone. This ensures that even if there's a slight miscalculation in the range or
     a sudden change in environmental conditions, there's some leeway before communication is lost.'''
     global a
-    a= val*0.95
+    a= val
     update_DIR_xy_distance_VECTORS() # changing of a should change the direction distances
 
 #Return the byte count necessary to represent max ID.
-def determine_max_byte_size (number):
+def determine_max_byte_size(number):
     if number == 0:
         return 1  # Handle zero explicitly
     elif number <= 0xFF:
@@ -89,56 +92,21 @@ Irremovable= 3
 Irremovable_boarder=4
 
 '''
-These will be used in the building and decoding message
-'''
-#Exchanging data Headers
-Movement_command= 'M'
-Calibration= 'C'
-Demand_header= 'D'
-Response_header= 'R'
-ACK_header= "K"
-# Expansion Headers
-Expan_header= 'E'
-Arrival_header= 'A'
-Inherit_header= 'I'
-Forming_border_header= 'F'
-#Spanning Headers
-Spanning_header= 'S'
-Target_coordinates_header= 'T'
-# Blancing Headers
-Local_balance_header='L'
-Guidance_header= 'G'
-Balance_header= 'B'
-Algorithm_termination_header="O"
-
-# Create an array of headers
-headers = [
-    Movement_command, Calibration, Demand_header, Response_header,ACK_header,
-    Expan_header, Arrival_header, Inherit_header, Forming_border_header,
-    Spanning_header, Target_coordinates_header, Local_balance_header,
-    Guidance_header, Balance_header, Algorithm_termination_header
-]
-
-# Generate an array of ASCII values to be used in retiveing messages 
-headers_ascii_values = [ord(header) for header in headers]
-
-'''
 -------------------------------------------------------------------------------------
 ----------------------------- Calss members, init__ ---------------------------------
 -------------------------------------------------------------------------------------
 '''
 class Drone:
-    def __init__(self, x,y,z):
+    def __init__(self,x,y,z):
         self.positionX=x
         self.positionY=y
         self.distance_from_sink=0 # the distance of the drone from  the sink
         self.hight=z
-        self.state=None
-        self.previous_state=1
+        self.state=Free
+        self.previous_state=Free
         self.drone_id_to_sink=0
         self.drone_id_to_border=0
         self.a=None
-        self.id=None
         self.target_detected= False
         self.border_candidate=False
         self.dominated_direction=0
@@ -161,9 +129,9 @@ class Drone:
         # save the first spot which is s0 the current place of the drone
         # spot is another name of s_list[0] so any changes will be seen in spot
         self.spot= self.neighbor_list[0]
-        self.spot["id"]=self.id
-        self.spot["states"]=self.state
-        self.spot["previous_state"]=self.state
+        self.spot["drones_in_id"].append(self.id)
+        self.spot["states"].append(self.state)
+        self.spot["previous_state"].append(self.previous_state)
         self.num_neigbors = 6
         for i in range(1, self.num_neigbors+1):
             s = {"name": "s" + str(i), "distance": 0, "priority": 0,"drones_in": 0,"drones_in_id":[] , "states": [], "previous_state": []}
@@ -180,9 +148,9 @@ class Drone:
         self.start_expanding= None
         self.end_of_balancin= None
         self.demanders_list=[]
-
-
+        # connect_xbee(xbee_serial_port, baud_rate)
         
+
         
 
     '''
@@ -214,18 +182,18 @@ class Drone:
     def resend_data(self):
         if not self.demanders_received_data.is_set():
                 data_msg= self.build_spot_info_message(Response_header) 
-                self.send_msg(data_msg)
+                send_msg(data_msg)
         self.demanders_received_data.clear()
 
     def build_data_demand_message(self):
         message= Demand_header.encode()
-        max_byte_count = determine_max_byte_size(id)
+        max_byte_count = determine_max_byte_size(self.id)
         message += struct.pack('>B', max_byte_count)
         message += self.id.to_bytes(max_byte_count, 'big')
         message += b'\n'
         return message
     
-    def decode_data_demand_message(encoded_message):
+    def decode_data_demand_message(self,encoded_message):
         header_size = 1  
         demand_header = encoded_message[:header_size].decode()
         # Extract the max_byte_count which is the next byte after the header
@@ -241,20 +209,20 @@ class Drone:
     def demand_neighbors_info(self):
         # Send request 
         demand_msg= self.build_data_demand_message()
-        self.send_msg(demand_msg)
+        send_msg(demand_msg)
         
         # wait for request , wait all requests and send only once 
         self.initialize_timer()
         if self.demanders_list: # there are drone demaneded 
             data_msg= self.build_spot_info_message(Response_header) # Build message that contains all data
-            self.send_msg(data_msg)
+            send_msg(data_msg)
             # wait Ack from the demander and in case not all recived re-send 
             self.initialize_timer()
             self.resend_data()
 
     def build_ACK_data_message(self, target_id):
         message= ACK_header.encode()
-        max_byte_count = max([determine_max_byte_size(id)]+
+        max_byte_count = max([determine_max_byte_size(self.id)]+
                             [determine_max_byte_size(target_id)])
         message += struct.pack('>B', max_byte_count)
         message += self.id.to_bytes(max_byte_count, 'big')
@@ -262,7 +230,7 @@ class Drone:
         message += b'\n'
         return message
     
-    def decode_ACK_data_message(encoded_message):
+    def decode_ACK_data_message(self, encoded_message):
         # Skip the header (1 byte)
         content = encoded_message[1:]
         # Extract the max_byte_count (1 byte)
@@ -280,12 +248,12 @@ class Drone:
         return id, target_id
     
 
-    def get_neighbors_info(self):
+    def get_neighbors_info(self,msg):
         positionX, positionY, state, previous_state,id_value= self.decode_spot_info_message(msg)
         Ack_msg=self.build_ACK_data_message(id_value)
         self.update_neighbors_list(positionX, positionY, state, previous_state,id_value)
         self.calculate_neighbors_distance_sink()
-        self.send_msg(Ack_msg)
+        send_msg(Ack_msg)
 
 
     def exchange_neighbors_info_communication(self,msg):
@@ -293,11 +261,10 @@ class Drone:
         if msg.startswith(Demand_header.encode()) and msg.endswith(b'\n'):
             id_need_data= self.decode_data_demand_message(msg)
             self.append_id_demanders_list(id_need_data)
-            self.reset_timer(self)
+            self.reset_timer()
 
         if msg.startswith(ACK_header.encode()) and msg.endswith(b'\n'):
                 sender_id, target_id =self.decode_ACK_data_message(msg)
-                print( "ACK sender and taget_id", sender_id, target_id)
                 if target_id== id: 
                     self.remove_id_demanders_list(sender_id)
                     self.reset_timer()
@@ -306,26 +273,26 @@ class Drone:
 
         # Receiving message containing data     
         if msg.startswith(Response_header.encode()) and msg.endswith(b'\n'):
-            self.get_neighbors_info()
+            self.get_neighbors_info(msg)
         
-    def encode_float_to_int(self, value, precision= multiplier):
+    def encode_float_to_int(self, value, precision=multiplier):
         """Encodes a float as an integer with a given multiplier."""
         encoded = int(value * precision)
         # Choose the format based on the size of the integer
-        if encoded <= 65535:
-            return struct.pack('>BH', 2, encoded)  # Length 2 bytes, value
+        if -32768 <= encoded <= 32767:  # Range of a signed short
+            return struct.pack('>bh', 2, encoded)  # Length 2 bytes, value
         else:
-            return struct.pack('>BI', 4, encoded)  # Length 4 bytes, value
+            return struct.pack('>bi', 4, encoded)  # Length 4 bytes, value
 
 
     def decode_int_to_float(self, encoded_float):
         # Check the byte length to decide the format
         if len(encoded_float) == 2:
-            value = struct.unpack('>H', encoded_float)[0]
+            value = struct.unpack('>h', encoded_float)[0]  # 'h' for signed short
         elif len(encoded_float) == 4:
-            value = struct.unpack('>I', encoded_float)[0]
+            value = struct.unpack('>i', encoded_float)[0]  # 'i' for signed int
         # Convert back to float
-        return value / multiplier  # Assuming multiplier = 100
+        return value / multiplier  # Assuming multiplier is defined elsewhere
 
     def build_spot_info_message(self, header):
         message = header.encode()
@@ -369,34 +336,13 @@ class Drone:
         id_value = int.from_bytes(message[index:index+max_byte_count], 'big')
         index += max_byte_count
         return positionX, positionY, state, previous_state, id_value
-
-    def send_msg(self,msg):
-        #TODO deal with sending boradcasting
-        pass
-
-    def retrive_msg_from_buffer(self):
-        time.sleep(0.05) # wait to have msgs in the buffer
-        # device is the object of Xbee connection
-        xbee_message = device.read_data(0.02) #  0.02 timeout in seconds
-        # read untile the bufere is empty or retrive 7 msgs
-        msg=" "
-        if xbee_message is not None:
-            return msg
-        else:
-            return None
-
-    def clear_buffer(self):
-        # read the buffer until it is empty
-        # while xbee_device.get_queue_length() > 0:
-        #     xbee_device.read_data()
-        pass
-
-
+    
     '''
     -------------------------------------------------------------------------------------
     -------------------------------- Update upon movement--------------------------------
     -------------------------------------------------------------------------------------
     '''
+
     def calculate_neighbors_distance_sink(self):
         DxDy2 = round((self.positionX * self.positionX) + (self.positionY * self.positionY),2)
         DxDy3a2 = round(DxDy2 + 3 * a * a,2)
@@ -444,6 +390,8 @@ class Drone:
                     new_content.append(f'xbee_range = {new_a}\n')
                 else:
                     new_content.append(line)
+        set_a(new_a)
+        
 
         # Write the updated content back to the file
         with open(Operational_Data_path, 'w') as file:
@@ -494,7 +442,7 @@ class Drone:
 
     def update_candidate_spot_info_to_neighbors(self):
         msg= self.build_spot_info_message(Arrival_header)
-        self.send_msg(msg)
+        send_msg(msg)
 
     def update_neighbors_list(self, positionX, positionY, state, previous_state, id_rec):
         s_index= self.find_relative_spot(positionX, positionY)
@@ -557,11 +505,36 @@ class Drone:
     def convert_spot_angle_distance(self, dir):
         return DIR_VECTORS[dir][0], DIR_VECTORS[dir][1]
 
-    def find_relative_spot(self, x, y ):
+    # def find_relative_spot(self, x, y ):
+    #     for i, vector in enumerate(DIR_xy_distance_VECTORS):
+    #         if abs(self.positionX - (x + vector[0])) < 1e-9 and abs(self.positionY - (y + vector[1])) < 1e-9:
+    #             return i  # Return index if a match is found
+    #     return -1  # Return -1 if no match is found
+    # def find_relative_spot(self, x, y):
+    # # Calculate the difference
+    #     dx = x - self.positionX
+    #     dy = y - self.positionY
+
+    #     closest_index = -1
+    #     closest_distance = float('inf')
+
+    #     # Iterate through the vectors to find the closest one
+    #     for i, vector in enumerate(DIR_xy_distance_VECTORS):
+    #         distance = ((vector[0] - dx) ** 2 + (vector[1] - dy) ** 2) ** 0.5
+    #         if distance < closest_distance:
+    #             closest_distance = distance
+    #             closest_index = i
+    #     return closest_index
+    def find_relative_spot(self, x, y, tolerance=5):
+        # Calculate the difference
+        dx = x - self.positionX
+        dy = y - self.positionY
+
+        # Iterate through the vectors to find a matching one within the tolerance
         for i, vector in enumerate(DIR_xy_distance_VECTORS):
-            if abs(self.positionX - (x + vector[0])) < 1e-9 and abs(self.positionY - (y + vector[1])) < 1e-9:
-                return i  # Return index if a match is found
-        return -1  # Return -1 if no match is found
+            if abs(vector[0] - dx) <= tolerance and abs(vector[1] - dy) <= tolerance:
+                return i  # Return index if a match is found within the tolerance
+        return -1
 
     def move_to_spot(self,vehicle, destination_spot):
         set_to_move(vehicle)

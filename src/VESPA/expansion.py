@@ -67,24 +67,24 @@ def handel_elected_drone_arrivale(self,msg):
     if rec_id==self.elected_id:
         self.elected_droen_arrived.set()
 
-def expansion_listener (self,vehicle):
+def expansion_listener (self):
     self.Forming_Border_Broadcast_REC = threading.Event()
 
     while not self.Forming_Border_Broadcast_REC.is_set():
 
-        msg= self.retrive_msg_from_buffer()
+        msg= retrieve_msg_from_buffer()
 
-        msg = self.exchange_neighbors_info_communication(msg)
+        self.exchange_neighbors_info_communication(msg)
 
-        if msg.startswith(Movement_command) and msg.endswith("\n"):
+        if msg.startswith(Movement_command.encode()) and msg.endswith("\n"):
             id, spot, lon, lat= decode_movement_command_message(msg)
             if id==-1 and spot==-1 and lon==0 and lat==0: # mean all drone are in sky
                 self.start_expanding.set()
-            else:
-                initial_movement(self, vehicle,id, spot, lon, lat)
+            # else:
+            #     initial_movement(self, vehicle,id, spot, lon, lat)
 
-        elif msg.startswith(Calibration) and msg.endswith("\n"):
-            calibration_ping_pong(self, vehicle, msg )
+        # elif msg.startswith(Calibration) and msg.endswith("\n"):
+        #     calibration_ping_pong(self, vehicle, msg )
 
         elif msg.startswith(Expan_header.encode()) and msg.endswith(b'\n'):
             handel_elected_drone_arrivale(self, msg)
@@ -130,6 +130,7 @@ def expansion_listener (self,vehicle):
 '''
 def spatial_observation(self):
     self.demand_neighbors_info() # return after gathering all info 
+    self.calculate_neighbors_distance_sink()
     self.check_Ownership()
 
 def findMinDistances_niegboor(self):
@@ -171,7 +172,7 @@ def sink_movement_command(self,vehicle,id):
         current_lon = vehicle.location.global_relative_frame.lon
         long, lat= new_coordinates(current_lon, current_lat, distance , angle)
         msg= build_movement_command_message(id,destination_spot_random, long, lat)
-        self.send_msg(msg)
+        send_msg(msg)
         time.sleep((a/defined_groundspeed)+1 )# wait until arrival
     else:
         # It is command to drone to start,( 0,0) is null island where it is imposible to start from
@@ -199,21 +200,21 @@ def initial_movement(self,vehicle,id, spot, lon, lat):
         set_yaw_to_dir_PID( vehicle, angle) # set the angle in the same direction taken since simple goto can include rotation
         if self.id==1: # only first drone does the range calibration
             msg= build_calibration_message(1,0)
-            self.send_msg(msg)
+            send_msg(msg)
 
 def calibration_ping_pong(self, vehicle, msg ):
     indicator, xbee_range= decode_calibration_message(msg)
     if indicator==1 and xbee_range==0: # still calibrating
         if self.id==0:# only the sink respond
             respond_msg= build_calibration_message(1,0)
-            self.send_msg( respond_msg)
+            send_msg( respond_msg)
 
         elif self.id==1:
             while True:
                 msg= build_calibration_message(1,0)
-                self.send_msg(msg)
+                send_msg(msg)
                 time.sleep(1)
-                rec_messge= self.retrive_msg_from_buffer()
+                rec_messge= self.retrieve_msg_from_buffer()
                 if rec_messge != None: # A message recived
                     if msg.startswith(Calibration.encode()) and msg.endswith(b'\n'):
                         indicator, xbee_range= decode_calibration_message(rec_messge)
@@ -246,7 +247,7 @@ def send_msg_border_upon_confirmation(self,msg):
     # here the drone will keep sending until see the drone targets recives the message 
     while not self.forming_border_msg_recived.is_set():
         time.sleep(0.1)
-        self.send_msg(msg)
+        send_msg(msg)
     self.forming_border_msg_recived.clear()
 
 '''
@@ -347,7 +348,7 @@ def expand_and_form_border(self,vehicle):
                 self.move_to_spot(vehicle, destination_spot)
                 # After move_to_spot retuen it means arrivale 
                 movement_done_msg= build_expan_elected(self.id)
-                self.send_msg(movement_done_msg)
+                send_msg(movement_done_msg)
         else:
            # Wait untile the elected drone to arrive to next spot.
            self.elected_droen_arrived.wait() 
@@ -382,7 +383,7 @@ def expand_and_form_border(self,vehicle):
     
 def first_exapnsion (self, vehicle):
     # Lance a thread to read messages continuously
-    xbee_receive_message_thread = threading.Thread(target=expansion_listener, args=(self,vehicle)) #pass the function reference and arguments separately to the Thread constructor.
+    xbee_receive_message_thread = threading.Thread(target=expansion_listener, args=(self,)) #pass the function reference and arguments separately to the Thread constructor.
     xbee_receive_message_thread.start()
     self.start_expanding= threading.Event()
     self.elected_droen_arrived= threading.Event()
@@ -399,7 +400,7 @@ def first_exapnsion (self, vehicle):
             sink_movement_command(self,vehicle,i)
         # The end send message referes that all in position
         msg= build_movement_command_message(-1,-1, 0, 0)
-        self.send_msg(msg)
+        send_msg(msg)
     else:
         self.start_expanding.wait()
         self.start_expanding.clear()
@@ -413,7 +414,7 @@ def first_exapnsion (self, vehicle):
 
 def further_expansion (self,vehicle):
     # Lance a thread to read messages continuously
-    xbee_receive_message_thread = threading.Thread(target=expansion_listener, args=(self,vehicle)) #pass the function reference and arguments separately to the Thread constructor.
+    xbee_receive_message_thread = threading.Thread(target=expansion_listener, args=(self,)) #pass the function reference and arguments separately to the Thread constructor.
     xbee_receive_message_thread.start()
     
     if self.state == Border:
