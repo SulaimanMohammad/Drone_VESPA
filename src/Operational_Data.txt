@@ -10,3 +10,7 @@ scanning_time= 10 # in second (function to the speed and size of a )
 sync_time= 10
 multiplier = 100
 defined_groundspeed=1
+
+# Xbee variables 
+xbee_serial_port='/dev/ttyUSB1'
+baud_rate=9600
