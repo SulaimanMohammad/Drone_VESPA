@@ -23,7 +23,7 @@ import importlib
 ---------------------------------- Variables ----------------------------------------
 -------------------------------------------------------------------------------------
 '''
-sq3=1.73
+sq3=sqrt(3)
 a=20
 multiplier=100
 
@@ -97,7 +97,7 @@ Irremovable_boarder=4
 -------------------------------------------------------------------------------------
 '''
 class Drone:
-    def __init__(self,x,y,z):
+    def __init__(self,id, x,y,z):
         self.positionX=x
         self.positionY=y
         self.distance_from_sink=0 # the distance of the drone from  the sink
@@ -124,6 +124,7 @@ class Drone:
         self.read_vars_from_file() # Include set id and xbee range "a" 
         # Set the variables globally
         globals().update(global_vars)
+        self.id=id
         # init s0 and it will be part of the spots list
         self.neighbor_list=[{"name": "s" + str(0), "distance": 0, "priority": 0, "drones_in": 1,"drones_in_id":[], "states": [] , "previous_state": []}]
         # save the first spot which is s0 the current place of the drone
@@ -254,7 +255,6 @@ class Drone:
         positionX, positionY, state, previous_state,id_value= self.decode_spot_info_message(msg)
         Ack_msg=self.build_ACK_data_message(id_value)
         self.update_neighbors_list(positionX, positionY, state, previous_state,id_value)
-        self.calculate_neighbors_distance_sink()
         send_msg(Ack_msg)
 
 
