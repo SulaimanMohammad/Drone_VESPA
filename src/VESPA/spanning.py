@@ -145,7 +145,7 @@ class Sink_Timer:
 
         self.VESPA_termination.wait()
         self.VESPA_termination.clear()
-        self.clear_buffer()
+        clear_buffer()
         sink_t.message_thread.join() 
 
 def sink_listener(self,sink_t):
@@ -450,7 +450,7 @@ def spanning(self, vehicle):
         if self.state==Irremovable:
             self.VESPA_termination.wait()
             self.VESPA_termination.clear()
-            self.clear_buffer()
+            clear_buffer()
             xbee_thread.join() 
         
         else: # for free and border drones 
@@ -458,7 +458,7 @@ def spanning(self, vehicle):
             listener_end_of_spanning.wait() 
             listener_end_of_spanning.clear()
             # Stop listener
-            self.clear_buffer()
+            clear_buffer()
             xbee_thread.join() 
             
         

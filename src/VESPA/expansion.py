@@ -242,7 +242,7 @@ def calibration_ping_pong(self, vehicle, msg ):
     elif indicator==0 and xbee_range>0:
         self.update_xbee_range(a)
         set_a(a)
-        self.clear_buffer()
+        clear_buffer()
 
 def send_msg_border_upon_confirmation(self,msg):
     # here the drone will keep sending until see the drone targets recives the message 
@@ -409,7 +409,7 @@ def first_exapnsion (self, vehicle):
     
     # Since broadcast messages might still be circulating while retrieval has stopped, there could be leftover messages in the buffer.
     # It's essential to clear the buffer before the next phase to prevent any surplus.
-    self.clear_buffer()
+    clear_buffer()
     xbee_receive_message_thread.join() # stop listening to message
     
 
@@ -425,7 +425,7 @@ def further_expansion (self,vehicle):
     else: # State is Free
         expand_and_form_border(self,vehicle)
     
-    self.clear_buffer()
+    clear_buffer()
     xbee_receive_message_thread.join() 
     
 

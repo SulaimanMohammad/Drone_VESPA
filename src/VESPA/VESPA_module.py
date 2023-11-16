@@ -171,16 +171,15 @@ class Drone:
              self.demanders_list.remove(value)   
 
     def initialize_timer(self):
-        self.remaining_time=5
+        self.remaining_time=2
         while True:
             self.remaining_time -= 0.1
-            #print(f"Remaining time: {self.remaining_time:.2f} seconds")
             if self.remaining_time <= 0:
                     break
             time.sleep(0.1)
 
     def reset_timer(self):
-        self.remaining_time=5
+        self.remaining_time=2
 
     def resend_data(self):
         if not self.demanders_received_data.is_set():
@@ -516,7 +515,7 @@ class Drone:
     def convert_spot_angle_distance(self, dir):
         return DIR_VECTORS[dir][0], DIR_VECTORS[dir][1]
 
-    def find_relative_spot(self, x, y, tolerance=5):
+    def find_relative_spot(self, x, y, tolerance=2):
         # Calculate the difference
         dx = x - self.positionX
         dy = y - self.positionY
@@ -537,7 +536,7 @@ class Drone:
             vehicle.mode = VehicleMode ("RTL")
             vehicle.close()
         self.update_location(destination_spot)
-        self.clear_buffer() # need to clear the bufer from message received on the road
+        clear_buffer() # need to clear the bufer from message received on the road
         # Arrive to steady state and hover then start observing the location
         hover(vehicle)
 

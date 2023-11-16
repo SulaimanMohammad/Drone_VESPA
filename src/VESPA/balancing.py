@@ -291,7 +291,7 @@ def balancing(self, vehicle):
     self.rec_propagation_indicator=[]  
     self.rec_candidate=[]   
     self.direction_taken=[]
-    self.clear_buffer()
+    clear_buffer()
     xbee_receive_message_thread.join()
     
 

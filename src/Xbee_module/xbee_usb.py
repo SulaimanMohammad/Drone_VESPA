@@ -60,8 +60,10 @@ def retrieve_msg_from_buffer():
 def close_xbee_port():
     ser.close()
 
-def clear_buffer(self):
-    # read the buffer until it is empty
-    # while xbee_device.get_queue_length() > 0:
-    #     xbee_device.read_data()
-    pass
+def clear_buffer():
+    global message_buffer
+    # Read and discard all available data
+    while ser.in_waiting > 0:
+        ser.read(ser.in_waiting)
+    # Also clear the global message buffer
+    message_buffer.clear()

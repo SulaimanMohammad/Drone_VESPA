@@ -74,8 +74,7 @@ def close_xbee_port():
     pi.stop()  # Stop the pigpio daemon
 
 def clear_buffer(self):
-    # read the buffer until it is empty
-    # while xbee_device.get_queue_length() > 0:
-    #     xbee_device.read_data()
-    pass
+    global message_buffer
+    # Clear the global message buffer
+    message_buffer.clear()
 
