@@ -16,7 +16,7 @@ from drone.drone_ardupilot import *
 from pathlib import Path
 import re
 from .headers import * 
-
+import importlib
 
 '''
 -------------------------------------------------------------------------------------
@@ -148,11 +148,13 @@ class Drone:
         self.start_expanding= None
         self.end_of_balancin= None
         self.demanders_list=[]
-        # connect_xbee(xbee_serial_port, baud_rate)
-        
-
-        
-
+        if Tx==None and Rx== None:
+            module = importlib.import_module('Xbee_module.xbee_usb')
+        else:
+            module = importlib.import_module('Xbee_module.xbee_pigpio')
+        globals().update(module.__dict__)
+        #connect_xbee(xbee_serial_port, baud_rate)
+    
     '''
     -------------------------------------------------------------------------------------
     ---------------------------------- Communication ------------------------------------
