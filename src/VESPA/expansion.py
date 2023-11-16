@@ -129,8 +129,9 @@ def expansion_listener (self):
 -------------------------------------------------------------------------------------
 '''
 def spatial_observation(self):
-    self.demand_neighbors_info() # return after gathering all info 
     self.calculate_neighbors_distance_sink()
+    self.demand_neighbors_info() # return after gathering all info
+    self.correct_states_after_comm()
     self.check_Ownership()
 
 def findMinDistances_niegboor(self):

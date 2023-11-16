@@ -417,7 +417,15 @@ class Drone:
         print("drone in s0", self.spot["drones_in"] )
         if self.spot["drones_in"]==1: # the drone is Owner
             self.change_state_to (Owner)
-
+    
+    def correct_states_after_comm(self):
+        for s in self.neighbor_list[1:]: 
+            if s["drones_in"]==1:
+                for i, state in enumerate (s["states"]):
+                    if state != Owner:
+                        s["states"][i]=Owner
+                        s["previous_state"][i]=Free
+                    
     def update_rec_candidate(self, new_rec_candidate):
         # Update without duplicates
         for item in new_rec_candidate:
@@ -463,8 +471,9 @@ class Drone:
                             # Decrement drones_in count
                             s['drones_in'] -= 1
                         else: # The id of drone is in the same spot just update the satates
-                            s['states']= state
-                            s['previous_state']=previous_state
+                            idx = s['drones_in_id'].index(id_rec)
+                            s['states'][idx]= state
+                            s['previous_state'][idx]=previous_state
                             return  # Exit the function
 
                 # If the ID of drone doesnt exist at all or it was deleted after was in another neighborhood spot
@@ -505,35 +514,14 @@ class Drone:
     def convert_spot_angle_distance(self, dir):
         return DIR_VECTORS[dir][0], DIR_VECTORS[dir][1]
 
-    # def find_relative_spot(self, x, y ):
-    #     for i, vector in enumerate(DIR_xy_distance_VECTORS):
-    #         if abs(self.positionX - (x + vector[0])) < 1e-9 and abs(self.positionY - (y + vector[1])) < 1e-9:
-    #             return i  # Return index if a match is found
-    #     return -1  # Return -1 if no match is found
-    # def find_relative_spot(self, x, y):
-    # # Calculate the difference
-    #     dx = x - self.positionX
-    #     dy = y - self.positionY
-
-    #     closest_index = -1
-    #     closest_distance = float('inf')
-
-    #     # Iterate through the vectors to find the closest one
-    #     for i, vector in enumerate(DIR_xy_distance_VECTORS):
-    #         distance = ((vector[0] - dx) ** 2 + (vector[1] - dy) ** 2) ** 0.5
-    #         if distance < closest_distance:
-    #             closest_distance = distance
-    #             closest_index = i
-    #     return closest_index
     def find_relative_spot(self, x, y, tolerance=5):
         # Calculate the difference
         dx = x - self.positionX
         dy = y - self.positionY
-
         # Iterate through the vectors to find a matching one within the tolerance
         for i, vector in enumerate(DIR_xy_distance_VECTORS):
             if abs(vector[0] - dx) <= tolerance and abs(vector[1] - dy) <= tolerance:
-                return i  # Return index if a match is found within the tolerance
+                return i  
         return -1
 
     def move_to_spot(self,vehicle, destination_spot):
