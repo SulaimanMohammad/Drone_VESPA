@@ -12,5 +12,7 @@ multiplier = 100
 defined_groundspeed=1
 
 # Xbee variables 
-xbee_serial_port='/dev/ttyUSB1'
+xbee_serial_port='/dev/ttyUSB0'
+Tx=None
+Rx=None
 baud_rate=9600
