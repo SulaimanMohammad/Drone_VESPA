@@ -11,6 +11,7 @@ def connect_xbee(TX,RX,baud_rate_set):
     baud_rate= baud_rate_set
     
     # Open a serial connection
+    global pi
     pi = pigpio.pi()
     if not pi.connected:
         raise Exception("Could not connect to pigpio daemon")

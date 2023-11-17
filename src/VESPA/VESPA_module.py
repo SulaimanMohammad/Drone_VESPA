@@ -118,6 +118,7 @@ class Drone:
         self.rec_propagation_indicator=[]
         self.elected_id=None
         set_a(a)
+        self.id=id
         # init s0 and it will be part of the spots list
         self.neighbor_list=[{"name": "s" + str(0), "distance": 0, "priority": 0, "drones_in": 1,"drones_in_id":[], "states": [] , "previous_state": []}]
         # save the first spot which is s0 the current place of the drone
@@ -142,8 +143,10 @@ class Drone:
         self.start_expanding= None
         self.end_of_balancin= None
         self.demanders_list=[]
-        #connect_xbee(xbee_serial_port, baud_rate)
-    
+        if uart:
+            connect_xbee(xbee_serial_port, baud_rate)
+        else:
+            connect_xbee(Tx,Rx, baud_rate)
     '''
     -------------------------------------------------------------------------------------
     ---------------------------------- Communication ------------------------------------

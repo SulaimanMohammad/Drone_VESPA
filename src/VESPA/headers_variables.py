@@ -56,7 +56,6 @@ def read_vars_from_file():
                             global_vars[var_name] = eval(value.strip(), {}, global_vars)
                         except NameError:
                             global_vars[var_name] = value.strip()
-
 global_vars = {}
 def load_vars():
     read_vars_from_file() # Include set id and xbee range "a" 
@@ -65,16 +64,16 @@ def load_vars():
 def get_global_vars():
     return global_vars
 
-def get_xbee_module():
-    if Tx==None and Rx== None:
-        module = importlib.import_module('Xbee_module.xbee_usb')
-    else:
-        module = importlib.import_module('Xbee_module.xbee_pigpio')
-    return module 
-
 def set_env(globals_dict):
     load_vars()
     global_vars = get_global_vars()
-    xbee_module = get_xbee_module()
+    # Determine which XBee module to use and set 'uart'
+    if Tx == None and Rx == None:
+        xbee_module = importlib.import_module('Xbee_module.xbee_usb')
+        global_vars['uart'] = True  # Set 'uart' to True for USB
+    else:
+        xbee_module = importlib.import_module('Xbee_module.xbee_pigpio')
+        global_vars['uart'] = False  # Set 'uart' to False for GPIO
+
     globals_dict.update(global_vars)
     globals_dict.update(xbee_module.__dict__)
