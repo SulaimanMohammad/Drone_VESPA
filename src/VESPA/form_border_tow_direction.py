@@ -14,6 +14,7 @@ Border=2
 Irremovable= 3
 Irremovable_boarder=4
 
+set_env(globals())
 '''
 ---------------------------------- Border Communication ------------------------------------
 '''

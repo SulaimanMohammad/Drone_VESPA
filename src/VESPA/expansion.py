@@ -2,6 +2,8 @@ from .VESPA_module import *
 from .form_border_one_direction import form_border_one_direction, start_msg_one_direction
 from .form_border_tow_direction import *
 
+set_env(globals())
+
 '''
 -------------------------------------------------------------------------------------
 ---------------------------------- Communication ------------------------------------

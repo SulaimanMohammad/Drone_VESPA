@@ -1,7 +1,5 @@
-from enum import Enum
 from math import sqrt
 import random
-import copy
 import struct
 import sys
 import os
@@ -11,22 +9,21 @@ import time
 parent_directory = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 # Add the parent directory to sys.path
 sys.path.append(parent_directory)
-from Xbee_module.xbee_usb import *
 from drone.drone_ardupilot import *
-from pathlib import Path
-import re
-from .headers import * 
-import importlib
+from .headers_variables import * 
+
 
 '''
 -------------------------------------------------------------------------------------
 ---------------------------------- Variables ----------------------------------------
 -------------------------------------------------------------------------------------
 '''
-sq3=sqrt(3)
-a=20
-multiplier=100
+set_env(globals())
 
+sq3=sqrt(3)
+a=xbee_range
+multiplier=100
+ 
 '''Dictionary to hold the variables 
 drones_number, id ,xbee_range, C, eps , speed_of_drone,  movement_time= a*speed_of_drone*(1+ 0.2)  
 scanning_time, sync_time, multiplier, defined_groundspeed '''
@@ -84,7 +81,6 @@ formula_dict = {
     "s6": "sqrt(DxDy3a2 - a * (3 * Dy - sqDx))"
 }
 
-
 Owner=0
 Free=1
 Border=2
@@ -97,7 +93,7 @@ Irremovable_boarder=4
 -------------------------------------------------------------------------------------
 '''
 class Drone:
-    def __init__(self,id, x,y,z):
+    def __init__(self, x,y,z):
         self.positionX=x
         self.positionY=y
         self.distance_from_sink=0 # the distance of the drone from  the sink
@@ -121,10 +117,7 @@ class Drone:
         self.neighbor_list = []  # list that contains the 6 neighbors around the current location
         self.rec_propagation_indicator=[]
         self.elected_id=None
-        self.read_vars_from_file() # Include set id and xbee range "a" 
-        # Set the variables globally
-        globals().update(global_vars)
-        self.id=id
+        set_a(a)
         # init s0 and it will be part of the spots list
         self.neighbor_list=[{"name": "s" + str(0), "distance": 0, "priority": 0, "drones_in": 1,"drones_in_id":[], "states": [] , "previous_state": []}]
         # save the first spot which is s0 the current place of the drone
@@ -149,11 +142,6 @@ class Drone:
         self.start_expanding= None
         self.end_of_balancin= None
         self.demanders_list=[]
-        if Tx==None and Rx== None:
-            module = importlib.import_module('Xbee_module.xbee_usb')
-        else:
-            module = importlib.import_module('Xbee_module.xbee_pigpio')
-        globals().update(module.__dict__)
         #connect_xbee(xbee_serial_port, baud_rate)
     
     '''
@@ -356,34 +344,15 @@ class Drone:
                 distance = eval(formula, {'sqrt': sqrt, 'DxDy2': DxDy2, 'DxDy3a2': DxDy3a2, 'a': a, 'aDx': aDx, 'sqDx': sqDx, 'Dy': Dy})
                 s["distance"] = round(distance,2)
         self.distance_from_sink=self.spot["distance"] # where spot is the data of s0 the current position
-
-
-    def read_vars_from_file(self):
-        # Current script directory
+            
+    def update_xbee_range(self,new_a):
+          # Current script directory
         current_dir = Path(__file__).resolve().parent
         # Path to the parent directory
         parent_dir = current_dir.parent
         global Operational_Data_path
         Operational_Data_path = parent_dir/'Operational_Data.txt'
-
-        with open(Operational_Data_path, 'r') as file:
-            for line in file:
-                match = re.match(r"(\w+)\s*=\s*([^#]+)", line)
-                if match:
-                    var_name, value = match.groups()
-                    if var_name in ["max_acceleration", "max_deceleration"]:
-                        continue
-                    if var_name == "id":
-                        self.id = int(value.strip())  # Set id to the object's attribute
-                    elif var_name == "xbee_range":
-                        set_a(int(value.strip()))  # Use set_a() for xbee_range
-                    else:
-                        try:
-                            global_vars[var_name] = eval(value.strip(), {}, global_vars)
-                        except NameError:
-                            global_vars[var_name] = value.strip()
-            
-    def update_xbee_range(self,new_a):
+        
         new_content = []
         with open(Operational_Data_path, 'r') as file:
             for line in file:
@@ -392,8 +361,6 @@ class Drone:
                 else:
                     new_content.append(line)
         set_a(new_a)
-        
-
         # Write the updated content back to the file
         with open(Operational_Data_path, 'w') as file:
             file.writelines(new_content)
@@ -414,8 +381,6 @@ class Drone:
                 self.spot["states"][0]= self.state
 
     def check_Ownership(self):
-         # If s0 where the drone exist conatins only the drone (droen Owner)
-        print("drone in s0", self.spot["drones_in"] )
         if self.spot["drones_in"]==1: # the drone is Owner
             self.change_state_to (Owner)
     
@@ -515,7 +480,7 @@ class Drone:
     def convert_spot_angle_distance(self, dir):
         return DIR_VECTORS[dir][0], DIR_VECTORS[dir][1]
 
-    def find_relative_spot(self, x, y, tolerance=2):
+    def find_relative_spot(self, x, y, tolerance=1):
         # Calculate the difference
         dx = x - self.positionX
         dy = y - self.positionY

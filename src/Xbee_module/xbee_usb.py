@@ -4,7 +4,7 @@ import os
 parent_directory = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 # Add the parent directory to sys.path
 sys.path.append(parent_directory)
-from VESPA.headers import *
+from VESPA.headers_variables import *
 import serial
 
 
@@ -15,6 +15,7 @@ def connect_xbee(xbee_serial_port, baud_rate, timeout=1):
 
 def send_msg(message):
     """ Send a message via XBee. """
+    print("sending msg", message)
     ser.write(message)
 
 message_buffer = bytearray()

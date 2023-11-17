@@ -1,6 +1,9 @@
 from .VESPA_module import *
 from .form_border_tow_direction import forward_border_message, build_border_message,forward_broadcast_message, decode_border_message
 from .expansion import Fire_border_msg
+
+set_env(globals())
+
 '''
 -------------------------------------------------------------------------------------
 ---------------------------------- Communication ------------------------------------

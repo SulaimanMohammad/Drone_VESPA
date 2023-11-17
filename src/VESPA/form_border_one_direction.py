@@ -15,7 +15,7 @@ Border=2
 Irremovable= 3
 Irremovable_boarder=4
 
-
+set_env(globals())
 '''
 This module is used to send messages by sending message only to one drone by searching clockwise from empty spot 
 '''

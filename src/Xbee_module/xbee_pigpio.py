@@ -1,6 +1,6 @@
 import pigpio
 import time 
-from VESPA.headers import *
+from VESPA.headers_variables import *
 
 def connect_xbee(TX,RX,baud_rate_set):
     global tx_pin
