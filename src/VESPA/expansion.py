@@ -145,7 +145,7 @@ def set_priorities(self):
     findMinDistances_niegboor(self)
     for s in self.neighbor_list:
         if  s["name"] not in self.allowed_spots:
-            if s["drones_in"] == 0 : # free spot
+            if s["drones_in"] == 0 and denom !=0: # free spot
                 s["priority"]= s["distance"]* C /denom
             else: # s is occupied
                 if s["name"] in self.min_distance_dicts: #close to sink
