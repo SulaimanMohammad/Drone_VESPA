@@ -93,7 +93,7 @@ Irremovable_boarder=4
 -------------------------------------------------------------------------------------
 '''
 class Drone:
-    def __init__(self, x,y,z):
+    def __init__(self,x,y,z):
         self.positionX=x
         self.positionY=y
         self.distance_from_sink=0 # the distance of the drone from  the sink
@@ -333,11 +333,11 @@ class Drone:
     '''
 
     def calculate_neighbors_distance_sink(self):
-        DxDy2 = round((self.positionX * self.positionX) + (self.positionY * self.positionY),2)
-        DxDy3a2 = round(DxDy2 + 3 * a * a,2)
-        sqDx = round(sq3 * self.positionX,2)
-        aDx = round((2*sq3) * self.positionX,2)
-        Dy= round(self.positionY,2)
+        DxDy2 = ((self.positionX * self.positionX) + (self.positionY * self.positionY))
+        DxDy3a2 = (DxDy2 + 3 * a * a)
+        sqDx = (sq3 * self.positionX)
+        aDx = ((2*sq3) * self.positionX)
+        Dy= (self.positionY)
         for s in self.neighbor_list:
             formula = formula_dict.get(s["name"])
             if formula:
