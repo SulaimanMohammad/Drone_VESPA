@@ -18,9 +18,9 @@ def send_msg(message):
     ser.write(message)
 
 message_buffer = bytearray()
-def retrieve_msg_from_buffer(continuity_of_reading_condition):
+def retrieve_msg_from_buffer(stop_flag):
     global message_buffer 
-    while continuity_of_reading_condition: # Keep checking for a complete message or condition related to the phase is not set
+    while not stop_flag.is_set(): # Keep checking for a complete message or condition related to the phase is not set
         # Read data from USB serial if available
         while ser.in_waiting > 0:
             byte = ser.read(1)
@@ -38,7 +38,7 @@ def retrieve_msg_from_buffer(continuity_of_reading_condition):
             # If a valid header is not found, clear the buffer and return
             if header_index == -1:
                 message_buffer.clear()
-                return None
+                return bytearray(b'')
 
             # Find the end of the message (newline character)
             newline_index = message_buffer.find(b'\n', header_index)
@@ -52,9 +52,10 @@ def retrieve_msg_from_buffer(continuity_of_reading_condition):
             message_buffer = message_buffer[newline_index + 1:]
             # Return the complete message
             return complete_message
-
+        
         # Short sleep to prevent high CPU usage
-        time.sleep(0.05)
+        time.sleep(0.1)
+    return bytearray(b'')
 
 def close_xbee_port():
     ser.close()

@@ -30,9 +30,9 @@ def send_msg(msg):
         time.sleep(0.1)
 
 message_buffer = bytearray()
-def retrieve_msg_from_buffer(continuity_of_reading_condition):
+def retrieve_msg_from_buffer(stop_flag):
     global message_buffer 
-    while continuity_of_reading_condition: # Keep checking for a complete message or condition related to the phase is not set
+    while not stop_flag.is_set(): # Keep checking for a complete message or condition related to the phase is not set
         # Read available data
         (count, data) = pi.bb_serial_read(rx_pin)
         if count:
@@ -50,7 +50,7 @@ def retrieve_msg_from_buffer(continuity_of_reading_condition):
             # If a valid header is not found, clear the buffer and return
             if header_index == -1:
                 message_buffer.clear()
-                return None
+                return bytearray(b'')
 
             # Find the end of the message (newline character)
             newline_index = message_buffer.find(b'\n', header_index)
@@ -68,6 +68,8 @@ def retrieve_msg_from_buffer(continuity_of_reading_condition):
 
         # Short sleep to prevent high CPU usage
         time.sleep(0.1)
+
+    return bytearray(b'') # Return empty object so it can be recognized as not part of the headers array 
 
 def close_xbee_port():
     pi.bb_serial_read_close(rx_pin)  # Close the RX pin
