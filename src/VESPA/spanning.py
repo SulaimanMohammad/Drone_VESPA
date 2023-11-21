@@ -116,7 +116,7 @@ class Sink_Timer:
         sink_t.message_counter = 0  # Initialize message count
         sink_t.remaining_time = sink_t.timeout
         sink_t.lock_sink = threading.Lock()  # Create a lock
-        sink_t.message_thread = threading.Thread(target=sink_listener, args=(sink_t,self,timeout,))
+        sink_t.message_thread = threading.Thread(target=sink_listener, args=(sink_t,self,))
         sink_t.message_thread.start()
 
         # Needed to find what neigbour that became irremvable due to finding target
@@ -127,7 +127,7 @@ class Sink_Timer:
                 sink_t.remaining_time -= 0.5
                 print(f"Remaining time: {sink_t.remaining_time:.2f} seconds")
                 if sink_t.remaining_time <= 0:
-                    sink_t.time_up(sink_t,self)
+                    sink_t.time_up(self)
                     break
             time.sleep(0.5)
 
@@ -149,7 +149,7 @@ class Sink_Timer:
         clear_buffer()
         sink_t.message_thread.join() 
 
-def sink_listener(self,sink_t):
+def sink_listener(sink_t, self):
     '''
     if a path to sink is constructed a drone of the niegboor wil become irremovable 
     when a drone became irremovable it will send message contains its id to all around
@@ -408,8 +408,8 @@ def build_path(self):
 '''     
 def spanning(self, vehicle): 
 
-    if self.spot['distance']==0: # if the drone is sink ( leader of the termination of the spaning phase)
-        self.spanning_sink()
+    if self.spot['distance']<1: # if the drone is sink ( leader of the termination of the spaning phase)
+        spanning_sink(self)
     
     else:
         xbee_thread = threading.Thread(target=xbee_listener, args=(self,))
