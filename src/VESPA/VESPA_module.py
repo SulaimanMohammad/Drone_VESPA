@@ -174,9 +174,9 @@ class Drone:
 
     def resend_data(self):
         if not self.demanders_received_data.is_set():
-                data_msg= self.build_spot_info_message(Response_header) 
-                send_msg(data_msg)
-        self.demanders_received_data.clear()
+            data_msg= self.build_spot_info_message(Response_header) 
+            send_msg(data_msg)
+            self.demanders_received_data.clear()
 
     def build_data_demand_message(self):
         message= Demand_header.encode()
@@ -257,7 +257,7 @@ class Drone:
 
         if msg.startswith(ACK_header.encode()) and msg.endswith(b'\n'):
                 sender_id, target_id =self.decode_ACK_data_message(msg)
-                if target_id== id: 
+                if target_id== self.id : 
                     self.remove_id_demanders_list(sender_id)
                     self.reset_timer()
                 if len(self.demanders_list)==0:

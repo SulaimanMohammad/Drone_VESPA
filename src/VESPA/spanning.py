@@ -88,7 +88,7 @@ def path_around_exist(self):
     
     if filtered_neighbors is not None:  # There are occupied neighbors
         with self.lock_neighbor_list:
-            neighbor_irremovable = next((neighbor for neighbor in filtered_neighbors if ( neighbor['state'] == Irremovable) ), None)
+            neighbor_irremovable = next((neighbor for neighbor in filtered_neighbors if ( neighbor['states'] == Irremovable) ), None)
     if neighbor_irremovable>0:
         return True
     else: 
@@ -134,7 +134,7 @@ class Sink_Timer:
     def time_up(sink_t,self):
         # Called when the timer reaches its timeout without being reset.
         print("Time's up! ")
-        self.change_state(Irremovable) # The sink will always be irremovable 
+        self.change_state_to(Irremovable) # The sink will always be irremovable 
         # No message received, thus the sink must build path to the border 
         if sink_t.message_counter==0 or (not path_around_exist(self)): 
             target_id= find_close_neigboor_2border(self)
@@ -262,9 +262,9 @@ def xbee_listener(self):
             if id_rec == self.id :
                 if data==0:
                     if self.state== Border: 
-                        self.change_state(Irremovable_boarder)
+                        self.change_state_to(Irremovable_boarder)
                     else: 
-                        self.change_state(Irremovable)
+                        self.change_state_to(Irremovable)
                     # Send message to the neighbors to inform the new changes 
                     msg= build_target_message(self.id)
                     send_msg(msg)
@@ -331,11 +331,11 @@ def find_close_neigboor_2sink(self):
         # if you arrive to irremovable 
 
         with self.lock_neighbor_list:
-            neighbor_irremovable = next((neighbor for neighbor in filtered_neighbors if ( neighbor['state'] == Irremovable) ), None)
+            neighbor_irremovable = next((neighbor for neighbor in filtered_neighbors if ( neighbor['states'] == Irremovable) ), None)
 
         # No irremovable found 
         if neighbor_irremovable== None:
-            return min(filtered_neighbors, key=lambda x: x["distance"])["id"] # retuen the id of the drone 
+            return min(filtered_neighbors, key=lambda x: x["distance"])["drones_in_id"] # retuen the id of the drone 
         else: 
             # irremovable found, save it
             append_id_to_path( self.drone_id_to_sink, neighbor_irremovable )
@@ -348,9 +348,9 @@ def find_close_neigboor_2sink(self):
         
         # If there are many drones had a state border befor chose the one closer to sink 
         if drone_previous_border>1: 
-            return min(drone_previous_border, key=lambda x: x["distance"])["id"]
+            return min(drone_previous_border, key=lambda x: x["distance"])["drones_in_id"]
         elif drone_previous_border==1:
-            return drone_previous_border["id"]
+            return drone_previous_border["drones_in_id"]
 
         # Founding no drone it is not possible, after the further exapnsion, the drones will be between the old border an dthe new one 
   
@@ -377,10 +377,10 @@ def find_close_neigboor_2border(self):
     # if there is a irremovable or irremovable-border there is no need to send message
     # Here a mutex needed in this operation to read  the state
     with self.lock_neighbor_list:     
-        neighbor_irremovable = next((neighbor for neighbor in filtered_neighbors if ( neighbor['state'] == Irremovable or neighbor['state'] == Irremovable_boarder) ), None)
+        neighbor_irremovable = next((neighbor for neighbor in filtered_neighbors if ( neighbor['states'] == Irremovable or neighbor['states'] == Irremovable_boarder) ), None)
 
     if neighbor_irremovable== None: # No irremovable found, check what is the closest to the sink
-        return max(filtered_neighbors, key=lambda x: x["distance"])["id"] # Retuen the id of the drone 
+        return max(filtered_neighbors, key=lambda x: x["distance"])["drones_in_id"] # Retuen the id of the drone 
     else: # There is a irremovable drone in occupied neighbors but usually it is only one
         append_id_to_path(self.drone_id_to_border, neighbor_irremovable)
         return -1 
