@@ -45,16 +45,17 @@ def build_target_message(target_id, header=Spanning_header, data=0):
 
 def decode_target_message(message):
     # Extract max_byte_count and target_id
-    max_byte_count = struct.unpack('>B', message[2:3])[0]
-    target_id_start = 3
+    content = message[1:]
+    # Extract the max_byte_count (1 byte)
+    max_byte_count = struct.unpack('>B', content[:1])[0]
+    target_id_start = 2
     target_id_end = target_id_start + max_byte_count
     target_id = int.from_bytes(message[target_id_start:target_id_end], 'big')
-    
     # Extract the data size and data
     data_size_start = target_id_end
+  
     data_size_end = data_size_start + 1  # Since data size is stored in 1 byte
-    data_size = struct.unpack('>B', message[data_size_start:data_size_end])[0]
-    
+    data_size = int.from_bytes(message[data_size_start:data_size_end], 'big') 
     # Extract and convert the data bytes to integer
     data_start = data_size_end
     data_end = data_start + data_size
@@ -96,13 +97,20 @@ def path_around_exist(self):
     
 
 def check_continuity_of_listening(self):
-    if self.state==Irremovable or self.id==0:
+    if self.state==Irremovable:
         if self.VESPA_termination.is_set():
             return False
     else:
         if listener_end_of_spanning.is_set():
             return False 
     return True
+
+def retrieve_msg_from_buffer_spanning(self):
+    if self.state==Irremovable:
+        msg= retrieve_msg_from_buffer(self.VESPA_termination)
+    else:
+        msg= retrieve_msg_from_buffer(listener_end_of_spanning)
+    return msg
 
 
 '''
@@ -141,7 +149,7 @@ class Sink_Timer:
             if target_id != -1 : # No irremovable send msg to a drone to make it irremovable 
                 # Send message to a drone that had Id= target_id
                 append_id_to_path( self.drone_id_to_border, target_id ) 
-                msg= build_target_message(target_id)
+                msg= build_target_message(int(target_id[0]))
                 send_msg(msg)
 
         self.VESPA_termination.wait()
@@ -160,12 +168,12 @@ def sink_listener(sink_t, self):
      
     '''
     while check_continuity_of_listening(self): # the end is not reached , keep listenning
-        msg= retrieve_msg_from_buffer(check_continuity_of_listening(self)) 
+        msg= retrieve_msg_from_buffer(self.VESPA_termination) 
         
         self.exchange_neighbors_info_communication(msg)
 
         if msg.startswith(Spanning_header.encode()) and msg.endswith(b'\n'):
-            id_rec,data = self.decode_target_message(msg)
+            id_rec,data = decode_target_message(msg)
             if id_rec == self.id: 
                 if data ==0:
                     with sink_t.lock_sink:  # Acquire the lock
@@ -237,6 +245,8 @@ def forward_coordiantes_sink(self, sender_id, longitude, latitude):
 # Event flag to signal that xbee_listener wants to write
 listener_current_updated_irremovable = threading.Event()
 listener_end_of_spanning = threading.Event()
+
+
 def xbee_listener(self):
     '''
     1-If the header refer to data demand (build the message that contains the data and send it)
@@ -252,13 +262,13 @@ def xbee_listener(self):
     # Keep listening until reciving a end of the phase 
     while check_continuity_of_listening(self): 
        
-        msg= retrieve_msg_from_buffer(check_continuity_of_listening(self))
+        msg= retrieve_msg_from_buffer_spanning(self)
 
         self.exchange_neighbors_info_communication(msg)
         
         # Message of building the path 
         if msg.startswith(Spanning_header.encode()) and msg.endswith(b'\n'):
-            id_rec, data= self.decode_target_message(msg)           
+            id_rec, data= decode_target_message(msg)           
             if id_rec == self.id :
                 if data==0:
                     if self.state== Border: 
@@ -425,7 +435,6 @@ def spanning(self, vehicle):
             while not listener_current_updated_irremovable.is_set() or ( not listener_end_of_spanning.is_set()):
                 time.sleep(1)
             listener_current_updated_irremovable.clear() # need to be cleared for the next spanning 
-        
         # For Irremovables and Free drones that were changed  
         if (self.state== Irremovable) or (self.state == Irremovable_boarder): 
             self.build_path()
@@ -438,7 +447,7 @@ def spanning(self, vehicle):
                     current_lon = vehicle.location.global_relative_frame.lon
                     current_lat = vehicle.location.global_relative_frame.lat
                     coordinates_msg= build_GPS_coordinates_message(self.drone_id_to_sink[0], self.id, current_lon,current_lat )
-                    send_msg(coordinates_msg)
+                    send_msg(coordinates_msg) 
 
         # Send a message that will travel from border to sink and that will annouce end of the pahse 
         if self.state== Irremovable_boarder:

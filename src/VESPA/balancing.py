@@ -95,7 +95,7 @@ def decode_shared_allowed_spots_message(message):
     return targets_id, allowed_spots
 
 def check_continuity_of_listening(self):
-    if self.end_of_balancing.is_set():
+    if not self.end_of_balancing.is_set():
         return True
     else: 
         return False
@@ -158,7 +158,7 @@ def border_listener(self,border_t):
     
     while check_continuity_of_listening(self): # the end is not reached , keep listenning 
         
-        msg= self.retrieve_msg_from_buffer(check_continuity_of_listening(self)) 
+        msg= self.retrieve_msg_from_buffer(self.end_of_balancing) 
 
         self.exchange_neighbors_info_communication(msg)
 
@@ -216,7 +216,7 @@ def communication_balancing_free_drones(self,vehicle):
     
     while check_continuity_of_listening(self): # the end is not reached , keep listenning 
         
-        msg= self.retrieve_msg_from_buffer(check_continuity_of_listening(self)) 
+        msg= self.retrieve_msg_from_buffer(self.end_of_balancing) 
         
         self.exchange_neighbors_info_communication(msg)
         

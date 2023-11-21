@@ -70,7 +70,7 @@ def handel_elected_drone_arrivale(self,msg):
         self.elected_droen_arrived.set()
 
 def check_continuity_of_listening(self):
-    if self.Forming_Border_Broadcast_REC.is_set():
+    if not self.Forming_Border_Broadcast_REC.is_set():
         return True
     else: 
         return False
@@ -79,8 +79,8 @@ def expansion_listener (self):
     self.Forming_Border_Broadcast_REC = threading.Event()
 
     while check_continuity_of_listening(self):
-
-        msg= retrieve_msg_from_buffer(check_continuity_of_listening(self))
+        
+        msg= retrieve_msg_from_buffer(self.Forming_Border_Broadcast_REC)
 
         self.exchange_neighbors_info_communication(msg)
 
