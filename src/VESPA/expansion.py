@@ -69,12 +69,18 @@ def handel_elected_drone_arrivale(self,msg):
     if rec_id==self.elected_id:
         self.elected_droen_arrived.set()
 
+def check_continuity_of_listening(self):
+    if self.Forming_Border_Broadcast_REC.is_set():
+        return True
+    else: 
+        return False
+
 def expansion_listener (self):
     self.Forming_Border_Broadcast_REC = threading.Event()
 
-    while not self.Forming_Border_Broadcast_REC.is_set():
+    while check_continuity_of_listening(self):
 
-        msg= retrieve_msg_from_buffer()
+        msg= retrieve_msg_from_buffer(check_continuity_of_listening(self))
 
         self.exchange_neighbors_info_communication(msg)
 
@@ -339,6 +345,7 @@ def save_unoccupied_spots_around_border(self):
 ----------------------------------- Main functions ----------------------------------
 -------------------------------------------------------------------------------------
 '''
+
 def expand_and_form_border(self,vehicle):
     spatial_observation(self)
     while self.state !=Owner:
@@ -414,7 +421,6 @@ def first_exapnsion (self, vehicle):
     clear_buffer()
     xbee_receive_message_thread.join() # stop listening to message
     
-
 def further_expansion (self,vehicle):
     # Lance a thread to read messages continuously
     xbee_receive_message_thread = threading.Thread(target=expansion_listener, args=(self,)) #pass the function reference and arguments separately to the Thread constructor.

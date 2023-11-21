@@ -137,7 +137,7 @@ class Sink_Timer:
         self.change_state(Irremovable) # The sink will always be irremovable 
         # No message received, thus the sink must build path to the border 
         if sink_t.message_counter==0 or (not path_around_exist(self)): 
-            target_id= find_close_neigboor_2border(self) 
+            target_id= find_close_neigboor_2border(self)
             if target_id != -1 : # No irremovable send msg to a drone to make it irremovable 
                 # Send message to a drone that had Id= target_id
                 append_id_to_path( self.drone_id_to_border, target_id ) 
@@ -160,9 +160,9 @@ def sink_listener(self,sink_t):
      
     '''
     while check_continuity_of_listening(self): # the end is not reached , keep listenning
-        msg= self.retrieve_msg_from_buffer() 
+        msg= retrieve_msg_from_buffer(check_continuity_of_listening(self)) 
         
-        msg = self.exchange_neighbors_info_communication(msg)
+        self.exchange_neighbors_info_communication(msg)
 
         if msg.startswith(Spanning_header.encode()) and msg.endswith(b'\n'):
             id_rec,data = self.decode_target_message(msg)
@@ -201,7 +201,6 @@ def spanning_sink(self):
     # initialize a timer that will be rest after reciving new message 
     sink_proess = Sink_Timer(self)
     sink_proess.run(self)
-
 
 
 '''
@@ -252,10 +251,10 @@ def xbee_listener(self):
     '''
     # Keep listening until reciving a end of the phase 
     while check_continuity_of_listening(self): 
-        
-        msg= self.retrieve_msg_from_buffer() 
-        
-        msg = self.exchange_neighbors_info_communication(msg)
+       
+        msg= retrieve_msg_from_buffer(check_continuity_of_listening(self))
+
+        self.exchange_neighbors_info_communication(msg)
         
         # Message of building the path 
         if msg.startswith(Spanning_header.encode()) and msg.endswith(b'\n'):
@@ -446,7 +445,7 @@ def spanning(self, vehicle):
             while not self.drone_id_to_sink: # wait until list not empty 
                 time.sleep(1)
             forward_confirm_msg(self,Border_sink_confirm)
-        
+
 
         if self.state==Irremovable:
             self.VESPA_termination.wait()

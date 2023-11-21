@@ -30,9 +30,9 @@ def send_msg(msg):
         time.sleep(0.1)
 
 message_buffer = bytearray()
-def retrieve_msg_from_buffer():
+def retrieve_msg_from_buffer(continuity_of_reading_condition):
     global message_buffer 
-    while True:  # Keep checking for a complete message
+    while continuity_of_reading_condition: # Keep checking for a complete message or condition related to the phase is not set
         # Read available data
         (count, data) = pi.bb_serial_read(rx_pin)
         if count:

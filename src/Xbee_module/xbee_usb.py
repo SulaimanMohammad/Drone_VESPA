@@ -15,18 +15,17 @@ def connect_xbee(xbee_serial_port, baud_rate, timeout=1):
 
 def send_msg(message):
     """ Send a message via XBee. """
-    print("sending msg", message)
     ser.write(message)
 
 message_buffer = bytearray()
-def retrieve_msg_from_buffer():
+def retrieve_msg_from_buffer(continuity_of_reading_condition):
     global message_buffer 
-    while True:  # Keep checking for a complete message
+    while continuity_of_reading_condition: # Keep checking for a complete message or condition related to the phase is not set
         # Read data from USB serial if available
         while ser.in_waiting > 0:
             byte = ser.read(1)
             message_buffer.extend(byte)
-
+        
         # Process buffer if it has data
         while len(message_buffer) > 0:
             # Search for a valid header
@@ -51,12 +50,11 @@ def retrieve_msg_from_buffer():
             complete_message = message_buffer[header_index:newline_index + 1]
             # Remove the processed message from the buffer
             message_buffer = message_buffer[newline_index + 1:]
-
             # Return the complete message
             return complete_message
 
         # Short sleep to prevent high CPU usage
-        time.sleep(0.1)
+        time.sleep(0.05)
 
 def close_xbee_port():
     ser.close()
