@@ -421,6 +421,7 @@ def build_path(self):
 def spanning(self, vehicle): 
 
     if self.spot['distance']<1: # if the drone is sink ( leader of the termination of the spaning phase)
+        self.demand_neighbors_info()
         spanning_sink(self)
     
     else:
@@ -437,8 +438,10 @@ def spanning(self, vehicle):
             while not listener_current_updated_irremovable.is_set() or ( not listener_end_of_spanning.is_set()):
                 time.sleep(1)
             listener_current_updated_irremovable.clear() # need to be cleared for the next spanning 
+        
         # For Irremovables and Free drones that were changed  
-        if (self.state== Irremovable) or (self.state == Irremovable_boarder): 
+        if (self.state== Irremovable) or (self.state == Irremovable_boarder):
+            self.demand_neighbors_info()
             build_path(self)
             # Time needed so the drone in the sink direction received msg,  changed its state and try to build its path 
             time.sleep(2) 
