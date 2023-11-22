@@ -480,7 +480,15 @@ class Drone:
                 # Increment drones_in count
                 s['drones_in'] += 1
         else:
-            print("Invalid index provided")
+            print("Signal originating from outside the region")
+            # Receive signal from drone out of the 6 neighbors 
+            for s in self.neighbor_list:
+                if id_rec in s["drones_in_id"]:
+                    idx = s['drones_in_id'].index(id_rec)
+                    s['drones_in_id'].pop(idx)
+                    s['states'].pop(idx)
+                    s['previous_state'].pop(idx)
+                    s['drones_in'] -= 1
 
 
     def update_state_in_neighbors_list( self, id, state):
