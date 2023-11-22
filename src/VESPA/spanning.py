@@ -142,16 +142,15 @@ class Sink_Timer:
     def time_up(sink_t,self):
         # Called when the timer reaches its timeout without being reset.
         print("Time's up! ")
-        self.change_state_to(Irremovable) # The sink will always be irremovable 
+        self.change_state_to(Irremovable) # The sink will always be irremovable
         # No message received, thus the sink must build path to the border 
         if sink_t.message_counter==0 or (not path_around_exist(self)): 
             target_id= find_close_neigboor_2border(self)
             if target_id != -1 : # No irremovable send msg to a drone to make it irremovable 
                 # Send message to a drone that had Id= target_id
                 append_id_to_path( self.drone_id_to_border, target_id ) 
-                msg= build_target_message(int(target_id[0]))
+                msg= build_target_message(target_id)
                 send_msg(msg)
-
         self.VESPA_termination.wait()
         self.VESPA_termination.clear()
         clear_buffer()
@@ -169,7 +168,7 @@ def sink_listener(sink_t, self):
     '''
     while check_continuity_of_listening(self): # the end is not reached , keep listenning
         msg= retrieve_msg_from_buffer(self.VESPA_termination) 
-        
+
         self.exchange_neighbors_info_communication(msg)
 
         if msg.startswith(Spanning_header.encode()) and msg.endswith(b'\n'):
@@ -268,7 +267,7 @@ def xbee_listener(self):
         
         # Message of building the path 
         if msg.startswith(Spanning_header.encode()) and msg.endswith(b'\n'):
-            id_rec, data= decode_target_message(msg)           
+            id_rec, data= decode_target_message(msg)       
             if id_rec == self.id :
                 if data==0:
                     if self.state== Border: 
@@ -279,7 +278,7 @@ def xbee_listener(self):
                     msg= build_target_message(self.id)
                     send_msg(msg)
                     listener_current_updated_irremovable.set() # Flag that the state was changed to irremovable 
-                elif data == Border_sink_confirm: 
+                elif data == Border_sink_confirm:
                     # It's a meaage flow from border to sink to verfiry the path and end the pahse
                     # verfiy if became already irremovable drone (part of the path)
                     if (self.state == Irremovable):
@@ -335,20 +334,20 @@ def find_close_neigboor_2sink(self):
 
     # Filter the neighbor_list with minimum distance the spot should be occupied "drones_in" > 0  
     filtered_neighbors = [neighbor for neighbor in three_min_neighbors if neighbor["drones_in"] > 0]
-    
+
     if filtered_neighbors is not None:  # There are occupied neighbors
         # Find the neighbor with id of the drone that is irremovable 
         # if you arrive to irremovable 
-
+        
         with self.lock_neighbor_list:
-            neighbor_irremovable = next((neighbor for neighbor in filtered_neighbors if ( neighbor['states'] == Irremovable) ), None)
-
+            # Here is changed because the filtered_neighbors is a list 
+            neighbor_irremovable = next((neighbor for neighbor in filtered_neighbors if Irremovable in neighbor['states']) , None)
         # No irremovable found 
         if neighbor_irremovable== None:
-            return min(filtered_neighbors, key=lambda x: x["distance"])["drones_in_id"] # retuen the id of the drone 
+            return int((min(filtered_neighbors, key=lambda x: x["distance"])["drones_in_id"])[0]) # retuen the id of the drone 
         else: 
             # irremovable found, save it
-            append_id_to_path( self.drone_id_to_sink, neighbor_irremovable )
+            append_id_to_path( self.drone_id_to_sink, neighbor_irremovable["drones_in_id"] )
             return -1
     else: 
         # The case of no occupied neighbors close to sink around is very possible after further expansion
@@ -358,9 +357,9 @@ def find_close_neigboor_2sink(self):
         
         # If there are many drones had a state border befor chose the one closer to sink 
         if drone_previous_border>1: 
-            return min(drone_previous_border, key=lambda x: x["distance"])["drones_in_id"]
+            return int((min(drone_previous_border, key=lambda x: x["distance"])["drones_in_id"])[0])
         elif drone_previous_border==1:
-            return drone_previous_border["drones_in_id"]
+            return (drone_previous_border["drones_in_id"])[0]
 
         # Founding no drone it is not possible, after the further exapnsion, the drones will be between the old border an dthe new one 
   
@@ -387,12 +386,12 @@ def find_close_neigboor_2border(self):
     # if there is a irremovable or irremovable-border there is no need to send message
     # Here a mutex needed in this operation to read  the state
     with self.lock_neighbor_list:     
-        neighbor_irremovable = next((neighbor for neighbor in filtered_neighbors if ( neighbor['states'] == Irremovable or neighbor['states'] == Irremovable_boarder) ), None)
+        neighbor_irremovable = next((neighbor for neighbor in filtered_neighbors if ( Irremovable in neighbor['states'] or Irremovable_boarder in neighbor['states']) ), None)
 
     if neighbor_irremovable== None: # No irremovable found, check what is the closest to the sink
-        return max(filtered_neighbors, key=lambda x: x["distance"])["drones_in_id"] # Retuen the id of the drone 
+        return int((max(filtered_neighbors, key=lambda x: x["distance"])["drones_in_id"])[0]) # Retuen the id of the drone 
     else: # There is a irremovable drone in occupied neighbors but usually it is only one
-        append_id_to_path(self.drone_id_to_border, neighbor_irremovable)
+        append_id_to_path(self.drone_id_to_border, neighbor_irremovable["drones_in_id"])
         return -1 
   
 def build_path(self):
@@ -410,6 +409,7 @@ def build_path(self):
             append_id_to_path(self.drone_id_to_border, target_id)
             msg= build_target_message(target_id)
             send_msg(msg)
+    
 
 '''
 -------------------------------------------------------------------------------------
@@ -437,7 +437,7 @@ def spanning(self, vehicle):
             listener_current_updated_irremovable.clear() # need to be cleared for the next spanning 
         # For Irremovables and Free drones that were changed  
         if (self.state== Irremovable) or (self.state == Irremovable_boarder): 
-            self.build_path()
+            build_path(self)
             # Time needed so the drone in the sink direction received msg,  changed its state and try to build its path 
             time.sleep(2) 
             # Send message to the sink about the corrdinates 
@@ -447,7 +447,7 @@ def spanning(self, vehicle):
                     current_lon = vehicle.location.global_relative_frame.lon
                     current_lat = vehicle.location.global_relative_frame.lat
                     coordinates_msg= build_GPS_coordinates_message(self.drone_id_to_sink[0], self.id, current_lon,current_lat )
-                    send_msg(coordinates_msg) 
+                    send_msg(coordinates_msg)
 
         # Send a message that will travel from border to sink and that will annouce end of the pahse 
         if self.state== Irremovable_boarder:
