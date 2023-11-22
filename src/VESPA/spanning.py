@@ -31,38 +31,40 @@ def write_to_csv(id, longitude, latitude):
             writer.writerow([id, longitude, latitude])
 
 def build_target_message(target_id, header=Spanning_header, data=0):
-    max_byte_count = determine_max_byte_size(target_id)
-    message = header.encode() + struct.pack('>B', max_byte_count)    
-    message += target_id.to_bytes(max_byte_count, 'big')
-    
+    max_byte_count = determine_max_byte_size (target_id)
+    message = header.encode() + struct.pack('>B', max_byte_count)
+    message += target_id.to_bytes(max_byte_count,  byteorder='big',signed=True)
+
     data_byte_size = determine_max_byte_size(data)
-    data_bytes = data.to_bytes(data_byte_size, 'big')
-    message += struct.pack('>B', data_byte_size) 
-    message += data_bytes  
-    
+    # Convert to bytes using two's complement
+    data_bytes = data.to_bytes(data_byte_size, byteorder='big', signed=True)
+    message += struct.pack('>B', data_byte_size)
+    message += data_bytes
+
     message += b'\n'
     return message
 
 def decode_target_message(message):
     # Extract max_byte_count and target_id
     content = message[1:]
-    # Extract the max_byte_count (1 byte)
     max_byte_count = struct.unpack('>B', content[:1])[0]
     target_id_start = 2
     target_id_end = target_id_start + max_byte_count
-    target_id = int.from_bytes(message[target_id_start:target_id_end], 'big')
+    target_id = int.from_bytes(message[target_id_start:target_id_end], 'big',signed=True)
     # Extract the data size and data
     data_size_start = target_id_end
-  
+
     data_size_end = data_size_start + 1  # Since data size is stored in 1 byte
-    data_size = int.from_bytes(message[data_size_start:data_size_end], 'big') 
+    data_size = int.from_bytes(message[data_size_start:data_size_end], 'big')
     # Extract and convert the data bytes to integer
     data_start = data_size_end
     data_end = data_start + data_size
     data_bytes = message[data_start:data_end]
-    data = int.from_bytes(data_bytes, 'big')
-    
+    # Decode the data bytes as a signed integer
+    data = int.from_bytes(data_bytes, 'big', signed=True)
+
     return target_id, data
+
 
 # This func uses build_target_message but with data=!0 to be recognized as message to confirm the path 
 def forward_confirm_msg(self, data, header=Spanning_header):
