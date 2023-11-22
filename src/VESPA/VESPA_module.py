@@ -60,16 +60,19 @@ def set_a(val):
 
 #Return the byte count necessary to represent max ID.
 def determine_max_byte_size(number):
-    if number == 0:
-        return 1  # Handle zero explicitly
-    elif number <= 0xFF:
-        return 1
-    elif number <= 0xFFFF:
-        return 2
-    elif number <= 0xFFFFFF:
-        return 3
+    if number< 0:
+        return (number.bit_length() + 7) // 8
     else:
-        return 4
+        if number == 0:
+            return 1  # Handle zero explicitly
+        elif number <= 0xFF:
+            return 1
+        elif number <= 0xFFFF:
+            return 2
+        elif number <= 0xFFFFFF:
+            return 3
+        else:
+            return 4
 
 formula_dict = {
     "s0": "sqrt(DxDy2)",
