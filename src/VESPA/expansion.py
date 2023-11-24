@@ -1,5 +1,5 @@
 from .VESPA_module import *
-from .form_border_one_direction import form_border_one_direction, start_msg_one_direction
+from .form_border_one_direction import *
 from .form_border_tow_direction import *
 
 set_env(globals())
@@ -88,11 +88,11 @@ def expansion_listener (self):
             id, spot, lon, lat= decode_movement_command_message(msg)
             if id==-1 and spot==-1 and lon==0 and lat==0: # mean all drone are in sky
                 self.start_expanding.set()
-            # else:
-            #     initial_movement(self, vehicle,id, spot, lon, lat)
+            else:
+                initial_movement(self, vehicle,id, spot, lon, lat)
 
-        # elif msg.startswith(Calibration) and msg.endswith("\n"):
-        #     calibration_ping_pong(self, vehicle, msg )
+        elif msg.startswith(Calibration) and msg.endswith("\n"):
+            calibration_ping_pong(self, vehicle, msg )
 
         elif msg.startswith(Expan_header.encode()) and msg.endswith(b'\n'):
             handel_elected_drone_arrivale(self, msg)
@@ -104,33 +104,9 @@ def expansion_listener (self):
             handel_inheritence_message(self, msg)
             
         elif msg.startswith(Forming_border_header.encode()) and msg.endswith(b'\n'): # message starts with F end with \n
-            rec_propagation_indicator, target_ids, sender, candidate= decode_border_message(msg)
-            
-            if sender in target_ids:
-                self.forming_border_msg_recived.set()
-            
-            # End of the expansion broadcast msg
-            if len(target_ids)==1 and target_ids[0]==-1 and rec_propagation_indicator[0]==-1 :
-                if self.border_candidate==True:
-                    border_broadcast_respond(self, candidate)
-                # Here any drone in any state needs to forward the boradcast message and rise ending flag
-                forward_broadcast_message(self, Forming_border_header,candidate)
-                self.Forming_Border_Broadcast_REC.set()
-
-            elif self.id in  target_ids: # the drone respond only if it is targeted
-                if candidate == self.id: # the message recived contains the id of the drone means the message came back
-                    circle_completed (self)
-                else: # the current drone received a message from a candidate border so it needs to forward it
-                    find_msg_direction_forward(self,rec_propagation_indicator,target_ids,sender,candidate )
-
-            else: # Drone is not targeted ( doesnt matter it it is free or candidate) thus it drops the message
-                    # Do anything but wait for end of the expansion broadcast
-                    continue
-            
-            # For right handed methode
-            # from .right_handed_border import form_border_right_hand
-            # form_border_one_direction(self, Forming_border_header, msg)
-            
+            form_border_one_direction(self,Forming_border_header,msg)
+            #form_border_two_direction(self,Forming_border_header,msg)
+                        
 '''
 -------------------------------------------------------------------------------------
 -------------------------------- Movement calculation -------------------------------
@@ -265,71 +241,14 @@ def send_msg_border_upon_confirmation(self,msg):
 -------------------------------------------------------------------------------------
 '''
 
-def count_element_occurrences(self):
-    # Find the maximum element in the direction_taken list
-    max_element = 7  # s0 to s6
-    # Create a dictionary to store the frequencies, similar to hash map to count occurrences
-    frequency_dict = {i: 0 for i in range(max_element + 1)}
-    # Count the occurrences of each element
-    for direction in self.direction_taken:
-        frequency_dict[direction] += 1
-    # Find the maximum frequency
-    max_freq = max(frequency_dict.values())
-    max_indices = [key for key, value in frequency_dict.items() if value == max_freq]
-    # If there is only one occurrence of the maximum frequency, return its index
-    if len(max_indices) == 1:
-        return max_indices[0]
-    # If there are multiple occurrences of the maximum frequency, choose randomly
-    return random.choice(max_indices)
-
-def check_border_candidate_eligibility(self):
-    self.border_candidate=False
-    self.dominated_direction= count_element_occurrences(self)
-    # Define a dictionary to map directions to the corresponding spots_to_check_for_border values
-    direction_to_check_map = {
-        1: [1, 2, 6],
-        2: [1, 2, 3],
-        3: [3, 2, 4],
-        4: [3, 4, 5],
-        5: [4, 5, 6],
-        6: [1, 5, 6]
-    }
-    self.spots_to_check_for_border=direction_to_check_map.get(self.dominated_direction, [])
-    unoccupied_spots_counter = 0
-    for check in self.spots_to_check_for_border:
-        # Find the corresponding entry in neighbor_list by its name
-        neighbor = next((n for n in self.neighbor_list if n["name"] == "s" + str(check)), None)
-        if neighbor and (neighbor ["drones_in"] == 0 ): # spot also is not occupied
-            unoccupied_spots_counter += 1
-    if unoccupied_spots_counter>0: # at least one spot is empty so the drone can be part of he border
-        self.border_candidate=True
-    return self.border_candidate
-
-def Fire_border_msg(self, header):
-    self.current_target_ids= self.create_target_list(header)
-    # At the beginning  propagation_indicator and target_ids are the same in the source of the message
-    propagation_indicator=  self.current_target_ids
-    Msg= build_border_message(header, self.id, propagation_indicator, self.current_target_ids, self.id)
-    send_msg_border_upon_confirmation(self, Msg)
-
-    # Right-hand border forming
-    # Propagation_indicator and target_ids are the same in the source of the message
-    # propagation_indicator=  self.create_target_list(header)
-    # target_ids= self.choose_spot_right_handed()
-    # Msg= build_border_message(header, self.id,propagation_indicator, target_ids, self.id)
-    # self.send_msg(Msg)
-
-    # Another Right-hand border forming without propagation_indicator
-    # start_msg_one_direction(self,header)
-
 def Forme_border(self):
     check_border_candidate_eligibility(self)
     if self.border_candidate :
         self.update_candidate_spot_info_to_neighbors() # Useful if the drone arrived and filled a spot made others sourounded
         '''launch a message circulation for current candidat'''
-        Fire_border_msg(self, Forming_border_header)
+        start_msg_one_direction(self,Forming_border_header)
     else:
-        #means that the drone is sourounded in the expansion direction it can be set as free
+        # Drone is sourounded in the expansion direction it can be set as free
         self.change_state_to(Free)
 
     # wait until the border procesdure is finished
