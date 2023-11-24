@@ -1,0 +1,151 @@
+<mxfile host="app.diagrams.net" modified="2023-11-23T08:55:23.516Z" agent="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/117.0.0.0 Safari/537.36" etag="bVslrNhMix4tP8sAMWm_" version="22.1.3" type="device">
+  <diagram name="Page-1" id="fh-uDVwEaBKLU3wgrcIG">
+    <mxGraphModel dx="2778" dy="922" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="nJh8AWLlePj_QDBN4ZsL-1" value="" style="html=1;dashed=0;whiteSpace=wrap;" parent="1" vertex="1">
+          <mxGeometry x="-160" y="169.6" width="390" height="560.4" as="geometry" />
+        </mxCell>
+        <mxCell id="nJh8AWLlePj_QDBN4ZsL-2" value="" style="html=1;dashed=0;whiteSpace=wrap;" parent="1" vertex="1">
+          <mxGeometry x="-420" y="170.5" width="190" height="190" as="geometry" />
+        </mxCell>
+        <mxCell id="nJh8AWLlePj_QDBN4ZsL-4" value="demand data and send msg&amp;nbsp;" style="html=1;dashed=0;whiteSpace=wrap;" parent="1" vertex="1">
+          <mxGeometry x="-380" y="185.5" width="100" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="nJh8AWLlePj_QDBN4ZsL-16" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" parent="1" source="nJh8AWLlePj_QDBN4ZsL-9" target="bVlnGUSEk1k-4zFb2nsr-6" edge="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="-30" y="241.6" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="nJh8AWLlePj_QDBN4ZsL-9" value="Demand Recived&amp;nbsp;&amp;nbsp;" style="rounded=0;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+          <mxGeometry x="50" y="180" width="90" height="45" as="geometry" />
+        </mxCell>
+        <mxCell id="nJh8AWLlePj_QDBN4ZsL-10" value="Reset timer timer_demand&amp;nbsp;" style="rounded=0;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+          <mxGeometry x="170" y="327" width="130" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="nJh8AWLlePj_QDBN4ZsL-18" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" parent="1" source="nJh8AWLlePj_QDBN4ZsL-11" target="nJh8AWLlePj_QDBN4ZsL-13" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="nJh8AWLlePj_QDBN4ZsL-11" value="ACK Recived&amp;nbsp;&amp;nbsp;" style="rounded=0;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+          <mxGeometry x="51.25" y="335" width="90" height="45" as="geometry" />
+        </mxCell>
+        <mxCell id="nJh8AWLlePj_QDBN4ZsL-13" value="Remove id of demander&amp;nbsp;" style="html=1;dashed=0;whiteSpace=wrap;" parent="1" vertex="1">
+          <mxGeometry x="52.25" y="415" width="87.5" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="nJh8AWLlePj_QDBN4ZsL-15" value="List of demander&amp;nbsp;" style="shape=parallelogram;perimeter=parallelogramPerimeter;whiteSpace=wrap;html=1;dashed=0;" parent="1" vertex="1">
+          <mxGeometry x="-150" y="375" width="160" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="nJh8AWLlePj_QDBN4ZsL-17" value="Appened id &lt;br&gt;of demander&amp;nbsp;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;" parent="1" vertex="1">
+          <mxGeometry x="-160" y="325" width="90" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="nJh8AWLlePj_QDBN4ZsL-19" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.692;entryY=1.01;entryDx=0;entryDy=0;entryPerimeter=0;" parent="1" source="nJh8AWLlePj_QDBN4ZsL-13" target="nJh8AWLlePj_QDBN4ZsL-15" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="nJh8AWLlePj_QDBN4ZsL-22" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="1" source="nJh8AWLlePj_QDBN4ZsL-20" target="nJh8AWLlePj_QDBN4ZsL-21" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="bVlnGUSEk1k-4zFb2nsr-20" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="nJh8AWLlePj_QDBN4ZsL-20" target="bVlnGUSEk1k-4zFb2nsr-19">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="nJh8AWLlePj_QDBN4ZsL-20" value="Respond from another node contains info&amp;nbsp;" style="html=1;dashed=0;whiteSpace=wrap;" parent="1" vertex="1">
+          <mxGeometry x="55.5" y="600" width="90" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="nJh8AWLlePj_QDBN4ZsL-21" value="Send ACK&amp;nbsp;" style="html=1;dashed=0;whiteSpace=wrap;" parent="1" vertex="1">
+          <mxGeometry x="58" y="690" width="87.5" height="35" as="geometry" />
+        </mxCell>
+        <mxCell id="nJh8AWLlePj_QDBN4ZsL-26" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.077;entryY=-0.037;entryDx=0;entryDy=0;entryPerimeter=0;" parent="1" source="nJh8AWLlePj_QDBN4ZsL-9" target="nJh8AWLlePj_QDBN4ZsL-10" edge="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="179.6199999999999" y="282" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="nJh8AWLlePj_QDBN4ZsL-29" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.074;entryY=0.968;entryDx=0;entryDy=0;entryPerimeter=0;" parent="1" source="nJh8AWLlePj_QDBN4ZsL-13" target="nJh8AWLlePj_QDBN4ZsL-10" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="t1qk9CpYKrvgs7r72q3K-2" value="Receiver thread&amp;nbsp;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=16;" parent="1" vertex="1">
+          <mxGeometry x="-50" y="139.6" width="140" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="t1qk9CpYKrvgs7r72q3K-3" value="&lt;span style=&quot;color: rgb(0, 0, 0); font-family: Helvetica; font-size: 16px; font-style: normal; font-variant-ligatures: normal; font-variant-caps: normal; font-weight: 400; letter-spacing: normal; orphans: 2; text-align: center; text-indent: 0px; text-transform: none; widows: 2; word-spacing: 0px; -webkit-text-stroke-width: 0px; background-color: rgb(251, 251, 251); text-decoration-thickness: initial; text-decoration-style: initial; text-decoration-color: initial; float: none; display: inline !important;&quot;&gt;Main thread&amp;nbsp;&lt;/span&gt;" style="text;whiteSpace=wrap;html=1;fontSize=16;" parent="1" vertex="1">
+          <mxGeometry x="-380" y="139.6" width="150" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="bVlnGUSEk1k-4zFb2nsr-1" value="initialize_timer_resposnse&lt;br&gt;waiting&amp;nbsp;resposnse&lt;span style=&quot;background-color: initial;&quot;&gt;&amp;nbsp;info from others&amp;nbsp;&lt;/span&gt;" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="-399.37" y="275.5" width="148.75" height="55" as="geometry" />
+        </mxCell>
+        <mxCell id="bVlnGUSEk1k-4zFb2nsr-3" value="" style="group" vertex="1" connectable="0" parent="1">
+          <mxGeometry x="340" y="220" width="230" height="290" as="geometry" />
+        </mxCell>
+        <mxCell id="bVlnGUSEk1k-4zFb2nsr-2" value="" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="bVlnGUSEk1k-4zFb2nsr-3">
+          <mxGeometry width="230" height="290" as="geometry" />
+        </mxCell>
+        <mxCell id="nJh8AWLlePj_QDBN4ZsL-5" value="initialize_timer_demand&lt;br&gt;waiting demand info from others&amp;nbsp;" style="rounded=0;whiteSpace=wrap;html=1;" parent="bVlnGUSEk1k-4zFb2nsr-3" vertex="1">
+          <mxGeometry x="21.25" y="20" width="168.75" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="nJh8AWLlePj_QDBN4ZsL-6" value="Timer is done&amp;nbsp;&lt;br&gt;&lt;br&gt;Send info of curent node&amp;nbsp;" style="html=1;dashed=0;whiteSpace=wrap;" parent="bVlnGUSEk1k-4zFb2nsr-3" vertex="1">
+          <mxGeometry x="55.620000000000005" y="82" width="98.75" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="nJh8AWLlePj_QDBN4ZsL-7" value="initialize_timer&lt;br&gt;waiting for ACK" style="rounded=0;whiteSpace=wrap;html=1;" parent="bVlnGUSEk1k-4zFb2nsr-3" vertex="1">
+          <mxGeometry x="55.620000000000005" y="162" width="97.5" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="nJh8AWLlePj_QDBN4ZsL-8" value="Timer is done&amp;nbsp;&lt;br&gt;Resend_data if no ACK recived&amp;nbsp;" style="rounded=0;whiteSpace=wrap;html=1;" parent="bVlnGUSEk1k-4zFb2nsr-3" vertex="1">
+          <mxGeometry x="56.870000000000005" y="222" width="97.5" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="bVlnGUSEk1k-4zFb2nsr-4" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.003;entryY=0.438;entryDx=0;entryDy=0;entryPerimeter=0;" edge="1" parent="1" source="nJh8AWLlePj_QDBN4ZsL-10" target="bVlnGUSEk1k-4zFb2nsr-2">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="bVlnGUSEk1k-4zFb2nsr-5" value="&lt;font style=&quot;font-size: 18px;&quot;&gt;Collect demands thread&lt;/font&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry x="350" y="175" width="210" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="bVlnGUSEk1k-4zFb2nsr-8" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="bVlnGUSEk1k-4zFb2nsr-6" target="bVlnGUSEk1k-4zFb2nsr-7">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="bVlnGUSEk1k-4zFb2nsr-11" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="bVlnGUSEk1k-4zFb2nsr-6" target="nJh8AWLlePj_QDBN4ZsL-15">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="bVlnGUSEk1k-4zFb2nsr-6" value="List of demander is empty&amp;nbsp;" style="shape=rhombus;html=1;dashed=0;whiteSpace=wrap;perimeter=rhombusPerimeter;" vertex="1" parent="1">
+          <mxGeometry x="-112.5" y="232.5" width="85" height="65" as="geometry" />
+        </mxCell>
+        <mxCell id="bVlnGUSEk1k-4zFb2nsr-7" value="luanch&amp;nbsp;Collect demands thread" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="40" y="245" width="100" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="bVlnGUSEk1k-4zFb2nsr-9" value="YES" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry x="-25" y="228" width="50" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="bVlnGUSEk1k-4zFb2nsr-10" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.523;entryY=0.047;entryDx=0;entryDy=0;entryPerimeter=0;" edge="1" parent="1" source="bVlnGUSEk1k-4zFb2nsr-7" target="nJh8AWLlePj_QDBN4ZsL-15">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="90" y="320" />
+              <mxPoint x="-66" y="320" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="bVlnGUSEk1k-4zFb2nsr-12" value="NO" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry x="-110" y="295" width="40" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="bVlnGUSEk1k-4zFb2nsr-17" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="bVlnGUSEk1k-4zFb2nsr-13" target="bVlnGUSEk1k-4zFb2nsr-16">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="bVlnGUSEk1k-4zFb2nsr-13" value="List of demander&lt;br&gt;empty&amp;nbsp;" style="shape=rhombus;html=1;dashed=0;whiteSpace=wrap;perimeter=rhombusPerimeter;" vertex="1" parent="1">
+          <mxGeometry x="55.5" y="490" width="81.5" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="bVlnGUSEk1k-4zFb2nsr-14" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.491;entryY=0.069;entryDx=0;entryDy=0;entryPerimeter=0;" edge="1" parent="1" source="nJh8AWLlePj_QDBN4ZsL-13" target="bVlnGUSEk1k-4zFb2nsr-13">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="bVlnGUSEk1k-4zFb2nsr-15" value="Rec Ack from all&amp;nbsp;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry x="-25" y="480" width="110" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="bVlnGUSEk1k-4zFb2nsr-16" value="Join Collect demands thread" style="html=1;dashed=0;whiteSpace=wrap;" vertex="1" parent="1">
+          <mxGeometry x="-120" y="505" width="100" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="bVlnGUSEk1k-4zFb2nsr-18" value="YES" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry x="-5" y="500" width="50" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="bVlnGUSEk1k-4zFb2nsr-21" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="bVlnGUSEk1k-4zFb2nsr-19" target="bVlnGUSEk1k-4zFb2nsr-1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="bVlnGUSEk1k-4zFb2nsr-19" value="Reset timer timer_resposnse&amp;nbsp;" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="-190" y="610" width="130" height="40" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

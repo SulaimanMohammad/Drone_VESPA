@@ -55,7 +55,9 @@ def retrieve_msg_from_buffer(stop_flag):
         
         # Short sleep to prevent high CPU usage
         time.sleep(0.1)
-    return bytearray(b'')
+        
+    return bytearray(b'') # Return empty object so it can be recognized as not part of the headers array 
+
 
 def close_xbee_port():
     ser.close()

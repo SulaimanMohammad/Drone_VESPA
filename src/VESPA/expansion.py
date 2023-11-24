@@ -264,6 +264,65 @@ def save_unoccupied_spots_around_border(self):
 ----------------------------------- Main functions ----------------------------------
 -------------------------------------------------------------------------------------
 '''
+def expand_and_form_border_try(self):
+    xbee_receive_message_thread = threading.Thread(target=expansion_listener, args=(self,)) #pass the function reference and arguments separately to the Thread constructor.
+    xbee_receive_message_thread.start()
+    self.elected_droen_arrived= threading.Event()
+    if self.id==0:
+        self.direction_taken.append(0)
+        self.state=Owner
+        time.sleep(10)
+    else:
+        destination_spot_random = 2
+        print ("go to S", destination_spot_random)
+        self.direction_taken.append( destination_spot_random)
+        self.update_location(destination_spot_random)
+        
+    spatial_observation(self)
+    while self.state !=Owner:
+        set_priorities(self)
+        destination_spot= find_priority(self)
+        self.elected_id= neighbors_election(self)
+        if self.elected_id== self.id: # current drone is elected one to move
+            print("elected", self.elected_id)
+            if destination_spot != 0: # Movement to another spot not staying 
+                print ("go to S", destination_spot)
+                #self.move_to_spot(vehicle, destination_spot)
+                self.direction_taken.append( destination_spot)
+                self.update_location(destination_spot)
+                time.sleep(5)
+                # After move_to_spot retuen it means arrivale 
+                movement_done_msg= build_expan_elected(self.id)
+                print(movement_done_msg )
+                send_msg(movement_done_msg)
+        else:
+           print( "waiting for flag")
+           # Wait untile the elected drone to arrive to next spot.
+           self.elected_droen_arrived.wait() 
+           self.elected_droen_arrived.clear()
+
+        print("checking for update the state")
+        spatial_observation(self)
+        
+    # check also that noelectin message around 
+    while not (all(neighbor['drones_in'] in [0, 1] for neighbor in self.neighbor_list) or
+            all(neighbor['drones_in'] > 0 for neighbor in self.neighbor_list)):
+        # Before initiating the border procedure, it's important to wait for some time to ensures that the drone is alone in its spot.
+        # This step eliminates the possibility of erroneously considering a drone as a border-candidate when another drone in the same spot is about to move.
+        time.sleep(2)
+        print(" waiting to check for border")
+        self.demand_neighbors_info()
+    spatial_observation(self)
+    for station in self.neighbor_list:
+        if station['drones_in'] > 0:
+            print(station)
+    Forme_border(self)
+    xbee_receive_message_thread.join() # stop listening to message
+    for station in self.neighbor_list:
+        if station['drones_in'] > 0:
+            print(station)
+    print("end ")
+
 
 def expand_and_form_border(self,vehicle):
     spatial_observation(self)

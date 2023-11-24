@@ -289,6 +289,7 @@ def xbee_listener(self):
             elif id_rec == spanning_terminator: # Message sent by the sink announcing the end of spanning phase
                 end_msg= build_target_message(spanning_terminator)
                 send_msg(end_msg)
+                print("it is done")
                 listener_end_of_spanning.set()
                  
             else: # Recieved msg refer to changes in state to irrremovable in one of the nighbors
@@ -418,7 +419,7 @@ def build_path(self):
 ----------------------------------- Main function ----------------------------------
 -------------------------------------------------------------------------------------
 '''     
-def spanning(self, vehicle): 
+def spanning(self, vehicle=0): 
 
     if self.spot['distance']<1: # if the drone is sink ( leader of the termination of the spaning phase)
         self.demand_neighbors_info()
@@ -435,7 +436,7 @@ def spanning(self, vehicle):
         # Free drone wait for msg to become irremovable by another drone or wait broadcast from sink of finihing Spainning
         if self.state== Free or self.state== Border:
             # Wait for xbee_listener to signal that state has been changed ( doesn't keep the CPU busy.)
-            while not listener_current_updated_irremovable.is_set() or ( not listener_end_of_spanning.is_set()):
+            while not listener_current_updated_irremovable.is_set(): #or ( not listener_end_of_spanning.is_set()):
                 time.sleep(1)
             listener_current_updated_irremovable.clear() # need to be cleared for the next spanning 
         
@@ -447,12 +448,15 @@ def spanning(self, vehicle):
             time.sleep(2) 
             # Send message to the sink about the corrdinates 
             # Not all Irremovable found targets, irremovable can be only part of the path
+            # if self.target_detected:
+            #     if check_gps_fix(vehicle): # GPS data are correct
+            #         current_lon = vehicle.location.global_relative_frame.lon
+            #         current_lat = vehicle.location.global_relative_frame.lat
+            #         coordinates_msg= build_GPS_coordinates_message(self.drone_id_to_sink[0], self.id, current_lon,current_lat )
+            #         send_msg(coordinates_msg)
             if self.target_detected:
-                if check_gps_fix(vehicle): # GPS data are correct
-                    current_lon = vehicle.location.global_relative_frame.lon
-                    current_lat = vehicle.location.global_relative_frame.lat
-                    coordinates_msg= build_GPS_coordinates_message(self.drone_id_to_sink[0], self.id, current_lon,current_lat )
-                    send_msg(coordinates_msg)
+                coordinates_msg= build_GPS_coordinates_message(self.drone_id_to_sink[0], self.id, self.positionX, self.positionY )
+                send_msg(coordinates_msg)
 
         # Send a message that will travel from border to sink and that will annouce end of the pahse 
         if self.state== Irremovable_boarder:

@@ -18,6 +18,74 @@ set_env(globals())
 '''
 ---------------------------------- Border Communication ------------------------------------
 '''
+
+def choose_spot_right_handed(self):
+    neighbor_list_x = self.neighbor_list[1:]
+    n = len(neighbor_list_x)
+    first_empty_index = None
+
+    # Find the first empty zone
+    for i, neighbor in enumerate(neighbor_list_x):
+        if neighbor["drones_in"] == 0:
+            first_empty_index = i
+            break
+
+    # If no empty zone is found, return None
+    if first_empty_index is None:
+        return None
+
+    # Search for the next drone in a circular fashion
+    for j in range(1, n+1):
+        next_index = (first_empty_index + j) % n
+        if neighbor_list_x[next_index]["drones_in"] > 0:
+            return [neighbor_list_x[next_index]["drones_in_id"][0]]
+
+    return None
+
+
+def count_element_occurrences(self):
+    # Find the maximum element in the direction_taken list
+    max_element = 7  # s0 to s6
+    # Create a dictionary to store the frequencies, similar to hash map to count occurrences
+    frequency_dict = {i: 0 for i in range(max_element + 1)}
+    # Count the occurrences of each element
+    for direction in self.direction_taken:
+        frequency_dict[direction] += 1
+    # Find the maximum frequency
+    max_freq = max(frequency_dict.values())
+    max_indices = [key for key, value in frequency_dict.items() if value == max_freq]
+    # If there is only one occurrence of the maximum frequency, return its index
+    if len(max_indices) == 1:
+        return max_indices[0]
+    # If there are multiple occurrences of the maximum frequency, choose randomly
+    return random.choice(max_indices)
+
+
+def check_border_candidate_eligibility(self):
+    self.border_candidate=False
+    self.dominated_direction= count_element_occurrences(self)
+    # Define a dictionary to map directions to the corresponding spots_to_check_for_border values
+    direction_to_check_map = {
+        0: [1,2,3,4,5,6],
+        1: [1, 2, 6],
+        2: [1, 2, 3],
+        3: [3, 2, 4],
+        4: [3, 4, 5],
+        5: [4, 5, 6],
+        6: [1, 5, 6]
+    }
+    self.spots_to_check_for_border=direction_to_check_map.get(self.dominated_direction, [])
+    unoccupied_spots_counter = 0
+    for check in self.spots_to_check_for_border:
+        # Find the corresponding entry in neighbor_list by its name
+        neighbor = next((n for n in self.neighbor_list if n["name"] == "s" + str(check)), None)
+        if neighbor and (neighbor ["drones_in"] == 0 ): # spot also is not occupied
+            unoccupied_spots_counter += 1
+    if unoccupied_spots_counter>0: # at least one spot is empty so the drone can be part of he border
+        self.border_candidate=True
+    return self.border_candidate
+
+
 def create_target_list(self, header):
         target_ids=[]
         if header==Balance_header: # Targets are only the border ones
@@ -33,27 +101,29 @@ def create_target_list(self, header):
 def build_border_message(header, id ,propagation_indicator ,target_ids, candidate):
 
         # Determine max byte count for numbers
-        max_byte_count = max(
-                            [determine_max_byte_size(num) for num in target_ids ]+
-                            [determine_max_byte_size(num) for num in propagation_indicator]+
-                            [determine_max_byte_size(candidate)]
-                            )
+        message=[]
+        if target_ids and propagation_indicator:
+            max_byte_count = max(
+                                [determine_max_byte_size(num) for num in target_ids ]+
+                                [determine_max_byte_size(num) for num in propagation_indicator]+
+                                [determine_max_byte_size(candidate)]
+                                )
+        
+            # Start message with 'F', followed by max byte count and then the length of the propagation_indicator
+            message = header.encode() + struct.pack('>BB', max_byte_count, len(propagation_indicator))
 
-        # Start message with 'F', followed by max byte count and then the length of the propagation_indicator
-        message = header.encode() + struct.pack('>BB', max_byte_count, len(propagation_indicator))
+            # Add each number to the message using determined byte count
+            for num in propagation_indicator:
+                message += num.to_bytes(max_byte_count, byteorder='big',signed=True)
 
-        # Add each number to the message using determined byte count
-        for num in propagation_indicator:
-            message += num.to_bytes(max_byte_count, 'big')
-
-        message += struct.pack('>B',len(target_ids))
-        for num in target_ids:
-                message += num.to_bytes(max_byte_count, 'big')
-        # Append the sender using the determined byte count
-        message += id.to_bytes(max_byte_count, 'big')
-        # Append the candidate using the determined byte count
-        message += candidate.to_bytes(max_byte_count, 'big')
-        message += b'\n'
+            message += struct.pack('>B',len(target_ids))
+            for num in target_ids:
+                    message += num.to_bytes(max_byte_count, byteorder='big', signed=True)
+            # Append the sender using the determined byte count
+            message += id.to_bytes(max_byte_count, 'big')
+            # Append the candidate using the determined byte count
+            message += candidate.to_bytes(max_byte_count, 'big')
+            message += b'\n'
         return message
 
 def decode_border_message(message):
@@ -62,7 +132,7 @@ def decode_border_message(message):
     # Determine the start and end indices for the propagation_indicator numbers
     indices = [(i * max_byte_count + 3, (i + 1) * max_byte_count + 3) for i in range(propagation_length)]
     # Extract the numbers in propagation_indicator
-    propagation_indicator = [int.from_bytes(message[start:end], 'big') for start, end in indices]
+    propagation_indicator = [int.from_bytes(message[start:end], 'big',signed=True) for start, end in indices]
     # Extract the length of target_ids and then extract the numbers in target_ids
     target_ids_length_position = 3 + max_byte_count * propagation_length
     target_ids_length = struct.unpack('>B', message[target_ids_length_position:target_ids_length_position+1])[0]
@@ -70,7 +140,7 @@ def decode_border_message(message):
     target_ids_start = target_ids_length_position + 1
     indices_target = [(i * max_byte_count + target_ids_start, (i + 1) * max_byte_count + target_ids_start) for i in range(target_ids_length)]
     # Extract the numbers in target_ids
-    target_ids = [int.from_bytes(message[start:end], 'big') for start, end in indices_target]
+    target_ids = [int.from_bytes(message[start:end], 'big',signed=True) for start, end in indices_target]
     # Extract the sender
     sender_start = target_ids_start + max_byte_count * target_ids_length
     sender = int.from_bytes(message[sender_start:sender_start+max_byte_count], 'big')
@@ -86,8 +156,7 @@ def calculate_propagation_indicator_target(rec_propagation_indicator, all_neighb
     # This retuen the unique values in all_neigbors_id that are not present in recieved rec_propagation_indicator
     # rec_propagation_indicator = [0,1, 2, 3] , all_neigbors_id = [0,1,2,4,9] => [4,9]
     new_target_ids= [item for item in rec_propagation_indicator if item not in all_neighbor]
-
-    # Calculated propagation_indicator
+     # Calculated propagation_indicator
     ''' (A ∩ B) ∪ (B - A) = B'''
     # where A is received  propagation_indicator and B is all_neighbor of current drone
     new_propagation_indicator= all_neighbor
@@ -102,11 +171,11 @@ def forward_border_message(self, header, propagation_indicator, targets_ids, can
     '''
     if self.id in targets_ids: # the current drone is in the targeted ids
 
-        targets_ids= create_target_list(self, header)
-
-        new_propagation_indicator, new_targets_ids= calculate_propagation_indicator_target( propagation_indicator,targets_ids)
-        msg= build_border_message(header, self.id,  new_propagation_indicator,new_targets_ids, candidate) # as you see the candidate is resent as it was recived
-        send_msg_border_upon_confirmation(self, msg)
+        all_neighbor= create_target_list(self, header)
+        new_targets_ids, new_propagation_indicator= calculate_propagation_indicator_target( propagation_indicator,all_neighbor)
+        msg= build_border_message(header, self.id,  new_propagation_indicator,choose_spot_right_handed(self), candidate) # as you see the candidate is resent as it was recived
+        #send_msg_border_upon_confirmation(self, msg)
+        send_msg(msg)
     else: # it is not in the tagreted ids then do nothing ( drop the message)
         return
 
@@ -210,3 +279,28 @@ def handel_inheritence_message(self, msg):
         if id_rec== self.id:
             self.update_rec_candidate(new_rec_candidate_values)
             self.update_rec_propagation_indicator(new_rec_propagation_indicator_values)
+
+def form_border_two_direction(self,header,msg):
+    rec_propagation_indicator, target_ids, sender, candidate= decode_border_message(msg)
+    if sender in target_ids:
+        self.forming_border_msg_recived.set()
+    
+    # End of the expansion broadcast msg
+    if len(target_ids)==1 and target_ids[0]==-1 and rec_propagation_indicator[0]==-1 :
+        if self.border_candidate==True:
+            border_broadcast_respond(self, candidate)
+        # Here any drone in any state needs to forward the boradcast message and rise ending flag
+        forward_broadcast_message(self, header,candidate)
+        self.Forming_Border_Broadcast_REC.set()
+
+    elif self.id in  target_ids: # the drone respond only if it is targeted
+        if candidate == self.id: # the message recived contains the id of the drone means the message came back
+            print("circle_completed" )
+            circle_completed (self)
+        else: # the current drone received a message from a candidate border so it needs to forward it
+            find_msg_direction_forward(self, rec_propagation_indicator,target_ids,sender,candidate )
+            
+    else: # Drone is not targeted ( doesnt matter it it is free or candidate) thus it drops the message
+            # Do anything but wait for end of the expansion broadcast
+        return 
+
