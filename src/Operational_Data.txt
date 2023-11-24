@@ -13,6 +13,6 @@ defined_groundspeed=1
 
 # Xbee variables 
 xbee_serial_port='/dev/ttyUSB0'
-Tx=None
-Rx=None
+Tx=23
+Rx=24
 baud_rate=9600
