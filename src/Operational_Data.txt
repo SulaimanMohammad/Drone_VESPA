@@ -1,18 +1,23 @@
+# Drone variables
 max_acceleration = 0.7
 max_deceleration = -0.7
-xbee_range=13
-id=1
-C=100
-eps=20
-speed_of_drone=2 # 2 m/s
-# movement_time= a*speed_of_drone*(1+ 0.2)  # add 20% of time for safty
-scanning_time= 10 # in second (function to the speed and size of a )
-sync_time= 10
-multiplier = 100
+speed_of_drone=2 # m/s
 defined_groundspeed=1
 
-# Xbee variables 
+# VESPA variables
+id=0
+C=100
+eps=20
+multiplier = 100
+sync_time= 10
+scanning_time= 10
+exchange_data_latency=3
+# movement_time= a*speed_of_drone*(1+ 0.2)  # add 20% of time for safty
+
+# Xbee variables
 xbee_serial_port='/dev/ttyUSB0'
-Tx=None
-Rx=None
+Tx=23
+Rx=24
 baud_rate=9600
+xbee_range=13
+
