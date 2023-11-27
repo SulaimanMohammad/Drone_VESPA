@@ -13,6 +13,7 @@ sudo rm /usr/lib/python3.11/EXTERNALLY-MANAGED
 
 echo -e "\033[32m ------ Install Packages for Drone ------ \033[0m"
 # Install dependencies
+sudo apt-get install python3-numpy 
 sudo apt install libxml2-dev libxslt-dev
 pip3 install lxml
 
