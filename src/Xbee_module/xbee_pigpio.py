@@ -76,7 +76,7 @@ def close_xbee_port():
     pi.wave_clear()  # Clear any waveforms
     pi.stop()  # Stop the pigpio daemon
 
-def clear_buffer(self):
+def clear_buffer():
     global message_buffer
     # Clear the global message buffer
     message_buffer.clear()
