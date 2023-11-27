@@ -12,14 +12,17 @@ sudo rm /usr/lib/python3.11/EXTERNALLY-MANAGED
 
 
 echo -e "\033[32m ------ Install Packages for Drone ------ \033[0m"
+# Install dependencies
+sudo apt install libxml2-dev libxslt-dev
+pip3 install lxml
+
 # Install Dronekit and related packages
 packages=("dronekit" "dronekit-sitl" "mavproxy" "simple-pid" "pyserial")
-
 for package in "${packages[@]}"; do
     # Check if the package is installed
     if ! pip3 show "$package" &> /dev/null; then
         # If it's not installed, install it
-        sudo pip3 install "$package"
+        pip3 install "$package"
     else
         echo "$package is already installed."
     fi
@@ -28,7 +31,7 @@ done
 # Check if 'serial' is installed if yes uninstall it
 if pip3 show serial &> /dev/null; then
     # If it's installed, uninstall it
-    sudo pip3 uninstall -y serial
+    pip3 uninstall -y serial
 fi
 
 
