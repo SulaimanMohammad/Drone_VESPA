@@ -37,8 +37,8 @@ fi
 
 
 echo -e "\033[32m ------ Modify Dronekit for python3------ \033[0m"
-# Modify the specified file
-sudo sed -i '2689s/collections.MutableMapping/collections.abc.MutableMapping/' /usr/local/lib/python3.9/dist-packages/dronekit/__init__.py
+# Modify the specified file after finding it 
+sudo sed -i '2689s/collections.MutableMapping/collections.abc.MutableMapping/' "$(pip3 show dronekit | grep 'Location' | awk '{print $2}')/dronekit/__init__.py"
 
 
 # Connect to mobile WiFi hotspot (Replace SSID and PASSWORD with your hotspot details)
