@@ -79,7 +79,8 @@ def expansion_listener (self):
     self.Forming_Border_Broadcast_REC = threading.Event()
 
     while check_continuity_of_listening(self):
-        
+        self.manage_xbee_while_movement()
+
         msg= retrieve_msg_from_buffer(self.Forming_Border_Broadcast_REC)
 
         self.exchange_neighbors_info_communication(msg)
@@ -286,11 +287,14 @@ def expand_and_form_border_try(self):
         if self.elected_id== self.id: # current drone is elected one to move
             print("elected", self.elected_id)
             if destination_spot != 0: # Movement to another spot not staying 
-                print ("go to S", destination_spot)
+                print ("move to S", destination_spot)
                 #self.move_to_spot(vehicle, destination_spot)
                 self.direction_taken.append( destination_spot)
                 self.update_location(destination_spot)
+                self.in_movement.set()
                 time.sleep(5)
+                self.in_movement.clear()
+                print("arrived from main")
                 # After move_to_spot retuen it means arrivale 
                 movement_done_msg= build_expan_elected(self.id)
                 print(movement_done_msg )

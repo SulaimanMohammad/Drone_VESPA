@@ -96,7 +96,7 @@ Irremovable_boarder=4
 -------------------------------------------------------------------------------------
 '''
 class Drone:
-    def __init__(self,x,y,z):
+    def __init__(self,id,x,y,z):
         self.positionX=x
         self.positionY=y
         self.distance_from_sink=0 # the distance of the drone from  the sink
@@ -140,17 +140,18 @@ class Drone:
         self.lock_neighbor_list = threading.Lock()
         self.demanders_received_data = threading.Event()
         self.forming_border_msg_recived= threading.Event()
-        self.VESPA_termination= threading.Event() 
+        self.VESPA_termination= threading.Event()
+        self.in_movement= threading.Event() 
         self.elected_droen_arrived= None    
         self.Forming_Border_Broadcast_REC= None
         self.start_expanding= None
         self.end_of_balancin= None
         self.demanders_list=[]
         self.demand_timer=None
-        if uart:
-            connect_xbee(xbee_serial_port, baud_rate)
-        else:
-            connect_xbee(Tx,Rx, baud_rate)
+        # if uart:
+        #     connect_xbee(xbee_serial_port, baud_rate)
+        # else:
+        #     connect_xbee(Tx,Rx, baud_rate)
     '''
     -------------------------------------------------------------------------------------
     ---------------------------------- Communication ------------------------------------
@@ -357,6 +358,7 @@ class Drone:
         index += max_byte_count
         return positionX, positionY, state, previous_state, id_value
     
+   
     '''
     -------------------------------------------------------------------------------------
     -------------------------------- Update upon movement--------------------------------
@@ -545,6 +547,14 @@ class Drone:
         clear_buffer() # need to clear the bufer from message received on the road
         # Arrive to steady state and hover then start observing the location
         hover(vehicle)
+
+    def manage_xbee_while_movement(self):
+        print(" start movement")
+        while self.in_movement.is_set():
+            print(" still in move ")
+            time.sleep(0.1)
+        clear_buffer()
+        print("arrived from manage_xbee_while_movement")
 
     def search_for_target(self): # find if there is target in the area or not
         # move in the place and couver it to check if there is target or not
