@@ -1,6 +1,7 @@
 #!/bin/bash
+
 REPO_URL="https://github.com/SulaimanMohammad/Drone_VESPA.git"
-# fin the name of the RP 
+# find the name of the RP 
 PI_DRONE_DIR=$(ls /home | grep pi-drone)
 CLONE_PATH="/home/$PI_DRONE_DIR/Drone_VESPA"
 
@@ -53,20 +54,19 @@ fi
 
 cd /home/$PI_DRONE_DIR/Drone_VESPA/
 # Check if the "log" directory exists
-if [ ! -d "log" ]; then
+if [ ! -d "mission_log" ]; then
   mkdir mission_log
-  sudo chown -R $USER log
+  sudo chown -R $USER mission_log
 fi
 
 # Set the id of the drone 
-# Get the hostname
-hostname=$(hostname)
+id_username=$(whoami)
 # Name of file where the id is set 
-output_file="/home/$PI_DRONE_DIR/Drone_VESPA/src/drone/Operational_Data.txt"
+output_file="/home/$PI_DRONE_DIR/Drone_VESPA/src/Operational_Data.txt"
 # Get just the filename from the output_file path
 output_filename=$(basename "$output_file")
-# Use regular expression to extract the number after "pi-drone"
-if [[ $hostname =~ pi-drone([0-9]+) ]]; then
+# Extract the number after "pi-drone"
+if [[ $id_username =~ pi-drone([0-9]+) ]]; then
   number=${BASH_REMATCH[1]}
 else
   number=""
@@ -84,5 +84,5 @@ if [ -n "$number" ]; then
     echo "Appended id=$number to $output_filename"
   fi
 else
-  echo "No number found in the hostname."
+  echo "No id found"
 fi
