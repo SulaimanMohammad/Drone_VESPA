@@ -5,8 +5,9 @@
 - Configure raspberry pi to be able to communicate with pixhawk 
 
 ```bash
+        sudo apt install git
         git clone https://github.com/SulaimanMohammad/Drone_VESPA.git
-        cd Drone_VESPA
+        cd Drone_VESPA/configuration
 ``` 
 ```bash
         ./rpi_setup.sh
