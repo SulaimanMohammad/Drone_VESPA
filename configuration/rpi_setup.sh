@@ -8,7 +8,7 @@ sudo apt-get update && sudo apt-get upgrade
 echo -e "\033[32m ------ Install python3 ------ \033[0m"
 # Install required packages
 sudo apt-get install -y python3-pip python3-dev
-#sudo apt-get install -y vim
+sudo rm /usr/lib/python3.11/EXTERNALLY-MANAGED
 
 
 echo -e "\033[32m ------ Install Packages for Drone ------ \033[0m"
