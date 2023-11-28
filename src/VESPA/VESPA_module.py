@@ -549,12 +549,10 @@ class Drone:
         hover(vehicle)
 
     def manage_xbee_while_movement(self):
-        print(" start movement")
         while self.in_movement.is_set():
-            print(" still in move ")
+            print("in move ")
             time.sleep(0.1)
         clear_buffer()
-        print("arrived from manage_xbee_while_movement")
 
     def search_for_target(self): # find if there is target in the area or not
         # move in the place and couver it to check if there is target or not

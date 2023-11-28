@@ -12,14 +12,18 @@ sudo rm /usr/lib/python3.11/EXTERNALLY-MANAGED
 
 
 echo -e "\033[32m ------ Install Packages for Drone ------ \033[0m"
+# Install dependencies
+sudo apt-get install python3-numpy 
+sudo apt install libxml2-dev libxslt-dev
+pip3 install lxml
+
 # Install Dronekit and related packages
 packages=("dronekit" "dronekit-sitl" "mavproxy" "simple-pid" "pyserial")
-
 for package in "${packages[@]}"; do
     # Check if the package is installed
     if ! pip3 show "$package" &> /dev/null; then
         # If it's not installed, install it
-        sudo pip3 install "$package"
+        pip3 install "$package"
     else
         echo "$package is already installed."
     fi
@@ -28,7 +32,7 @@ done
 # Check if 'serial' is installed if yes uninstall it
 if pip3 show serial &> /dev/null; then
     # If it's installed, uninstall it
-    sudo pip3 uninstall -y serial
+    pip3 uninstall -y serial
 fi
 
 
@@ -116,29 +120,16 @@ if [ -e /boot/config.txt ]; then
         fi
     done
 
-    echo "Settings updated. Reboot your Raspberry Pi to apply the changes."
+    echo "Settings updated."
 else
     echo "Error: /boot/config.txt file not found."
 fi
 
-
-echo -e "\033[32m ------ Install soft_uart for extra UART ------ \033[0m"
-# Clone the soft_uart repository
-sudo git clone https://github.com/adrianomarto/soft_uart
-cd soft_uart
-
-# Install raspberrypi-kernel-headers package
-sudo apt-get install -y raspberrypi-kernel-headers
-
-# Compile and install the soft_uart module
-sudo make
-sudo make install
-
-# Load the module with default parameters
-sudo insmod soft_uart.ko
-
-# Add the user to the dialout group
-sudo usermod -a -G dialout $USER
+echo -e "\033[32m ------ Install pigpio for software UART, add it as a system service ------ \033[0m"
+sudo apt install pigpio
+pip install pigpio
+sudo systemctl enable pigpiod
+sudo systemctl start pigpiod
 
 echo -e "\033[32m ------Configure Drone_VESPA.git ------ \033[0m"
 ./update_repo.sh
@@ -146,8 +137,3 @@ echo -e "\033[32m ------Configure Drone_VESPA.git ------ \033[0m"
 echo "Installation and configuration complete. Time to REBOOT"
 echo -e "\033[32m *** Reboot Reconnect with ssh *** \033[0m"
 sudo reboot
-
-# Optional: Set custom GPIO pins for TX and RX (modify as needed)
-# GPIO_TX=10
-# GPIO_RX=11
-# sudo insmod soft_uart.ko gpio_tx=$GPIO_TX gpio_rx=$GPIO_RX
