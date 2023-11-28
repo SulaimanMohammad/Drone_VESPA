@@ -116,7 +116,7 @@ def expansion_listener (self):
 def spatial_observation(self):
     self.calculate_neighbors_distance_sink()
     self.demand_neighbors_info() # return after gathering all info
-    self.correct_states_after_comm()
+    #self.correct_states_after_comm()
     self.check_Ownership()
 
 def findMinDistances_niegboor(self):
@@ -284,6 +284,9 @@ def expand_and_form_border_try(self):
         set_priorities(self)
         destination_spot= find_priority(self)
         self.elected_id= neighbors_election(self)
+        for station in self.neighbor_list:
+            if station['drones_in'] > 0:
+                print(station)
         if self.elected_id== self.id: # current drone is elected one to move
             print("elected", self.elected_id)
             if destination_spot != 0: # Movement to another spot not staying 
