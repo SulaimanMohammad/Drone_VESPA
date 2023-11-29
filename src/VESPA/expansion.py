@@ -278,15 +278,18 @@ def expand_and_form_border_try(self):
         print ("go to S", destination_spot_random)
         self.direction_taken.append( destination_spot_random)
         self.update_location(destination_spot_random)
-        
+    
+    print("spot", self.spot)
     spatial_observation(self)
+    print("After")
+    for station in self.neighbor_list:
+        if station['drones_in'] > 0:
+            print(station)
     while self.state !=Owner:
         set_priorities(self)
         destination_spot= find_priority(self)
         self.elected_id= neighbors_election(self)
-        for station in self.neighbor_list:
-            if station['drones_in'] > 0:
-                print(station)
+        
         if self.elected_id== self.id: # current drone is elected one to move
             print("elected", self.elected_id)
             if destination_spot != 0: # Movement to another spot not staying 
@@ -308,9 +311,14 @@ def expand_and_form_border_try(self):
            self.elected_droen_arrived.wait() 
            self.elected_droen_arrived.clear()
 
+        time.sleep(1)
         print("checking for update the state")
         spatial_observation(self)
-        
+        print("in loop")
+        for station in self.neighbor_list:
+            if station['drones_in'] > 0:
+                print(station)
+            
     # check also that noelectin message around 
     while not (all(neighbor['drones_in'] in [0, 1] for neighbor in self.neighbor_list) or
             all(neighbor['drones_in'] > 0 for neighbor in self.neighbor_list)):

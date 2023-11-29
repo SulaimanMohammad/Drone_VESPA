@@ -54,7 +54,7 @@ def retrieve_msg_from_buffer(stop_flag):
             return complete_message
         
         # Short sleep to prevent high CPU usage
-        time.sleep(0.1)
+        time.sleep(0.05)
         
     return bytearray(b'') # Return empty object so it can be recognized as not part of the headers array 
 

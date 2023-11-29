@@ -13,7 +13,7 @@ serial_port = '/dev/ttyUSB0'  # Default UART port on Raspberry Pi
 baud_rate = 9600  # Baud rate for XBee
 connect_xbee(serial_port, baud_rate) 
 
-drone = Drone(1,0.0,0.0,1)
+drone = Drone(0,0.0,0.0,1)
 time.sleep(3) 
 
 try:
