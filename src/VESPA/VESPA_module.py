@@ -434,6 +434,37 @@ class Drone:
             # Update the 'drones_in' count for the new spot
             new_spot['drones_in'] = len(new_spot['drones_in_id'])    
 
+    def rearrange_neighbor_statically_upon_elected_arrival (self,elected_drone_id, target_spot):
+        target_spot_name = f's{target_spot}'
+        source_spot = None
+        drone_states = []
+        drone_previous_state = []
+
+        # Find and update source spot
+        for spot in self.neighbor_list:
+            if elected_drone_id in spot['drones_in_id']:
+                source_spot = spot
+                drone_index = spot['drones_in_id'].index(elected_drone_id)
+                drone_states = spot['states'][drone_index]
+                drone_previous_state = spot['previous_state'][drone_index]
+
+                # Update source spot
+                spot['drones_in'] -= 1
+                spot['drones_in_id'].remove(elected_drone_id)
+                del spot['states'][drone_index]
+                del spot['previous_state'][drone_index]
+                break
+
+        # Update target spot
+        for spot in self.neighbor_list:
+            if spot['name'] == target_spot_name:
+                spot['drones_in'] += 1
+                spot['drones_in_id'].append(elected_drone_id)
+                spot['states'].append(drone_states)
+                spot['previous_state'].append(drone_previous_state)
+                break
+        self.check_Ownership()
+        
     def update_xbee_range(self,new_a):
           # Current script directory
         current_dir = Path(__file__).resolve().parent

@@ -282,11 +282,11 @@ def expand_and_form_border(self,vehicle):
            # Wait untile the elected drone to arrive to next spot.
            self.elected_droen_arrived.wait() 
            self.elected_droen_arrived.clear()
+           self.rearrange_neighbor_statically_upon_elected_arrival (self.elected_id, destination_spot)
 
         print("checking for update the state")
         spatial_observation(self)
         
-
     while not (all(neighbor['drones_in'] in [0, 1] for neighbor in self.neighbor_list) or
                all(neighbor['drones_in'] > 0 for neighbor in self.neighbor_list)):
         # Before initiating the border procedure, it's important to wait for some time to ensures that the drone is alone in its spot.
