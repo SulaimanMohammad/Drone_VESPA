@@ -208,5 +208,6 @@ def start_msg_one_direction(self,header):
     self.current_target_ids= choose_spot_right_handed(self)
     msg= build_border_message(self,header,self.current_target_ids, self.id)
     # send_msg_border_upon_confirmation(self, msg)
+    print( "message sent", msg)
     send_msg(msg)
 

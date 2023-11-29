@@ -1,6 +1,6 @@
 from .VESPA_module import *
 from .form_border_one_direction import *
-from .form_border_tow_direction import *
+#from .form_border_tow_direction import *
 
 set_env(globals())
 
@@ -79,10 +79,11 @@ def expansion_listener (self):
     self.Forming_Border_Broadcast_REC = threading.Event()
 
     while check_continuity_of_listening(self):
-        self.manage_xbee_while_movement()
+        # self.manage_xbee_while_movement()
 
         msg= retrieve_msg_from_buffer(self.Forming_Border_Broadcast_REC)
 
+       
         self.exchange_neighbors_info_communication(msg)
 
         if msg.startswith(Movement_command.encode()) and msg.endswith("\n"):
@@ -310,8 +311,12 @@ def expand_and_form_border_try(self):
            # Wait untile the elected drone to arrive to next spot.
            self.elected_droen_arrived.wait() 
            self.elected_droen_arrived.clear()
+           self.rearrange_neighbor_statically_upon_elected_arrival (self.elected_id, destination_spot)  
+           print( "after election")
+           for station in self.neighbor_list:
+                if station['drones_in'] > 0:
+                    print(station)
 
-        time.sleep(1)
         print("checking for update the state")
         spatial_observation(self)
         print("in loop")
@@ -327,6 +332,8 @@ def expand_and_form_border_try(self):
         time.sleep(2)
         print(" waiting to check for border")
         self.demand_neighbors_info()
+    
+    print("forming border")
     spatial_observation(self)
     for station in self.neighbor_list:
         if station['drones_in'] > 0:
