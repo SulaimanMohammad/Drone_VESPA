@@ -375,7 +375,65 @@ class Drone:
                 distance = eval(formula, {'sqrt': sqrt, 'DxDy2': DxDy2, 'DxDy3a2': DxDy3a2, 'a': a, 'aDx': aDx, 'sqDx': sqDx, 'Dy': Dy})
                 s["distance"] = round(distance,2)
         self.distance_from_sink=self.spot["distance"] # where spot is the data of s0 the current position
-            
+
+
+    def rearrange_neighbor_statically_upon_movement(self,move_to_spot):
+        moving_drone_id=self.id
+        # Define the movement rules
+        movement_rules = {
+            1: {'s0': 's4', 's1': 's0', 's2': 's3', 's6': 's5', 'empty': ['s4', 's5', 's6']},
+            2: {'s0': 's5', 's1': 's6', 's2': 's0', 's3': 's4', 'empty': ['s4', 's5', 's6']},
+            3: {'s0': 's6', 's3': 's0', 's4': 's5', 's2': 's1', 'empty': ['s1', 's5', 's6']},
+            4: {'s0': 's1', 's4': 's0', 's3': 's2', 's5': 's6', 'empty': ['s1', 's2', 's6']},
+            5: {'s0': 's2', 's4': 's3', 's5': 's0', 's6': 's1', 'empty': ['s1', 's2', 's3']},
+            6: {'s0': 's3', 's1': 's2', 's5': 's4', 's6': 's0', 'empty': ['s2', 's3', 's4']}
+        }
+
+        # Create a dictionary for faster spot lookup
+        spot_lookup = {spot['name']: spot for spot in self.neighbor_list}
+
+        # Empty the specified spots
+        for spot_name in movement_rules[move_to_spot]['empty']:
+            spot_lookup[spot_name].update({'drones_in': 0, 'drones_in_id': [], 'states': [], 'previous_state': []})
+
+        # Move the drones based on movement rules, excluding the 'empty' key
+        for spot_name, new_spot_name in {k: v for k, v in movement_rules[move_to_spot].items() if k != 'empty'}.items():
+            spot = spot_lookup[spot_name]
+            new_spot = spot_lookup[new_spot_name]
+
+            # Special handling for s0 and the moving drone
+            if spot_name == 's0' and moving_drone_id in spot['drones_in_id']:
+                drone_index = spot['drones_in_id'].index(moving_drone_id)
+                moving_drone_states = spot['states'][drone_index]
+                moving_drone_previous_state = spot['previous_state'][drone_index]
+
+                # Move other drones
+                drones_to_move = [d_id for d_id in spot['drones_in_id'] if d_id != moving_drone_id]
+                states_to_move = [state for i, state in enumerate(spot['states']) if i != drone_index]
+                prev_states_to_move = [state for i, state in enumerate(spot['previous_state']) if i != drone_index]
+
+                new_spot['drones_in_id'].extend(drones_to_move)
+                new_spot['states'].extend(states_to_move)
+                new_spot['previous_state'].extend(prev_states_to_move)
+
+                # Update s0 to only have the moving drone
+                spot['drones_in_id'] = [moving_drone_id]
+                spot['states'] = [moving_drone_states]
+                spot['previous_state'] = [moving_drone_previous_state]
+                spot['drones_in'] = 1
+            else:
+                # Move all drones for other spots
+                new_spot['drones_in_id'].extend(spot['drones_in_id'])
+                new_spot['states'].extend(spot['states'])
+                new_spot['previous_state'].extend(spot['previous_state'])
+
+                spot['drones_in_id'] = []
+                spot['states'] = []
+                spot['previous_state'] = []
+                spot['drones_in'] = 0
+            # Update the 'drones_in' count for the new spot
+            new_spot['drones_in'] = len(new_spot['drones_in_id'])    
+
     def update_xbee_range(self,new_a):
           # Current script directory
         current_dir = Path(__file__).resolve().parent
@@ -442,6 +500,7 @@ class Drone:
         y= DIR_xy_distance_VECTORS[dir][1]
         self.positionX =round(self.positionX + x,2) # Add the value not assign because it is movement
         self.positionY = round(self.positionY+ y ,2)
+        self.rearrange_neighbor_statically_upon_movement(dir)
         # Find the distance of the neigboors at the new position
         self.calculate_neighbors_distance_sink()
 
