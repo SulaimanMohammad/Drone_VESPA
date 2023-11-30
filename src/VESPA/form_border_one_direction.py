@@ -105,7 +105,7 @@ def border_broadcast_respond(self, candidate):
 
 def form_border_one_direction(self,header,msg):
     sender_id, target_ids, candidate= decode_border_message(msg)
-    print("sender_id, target_ids, candidate",sender_id, target_ids, candidate )
+    #print("sender_id, target_ids, candidate",sender_id, target_ids, candidate )
     if sender_id in target_ids:
         self.forming_border_msg_recived.set()
     if len(target_ids)==1 and target_ids[0]==-1:
@@ -169,7 +169,7 @@ def check_border_candidate_eligibility(self):
         neighbor = next((n for n in self.neighbor_list if n["name"] == "s" + str(check)), None)
         if neighbor and (neighbor ["drones_in"] == 0 ): # spot also is not occupied
             unoccupied_spots_counter += 1
-    if unoccupied_spots_counter>0: # at least one spot is empty so the drone can be part of he border
+    if unoccupied_spots_counter>0 : # at least one spot is empty so the drone can be part of he border
         self.border_candidate=True
     return self.border_candidate
 
@@ -206,8 +206,9 @@ def create_target_list(self, header):
 
 def start_msg_one_direction(self,header):
     self.current_target_ids= choose_spot_right_handed(self)
-    msg= build_border_message(self,header,self.current_target_ids, self.id)
-    # send_msg_border_upon_confirmation(self, msg)
-    print( "message sent", msg)
-    send_msg(msg)
+    if self.current_target_ids:
+        msg= build_border_message(self,header,self.current_target_ids, self.id)
+        # send_msg_border_upon_confirmation(self, msg)
+        #print( "message sent", msg)
+        send_msg(msg)
 

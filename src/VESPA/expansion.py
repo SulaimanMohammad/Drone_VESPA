@@ -79,7 +79,7 @@ def expansion_listener (self):
     self.Forming_Border_Broadcast_REC = threading.Event()
 
     while check_continuity_of_listening(self):
-        # self.manage_xbee_while_movement()
+        #self.manage_xbee_while_movement()
 
         msg= retrieve_msg_from_buffer(self.Forming_Border_Broadcast_REC)
 
@@ -325,7 +325,7 @@ def expand_and_form_border_try(self):
                 print(station)
             
     # check also that noelectin message around 
-    while not (all(neighbor['drones_in'] in [0, 1] for neighbor in self.neighbor_list) or
+    while self.spot['drones_in']>1 or (not (all(neighbor['drones_in'] in [0, 1] for neighbor in self.neighbor_list) ) or
             all(neighbor['drones_in'] > 0 for neighbor in self.neighbor_list)):
         # Before initiating the border procedure, it's important to wait for some time to ensures that the drone is alone in its spot.
         # This step eliminates the possibility of erroneously considering a drone as a border-candidate when another drone in the same spot is about to move.
