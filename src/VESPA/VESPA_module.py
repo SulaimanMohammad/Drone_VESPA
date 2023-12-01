@@ -255,6 +255,7 @@ class Drone:
 
     def get_neighbors_info(self,msg):
         positionX, positionY, state, previous_state,id_value= self.decode_spot_info_message(msg)
+        #print ( positionX, positionY, state, previous_state,id_value)
         self.reset_timer_resposnse()
         Ack_msg=self.build_ACK_data_message(id_value)
         send_msg(Ack_msg)
@@ -533,7 +534,7 @@ class Drone:
         y= DIR_xy_distance_VECTORS[dir][1]
         self.positionX =round(self.positionX + x,2) # Add the value not assign because it is movement
         self.positionY = round(self.positionY+ y ,2)
-        self.rearrange_neighbor_statically_upon_movement(dir)
+        #self.rearrange_neighbor_statically_upon_movement(dir)
         # Find the distance of the neigboors at the new position
         self.calculate_neighbors_distance_sink()
 
@@ -543,7 +544,7 @@ class Drone:
 
     def update_neighbors_list(self, positionX, positionY, state, previous_state, id_rec):
         s_index= self.find_relative_spot(positionX, positionY)
-        print( "s_index",s_index)
+        #print( "s_index",s_index)
         # Check if index is valid ( index between 0 and 6 )
         if 0 <= s_index <= self.num_neigbors+1:
             with self.lock_neighbor_list:

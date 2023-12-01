@@ -13,6 +13,7 @@ This module is used to send messages by sending message only to one drone by sea
 '''
 def build_border_message(self,header,target_ids, candidate):
     # Determine max byte count for numbers
+    #print( "target_ids",target_ids)
     max_byte_count = max(
                         [determine_max_byte_size(num) for num in target_ids ]+
                         [determine_max_byte_size(candidate)]+
@@ -123,9 +124,10 @@ def form_border_one_direction(self,header,msg):
                 if candidate not in self.rec_candidate:
                     self.rec_candidate.append(candidate)
             self.current_target_ids= choose_spot_right_handed(self)
-            msg= build_border_message(self,header,self.current_target_ids, candidate)
-            # send_msg_border_upon_confirmation(self, msg)
-            send_msg(msg)
+            if self.current_target_ids:
+                msg= build_border_message(self,header,self.current_target_ids, candidate)
+                # send_msg_border_upon_confirmation(self, msg)
+                send_msg(msg)
 
 ''''
 -------------------------------------------------------------------------------------
@@ -164,13 +166,16 @@ def check_border_candidate_eligibility(self):
     }
     self.spots_to_check_for_border=direction_to_check_map.get(self.dominated_direction, [])
     unoccupied_spots_counter = 0
+    self.demand_neighbors_info() # return after gathering all info
     for check in self.spots_to_check_for_border:
         # Find the corresponding entry in neighbor_list by its name
         neighbor = next((n for n in self.neighbor_list if n["name"] == "s" + str(check)), None)
         if neighbor and (neighbor ["drones_in"] == 0 ): # spot also is not occupied
             unoccupied_spots_counter += 1
-    if unoccupied_spots_counter>0 : # at least one spot is empty so the drone can be part of he border
+    if unoccupied_spots_counter>0 and self.spot ["drones_in"]==1 : # at least one spot is empty so the drone can be part of he border
         self.border_candidate=True
+    else: 
+        self.border_candidate=False
     return self.border_candidate
 
 def choose_spot_right_handed(self):
@@ -206,6 +211,7 @@ def create_target_list(self, header):
 
 def start_msg_one_direction(self,header):
     self.current_target_ids= choose_spot_right_handed(self)
+    #print("self.current_target_ids",self.current_target_ids)
     if self.current_target_ids:
         msg= build_border_message(self,header,self.current_target_ids, self.id)
         # send_msg_border_upon_confirmation(self, msg)

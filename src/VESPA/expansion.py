@@ -68,6 +68,7 @@ def handel_elected_drone_arrivale(self,msg):
     rec_id=decode_expan_elected(msg)
     if rec_id==self.elected_id:
         self.elected_droen_arrived.set()
+        #self.rearrange_neighbor_statically_upon_elected_arrival (self.elected_id, self.destination_spot)  
 
 def check_continuity_of_listening(self):
     if not self.Forming_Border_Broadcast_REC.is_set():
@@ -255,6 +256,7 @@ def Forme_border(self):
 
     # wait until the border procesdure is finished
     self.Forming_Border_Broadcast_REC.wait()
+    print(self.Forming_Border_Broadcast_REC )
     self.Forming_Border_Broadcast_REC.clear() # reset for the next expansion
 
 def save_unoccupied_spots_around_border(self):
@@ -272,8 +274,13 @@ def expand_and_form_border_try(self):
     self.elected_droen_arrived= threading.Event()
     if self.id==0:
         self.direction_taken.append(0)
-        self.state=Owner
-        time.sleep(10)
+        self.update_location(0)
+        self.change_state_to(Owner)
+        # for station in self.neighbor_list:
+        #     if station['drones_in'] > 0:
+        #         print(station)
+        self.Forming_Border_Broadcast_REC.wait()
+        #time.sleep(10)
     else:
         destination_spot_random = 2
         print ("go to S", destination_spot_random)
@@ -288,16 +295,16 @@ def expand_and_form_border_try(self):
             print(station)
     while self.state !=Owner:
         set_priorities(self)
-        destination_spot= find_priority(self)
+        self.destination_spot= find_priority(self)
         self.elected_id= neighbors_election(self)
         
         if self.elected_id== self.id: # current drone is elected one to move
             print("elected", self.elected_id)
-            if destination_spot != 0: # Movement to another spot not staying 
-                print ("move to S", destination_spot)
+            if self.destination_spot != 0: # Movement to another spot not staying 
+                print ("move to S", self.destination_spot)
                 #self.move_to_spot(vehicle, destination_spot)
-                self.direction_taken.append( destination_spot)
-                self.update_location(destination_spot)
+                self.direction_taken.append( self.destination_spot)
+                self.update_location(self.destination_spot)
                 self.in_movement.set()
                 time.sleep(5)
                 self.in_movement.clear()
@@ -311,7 +318,7 @@ def expand_and_form_border_try(self):
            # Wait untile the elected drone to arrive to next spot.
            self.elected_droen_arrived.wait() 
            self.elected_droen_arrived.clear()
-           self.rearrange_neighbor_statically_upon_elected_arrival (self.elected_id, destination_spot)  
+           self.rearrange_neighbor_statically_upon_elected_arrival (self.elected_id, self.destination_spot)  
            print( "after election")
            for station in self.neighbor_list:
                 if station['drones_in'] > 0:
@@ -323,6 +330,8 @@ def expand_and_form_border_try(self):
         for station in self.neighbor_list:
             if station['drones_in'] > 0:
                 print(station)
+    
+    send_msg(self.build_spot_info_message(Response_header))
             
     # check also that noelectin message around 
     while self.spot['drones_in']>1 or (not (all(neighbor['drones_in'] in [0, 1] for neighbor in self.neighbor_list) ) or
@@ -331,8 +340,11 @@ def expand_and_form_border_try(self):
         # This step eliminates the possibility of erroneously considering a drone as a border-candidate when another drone in the same spot is about to move.
         time.sleep(2)
         print(" waiting to check for border")
-        self.demand_neighbors_info()
-    
+        spatial_observation(self)
+        for station in self.neighbor_list:
+            if station['drones_in'] > 0:
+                print(station)
+        
     print("forming border")
     spatial_observation(self)
     for station in self.neighbor_list:
