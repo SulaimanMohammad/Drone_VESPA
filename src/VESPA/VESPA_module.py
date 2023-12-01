@@ -187,6 +187,9 @@ class Drone:
 
     def reset_timer_resposnse(self):
         self.remaining_time_resposnse=2*exchange_data_latency
+    
+    def stop_timer_resposnse(self):
+        self.remaining_time_resposnse=0
 
     def resend_data(self):
         if not self.demanders_received_data.is_set():
@@ -254,18 +257,22 @@ class Drone:
     
 
     def get_neighbors_info(self,msg):
-        positionX, positionY, state, previous_state,id_value= self.decode_spot_info_message(msg)
-        #print ( positionX, positionY, state, previous_state,id_value)
-        self.reset_timer_resposnse()
-        Ack_msg=self.build_ACK_data_message(id_value)
-        send_msg(Ack_msg)
-        self.update_neighbors_list(positionX, positionY, state, previous_state,id_value)
+        decoded_msg= self.decode_spot_info_message(msg)
+        if len(decoded_msg)>1 : # No erorr of receiving
+            positionX, positionY, state, previous_state, id_value= decoded_msg
+            self.reset_timer_resposnse()
+            Ack_msg=self.build_ACK_data_message(id_value)
+            send_msg(Ack_msg)
+            #print ( "rec message",msg)
+            self.update_neighbors_list(positionX, positionY, state, previous_state,id_value)
         
     def collect_demands(self):
         #wait for request , wait all requests and send only once 
         self.initialize_timer_demand()
         if self.demanders_list: # there are drone demaneded 
+            # print("preparing messag")
             data_msg= self.build_spot_info_message(Response_header) # Build message that contains all data
+            # print( "message sent",data_msg )
             send_msg(data_msg)
             # wait Ack from the demander and in case not all recived re-send 
             self.initialize_timer_demand()
@@ -322,6 +329,7 @@ class Drone:
         message += self.encode_float_to_int(self.positionX)
         message += self.encode_float_to_int(self.positionY)
         # Encode state
+        # print("state",self.state, "codes as", struct.pack('>B', self.state))
         message += struct.pack('>B', self.state)
         message += struct.pack('>B', self.previous_state)
         # Determine and append max byte count for self.id
@@ -329,10 +337,20 @@ class Drone:
         # Append the id 
         message += struct.pack('>B', max_byte_count)        
         message += self.id.to_bytes(max_byte_count, 'big')
-        message += b'\n'
+        # Calculate checksum
+        checksum = sum(message) % 256
+        message += struct.pack('>B', checksum) + b'\n'
         return message
 
     def decode_spot_info_message(self,message):
+        message_without_newline = message[:-1]
+        # Extract checksum from the message
+        received_checksum = struct.unpack('>B', message_without_newline[-1:])[0]
+        # Recalculate checksum for the message excluding the checksum byte itself
+        calculated_checksum = sum(message_without_newline[:-1]) % 256
+        if received_checksum != calculated_checksum:
+            print(" Bad message recived")
+            return [-1]
         index = 1  # Header is 1 byte
         # Decode length and positionX
         lengthX = struct.unpack('>B', message[index:index+1])[0]
@@ -357,7 +375,7 @@ class Drone:
         # Decode the id
         id_value = int.from_bytes(message[index:index+max_byte_count], 'big')
         index += max_byte_count
-        return positionX, positionY, state, previous_state, id_value
+        return [positionX, positionY, state, previous_state, id_value]
     
    
     '''
@@ -504,8 +522,9 @@ class Drone:
                 self.spot["states"][0]= self.state
 
     def check_Ownership(self):
-        if self.spot["drones_in"]==1: # the drone is Owner
-            self.change_state_to (Owner)
+        if self.state != Owner:
+            if self.spot["drones_in"]==1: # the drone is Owner
+                self.change_state_to (Owner)
     
     def correct_states_after_comm(self):
         for s in self.neighbor_list[1:]: 
@@ -544,7 +563,7 @@ class Drone:
 
     def update_neighbors_list(self, positionX, positionY, state, previous_state, id_rec):
         s_index= self.find_relative_spot(positionX, positionY)
-        #print( "s_index",s_index)
+        #print( "id",id_rec, "s_index",s_index, "state", state)
         # Check if index is valid ( index between 0 and 6 )
         if 0 <= s_index <= self.num_neigbors+1:
             with self.lock_neighbor_list:
