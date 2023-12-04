@@ -84,7 +84,7 @@ def expansion_listener (self):
 
         msg= retrieve_msg_from_buffer(self.Forming_Border_Broadcast_REC)
 
-       
+        print( "rec", msg)
         self.exchange_neighbors_info_communication(msg)
 
         if msg.startswith(Movement_command.encode()) and msg.endswith("\n"):

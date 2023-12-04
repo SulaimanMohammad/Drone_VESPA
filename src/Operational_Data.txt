@@ -16,7 +16,7 @@ exchange_data_latency=2
 
 # Xbee variables
 xbee_serial_port='/dev/ttyUSB0'
-Tx=23
-Rx=24
+Tx=None
+Rx=None
 baud_rate=9600
 xbee_range=13
