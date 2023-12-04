@@ -508,8 +508,9 @@ class Drone:
                 self.spot["states"][0]= self.state
 
     def check_Ownership(self):
-        if self.spot["drones_in"]==1: # the drone is Owner
-            self.change_state_to (Owner)
+        if self.state != Owner:
+            if self.spot["drones_in"]==1: # the drone is Owner
+                self.change_state_to (Owner)
     
     def correct_states_after_comm(self):
         for s in self.neighbor_list[1:]: 
