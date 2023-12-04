@@ -152,9 +152,10 @@ class Drone:
             connect_xbee(xbee_serial_port, baud_rate)
         else:
             connect_xbee(Tx,Rx, baud_rate)
+
     '''
     -------------------------------------------------------------------------------------
-    ---------------------------------- Communication ------------------------------------
+    ---------------- Timers and managment of Demand response-----------------------------
     -------------------------------------------------------------------------------------
     '''
 
@@ -194,6 +195,11 @@ class Drone:
             send_msg(data_msg)
         self.demanders_received_data.clear()
             
+    '''
+    -------------------------------------------------------------------------------------
+    ---------------------------------- Communication ------------------------------------
+    -------------------------------------------------------------------------------------
+    '''
 
     def build_data_demand_message(self):
         message= Demand_header.encode()
@@ -214,7 +220,6 @@ class Drone:
         id_bytes = encoded_message[id_start_index:id_end_index]
         id = int.from_bytes(id_bytes, 'big')
         return id
-
     
     def demand_neighbors_info(self):
         # This function is caled out of the listener thread because it contains timer and that would block the listening thtrad
@@ -252,50 +257,6 @@ class Drone:
         target_id = int.from_bytes(target_id_bytes, 'big')
         return id, target_id
     
-
-    def get_neighbors_info(self,msg):
-        positionX, positionY, state, previous_state,id_value= self.decode_spot_info_message(msg)
-        self.reset_timer_resposnse()
-        Ack_msg=self.build_ACK_data_message(id_value)
-        send_msg(Ack_msg)
-        self.update_neighbors_list(positionX, positionY, state, previous_state,id_value)
-        
-    def collect_demands(self):
-        #wait for request , wait all requests and send only once 
-        self.initialize_timer_demand()
-        if self.demanders_list: # there are drone demaneded 
-            data_msg= self.build_spot_info_message(Response_header) # Build message that contains all data
-            send_msg(data_msg)
-            # wait Ack from the demander and in case not all recived re-send 
-            self.initialize_timer_demand()
-            self.resend_data()
-        
-
-    def exchange_neighbors_info_communication(self,msg):
-        # Receiving message asking for data 
-        if msg.startswith(Demand_header.encode()) and msg.endswith(b'\n'):
-            id_need_data= self.decode_data_demand_message(msg)
-            if not self.demanders_list: # empty demander then launch the thread of timer 
-                self.demand_timer = threading.Thread(target=self.collect_demands, args=()) #pass the function reference and arguments separately to the Thread constructor.
-                self.demand_timer.start()  
-            self.append_id_demanders_list(id_need_data)
-            self.reset_timer_demand()
-                
-
-        if msg.startswith(ACK_header.encode()) and msg.endswith(b'\n'):
-                sender_id, target_id =self.decode_ACK_data_message(msg)
-                if target_id== self.id and sender_id in self.demanders_list: 
-                    self.remove_id_demanders_list(sender_id)
-                    self.reset_timer_demand()
-                if len(self.demanders_list)==0:
-                    self.demanders_received_data.set()
-                    if self.demand_timer is not None and self.demand_timer.is_alive(): 
-                        self.demand_timer.join()
-
-        # Receiving message containing data     
-        if msg.startswith(Response_header.encode()) and msg.endswith(b'\n'):
-            self.get_neighbors_info(msg)
-        
     def encode_float_to_int(self, value, precision=multiplier):
         """Encodes a float as an integer with a given multiplier."""
         encoded = int(value * precision)
@@ -304,7 +265,6 @@ class Drone:
             return struct.pack('>bh', 2, encoded)  # Length 2 bytes, value
         else:
             return struct.pack('>bi', 4, encoded)  # Length 4 bytes, value
-
 
     def decode_int_to_float(self, encoded_float):
         # Check the byte length to decide the format
@@ -357,6 +317,50 @@ class Drone:
         id_value = int.from_bytes(message[index:index+max_byte_count], 'big')
         index += max_byte_count
         return positionX, positionY, state, previous_state, id_value
+    
+    ''' 
+        Procedures to treat the incoming response answer 
+    '''
+    def get_neighbors_info(self,msg):
+        positionX, positionY, state, previous_state,id_value= self.decode_spot_info_message(msg)
+        self.reset_timer_resposnse()
+        Ack_msg=self.build_ACK_data_message(id_value)
+        send_msg(Ack_msg)
+        self.update_neighbors_list(positionX, positionY, state, previous_state,id_value)
+        
+    def collect_demands(self):
+        #wait for request , wait all requests and send only once 
+        self.initialize_timer_demand()
+        if self.demanders_list: # there are drone demaneded 
+            data_msg= self.build_spot_info_message(Response_header) # Build message that contains all data
+            send_msg(data_msg)
+            # wait Ack from the demander and in case not all recived re-send 
+            self.initialize_timer_demand()
+            self.resend_data()
+        
+    def exchange_neighbors_info_communication(self,msg):
+        # Receiving message asking for data 
+        if msg.startswith(Demand_header.encode()) and msg.endswith(b'\n'):
+            id_need_data= self.decode_data_demand_message(msg)
+            if not self.demanders_list: # empty demander then launch the thread of timer 
+                self.demand_timer = threading.Thread(target=self.collect_demands, args=()) #pass the function reference and arguments separately to the Thread constructor.
+                self.demand_timer.start()  
+            self.append_id_demanders_list(id_need_data)
+            self.reset_timer_demand()
+                
+        if msg.startswith(ACK_header.encode()) and msg.endswith(b'\n'):
+                sender_id, target_id =self.decode_ACK_data_message(msg)
+                if target_id== self.id and sender_id in self.demanders_list: 
+                    self.remove_id_demanders_list(sender_id)
+                    self.reset_timer_demand()
+                if len(self.demanders_list)==0:
+                    self.demanders_received_data.set()
+                    if self.demand_timer is not None and self.demand_timer.is_alive(): 
+                        self.demand_timer.join()
+
+        # Receiving message containing data     
+        if msg.startswith(Response_header.encode()) and msg.endswith(b'\n'):
+            self.get_neighbors_info(msg)
     
     '''
     -------------------------------------------------------------------------------------
@@ -574,7 +578,7 @@ class Drone:
                 # Increment drones_in count
                 s['drones_in'] += 1
         else:
-            print("Signal originating from outside the region")
+            m("Signal originating from outside the region")
             # Receive signal from drone out of the 6 neighbors 
             for s in self.neighbor_list:
                 if id_rec in s["drones_in_id"]:
