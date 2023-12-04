@@ -65,6 +65,7 @@ def decode_border_message(message):
     return sender_id, target_ids, candidate
 
 def circle_completed(self):
+        print("circle completed")
         if check_border_candidate_eligibility(self):
             self.change_state_to(Border)
             Broadcast_Msg= build_border_message(self,Forming_border_header,[-1], self.id)

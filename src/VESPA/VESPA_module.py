@@ -258,17 +258,21 @@ class Drone:
 
     def get_neighbors_info(self,msg):
         decoded_msg= self.decode_spot_info_message(msg)
+        # print( " rec msg as response ", msg )
         if len(decoded_msg)>1 : # No erorr of receiving
             positionX, positionY, state, previous_state, id_value= decoded_msg
+            #print( positionX, positionY, state, previous_state, id_value)
             self.reset_timer_resposnse()
             Ack_msg=self.build_ACK_data_message(id_value)
+            # print("ACK Message", Ack_msg)
             send_msg(Ack_msg)
             #print ( "rec message",msg)
             self.update_neighbors_list(positionX, positionY, state, previous_state,id_value)
         
     def collect_demands(self):
-        #wait for request , wait all requests and send only once 
+        # wait for request , wait all requests and send only once 
         self.initialize_timer_demand()
+        # print( " timer is done, num demander", self.demanders_list)
         if self.demanders_list: # there are drone demaneded 
             # print("preparing messag")
             data_msg= self.build_spot_info_message(Response_header) # Build message that contains all data
@@ -276,6 +280,8 @@ class Drone:
             send_msg(data_msg)
             # wait Ack from the demander and in case not all recived re-send 
             self.initialize_timer_demand()
+            # print( "ACK timer is done, num demander left", self.demanders_list)
+            # print(self.demanders_received_data)
             self.resend_data()
         
 
@@ -292,13 +298,17 @@ class Drone:
 
         if msg.startswith(ACK_header.encode()) and msg.endswith(b'\n'):
                 sender_id, target_id =self.decode_ACK_data_message(msg)
-                if target_id== self.id and sender_id in self.demanders_list: 
+                if target_id == self.id and sender_id in self.demanders_list:
+                    # print("ACK rec current demander", self.demanders_list)
                     self.remove_id_demanders_list(sender_id)
+                    # print( "Ack rec from", sender_id, "demander list is now", self.demanders_list) 
                     self.reset_timer_demand()
                 if len(self.demanders_list)==0:
                     self.demanders_received_data.set()
-                    if self.demand_timer is not None and self.demand_timer.is_alive(): 
-                        self.demand_timer.join()
+                else: 
+                    self.demanders_received_data.clear()
+                if self.demand_timer is not None and self.demand_timer.is_alive(): 
+                    self.demand_timer.join()
 
         # Receiving message containing data     
         if msg.startswith(Response_header.encode()) and msg.endswith(b'\n'):

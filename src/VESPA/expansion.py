@@ -149,7 +149,7 @@ def find_priority(self):
     return int(spot_to_go[0][1:])
 
 def neighbors_election(self):
-    id_free = [id for id, state in zip(self.spot["drones_in_id"], self.spot["states"]) if state == Free]
+    id_free = [id for id, state in zip(self.spot["drones_in_id"], self.spot["states"]) if state != Owner]
     return min(id_free) # return the min id of a drone is in state Free
 
 def sink_movement_command(self,vehicle,id):
@@ -250,9 +250,9 @@ def Forme_border(self):
         self.update_candidate_spot_info_to_neighbors() # Useful if the drone arrived and filled a spot made others sourounded
         '''launch a message circulation for current candidat'''
         start_msg_one_direction(self,Forming_border_header)
-    else:
-        # Drone is sourounded in the expansion direction it can be set as free
-        self.change_state_to(Free)
+    # else:
+    #     # Drone is sourounded in the expansion direction it can be set as free
+    #     self.change_state_to(Free)
 
     # wait until the border procesdure is finished
     self.Forming_Border_Broadcast_REC.wait()
@@ -311,7 +311,6 @@ def expand_and_form_border_try(self):
                 print("arrived from main")
                 # After move_to_spot retuen it means arrivale 
                 movement_done_msg= build_expan_elected(self.id)
-                print(movement_done_msg )
                 send_msg(movement_done_msg)
         else:
            print( "waiting for flag")
