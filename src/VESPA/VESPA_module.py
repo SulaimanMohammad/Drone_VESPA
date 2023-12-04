@@ -355,8 +355,10 @@ class Drone:
                     self.reset_timer_demand()
                 if len(self.demanders_list)==0:
                     self.demanders_received_data.set()
-                    if self.demand_timer is not None and self.demand_timer.is_alive(): 
-                        self.demand_timer.join()
+                else:
+                    self.demanders_received_data.clear()
+                if self.demand_timer is not None and self.demand_timer.is_alive() and self.remaining_time_demand<=0: 
+                    self.demand_timer.join()
 
         # Receiving message containing data     
         if msg.startswith(Response_header.encode()) and msg.endswith(b'\n'):
