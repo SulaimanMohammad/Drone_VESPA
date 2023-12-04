@@ -281,6 +281,7 @@ class Drone:
         message += self.encode_float_to_int(self.positionX)
         message += self.encode_float_to_int(self.positionY)
         # Encode state
+        # print("state",self.state, "codes as", struct.pack('>B', self.state))
         message += struct.pack('>B', self.state)
         message += struct.pack('>B', self.previous_state)
         # Determine and append max byte count for self.id
@@ -288,10 +289,20 @@ class Drone:
         # Append the id 
         message += struct.pack('>B', max_byte_count)        
         message += self.id.to_bytes(max_byte_count, 'big')
-        message += b'\n'
+        # Calculate checksum
+        checksum = sum(message) % 256
+        message += struct.pack('>B', checksum) + b'\n'
         return message
 
     def decode_spot_info_message(self,message):
+        message_without_newline = message[:-1]
+        # Extract checksum from the message
+        received_checksum = struct.unpack('>B', message_without_newline[-1:])[0]
+        # Recalculate checksum for the message excluding the checksum byte itself
+        calculated_checksum = sum(message_without_newline[:-1]) % 256
+        if received_checksum != calculated_checksum:
+            #print(" Bad message recived")
+            return [-1]
         index = 1  # Header is 1 byte
         # Decode length and positionX
         lengthX = struct.unpack('>B', message[index:index+1])[0]
@@ -316,20 +327,23 @@ class Drone:
         # Decode the id
         id_value = int.from_bytes(message[index:index+max_byte_count], 'big')
         index += max_byte_count
-        return positionX, positionY, state, previous_state, id_value
+        return [positionX, positionY, state, previous_state, id_value]
     
     ''' 
         Procedures to treat the incoming response answer 
     '''
     def get_neighbors_info(self,msg):
-        positionX, positionY, state, previous_state,id_value= self.decode_spot_info_message(msg)
-        self.reset_timer_resposnse()
-        Ack_msg=self.build_ACK_data_message(id_value)
-        send_msg(Ack_msg)
-        self.update_neighbors_list(positionX, positionY, state, previous_state,id_value)
+        decoded_msg= self.decode_spot_info_message(msg) # If the message is invalid decode will return [-1]
+        # Ack will be sent only if the message is correct, Otherwise the lack of ACK will force the target of resending data 
+        if len(decoded_msg)>1 : # No erorr of receiving
+            positionX, positionY, state, previous_state, id_value= decoded_msg
+            self.reset_timer_resposnse()
+            Ack_msg=self.build_ACK_data_message(id_value)
+            send_msg(Ack_msg)
+            self.update_neighbors_list(positionX, positionY, state, previous_state,id_value)
         
     def collect_demands(self):
-        #wait for request , wait all requests and send only once 
+        # wait for request , wait all requests and send only once 
         self.initialize_timer_demand()
         if self.demanders_list: # there are drone demaneded 
             data_msg= self.build_spot_info_message(Response_header) # Build message that contains all data
