@@ -1,6 +1,6 @@
 from .VESPA_module import *
 from .form_border_one_direction import *
-from .form_border_tow_direction import *
+# from .form_border_tow_direction import *
 
 set_env(globals())
 
@@ -79,7 +79,8 @@ def expansion_listener (self):
     self.Forming_Border_Broadcast_REC = threading.Event()
 
     while check_continuity_of_listening(self):
-        
+        #self.manage_xbee_while_movement()
+
         msg= retrieve_msg_from_buffer(self.Forming_Border_Broadcast_REC)
 
         self.exchange_neighbors_info_communication(msg)
@@ -247,9 +248,6 @@ def Forme_border(self):
         self.update_candidate_spot_info_to_neighbors() # Useful if the drone arrived and filled a spot made others sourounded
         '''launch a message circulation for current candidat'''
         start_msg_one_direction(self,Forming_border_header)
-    else:
-        # Drone is sourounded in the expansion direction it can be set as free
-        self.change_state_to(Free)
 
     # wait until the border procesdure is finished
     self.Forming_Border_Broadcast_REC.wait()
