@@ -276,6 +276,7 @@ def expand_and_form_border(self,vehicle):
                 print ("go to S", destination_spot)
                 self.move_to_spot(vehicle, destination_spot)
                 # After move_to_spot retuen it means arrivale 
+                self.manage_xbee_while_movement()
                 movement_done_msg= build_expan_elected(self.id)
                 send_msg(movement_done_msg)
         else:

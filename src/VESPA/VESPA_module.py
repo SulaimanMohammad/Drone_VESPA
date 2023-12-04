@@ -141,6 +141,7 @@ class Drone:
         self.demanders_received_data = threading.Event()
         self.forming_border_msg_recived= threading.Event()
         self.VESPA_termination= threading.Event() 
+        self.in_movement= threading.Event()
         self.elected_droen_arrived= None    
         self.Forming_Border_Broadcast_REC= None
         self.start_expanding= None
@@ -634,6 +635,12 @@ class Drone:
         clear_buffer() # need to clear the bufer from message received on the road
         # Arrive to steady state and hover then start observing the location
         hover(vehicle)
+
+    def manage_xbee_while_movement(self):
+        while self.in_movement.is_set():           
+            time.sleep(0.01)
+        clear_buffer()
+
 
     def search_for_target(self): # find if there is target in the area or not
         # move in the place and couver it to check if there is target or not
