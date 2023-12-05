@@ -96,7 +96,7 @@ Irremovable_boarder=4
 -------------------------------------------------------------------------------------
 '''
 class Drone:
-    def __init__(self,x,y,z):
+    def __init__(self,id, x,y,z):
         self.positionX=x
         self.positionY=y
         self.distance_from_sink=0 # the distance of the drone from  the sink
@@ -148,10 +148,10 @@ class Drone:
         self.end_of_balancin= None
         self.demanders_list=[]
         self.demand_timer=None
-        if uart:
-            connect_xbee(xbee_serial_port, baud_rate)
-        else:
-            connect_xbee(Tx,Rx, baud_rate)
+        # if uart:
+        #     connect_xbee(xbee_serial_port, baud_rate)
+        # else:
+        #     connect_xbee(Tx,Rx, baud_rate)
 
     '''
     -------------------------------------------------------------------------------------
@@ -553,7 +553,7 @@ class Drone:
         y= DIR_xy_distance_VECTORS[dir][1]
         self.positionX =round(self.positionX + x,2) # Add the value not assign because it is movement
         self.positionY = round(self.positionY+ y ,2)
-        self.rearrange_neighbor_statically_upon_movement(dir)
+        #self.rearrange_neighbor_statically_upon_movement(dir)
         # Find the distance of the neigboors at the new position
         self.calculate_neighbors_distance_sink()
 
@@ -595,7 +595,7 @@ class Drone:
                 # Increment drones_in count
                 s['drones_in'] += 1
         else:
-            m("Signal originating from outside the region")
+            print("Signal originating from outside the region")
             # Receive signal from drone out of the 6 neighbors 
             for s in self.neighbor_list:
                 if id_rec in s["drones_in_id"]:
