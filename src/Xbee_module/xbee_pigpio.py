@@ -1,6 +1,8 @@
 import pigpio
 import time 
 from VESPA.headers_variables import *
+import threading
+send_lock = threading.Lock()
 
 def connect_xbee(TX,RX,baud_rate_set):
     global tx_pin
@@ -19,41 +21,42 @@ def connect_xbee(TX,RX,baud_rate_set):
     pi.set_mode(rx_pin, pigpio.INPUT)
     pi.bb_serial_read_open(rx_pin, baud_rate, 8)  # Open RX pin with a baud rate
     pi.set_mode(tx_pin, pigpio.OUTPUT)
-    time.sleep(2)
+    pi.wave_clear() # Clear any existing waveforms before sending the first message
+    time.sleep(0.5)
     send_msg('test'.encode() ) # Warm up message 
 
 def send_msg(msg):
-    # Send data
-    # Check if the message is empty or not in a byte-like format
-    if not msg or not isinstance(msg, (bytes, bytearray)):
-        print("Error: Message is empty or not in byte format.")
-        return
+    with send_lock:
+        # Check if the message is empty or not in a byte-like format
+        if not msg or not isinstance(msg, (bytes, bytearray)):
+            print("Error: Message is empty or not in byte format.")
+            return
 
-    pi.wave_clear()  # Clear any existing waveforms
-    if pi.wave_get_micros() > 0:  # Check if there's any data in the buffer
-          pi.wave_clear()  # Clear it again to be sure
+        pi.wave_clear()  # Clear any existing waveforms
+        if pi.wave_get_micros() > 0:  # Check if there's any data in the buffer
+            pi.wave_clear()  # Clear it again to be sure
 
-    pi.wave_add_serial(tx_pin, baud_rate, msg)  # Add a new waveform
-    # wave_id = pi.wave_create()  # Create the waveform
-    max_attempts = 10  # Maximum number of attempts to create the waveform
-    wave_id = None
-    for attempt in range(max_attempts):
-        try:
-            wave_id = pi.wave_create()  # Attempt to create the waveform
-            if wave_id >= 0:
-                break  # Waveform created successfully, exit the loop
-        except pigpio.error as e:
-            print(f"Attempt {attempt + 1} failed with error: {e}", " message was",msg )
-            time.sleep(0.1)  # Wait for 0.05 seconds before the next attempt
+        pi.wave_add_serial(tx_pin, baud_rate, msg)  # Add a new waveform
+        # wave_id = pi.wave_create()  # Create the waveform
+        max_attempts = 10  # Maximum number of attempts to create the waveform
+        wave_id = None
+        for attempt in range(max_attempts):
+            try:
+                wave_id = pi.wave_create()  # Attempt to create the waveform
+                if wave_id >= 0:
+                    break  # Waveform created successfully, exit the loop
+            except pigpio.error as e:
+                print(f"Attempt {attempt + 1} failed with error: {e}", " message was",msg )
+                time.sleep(0.1)  # Wait for 0.05 seconds before the next attempt
 
-    # Check if the waveform was created successfully after all attempts
-    if wave_id is None or wave_id < 0:
-        print("Error: Failed to create waveform after multiple attempts.")
-        return
+        # Check if the waveform was created successfully after all attempts
+        if wave_id is None or wave_id < 0:
+            print("Error: Failed to create waveform after multiple attempts.")
+            return
 
-    pi.wave_send_once(wave_id)  # Send the waveform
-    while pi.wave_tx_busy():  # Wait until the waveform is sent
-        time.sleep(0.05)
+        pi.wave_send_once(wave_id)  # Send the waveform
+        while pi.wave_tx_busy():  # Wait until the waveform is sent
+            time.sleep(0.05)
 
 
 message_buffer = bytearray()
