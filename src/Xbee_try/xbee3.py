@@ -20,6 +20,7 @@ time.sleep(3)
 try:
     while True:
         expand_and_form_border_try(drone)
+        print( "call spannng")
         spanning(drone)
         time.sleep(100)  # Interval for sending messages
 except KeyboardInterrupt:

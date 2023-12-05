@@ -418,7 +418,7 @@ def build_path(self):
 ----------------------------------- Main function ----------------------------------
 -------------------------------------------------------------------------------------
 '''     
-def spanning(self, vehicle): 
+def spanning(self, vehicle=0): 
 
     if self.spot['distance']<1: # if the drone is sink ( leader of the termination of the spaning phase)
         self.demand_neighbors_info()
@@ -447,12 +447,15 @@ def spanning(self, vehicle):
             time.sleep(2) 
             # Send message to the sink about the corrdinates 
             # Not all Irremovable found targets, irremovable can be only part of the path
+            # if self.target_detected:
+            #     if check_gps_fix(vehicle): # GPS data are correct
+            #         current_lon = vehicle.location.global_relative_frame.lon
+            #         current_lat = vehicle.location.global_relative_frame.lat
+            #         coordinates_msg= build_GPS_coordinates_message(self.drone_id_to_sink[0], self.id, current_lon,current_lat )
+            #         send_msg(coordinates_msg)
             if self.target_detected:
-                if check_gps_fix(vehicle): # GPS data are correct
-                    current_lon = vehicle.location.global_relative_frame.lon
-                    current_lat = vehicle.location.global_relative_frame.lat
-                    coordinates_msg= build_GPS_coordinates_message(self.drone_id_to_sink[0], self.id, current_lon,current_lat )
-                    send_msg(coordinates_msg)
+                coordinates_msg= build_GPS_coordinates_message(self.drone_id_to_sink[0], self.id, self.positionX, self.positionY )
+                send_msg(coordinates_msg)
 
         # Send a message that will travel from border to sink and that will annouce end of the pahse 
         if self.state== Irremovable_boarder:
