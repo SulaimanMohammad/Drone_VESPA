@@ -21,7 +21,7 @@ def connect_xbee(TX,RX,baud_rate_set):
     pi.set_mode(rx_pin, pigpio.INPUT)
     pi.bb_serial_read_open(rx_pin, baud_rate, 8)  # Open RX pin with a baud rate
     pi.set_mode(tx_pin, pigpio.OUTPUT)
-    time.sleep(2)
+    time.sleep(0.5)
     send_msg('test'.encode() ) # Warm up message 
 
 def send_msg(msg):
