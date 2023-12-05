@@ -595,7 +595,7 @@ class Drone:
                 # Increment drones_in count
                 s['drones_in'] += 1
         else:
-            m("Signal originating from outside the region")
+            print("Signal originating from outside the region")
             # Receive signal from drone out of the 6 neighbors 
             for s in self.neighbor_list:
                 if id_rec in s["drones_in_id"]:
