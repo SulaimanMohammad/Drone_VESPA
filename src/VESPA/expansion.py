@@ -89,20 +89,20 @@ def expansion_listener (self):
             id, spot, lon, lat= decode_movement_command_message(msg)
             if id==-1 and spot==-1 and lon==0 and lat==0: # mean all drone are in sky
                 self.start_expanding.set()
-            else:
-                initial_movement(self, vehicle,id, spot, lon, lat)
+            # else:
+            #     initial_movement(self, vehicle,id, spot, lon, lat)
 
-        elif msg.startswith(Calibration) and msg.endswith("\n"):
-            calibration_ping_pong(self, vehicle, msg )
+        # elif msg.startswith(Calibration) and msg.endswith("\n"):
+        #     calibration_ping_pong(self, vehicle, msg )
 
         elif msg.startswith(Expan_header.encode()) and msg.endswith(b'\n'):
             handel_elected_drone_arrivale(self, msg)
 
-        elif msg.startswith(Arrival_header.encode()) and msg.endswith(b'\n'):
-            handel_broken_into_spot(self, msg)
+        # elif msg.startswith(Arrival_header.encode()) and msg.endswith(b'\n'):
+        #     handel_broken_into_spot(self, msg)
 
-        elif msg.startswith(Inherit_header.encode()) and msg.endswith(b'\n'):
-            handel_inheritence_message(self, msg)
+        # elif msg.startswith(Inherit_header.encode()) and msg.endswith(b'\n'):
+        #     handel_inheritence_message(self, msg)
             
         elif msg.startswith(Forming_border_header.encode()) and msg.endswith(b'\n'): # message starts with F end with \n
             form_border_one_direction(self,Forming_border_header,msg)
