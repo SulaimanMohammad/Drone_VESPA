@@ -148,6 +148,8 @@ class Drone:
         self.end_of_balancin= None
         self.demanders_list=[]
         self.demand_timer=None
+        self.remaining_time_demand=None
+        self.remaining_time_resposnse=None
         if uart:
             connect_xbee(xbee_serial_port, baud_rate)
         else:
@@ -337,7 +339,8 @@ class Drone:
         # Ack will be sent only if the message is correct, Otherwise the lack of ACK will force the target of resending data 
         if len(decoded_msg)>1 : # No erorr of receiving
             positionX, positionY, state, previous_state, id_value= decoded_msg
-            self.reset_timer_resposnse()
+            if self.remaining_time_resposnse: # timer already initialized
+                self.reset_timer_resposnse()
             Ack_msg=self.build_ACK_data_message(id_value)
             send_msg(Ack_msg)
             self.update_neighbors_list(positionX, positionY, state, previous_state,id_value)
@@ -366,7 +369,8 @@ class Drone:
                 sender_id, target_id =self.decode_ACK_data_message(msg)
                 if target_id== self.id and sender_id in self.demanders_list: 
                     self.remove_id_demanders_list(sender_id)
-                    self.reset_timer_demand()
+                    if self.remaining_time_demand: # timer already initialized 
+                        self.reset_timer_demand()
                 if len(self.demanders_list)==0:
                     self.demanders_received_data.set()
                 else:
