@@ -549,13 +549,14 @@ class Drone:
     def update_location(self, dir):
         # PositionX , positionY are the coordinates from the sink
         # Format: _.xx 2 decimal
-        x=  DIR_xy_distance_VECTORS[dir][0]
-        y= DIR_xy_distance_VECTORS[dir][1]
-        self.positionX =round(self.positionX + x,2) # Add the value not assign because it is movement
-        self.positionY = round(self.positionY+ y ,2)
-        self.rearrange_neighbor_statically_upon_movement(dir)
-        # Find the distance of the neigboors at the new position
-        self.calculate_neighbors_distance_sink()
+        if dir !=0: # Update only if the position changed
+            x=  DIR_xy_distance_VECTORS[dir][0]
+            y= DIR_xy_distance_VECTORS[dir][1]
+            self.positionX =round(self.positionX + x,2) # Add the value not assign because it is movement
+            self.positionY = round(self.positionY+ y ,2)
+            self.rearrange_neighbor_statically_upon_movement(dir)
+            # Find the distance of the neigboors at the new position
+            self.calculate_neighbors_distance_sink()
 
     def update_candidate_spot_info_to_neighbors(self):
         msg= self.build_spot_info_message(Arrival_header)
