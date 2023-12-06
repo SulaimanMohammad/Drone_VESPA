@@ -1,5 +1,3 @@
-# sensor_reading.py
-
 import board
 import adafruit_vl53l4cd
 import busio

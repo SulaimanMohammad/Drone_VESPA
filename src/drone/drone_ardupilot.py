@@ -16,7 +16,12 @@ import queue
 
 from dronekit import Command
 from pymavlink import mavutil
-from ..Lidar.lidar import initialize_sensor, read_sensor
+
+import sys
+parent_directory = os.path.abspath(os.path.join(os.path.dirname(__file__), '../'))
+# Add the parent directory to sys.path
+sys.path.append(parent_directory)
+from Lidar.lidar import initialize_sensor, read_sensor
 # Declare global variables for logs 
 filename = " "
 
