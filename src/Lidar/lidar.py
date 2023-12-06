@@ -1,29 +1,84 @@
-# SPDX-FileCopyrightText: 2021 ladyada for Adafruit Industries
-# SPDX-License-Identifier: MIT
+# # sensor_reading.py
 
-# Simple demo of the VL53L0X distance sensor.
-# Will print the sensed range/distance every second.
-import time
+# import board
+# import adafruit_vl53l4cd
+# import busio
 
+# # Declare vl53 as a global variable
+# vl53 = None
+
+# def initialize_sensor():
+#     global vl53
+
+#     # Initialize I2C and sensor
+#     i2c = board.I2C()
+#     vl53 = adafruit_vl53l4cd.VL53L4CD(i2c)
+
+#     # Start ranging
+#     vl53.start_ranging()
+
+# def read_sensor(stop_event, queue):
+#     global vl53
+
+#     # Ensure the sensor is initialized
+#     if vl53 is None:
+#         raise Exception("Sensor not initialized")
+
+#     # Moving average parameters
+#     num_readings = 10
+#     readings = [0] * num_readings  # List to store the last 'num_readings' values
+#     index = 0
+#     total = 0
+
+#     while not stop_event.is_set():
+#         while not vl53.data_ready:
+#             pass
+#         vl53.clear_interrupt()
+
+#         # Remove the oldest reading and add the newest
+#         total -= readings[index]
+#         readings[index] = vl53.distance
+#         total += readings[index]
+
+#         index += 1
+#         if index >= num_readings:
+#             index = 0
+
+#         # Calculate the average and put it in the queue
+#         average_distance = total / num_readings
+#         print("Average Distance: {} cm".format(average_distance))
+#         queue.put(average_distance)
 import board
+import adafruit_vl53l4cd
 import busio
 
-import adafruit_vl53l0x
+# Initialize I2C and sensor
+i2c = board.I2C()
+vl53 = adafruit_vl53l4cd.VL53L4CD(i2c)
 
-# Initialize I2C bus and sensor.
-i2c = busio.I2C(board.SCL, board.SDA)
-vl53 = adafruit_vl53l0x.VL53L0X(i2c)
+# Moving average parameters
+num_readings = 10
+readings = [0]*num_readings  # List to store the last 'num_readings' values
+index = 0
+total = 0
+# Start ranging
+vl53.start_ranging()
 
-# Optionally adjust the measurement timing budget to change speed and accuracy.
-# See the example here for more details:
-#   https://github.com/pololu/vl53l0x-arduino/blob/master/examples/Single/Single.ino
-# For example a higher speed but less accurate timing budget of 20ms:
-# vl53.measurement_timing_budget = 20000
-# Or a slower but more accurate timing budget of 200ms:
-# vl53.measurement_timing_budget = 200000
-# The default timing budget is 33ms, a good compromise of speed and accuracy.
+def read_sensor(stop_event):
+    while not stop_event.is_set:
+        while not vl53.data_ready:
+            pass
+        vl53.clear_interrupt()
 
-# Main loop will read the range and print it every second.
-while True:
-    print("Range: {0}mm".format(vl53.range))
-    time.sleep(1.0)
+        # Remove the oldest reading and add the newest
+        total -= readings[index]
+        readings[index] = vl53.distance
+        total += readings[index]
+
+        index += 1
+        if index >= num_readings:
+            index = 0
+
+        # Calculate the average and print
+        average_distance = total / num_readings
+        print("Average Distance: {} cm".format(average_distance))
