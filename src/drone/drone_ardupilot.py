@@ -12,9 +12,11 @@ import numpy as np
 from simple_pid import PID
 import threading
 from pathlib import Path
+import queue
 
 from dronekit import Command
 from pymavlink import mavutil
+from ..Lidar.lidar import initialize_sensor, read_sensor
 # Declare global variables for logs 
 filename = " "
 
@@ -88,6 +90,7 @@ def arm_and_takeoff(self, aTargetAltitude):
     """
     Arms vehicle and fly to aTargetAltitude.
     """
+    initialize_sensor()
     if self.mode.name == "INITIALISING":
         print ("initialise the self") 
         write_log_message ("initialise the self") 
@@ -561,7 +564,7 @@ def set_yaw_to_dir_PID(self, target_yaw, relative=True, max_yaw_speed=20):
 
     self.remove_message_listener('ATTITUDE', yaw_listener)
     print("Yaw set to:", target_yaw)
-    self.mode    = VehicleMode("LOITER") #loiter mode and hover in your place 
+    #self.mode    = VehicleMode("LOITER") #loiter mode and hover in your place 
     time.sleep(1.5)
     self.mode     = VehicleMode("GUIDED")
 
@@ -720,6 +723,22 @@ def velocity_PID(desired_vel_x, velocity_body_vector):
 
     return velocity_x, velocity_y, velocity_z
 
+def object_avoidance(self,sensor_queue):
+    if not sensor_queue.empty():
+        sensor_value = sensor_queue.get()
+
+        # Check if sensor value is less than 80
+        if sensor_value < 80:
+            print("Sensor value below 80, entering special handling loop.")
+            while sensor_value < 80:
+                send_control_body(self, 0, 0, 2)
+                if not sensor_queue.empty():
+                    sensor_value = sensor_queue.get()
+                    print(f"Waiting in loop, sensor value: {sensor_value}")
+                time.sleep(0.1)  # Adjust as needed for responsiveness
+            print("Sensor value above 80, exiting special handling loop.")
+   
+
 def move_body_PID(self, angl_dir, distance, max_acceleration=0.5, max_deceleration= -0.5 , max_velocity=2): #max_velocity=2
      
     global velocity_listener
@@ -736,7 +755,7 @@ def move_body_PID(self, angl_dir, distance, max_acceleration=0.5, max_decelerati
     PID_time=0
     previous_desired_vel_x=0
     estimated_acceleration=1
-
+    
     check_mode(self) 
     max_acceleration,max_deceleration= get_acceleration()
     
@@ -751,6 +770,11 @@ def move_body_PID(self, angl_dir, distance, max_acceleration=0.5, max_decelerati
 
     self.add_attribute_listener('velocity', on_velocity)
     
+    stop_event = threading.Event()
+    sensor_queue = queue.Queue()
+    thread = threading.Thread(target=read_sensor, args=(stop_event, sensor_queue))
+    thread.start()
+
     some_velocity_threshold=0.08
     velocity_updated=False
     start_time = time.time()
@@ -759,7 +783,7 @@ def move_body_PID(self, angl_dir, distance, max_acceleration=0.5, max_decelerati
         print( "---------------------------------------------------------------------")
 
         new_velocity_data.wait()
-        
+        object_avoidance(self,sensor_queue)
         # Get current velocities from NED frame to body 
         velocity_body   =ned_to_body(self,velocity_listener )
         velocity_current_x=(velocity_body[0])
@@ -826,6 +850,8 @@ def move_body_PID(self, angl_dir, distance, max_acceleration=0.5, max_decelerati
     # Arrive to destination stop  
     send_control_body(self, 0, 0, 0)
     save_acceleration(max_acceleration, max_deceleration)
+    stop_event.set()
+    thread.join()
     self.remove_attribute_listener('velocity', on_velocity)
     
     
