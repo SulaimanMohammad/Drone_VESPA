@@ -131,6 +131,14 @@ pip install pigpio
 sudo systemctl enable pigpiod
 sudo systemctl start pigpiod
 
+echo -e "\033[32m ------ Install Time of Flight Micro-LIDAR Distance software ------ \033[0m"
+pip install board
+pip install adafruit-circuitpython-bundle
+pip install adafruit-blinka
+sudo apt-get install i2c-tools
+pip install adafruit-circuitpython-vl53l4cd
+sudo raspi-config nonint do_i2c 0   # Enable I2C 
+
 echo -e "\033[32m ------Configure Drone_VESPA.git ------ \033[0m"
 ./update_repo.sh
 
