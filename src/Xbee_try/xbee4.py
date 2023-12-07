@@ -15,7 +15,7 @@ sq3=1.73
 a=13
 x=(sq3 / 2.0) * a
 y=(3.0 / 2.0) * a
-drone = Drone(3,0.0,0.0,1)
+drone = Drone(4,0.0,0.0,1)
 time.sleep(3)       
 try:
     while True:

@@ -18,6 +18,7 @@ def interrupt(signal_num, frame):
     if vehicle is not None:
         vehicle.remove_attribute_listener('velocity', on_velocity)
         vehicle.mode = VehicleMode ("LAND")
+        thread.join()
         time.sleep(3) 
         vehicle.close()
         sys.exit()
