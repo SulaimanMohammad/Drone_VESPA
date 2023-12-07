@@ -96,7 +96,7 @@ Irremovable_boarder=4
 -------------------------------------------------------------------------------------
 '''
 class Drone:
-    def __init__(self,id, x,y,z):
+    def __init__(self,x,y,z):
         self.positionX=x
         self.positionY=y
         self.distance_from_sink=0 # the distance of the drone from  the sink
@@ -150,10 +150,10 @@ class Drone:
         self.demand_timer=None
         self.remaining_time_demand=None
         self.remaining_time_resposnse=None
-        # if uart:
-        #     connect_xbee(xbee_serial_port, baud_rate)
-        # else:
-        #     connect_xbee(Tx,Rx, baud_rate)
+        if uart:
+            connect_xbee(xbee_serial_port, baud_rate)
+        else:
+            connect_xbee(Tx,Rx, baud_rate)
 
     '''
     -------------------------------------------------------------------------------------
