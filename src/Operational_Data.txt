@@ -1,6 +1,6 @@
 # Drone variables
 max_acceleration = 0.7
-max_deceleration = -0.7
+max_deceleration = -0.3794385297142384
 speed_of_drone=2 # m/s
 defined_groundspeed=1
 

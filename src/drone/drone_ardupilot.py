@@ -95,7 +95,7 @@ def arm_and_takeoff(self, aTargetAltitude):
     """
     Arms vehicle and fly to aTargetAltitude.
     """
-    initialize_sensor()
+    #initialize_sensor()
     if self.mode.name == "INITIALISING":
         print ("initialise the self") 
         write_log_message ("initialise the self") 

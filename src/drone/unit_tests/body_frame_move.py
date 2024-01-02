@@ -36,10 +36,10 @@ drone_hight=2
 arm_and_takeoff(vehicle,drone_hight)
 print( "Takeoff and wait 2 sec")
 
-#loiter mode and hover in your place 
-vehicle.mode    = VehicleMode("LOITER") #loiter mode and hover in your place 
-time.sleep(1)
-vehicle.mode     = VehicleMode("GUIDED")
+# #loiter mode and hover in your place 
+# vehicle.mode    = VehicleMode("LOITER") #loiter mode and hover in your place 
+# time.sleep(1)
+# vehicle.mode     = VehicleMode("GUIDED")
 
 set_data_rate(vehicle, 20)
 
