@@ -1,3 +1,4 @@
+
 #include <Arduino.h>
 #include <Wire.h>
 #include <vl53l4cx_class.h>
@@ -26,13 +27,14 @@
 /* ---------- Lidar variables ---------- */
 const int numSamples = 1; // number of samples for one reading
 #define FOV 2             // Field of View of the sensor
-#define full_FOV 180
-#define MAX_POINTS (full_FOV / FOV) + 1 // Adjust based on maximum expected number of points
-#define Sensor_range 6000               // it is maximum reading the sensor give here 6m in mm
+#define pan_active_range 180
+#define tilt_active_range 180
+#define MAX_POINTS (pan_active_range / FOV) + 1 // Adjust based on maximum expected number of points
+#define Sensor_range 6000                       // it is maximum reading the sensor give here 6m in mm
 #define Limit_distance Sensor_range + (Sensor_range * 0.20)
 /* ---------- Servo variables ---------- */
-int controle = 2;    // Pin on the bord for control signal
-int feedbackPin = 4; // Pin on the bord for the feedback if it is used
+int pan_controle = 2;  // Pin on the bord for control signal
+int tilt_controle = 4; // Pin on the bord for control signal
 int readingsCount = 0;
 int servoPosition = 0; // Current position of the servo
 
@@ -92,20 +94,23 @@ struct KDistance
 /*--- Point represent connection between distance-angle in 2D plan --*/
 struct Point
 {
-    float x, y, distance;
-    double angle;
+    float x, y, z, distance;
+    float pan_angle, tilt_angle;
     bool visited = false;
     int clusterId = UNCLASSIFIED;
 };
 Point points[MAX_POINTS];
-// int savedDistances[(full_FOV / FOV) + 1]; // Array to store distances at each FOV step
+// int savedDistances[(pan_active_range / FOV) + 1]; // Array to store distances at each FOV step
 // // +1 because 18/18=10 (0 to 162) and we need one element for the read of 180
-std::vector<int> savedDistances((full_FOV / FOV) + 1, Limit_distance); // Vector to store distances at each FOV step
-std::vector<bool> isFirstReading((full_FOV / FOV) + 1, true);          // Vector to track if it's the first reading for each position
+int pan_steps = pan_active_range / FOV + 1;
+int tilt_steps = tilt_active_range / FOV + 1;
+std::vector<std::vector<std::vector<int>>> savedDistances;
+std::vector<std::vector<std::vector<bool>>> isFirstReading;
 
 /* ----------  Initialization ---------- */
 VL53L4CX sensor_vl53l4cx_sat(&DEV_I2C, 2);
-Servo myservo;
+Servo pan_servo;
+Servo tilt_servo;
 
 /*----------- Functions Declaration -------*/
 void move_collect_data(int start_point, int end_point);                              // Move servo and save distance for each angle
@@ -113,7 +118,7 @@ void detect_objects_clustering(std::vector<ClusterInfo> &clusters);             
 void resetData();                                                                    // Reset data after sweeps 0-180 to 180-0
 void print_position_distance(int arrayIndex, int servoPosition, int distance_value); // print data of each angle and distance
 void reorderPointsForConsistentProcessing();                                         // Reorder Point to match 0-180 with 180 to 0
-Point polarToCartesian(int servo_angle, float distance);                             // Convert point from ( angle, distance) to (x,y)
+Point sphericalToCartesian(int pan_angle, int tilt_angle, float distance);           // Convert point from ( angle, distance) to (x,y)
 float calculateDistance(const Point &p1, const Point &p2);                           // Calculate the distance between 2 points considering the distance and the angle
 void DBSCAN();
 void expandCluster(int pointIndex, int clusterId, int *neighbors, int &numNeighbors);
@@ -138,7 +143,6 @@ void reportMemory();
 void setup()
 {
     pinMode(LedPin, OUTPUT);
-
     SerialPort.begin(115200); // Initialize serial for output.
     SerialPort.println("Starting...");
     DEV_I2C.begin();                                 // Initialize I2C bus.
@@ -148,9 +152,38 @@ void setup()
     sensor_vl53l4cx_sat.VL53L4CX_StartMeasurement(); // Start Measurements
 
     // Set servo
-    myservo.setPeriodHertz(50);
-    myservo.attach(controle); // Attach the servo on GPIO 4
-    myservo.write(0);         // Set initial position of servo to 0 degrees
+    pan_servo.setPeriodHertz(50);
+    tilt_servo.setPeriodHertz(50);
+    pan_servo.attach(pan_controle);
+    tilt_servo.attach(tilt_controle);
+    pan_servo.write(0);
+    tilt_servo.write(0);
+    Serial.println("Starting setup...");
+
+    Serial.print("Computed pan_steps: ");
+    Serial.println(pan_steps);
+    Serial.print("Computed tilt_steps: ");
+    Serial.println(tilt_steps);
+
+    // Check if the sizes are as expected
+    // static_assert(pan_active_range / FOV + 1 > 0, "pan_steps is non-positive");
+    // static_assert(tilt_active_range / FOV + 1 > 0, "tilt_steps is non-positive");
+
+    // Initialize vectors
+    Serial.println("Initializing vectors...");
+    savedDistances = std::vector<std::vector<std::vector<int>>>(
+        pan_steps,
+        std::vector<std::vector<int>>(
+            tilt_steps,
+            std::vector<int>(1, Limit_distance)));
+
+    isFirstReading = std::vector<std::vector<std::vector<bool>>>(
+        pan_steps,
+        std::vector<std::vector<bool>>(
+            tilt_steps,
+            std::vector<bool>(1, true)));
+
+    Serial.println("Vectors initialized successfully.");
 }
 
 void loop()
@@ -193,38 +226,57 @@ void move_collect_data(int start_point, int end_point)
 {
     int step = (start_point < end_point) ? FOV : -FOV; // Determine the direction based on start and end values
 
-    // Reset numPoints before collecting new data
-    numPoints = 0;
-
     // Move from start to end, updating the average and collecting valid data
-    for (int servoPosition = start_point; (step > 0) ? (servoPosition <= end_point) : (servoPosition >= end_point); servoPosition += step)
+    for (int pan_servoPosition = start_point; (step > 0) ? (pan_servoPosition <= end_point) : (pan_servoPosition >= end_point); pan_servoPosition += step)
     {
-        myservo.write(servoPosition);
+        pan_servo.write(pan_servoPosition);
         delay(50); // Wait for stabilization
-        int distance = get_distance();
-        if (distance > 0 && numPoints < MAX_POINTS) // Check if the reading is valid
+
+        for (int tilt_servoPosition = 0; tilt_servoPosition <= tilt_active_range; tilt_servoPosition += FOV)
         {
-            int arrayIndex = abs(servoPosition) / FOV;
-            if (isFirstReading[arrayIndex] || savedDistances[arrayIndex] == Limit_distance)
-            {
-                // If it's the first reading, just return the new distance
-                savedDistances[arrayIndex] = distance;
-            }
-            else
-            {
-                // Otherwise, calculate the new average
-                savedDistances[arrayIndex] = savedDistances[arrayIndex] + distance / 2.0;
-            }
-            isFirstReading[arrayIndex] = false;
+            tilt_servo.write(tilt_servoPosition);
+            delay(50); // Wait for stabilization
 
-            // Convert valid polar coordinates to Cartesian and store in the array
-            points[numPoints] = polarToCartesian(servoPosition, savedDistances[arrayIndex]);
-            // print_position_distance(arrayIndex, servoPosition, savedDistances[arrayIndex]);
+            int distance = get_distance();
+            if (distance > 0)
+            {
+                int pan_index = abs(pan_servoPosition) / FOV; // Adjust index for pan angle
+                int tilt_index = tilt_servoPosition / FOV;    // Index for tilt angle
 
-            numPoints++; // Increment the number of points
+                if (isFirstReading[pan_index][tilt_index][0] || savedDistances[pan_index][tilt_index][0] == Limit_distance)
+                {
+                    // If it's the first reading, update with the new distance
+                    savedDistances[pan_index][tilt_index][0] = distance;
+                }
+                else
+                {
+                    // Otherwise, calculate the new average
+                    savedDistances[pan_index][tilt_index][0] = (savedDistances[pan_index][tilt_index][0] + distance) / 2.0;
+                }
+                isFirstReading[pan_index][tilt_index][0] = false;
+
+                // Convert valid polar coordinates to Cartesian and store in the array
+                // Note: Modify sphericalToCartesian function to accept distance as a parameter
+                points[numPoints] = sphericalToCartesian(pan_servoPosition, tilt_servoPosition, savedDistances[pan_index][tilt_index][0]);
+                // Print pan angle, tilt angle, distance, and 3D point coordinates
+                Serial.print("Pan Angle: ");
+                Serial.print(pan_servoPosition);
+                Serial.print(", Tilt Angle: ");
+                Serial.print(tilt_servoPosition);
+                Serial.print(", Distance: ");
+                Serial.print(distance);
+                Serial.print(", Point: (");
+                Serial.print(points[numPoints].x);
+                Serial.print(", ");
+                Serial.print(points[numPoints].y);
+                Serial.print(", ");
+                Serial.print(points[numPoints].z);
+                Serial.println(")");
+                numPoints++; // Increment the number of points
+            }
         }
         // Additional check to ensure the loop includes the end point
-        if (servoPosition == end_point)
+        if (pan_servoPosition == end_point)
         {
             break;
         }
@@ -280,17 +332,25 @@ void detect_objects_clustering(std::vector<ClusterInfo> &clusters)
 
 void resetData()
 {
+    // Loop through the pan and tilt steps for the 3D vectors
+    for (int pan = 0; pan < (pan_active_range / FOV) + 1; pan++)
+    {
+        for (int tilt = 0; tilt < (tilt_active_range / FOV) + 1; tilt++)
+        {
+            savedDistances[pan][tilt][0] = 0;
+            isFirstReading[pan][tilt][0] = true;
+        }
+    }
+
+    // Reset the points array
     for (int i = 0; i < MAX_POINTS; i++)
     {
-        savedDistances[i] = 0;
-        isFirstReading[i] = true;
-        // Reset the points array
-        points[i] = Point();
+        points[i] = Point(); // Reset each point (assuming default constructor sets it to a default state)
+        // Assuming Point3D structure has these properties
         points[i].clusterId = UNCLASSIFIED;
         points[i].visited = false;
     }
 }
-
 void print_position_distance(int arrayIndex, int servoPosition, int distance_value)
 {
     Serial.print("arrayIndex");
@@ -320,22 +380,31 @@ void reorderPointsForConsistentProcessing()
 ------------------Set the point in 2D plan -----------------
 ------------------------------------------------------------
 */
-Point polarToCartesian(int servo_angle, float distance)
+Point sphericalToCartesian(int pan_angle, int tilt_angle, float distance)
 {
     Point p;
-    p.angle = servo_angle;
-    double radian = static_cast<float>(servo_angle) * PI / 180.0f;
-    p.x = distance * cos(radian);
-    p.y = distance * sin(radian);
+    p.pan_angle = pan_angle;
+    p.tilt_angle = tilt_angle;
+    float theta = static_cast<float>(pan_angle) * PI / 180.0f; // Pan angle, horizontal rotation
+    float phi = static_cast<float>(tilt_angle) * PI / 180.0f;  // Tilt angle, vertical rotation
+    p.x = distance * sin(phi) * cos(theta);
+    p.y = distance * sin(phi) * sin(theta);
+    p.z = distance * cos(phi);
+
     return p;
 }
 
 // Function to calculate Euclidean distance between two points
 float calculateDistance(const Point &p1, const Point &p2)
 {
-    float distanceDiff = sqrt(pow(p1.x - p2.x, 2) + pow(p1.y - p2.y, 2)); // Euclidean distance
-    float angleDiff = fabs(p1.angle - p2.angle);                          // Absolute difference in angles
-    return distanceDiff + angleWeight * angleDiff;                        // Combine using a weight factor
+    float distanceDiff = sqrt(pow(p1.x - p2.x, 2) + pow(p1.y - p2.y, 2) + pow(p1.z - p2.z, 2)); // Euclidean distance in 3D
+                                                                                                // Euclidean distance
+    // Calculate absolute differences in pan and tilt angles
+    float panAngleDiff = fabs(p1.pan_angle - p2.pan_angle);
+    float tiltAngleDiff = fabs(p1.tilt_angle - p2.tilt_angle);
+
+    // Combine position and orientation differences using weight factors
+    return distanceDiff + angleWeight * (panAngleDiff + tiltAngleDiff);
 }
 
 /*
@@ -843,14 +912,22 @@ void gather_clusters_info(std::vector<ClusterInfo> &clusters)
             clusterData[clusterId].sumX += points[i].x;
             clusterData[clusterId].sumY += points[i].y;
             clusterData[clusterId].count++;
-            // Check for minimum distance
-            if (savedDistances[i] < clusterData[clusterId].minDistance && savedDistances[i] != 0)
+            // Calculate indices for savedDistances
+            int pan_index = (points[i].pan_angle + 180) / FOV;
+            int tilt_index = points[i].tilt_angle / FOV;
+
+            // Check if indices are within the range
+            if (pan_index >= 0 && pan_index < pan_steps && tilt_index >= 0 && tilt_index < tilt_steps)
             {
+                int distance = savedDistances[pan_index][tilt_index][0];
 
-                clusterData[clusterId].minDistance = savedDistances[i];
-                clusterData[clusterId].minDistancePointIndex = i;
+                // Check for minimum distance
+                if (distance < clusterData[clusterId].minDistance && distance != 0)
+                {
+                    clusterData[clusterId].minDistance = distance;
+                    clusterData[clusterId].minDistancePointIndex = i;
+                }
             }
-
             // Check for core point (based on number of neighbors)
             int neighbors[MAX_POINTS];
             int numNeighbors = 0;
@@ -863,10 +940,18 @@ void gather_clusters_info(std::vector<ClusterInfo> &clusters)
                     clusterData[clusterId].corePointIndex = i;
                     clusterData[clusterId].corePointNumNeighbors = numNeighbors;
 
-                    // Retrieve and store the distance of the core point
-                    if (i < savedDistances.size())
+                    int corePointIndex = clusterData[clusterId].corePointIndex;
+                    if (corePointIndex >= 0 && corePointIndex < numPoints)
                     {
-                        clusterData[clusterId].corePointDistance = savedDistances[i];
+                        // Calculate indices for savedDistances
+                        int pan_index = (points[corePointIndex].pan_angle + 180) / FOV;
+                        int tilt_index = points[corePointIndex].tilt_angle / FOV;
+
+                        // Check if indices are within the range
+                        if (pan_index >= 0 && pan_index < pan_steps && tilt_index >= 0 && tilt_index < tilt_steps)
+                        {
+                            clusterData[clusterId].corePointDistance = savedDistances[pan_index][tilt_index][0];
+                        }
                     }
                 }
             }

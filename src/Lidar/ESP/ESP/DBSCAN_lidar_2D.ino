@@ -63,10 +63,10 @@ struct ClusterInfo
 };
 
 /* ---------- TOPSIS parameters ---------- */
-float weightCorePointDistance = 0.31;
-float weightNumberOfPoints = 0.09;
-float weightMinDistance = 0.1;
-float weightCenterDistance = 0.5;
+float weightCorePointDistance = 0.35 + 0.35;
+float weightNumberOfPoints = 0.05;
+float weightMinDistance = 0.3;
+float weightCenterDistance = 0;
 
 // First merge between 2 sweeps
 const float scoreMergeThreshold = 0.05; // Define a threshold for merging clusters based on TOPSIS score similarity
@@ -74,10 +74,10 @@ const float distanceMergeThreshold = 200;
 // Second merge of the result of first one for general view of objects
 const float PostMergeTOPSIS_scoreThreshold = 0.02;
 const float PostMergeTOPSIS_distanceThreshold = 100;
-float globalMaxCorePointDistance = FLT_MIN;
-float globalMaxNumberOfPoints = FLT_MIN;
-float globalMaxCenterDistance = FLT_MIN;
-float globalMaxMinDistance = FLT_MIN;
+float globalMaxCorePointDistance = 0;
+float globalMaxNumberOfPoints = 0;
+float globalMaxCenterDistance = 0;
+float globalMaxMinDistance = Limit_distance;
 
 /* ----------  K-distance to define espsilon of DBSCAN parameters ---------- */
 const int K = minPoints;
