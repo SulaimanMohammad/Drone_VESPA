@@ -1,5 +1,7 @@
 #bash
 
+
+
 # Set the text color to green
 echo -e "\033[32m ------ Upgrade system  ------ \033[0m"
 # Update and upgrade system packages
@@ -140,6 +142,7 @@ pip install adafruit-circuitpython-vl53l4cd
 sudo raspi-config nonint do_i2c 0   # Enable I2C 
 
 echo -e "\033[32m ------Configure Drone_VESPA.git ------ \033[0m"
+./setup_drone_info
 ./update_repo.sh
 
 echo "Installation and configuration complete. Time to REBOOT"

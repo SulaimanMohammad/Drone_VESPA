@@ -51,38 +51,3 @@ elif [ $LOCAL = $BASE ]; then
 else
     echo "Diverged"
 fi
-
-cd /home/$PI_DRONE_DIR/Drone_VESPA/
-# Check if the "log" directory exists
-if [ ! -d "mission_log" ]; then
-  mkdir mission_log
-  sudo chown -R $USER mission_log
-fi
-
-# Set the id of the drone 
-id_username=$(whoami)
-# Name of file where the id is set 
-output_file="/home/$PI_DRONE_DIR/Drone_VESPA/src/Operational_Data.txt"
-# Get just the filename from the output_file path
-output_filename=$(basename "$output_file")
-# Extract the number after "pi-drone"
-if [[ $id_username =~ pi-drone([0-9]+) ]]; then
-  number=${BASH_REMATCH[1]}
-else
-  number=""
-fi
-# Check if a number was found
-if [ -n "$number" ]; then
-  # Check if the file contains an "id=" line
-  if grep -q 'id=' "$output_file"; then
-    # Update the "id=" line with the new number
-    sed -i "s/id=[0-9]*/id=$number/" "$output_file"
-    echo "Updated id=$number in $output_filename"
-  else
-    # Append a new "id=" line to the file
-    echo "id=$number" >> "$output_file"
-    echo "Appended id=$number to $output_filename"
-  fi
-else
-  echo "No id found"
-fi
