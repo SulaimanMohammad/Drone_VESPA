@@ -6,7 +6,7 @@
 
 # Define the path of the file
 FILE_PATH="../src/Operational_Data.txt"
-INO_PATH="../src/Lidar/ESP/DBSCAN_lidar_3D.ino"
+INO_PATH="../src/Lidar/ESP/Characterization.h"
 read_dimensions() {
     grep "$1=" $FILE_PATH | awk -F '=' '{print $2}'
 }
