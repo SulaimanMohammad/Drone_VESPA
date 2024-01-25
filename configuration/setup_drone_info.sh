@@ -78,7 +78,7 @@ echo "Updated argent_warning_distance to $argent_warning_distance in ESP code"
 #------------------------------------------
 #------------ set id of drone -------------
 #------------------------------------------
-PI_DRONE_DIR=$(ls /home | grep pi-drone)
+PI_DRONE_DIR=$(ls /home | grep drone)
 cd /home/$PI_DRONE_DIR/Drone_VESPA/
 # Check if the "log" directory exists
 if [ ! -d "mission_log" ]; then
@@ -93,7 +93,7 @@ output_file="/home/$PI_DRONE_DIR/Drone_VESPA/src/Operational_Data.txt"
 # Get just the filename from the output_file path
 output_filename=$(basename "$output_file")
 # Extract the number after "pi-drone"
-if [[ $id_username =~ pi-drone([0-9]+) ]]; then
+if [[ $id_username =~ drone([0-9]+) ]]; then
   number=${BASH_REMATCH[1]}
 else
   number=""

@@ -2,7 +2,7 @@
 
 REPO_URL="https://github.com/SulaimanMohammad/Drone_VESPA.git"
 # find the name of the RP 
-PI_DRONE_DIR=$(ls /home | grep pi-drone)
+PI_DRONE_DIR=$(ls /home | grep drone)
 CLONE_PATH="/home/$PI_DRONE_DIR/Drone_VESPA"
 
 
@@ -14,7 +14,7 @@ cd  /home/$PI_DRONE_DIR/
 BRANCH_NAME=${1:-"main"}
 
 # Navigate to the directory where your repository is located
-cd /home/pi-$PI_DRONE_DIR/Drone_VESPA
+cd /home/$PI_DRONE_DIR/Drone_VESPA
 
 # Check if the repository is already cloned
 if [ ! -d "$CLONE_PATH" ]; then
