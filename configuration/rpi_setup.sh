@@ -1,6 +1,6 @@
 #bash
-
-
+echo -e "\033[32m ------Configure Drone_VESPA parameters ------ \033[0m"
+./setup_drone_info.sh
 
 # Set the text color to green
 echo -e "\033[32m ------ Upgrade system  ------ \033[0m"
@@ -51,15 +51,16 @@ echo -e "\033[32m ------ Install git ------ \033[0m"
 sudo apt-get install -y git
 
 echo -e "\033[32m ------ Set the serial comm for the drone ------ \033[0m"
-# Run raspi-config in non-interactive mode to configure Serial UART
+# Run raspi-config in interactive mode to configure Serial UART
 # Enable Serial Port hardware
-sudo raspi-config nonint do_serial 1
+# sudo raspi-config nonint do_serial 1
 # Disable login shell over serial port
-sudo raspi-config nonint do_serial_login 1
+#sudo raspi-config nonint do_serial_login 1
 
+# Disable login shell over serial port in cmdline over the shell 
 sudo sed -i 's/console=serial0,[0-9]* //g' /boot/cmdline.txt
 
-# Modify /boot/config.txt
+# Enable Serial Port hardware by modifying /boot/config.txt
 # Check if enable_uart=0 exists
 if grep -q "enable_uart=0" /boot/config.txt; then
     # If exists, replace it with enable_uart=1
@@ -133,16 +134,15 @@ pip install pigpio
 sudo systemctl enable pigpiod
 sudo systemctl start pigpiod
 
-echo -e "\033[32m ------ Install Time of Flight Micro-LIDAR Distance software ------ \033[0m"
-pip install board
-pip install adafruit-circuitpython-bundle
-pip install adafruit-blinka
+echo -e "\033[32m ------ Install Time of Flight LIDAR Distance software ------ \033[0m"
+# pip install board
+# pip install adafruit-circuitpython-bundle
+# pip install adafruit-blinka
 sudo apt-get install i2c-tools
-pip install adafruit-circuitpython-vl53l4cd
+# pip install adafruit-circuitpython-vl53l4cd
 sudo raspi-config nonint do_i2c 0   # Enable I2C 
 
 echo -e "\033[32m ------Configure Drone_VESPA.git ------ \033[0m"
-./setup_drone_info
 ./update_repo.sh
 
 echo "Installation and configuration complete. Time to REBOOT"
