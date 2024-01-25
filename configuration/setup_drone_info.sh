@@ -24,6 +24,7 @@ color_echo() {
 }
 
 # Ask the user to confirm the dimensions
+echo " "
 echo -n "Are your drone dimensions as follows? "
 color_echo "1;34" "Length: $drone_length, Width: $drone_width, Height: ${drone_height} cm\n"
 color_echo "0;33" "Do you want to change dimensions? [yes/no] "
@@ -65,18 +66,19 @@ esac
 x=$(echo "$drone_width $drone_length" | awk '{print ($1>$2)?$1:$2}')
 
 # Calculate argent_warning_distance
-argent_warning_distance=$(echo "$x * 1.5" | bc | awk '{print int($1+0.5)}')
+argent_warning_distance=$(awk -v x="$x" 'BEGIN{print int(x * 1.5 + 0.5)}')
+#argent_warning_distance=$(echo "$x * 1.5" | bc | awk '{print int($1+0.5)}') // Only if bc is installed
 
 # Update the value in DBSCAN_lidar_3D.ino
 sed -i "s/#define argent_warning_distance .*/#define argent_warning_distance $argent_warning_distance/" $INO_PATH
 
-echo "Updated argent_warning_distance to $argent_warning_distance in DBSCAN_lidar_3D.ino"
+echo "Updated argent_warning_distance to $argent_warning_distance in ESP code"
 
 
 #------------------------------------------
 #------------ set id of drone -------------
 #------------------------------------------
-
+PI_DRONE_DIR=$(ls /home | grep pi-drone)
 cd /home/$PI_DRONE_DIR/Drone_VESPA/
 # Check if the "log" directory exists
 if [ ! -d "mission_log" ]; then
