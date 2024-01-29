@@ -528,19 +528,24 @@ class Drone:
         if self.state != Owner:
             if self.spot["drones_in"]==1: # the drone is alone 
                 self.change_state_to (Owner)
-
             # Many drone on the spot but non is owner( if drones arrived to same spot at same time)
             # Leader election with min id is chosen as owner 
             elif self.spot["drones_in"]>1:
-                all_free = all(state == Free for state in self.spot["states"])
-                if all_free: 
-                   min_id = min(self.spot["drones_in_id"])
-                   # current drone is chosen
-                   if  min_id == self.id:
-                       self.change_state_to (Owner)
-                   else:
-                    min_id_index = self.spot["drones_in_id"].index(min_id)
-                    self.spot["states"][min_id_index] = Owner
+                # Check if there is  owner or (irremovable or border because they are considered as owner) then it can not be owner of spot 
+                non_free = all(state != Free for state in self.spot["states"])
+                if non_free==0: # Only free there
+                    all_free = all(state == Free for state in self.spot["states"])
+                    if all_free:
+                        min_id = min(self.spot["drones_in_id"])
+                        print ( "\n chosed from many in same point:")
+                        print( min_id)
+                        # current drone is chosen
+                        if  min_id == self.id:
+                            self.change_state_to (Owner)
+                        else:
+                            min_id_index = self.spot["drones_in_id"].index(min_id)
+                            self.spot["states"][min_id_index] = Owner
+
     
     def correct_states_after_comm(self):
         # If another spot contains only one drone but did not change yet it is state then do it here 
