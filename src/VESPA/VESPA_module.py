@@ -402,7 +402,7 @@ class Drone:
         self.distance_from_sink=self.spot["distance"] # where spot is the data of s0 the current position
 
 
-    def rearrange_neighbor_statically_upon_movement(self,move_to_spot):
+    def rearrange_neighbor_statically_upon_movement(self,moveTOspot):
         moving_drone_id=self.id
         # Define the movement rules
         movement_rules = {
@@ -418,11 +418,11 @@ class Drone:
         spot_lookup = {spot['name']: spot for spot in self.neighbor_list}
 
         # Empty the specified spots
-        for spot_name in movement_rules[move_to_spot]['empty']:
+        for spot_name in movement_rules[moveTOspot]['empty']:
             spot_lookup[spot_name].update({'drones_in': 0, 'drones_in_id': [], 'states': [], 'previous_state': []})
 
         # Move the drones based on movement rules, excluding the 'empty' key
-        for spot_name, new_spot_name in {k: v for k, v in movement_rules[move_to_spot].items() if k != 'empty'}.items():
+        for spot_name, new_spot_name in {k: v for k, v in movement_rules[moveTOspot].items() if k != 'empty'}.items():
             spot = spot_lookup[spot_name]
             new_spot = spot_lookup[new_spot_name]
 
@@ -527,16 +527,32 @@ class Drone:
 
     def check_Ownership(self):
         if self.state != Owner:
-            if self.spot["drones_in"]==1: # the drone is Owner
+            if self.spot["drones_in"]==1: # the drone is alone 
                 self.change_state_to (Owner)
+
+            # Many drone on the spot but non is owner( if drones arrived to same spot at same time)
+            # Leader election with min id is chosen as owner 
+            elif self.spot["drones_in"]>1:
+                all_free = all(state == Free for state in self.spot["states"])
+                if all_free: 
+                   min_id = min(self.spot["drones_in_id"])
+                   # current drone is chosen
+                   if  min_id == self.id:
+                       self.change_state_to (Owner)
+                   else:
+                    min_id_index = self.spot["drones_in_id"].index(min_id)
+                    self.spot["states"][min_id_index] = Owner
     
     def correct_states_after_comm(self):
+        # If another spot contains only one drone but did not change yet it is state then do it here 
+        # That can happen if the drone is still in movement and did not arrive yet but its corrdiantes were set to destination 
         for s in self.neighbor_list[1:]: 
             if s["drones_in"]==1:
                 for i, state in enumerate (s["states"]):
                     if state != Owner:
                         s["states"][i]=Owner
-                        s["previous_state"][i]=Free
+                        s["previous_state"][i]=Free 
+
                     
     def update_rec_candidate(self, new_rec_candidate):
         # Update without duplicates
@@ -637,7 +653,7 @@ class Drone:
     def convert_spot_angle_distance(self, dir):
         return DIR_VECTORS[dir][0], DIR_VECTORS[dir][1]
 
-    def find_relative_spot(self, x, y, tolerance=1):
+    def find_relative_spot(self, x, y, tolerance=0.5):
         # Calculate the difference
         dx = x - self.positionX
         dy = y - self.positionY
