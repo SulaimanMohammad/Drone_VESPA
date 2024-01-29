@@ -402,7 +402,7 @@ class Drone:
         self.distance_from_sink=self.spot["distance"] # where spot is the data of s0 the current position
 
 
-    def rearrange_neighbor_statically_upon_movement(self,move_to_spot):
+    def rearrange_neighbor_statically_upon_movement(self,move_spot):
         moving_drone_id=self.id
         # Define the movement rules
         movement_rules = {
@@ -418,11 +418,11 @@ class Drone:
         spot_lookup = {spot['name']: spot for spot in self.neighbor_list}
 
         # Empty the specified spots
-        for spot_name in movement_rules[move_to_spot]['empty']:
+        for spot_name in movement_rules[move_spot]['empty']:
             spot_lookup[spot_name].update({'drones_in': 0, 'drones_in_id': [], 'states': [], 'previous_state': []})
 
         # Move the drones based on movement rules, excluding the 'empty' key
-        for spot_name, new_spot_name in {k: v for k, v in movement_rules[move_to_spot].items() if k != 'empty'}.items():
+        for spot_name, new_spot_name in {k: v for k, v in movement_rules[move_spot].items() if k != 'empty'}.items():
             spot = spot_lookup[spot_name]
             new_spot = spot_lookup[new_spot_name]
 
@@ -529,8 +529,23 @@ class Drone:
         if self.state != Owner:
             if self.spot["drones_in"]==1: # the drone is Owner
                 self.change_state_to (Owner)
-    
+            elif self.spot["drones_in"]>1:
+                all_free = all(state == Free for state in self.spot["states"])
+                if all_free: 
+                   min_id = min(self.spot["drones_in_id"])
+                   print ( "\n chosed from many in same point:")
+                   print( min_id)
+                   # current drone is chosen
+                   if  min_id == self.id:
+                       self.change_state_to (Owner)
+                   else:
+                    min_id_index = self.spot["drones_in_id"].index(min_id)
+                    self.spot["states"][min_id_index] = Owner
+
+
     def correct_states_after_comm(self):
+        # If another spot contains only one drone but did not change yet it is state then do it here 
+        # That can happen if the drone is still in movement and did not arrive yet but its corrdiantes were set to destination 
         for s in self.neighbor_list[1:]: 
             if s["drones_in"]==1:
                 for i, state in enumerate (s["states"]):
@@ -637,7 +652,7 @@ class Drone:
     def convert_spot_angle_distance(self, dir):
         return DIR_VECTORS[dir][0], DIR_VECTORS[dir][1]
 
-    def find_relative_spot(self, x, y, tolerance=1):
+    def find_relative_spot(self, x, y, tolerance=0.5):
         # Calculate the difference
         dx = x - self.positionX
         dy = y - self.positionY
@@ -648,6 +663,7 @@ class Drone:
         return -1
 
     def move_to_spot(self,vehicle, destination_spot):
+        self.update_location(destination_spot)
         set_to_move(vehicle)
         self.direction_taken.append( destination_spot)
         angle, distance = self.convert_spot_angle_distance(destination_spot)
@@ -657,15 +673,12 @@ class Drone:
             print(f"An error occurred: {str(e)}")
             vehicle.mode = VehicleMode ("RTL")
             vehicle.close()
-        self.update_location(destination_spot)
-        clear_buffer() # need to clear the bufer from message received on the road
-        # Arrive to steady state and hover then start observing the location
         hover(vehicle)
 
     def manage_xbee_while_movement(self):
         while self.in_movement.is_set():           
             time.sleep(0.01)
-        clear_buffer()
+        #clear_buffer()
 
 
     def search_for_target(self): # find if there is target in the area or not

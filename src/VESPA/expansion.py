@@ -81,8 +81,8 @@ def expansion_listener (self):
     while check_continuity_of_listening(self):
         #self.manage_xbee_while_movement()
 
+        
         msg= retrieve_msg_from_buffer(self.Forming_Border_Broadcast_REC)
-
         self.exchange_neighbors_info_communication(msg)
 
         if msg.startswith(Movement_command.encode()) and msg.endswith("\n"):
@@ -147,7 +147,7 @@ def find_priority(self):
     return int(spot_to_go[0][1:])
 
 def neighbors_election(self):
-    id_free = [id for id, state in zip(self.spot["drones_in_id"], self.spot["states"]) if state == Free]
+    id_free = [id for id, state in zip(self.spot["drones_in_id"], self.spot["states"]) if state == Free] #only free whill be consider in the election 
     return min(id_free) # return the min id of a drone is in state Free
 
 def sink_movement_command(self,vehicle,id):
@@ -300,7 +300,7 @@ def expand_and_form_border_try(self):
                 self.direction_taken.append( self.destination_spot)
                 self.update_location(self.destination_spot)
                 self.in_movement.set()
-                time.sleep(5)
+                time.sleep(8)
                 self.in_movement.clear()
                 print("arrived from main")
                 # After move_to_spot retuen it means arrivale 
@@ -331,9 +331,10 @@ def expand_and_form_border_try(self):
             all(neighbor['drones_in'] > 0 for neighbor in self.neighbor_list)):
         # Before initiating the border procedure, it's important to wait for some time to ensures that the drone is alone in its spot.
         # This step eliminates the possibility of erroneously considering a drone as a border-candidate when another drone in the same spot is about to move.
-        time.sleep(2)
+        time.sleep(1)
         print(" waiting to check for border")
         spatial_observation(self)
+        print( " finished observing")
         for station in self.neighbor_list:
             if station['drones_in'] > 0:
                 print(station)
@@ -351,7 +352,7 @@ def expand_and_form_border_try(self):
     print("end ")
 
 def expand_and_form_border(self,vehicle):
-    spatial_observation(self)
+    spatial_observation(self) 
     while self.state !=Owner:
         set_priorities(self)
         destination_spot= find_priority(self)
@@ -362,6 +363,7 @@ def expand_and_form_border(self,vehicle):
                 self.move_to_spot(vehicle, destination_spot)
                 # After move_to_spot retuen it means arrivale 
                 self.manage_xbee_while_movement()
+                # that means upon each movement there will be message sent , even if there are 2 drones on free and one owner then the one moves will send the message 
                 movement_done_msg= build_expan_elected(self.id)
                 send_msg(movement_done_msg)
         else:
