@@ -14,7 +14,7 @@ eps=20
 multiplier = 100
 sync_time= 10
 scanning_time= 10
-exchange_data_latency=2
+exchange_data_latency=1
 # movement_time= a*speed_of_drone*(1+ 0.2)  # add 20% of time for safty
 
 # Xbee variables

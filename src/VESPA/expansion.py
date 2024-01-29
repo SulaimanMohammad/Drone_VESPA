@@ -147,6 +147,7 @@ def find_priority(self):
     return int(spot_to_go[0][1:])
 
 def neighbors_election(self):
+    # Only free whil be consider in the election 
     id_free = [id for id, state in zip(self.spot["drones_in_id"], self.spot["states"]) if state == Free]
     return min(id_free) # return the min id of a drone is in state Free
 
@@ -296,7 +297,7 @@ def expand_and_form_border(self,vehicle):
     Forme_border(self)# will not return until the drones receive boradcast of forming border
     
     # Save the spots they are unoccupied to dont back behind border in the next expansion
-    if self.state==Border:
+    if self.state==Border or self.state==Irremovable_boarder:
         save_unoccupied_spots_around_border(self)     
 
     # Time guarantees that all drones begin the searching procedure simultaneously and synchronized.
