@@ -106,7 +106,6 @@ def border_broadcast_respond(self, candidate):
 def form_border_one_direction(self,header,msg):
 
     sender_id, target_ids, candidate= decode_border_message(msg)
-    check_border_candidate_eligibility(self)
     print("sender_id, target_ids, candidate, elg",sender_id, target_ids, candidate, self.border_candidate )
     if sender_id in target_ids:
         self.forming_border_msg_recived.set()
@@ -121,6 +120,7 @@ def form_border_one_direction(self,header,msg):
         if self.id == candidate:
             circle_completed(self)
         else: 
+            check_border_candidate_eligibility(self)
             if self.border_candidate == True:
                 if candidate not in self.rec_candidate:
                     self.rec_candidate.append(candidate)
@@ -155,6 +155,14 @@ def check_border_candidate_eligibility(self):
     if self.state != Owner:
         self.border_candidate=False
         return self.border_candidate
+    start_time = time.time()
+
+    self.demand_neighbors_info() # return after gathering all info
+    self.correct_states_after_comm()
+    self.check_Ownership()
+    end_time = time.time()
+    elapsed_time = end_time - start_time
+    print(f"Elapsed time: {elapsed_time} seconds")
     
     self.border_candidate=False
     self.dominated_direction= count_element_occurrences(self)
