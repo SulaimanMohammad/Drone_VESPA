@@ -293,7 +293,8 @@ def expand_and_form_border(self,vehicle):
         This step eliminates the possibility of erroneously considering a drone as a border-candidate when another drone in the same spot is about to move.
         '''
         time.sleep(sync_time)
-        spatial_observation(self)
+        self.demand_neighbors_info() # return after gathering all info
+        self.correct_states_after_comm()
 
     Forme_border(self)# will not return until the drones receive boradcast of forming border
     
