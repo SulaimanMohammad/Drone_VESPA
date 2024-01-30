@@ -105,8 +105,11 @@ def expansion_listener (self):
         #     handel_inheritence_message(self, msg)
             
         elif msg.startswith(Forming_border_header.encode()) and msg.endswith(b'\n'): # message starts with F end with \n
+            # while self.in_movement.is_set():
+            #     time.sleep(0.01)
+            #if self.state==Owner:  
             form_border_one_direction(self,Forming_border_header,msg)
-            #form_border_two_direction(self,Forming_border_header,msg)
+                #form_border_two_direction(self,Forming_border_header,msg)
                         
 '''
 -------------------------------------------------------------------------------------
@@ -327,10 +330,19 @@ def expand_and_form_border_try(self):
     send_msg(self.build_spot_info_message(Response_header))
             
     # check also that noelectin message around 
-    while self.spot['drones_in']>1 or (not (all(neighbor['drones_in'] in [0, 1] for neighbor in self.neighbor_list) ) or
-            all(neighbor['drones_in'] > 0 for neighbor in self.neighbor_list)):
+    while self.spot['drones_in']>1 and ( (all(neighbor['drones_in'] in [0, 1] for neighbor in self.neighbor_list) )):
         # Before initiating the border procedure, it's important to wait for some time to ensures that the drone is alone in its spot.
         # This step eliminates the possibility of erroneously considering a drone as a border-candidate when another drone in the same spot is about to move.
+        '''
+        The loop continues as long as any of these conditions are true:
+
+        The current spot has more than one drone: so it is not alone and one of the drone will populate one of the neigbor spot so ait for that to consider border cndidiate 
+        Any neighbor has more than one drone: oso the neigbor has many and some will move and occupy a spot around wait this before check the border  
+        All neighbors have at least one drone
+        '''
+        
+        
+        
         time.sleep(1)
         print(" waiting to check for border")
         spatial_observation(self)
