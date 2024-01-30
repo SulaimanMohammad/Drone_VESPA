@@ -79,7 +79,6 @@ def expansion_listener (self):
     self.Forming_Border_Broadcast_REC = threading.Event()
 
     while check_continuity_of_listening(self):
-        #self.manage_xbee_while_movement()
 
         msg= retrieve_msg_from_buffer(self.Forming_Border_Broadcast_REC)
 
@@ -275,7 +274,6 @@ def expand_and_form_border(self,vehicle):
                 print ("go to S", destination_spot)
                 self.move_to_spot(vehicle, destination_spot)
                 # After move_to_spot retuen it means arrivale 
-                self.manage_xbee_while_movement()
                 movement_done_msg= build_expan_elected(self.id)
                 send_msg(movement_done_msg)
         else:
@@ -286,13 +284,16 @@ def expand_and_form_border(self,vehicle):
 
         print("checking for update the state")
         spatial_observation(self)
-        
-    while not (all(neighbor['drones_in'] in [0, 1] for neighbor in self.neighbor_list) or
-               all(neighbor['drones_in'] > 0 for neighbor in self.neighbor_list)):
-        # Before initiating the border procedure, it's important to wait for some time to ensures that the drone is alone in its spot.
-        # This step eliminates the possibility of erroneously considering a drone as a border-candidate when another drone in the same spot is about to move.
+    
+    while self.spot['drones_in']>1 and (not(all(neighbor['drones_in'] in [0, 1] for neighbor in self.neighbor_list) )):
+        ''' 
+        Before initiating the border procedure, it's important to wait for some time to ensures that the drone is alone in its spot.
+        Also wait until all neighbor contains one drone (owner) or empty, in case many are in neighbor spot that would cause change in distrbution becaue 
+        of movemnt and the one that moves can be part of the new border so it is better to wait 
+        This step eliminates the possibility of erroneously considering a drone as a border-candidate when another drone in the same spot is about to move.
+        '''
         time.sleep(sync_time)
-        self.demand_neighbors_info()
+        spatial_observation(self)
 
     Forme_border(self)# will not return until the drones receive boradcast of forming border
     
