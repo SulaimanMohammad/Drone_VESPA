@@ -330,7 +330,7 @@ def expand_and_form_border_try(self):
     send_msg(self.build_spot_info_message(Response_header))
             
     # check also that noelectin message around 
-    while self.spot['drones_in']>1 and ( (all(neighbor['drones_in'] in [0, 1] for neighbor in self.neighbor_list) )):
+    while self.spot['drones_in']>1 and (not(all(neighbor['drones_in'] in [0, 1] for neighbor in self.neighbor_list) )):
         # Before initiating the border procedure, it's important to wait for some time to ensures that the drone is alone in its spot.
         # This step eliminates the possibility of erroneously considering a drone as a border-candidate when another drone in the same spot is about to move.
         '''
