@@ -84,13 +84,10 @@ def append_id_to_path(list_to_append, ids):
             list_to_append.append(id)
 
 def path_around_exist(self):
-    with self.lock_neighbor_list:
-        neighbor_list_no_s0= self.neighbor_list[1:]
 
-    filtered_neighbors = [neighbor for neighbor in neighbor_list_no_s0 if neighbor["drones_in"] > 0]
+    filtered_neighbors = [neighbor for neighbor in self.get_neighbor_list()[1:] if neighbor["drones_in"] > 0]
     
     if filtered_neighbors is not None:  # There are occupied neighbors
-        with self.lock_neighbor_list:
             neighbor_irremovable = next((neighbor for neighbor in filtered_neighbors if ( neighbor['states'] == Irremovable) ), None)
     if neighbor_irremovable>0:
         return True
@@ -320,15 +317,13 @@ def find_close_neigboor_2sink(self):
 
     # The search should be only in the neighbor_list but since it contains also the data of s0 (current spot)
     # But because we need to find min of occupied distance, we should remove the s0 from the list 
-    with self.lock_neighbor_list:
-        neighbor_list_no_s0= self.neighbor_list[1:]
 
     # Sort the neighbor_list based on the distance
-    reference_distance = self.neighbor_list[0]['distance']
+    reference_distance = self.get_neighbor_list()[0]['distance']
 
     # Filter neighbors with distance from sink less than current spot and sort them
     sorted_neighbors = sorted(
-    [neighbor for neighbor in neighbor_list_no_s0 if neighbor['distance'] < reference_distance],
+    [neighbor for neighbor in self.get_neighbor_list()[1:] if neighbor['distance'] < reference_distance],
     key=lambda x: x['distance'])
     
     # Extract the first 3 elements with the minimum distances
@@ -340,10 +335,8 @@ def find_close_neigboor_2sink(self):
     if filtered_neighbors is not None:  # There are occupied neighbors
         # Find the neighbor with id of the drone that is irremovable 
         # if you arrive to irremovable 
-        
-        with self.lock_neighbor_list:
-            # Here is changed because the filtered_neighbors is a list 
-            neighbor_irremovable = next((neighbor for neighbor in filtered_neighbors if Irremovable in neighbor['states']) , None)
+        # Here is changed because the filtered_neighbors is a list 
+        neighbor_irremovable = next((neighbor for neighbor in filtered_neighbors if Irremovable in neighbor['states']) , None)
         # No irremovable found 
         if neighbor_irremovable== None:
             return int((min(filtered_neighbors, key=lambda x: x["distance"])["drones_in_id"])[0]) # retuen the id of the drone 
@@ -354,8 +347,7 @@ def find_close_neigboor_2sink(self):
     else: 
         # The case of no occupied neighbors close to sink around is very possible after further expansion
         # Check if any of the neighbors drones are preivious border 
-        with self.lock_neighbor_list:
-            drone_previous_border = [neighbor for neighbor in self.neighbor_list if ( neighbor["drones_in"] > 0 and neighbor["previous_state"]== Border or neighbor["previous_state"]== Irremovable_boarder ) ] 
+        drone_previous_border = [neighbor for neighbor in self.get_neighbor_list() if ( neighbor["drones_in"] > 0 and neighbor["previous_state"]== Border or neighbor["previous_state"]== Irremovable_boarder ) ] 
         
         # If there are many drones had a state border befor chose the one closer to sink 
         if drone_previous_border>1: 
@@ -368,14 +360,11 @@ def find_close_neigboor_2sink(self):
 def find_close_neigboor_2border(self):
     neighbor_irremovable= None
     
-    with self.lock_neighbor_list:  
-        neighbor_list_no_s0= self.neighbor_list[1:]
-
-    reference_distance = self.neighbor_list[0]['distance']
+    reference_distance = self.get_neighbor_list()[0]['distance']
 
     # Filter neighbors with distance from sink bigger than current spot and sort them
     sorted_neighbors = sorted(
-    [neighbor for neighbor in neighbor_list_no_s0 if neighbor['distance'] > reference_distance],
+    [neighbor for neighbor in  self.get_neighbor_list()[1:] if neighbor['distance'] > reference_distance],
     key=lambda x: x['distance'])
     
     # Extract the first 3 elements with the max distances (close to the border)
@@ -387,8 +376,7 @@ def find_close_neigboor_2border(self):
     # Find the neighbor with drone that is irremovable or irremovable- border because 
     # if there is a irremovable or irremovable-border there is no need to send message
     # Here a mutex needed in this operation to read  the state
-    with self.lock_neighbor_list:     
-        neighbor_irremovable = next((neighbor for neighbor in filtered_neighbors if ( Irremovable in neighbor['states'] or Irremovable_boarder in neighbor['states']) ), None)
+    neighbor_irremovable = next((neighbor for neighbor in filtered_neighbors if ( Irremovable in neighbor['states'] or Irremovable_boarder in neighbor['states']) ), None)
 
     if neighbor_irremovable== None: # No irremovable found, check what is the closest to the sink
         return int((max(filtered_neighbors, key=lambda x: x["distance"])["drones_in_id"])[0]) # Retuen the id of the drone 

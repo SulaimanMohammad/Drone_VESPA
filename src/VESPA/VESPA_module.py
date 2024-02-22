@@ -392,12 +392,13 @@ class Drone:
         sqDx = (sq3 * self.positionX)
         aDx = ((2*sq3) * self.positionX)
         Dy= (self.positionY)
-        for s in self.neighbor_list:
-            formula = formula_dict.get(s["name"])
-            if formula:
-                distance = eval(formula, {'sqrt': sqrt, 'DxDy2': DxDy2, 'DxDy3a2': DxDy3a2, 'a': a, 'aDx': aDx, 'sqDx': sqDx, 'Dy': Dy})
-                s["distance"] = round(distance,2)
-        self.distance_from_sink=self.spot["distance"] # where spot is the data of s0 the current position
+        with self.lock_neighbor_list: # Writting need a lock 
+            for s in self.neighbor_list:
+                formula = formula_dict.get(s["name"])
+                if formula:
+                    distance = eval(formula, {'sqrt': sqrt, 'DxDy2': DxDy2, 'DxDy3a2': DxDy3a2, 'a': a, 'aDx': aDx, 'sqDx': sqDx, 'Dy': Dy})
+                    s["distance"] = round(distance,2)
+            self.distance_from_sink=self.spot["distance"] # where spot is the data of s0 the current position
 
 
     def rearrange_neighbor_statically_upon_movement(self,moveTOspot):
@@ -462,30 +463,30 @@ class Drone:
         source_spot = None
         drone_states = []
         drone_previous_state = []
+        with self.lock_neighbor_list:
+            # Find and update source spot
+            for spot in self.neighbor_list:
+                if elected_drone_id in spot['drones_in_id']:
+                    source_spot = spot
+                    drone_index = spot['drones_in_id'].index(elected_drone_id)
+                    drone_states = spot['states'][drone_index]
+                    drone_previous_state = spot['previous_state'][drone_index]
 
-        # Find and update source spot
-        for spot in self.neighbor_list:
-            if elected_drone_id in spot['drones_in_id']:
-                source_spot = spot
-                drone_index = spot['drones_in_id'].index(elected_drone_id)
-                drone_states = spot['states'][drone_index]
-                drone_previous_state = spot['previous_state'][drone_index]
+                    # Update source spot
+                    spot['drones_in'] -= 1
+                    spot['drones_in_id'].remove(elected_drone_id)
+                    del spot['states'][drone_index]
+                    del spot['previous_state'][drone_index]
+                    break
 
-                # Update source spot
-                spot['drones_in'] -= 1
-                spot['drones_in_id'].remove(elected_drone_id)
-                del spot['states'][drone_index]
-                del spot['previous_state'][drone_index]
-                break
-
-        # Update target spot
-        for spot in self.neighbor_list:
-            if spot['name'] == target_spot_name:
-                spot['drones_in'] += 1
-                spot['drones_in_id'].append(elected_drone_id)
-                spot['states'].append(drone_states)
-                spot['previous_state'].append(drone_previous_state)
-                break
+            # Update target spot
+            for spot in self.neighbor_list:
+                if spot['name'] == target_spot_name:
+                    spot['drones_in'] += 1
+                    spot['drones_in_id'].append(elected_drone_id)
+                    spot['states'].append(drone_states)
+                    spot['previous_state'].append(drone_previous_state)
+                    break
         self.check_Ownership()
         
     def update_xbee_range(self,new_a):
@@ -560,7 +561,7 @@ class Drone:
     def correct_states_after_comm(self):
         # If another spot contains only one drone but did not change yet it is state then do it here 
         # That can happen if the drone is still in movement and did not arrive yet but its corrdiantes were set to destination 
-        for s in self.neighbor_list[1:]: 
+        for s in self.get_neighbor_list()[1:]: 
             if s["drones_in"]==1:
                 for i, state in enumerate (s["states"]):
                     if state != Owner:

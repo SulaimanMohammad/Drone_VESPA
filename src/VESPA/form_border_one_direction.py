@@ -174,7 +174,7 @@ def check_border_candidate_eligibility(self):
     unoccupied_spots_counter = 0
     for check in self.spots_to_check_for_border:
         # Find the corresponding entry in neighbor_list by its name
-        neighbor = next((n for n in self.neighbor_list if n["name"] == "s" + str(check)), None)
+        neighbor = next((n for n in self.get_neighbor_list() if n["name"] == "s" + str(check)), None)
         if neighbor and (neighbor ["drones_in"] == 0 ): # spot also is not occupied
             unoccupied_spots_counter += 1
     if unoccupied_spots_counter>0 and self.spot ["drones_in"]==1 and self.get_state()==Owner: # At least one spot is empty so the drone can be part of the border
@@ -185,7 +185,7 @@ def check_border_candidate_eligibility(self):
     return self.border_candidate
 
 def choose_spot_right_handed(self):
-    neighbor_list_x = self.neighbor_list[1:]
+    neighbor_list_x = self.get_neighbor_list()[1:]
     n = len(neighbor_list_x)
     first_empty_index = None
     # Find the first empty zone
@@ -206,12 +206,12 @@ def choose_spot_right_handed(self):
 def create_target_list(self, header):
         target_ids=[]
         if header==Balance_header: # Targets are only the border ones
-            for s in self.neighbor_list:
+            for s in self.get_neighbor_list():
                 if 'border' in s['states']:
                     border_indices = [idx for idx, state in enumerate(s['states']) if state == 'border']
                     target_ids.extend([s['drones_in_id'][idx] for idx in border_indices])
         else:
-            for s in self.neighbor_list:
+            for s in self.get_neighbor_list():
                 target_ids.extend(s["drones_in_id"]) # add the id of all the niegbors including the current
         return target_ids
 

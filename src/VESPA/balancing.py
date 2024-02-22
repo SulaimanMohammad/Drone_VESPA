@@ -33,16 +33,14 @@ def decode_local_movement_message(message):
 
 def lead_local_balancing(self):
     No_free_drone=None 
-    with self.lock_neighbor_list:
-        # Extract the 'free' drone IDs in s0
-        s0 = next(spot for spot in self.neighbor_list if spot['name'] == 's0')
-        s0_free_ids = sorted([s0['drones_in_id'][idx] for idx, state in enumerate(s0['states']) if state == Free])
-        if s0_free_ids==0:
-           No_free_drone=1 
-        # List of neighbors without S0 
-        neighbor_list_no_s0= self.neighbor_list[1:]
-        # Identify all spot with the "border" state but out of the s0 ( the current spot)
-        border_spots = [spot for spot in  neighbor_list_no_s0 if Border or Irremovable_boarder in spot['states']]
+    # Extract the 'free' drone IDs in s0
+    s0 = next(spot for spot in self.self.get_neighbor_list() if spot['name'] == 's0')
+    s0_free_ids = sorted([s0['drones_in_id'][idx] for idx, state in enumerate(s0['states']) if state == Free])
+    if s0_free_ids==0:
+        No_free_drone=1 
+
+    # Identify all spot with the "border" state but out of the s0 ( the current spot),  List of neighbors without S0 
+    border_spots = [spot for spot in  self.get_neighbor_list()[1:] if Border or Irremovable_boarder in spot['states']]
     moves = []
     # For each "border" spot, calculate the difference in the number of "free" states with s0
     for spot in border_spots:
@@ -64,7 +62,7 @@ def lead_local_balancing(self):
 
 def build_shared_allowed_spots_message(self):
     # Extract data of S0 current spot
-    s0 = next(spot for spot in self.neighbor_list if spot['name'] == 's0')
+    s0 = next(spot for spot in  self.get_neighbor_list() if spot['name'] == 's0')
     # Create a list to store the IDs of drones with 'free' state in s0
     targets_id = [drone_id for drone_id, state in zip(s0['drones_in_id'], s0['states']) if state == Free]
     max_byte_count_targets = max(self.determine_max_byte_size(num) for num in targets_id)
@@ -251,7 +249,7 @@ def search_to_border(self):
     border_found=False
     
     #Find states with 'border'
-    border_states = [s for s in self.neighbor_list if 'border' in s['states']]
+    border_states = [s for s in self.get_neighbor_list() if 'border' in s['states']]
     
     # If only one border state is found
     if len(border_states) == 1:
@@ -274,7 +272,7 @@ def search_to_border(self):
     
     # If no border state is found, find the spot with the maximum distance (close to the border)
     else:
-        max_distance_spot = max(self.neighbor_list, key=lambda x: x['distance'])
+        max_distance_spot = max( self.get_neighbor_list(), key=lambda x: x['distance'])
         return border_found, int(max_distance_spot['name'][1:]) 
 
 def balancing(self, vehicle):

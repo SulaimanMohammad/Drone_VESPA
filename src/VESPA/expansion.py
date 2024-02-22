@@ -118,31 +118,33 @@ def spatial_observation(self):
     self.correct_states_after_comm()
     self.check_Ownership()
 
+# This called inside the lock so should not contain any lock or it will be dead
 def findMinDistances_niegboor(self):
     min_distance = min(self.neighbor_list, key=lambda x: x["distance"])["distance"]
     self.min_distance_dicts =[s["name"] for s in self.neighbor_list if s["distance"] == min_distance]
 
 def set_priorities(self):
-    denom= 4.0 * self.neighbor_list[0]["distance"] # 4*distance of s0 from sink
-    findMinDistances_niegboor(self)
-    for s in self.neighbor_list:
-        if  s["name"] not in self.allowed_spots:
-            if s["drones_in"] == 0 and denom !=0: # free spot
-                s["priority"]= s["distance"]* C /denom
-            else: # s is occupied
-                if s["name"] in self.min_distance_dicts: #close to sink
-                    s["priority"]= float("inf")
-                else: # random float between [w*c+eps, w+1*c[
-                    s["priority"]= random.uniform(s["drones_in"]* C + eps, (s["drones_in"]+1)*C)
-        else:
-            s["priority"]= float("inf")
+    with self.lock_neighbor_list: # Writing in the list should be locked 
+        denom= 4.0 * self.neighbor_list[0]["distance"] # 4*distance of s0 from sink
+        findMinDistances_niegboor(self)
+        for s in self.neighbor_list:
+            if  s["name"] not in self.allowed_spots:
+                if s["drones_in"] == 0 and denom !=0: # free spot
+                    s["priority"]= s["distance"]* C /denom
+                else: # s is occupied
+                    if s["name"] in self.min_distance_dicts: #close to sink
+                        s["priority"]= float("inf")
+                    else: # random float between [w*c+eps, w+1*c[
+                        s["priority"]= random.uniform(s["drones_in"]* C + eps, (s["drones_in"]+1)*C)
+            else:
+                s["priority"]= float("inf")
 
     if self.allowed_spots: # This constraint should be used only one time after the balancing to avoid going behind the border again
         self.allowed_spots=[]
 
 def find_priority(self):
-    min_Priority = min(self.neighbor_list, key=lambda x: x["priority"])["priority"]
-    spot_to_go =[s["name"] for s in self.neighbor_list if s["priority"] == min_Priority]
+    min_Priority = min(self.get_neighbor_list(), key=lambda x: x["priority"])["priority"]
+    spot_to_go =[s["name"] for s in self.get_neighbor_list() if s["priority"] == min_Priority]
     return int(spot_to_go[0][1:])
 
 def neighbors_election(self):
@@ -255,7 +257,7 @@ def Forme_border(self):
 
 def save_unoccupied_spots_around_border(self):
     # save spots that doesnt contains any drone from the point of border 
-    self.allowed_spots = [neighbor['name'] for neighbor in  self.neighbor_list if neighbor['drones_in'] == 0]
+    self.allowed_spots = [neighbor['name'] for neighbor in self.get_neighbor_list() if neighbor['drones_in'] == 0]
 
 '''
 -------------------------------------------------------------------------------------
@@ -285,7 +287,7 @@ def expand_and_form_border(self,vehicle):
         print("checking for update the state")
         spatial_observation(self)
     
-    while self.spot['drones_in']>1 and (not(all(neighbor['drones_in'] in [0, 1] for neighbor in self.neighbor_list) )):
+    while self.spot['drones_in']>1 and (not(all(neighbor['drones_in'] in [0, 1] for neighbor in self.get_neighbor_list()) )):
         ''' 
         Before initiating the border procedure, it's important to wait for some time to ensures that the drone is alone in its spot.
         Also wait until all neighbor contains one drone (owner) or empty, in case many are in neighbor spot that would cause change in distrbution becaue 
