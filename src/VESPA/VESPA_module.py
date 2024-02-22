@@ -138,6 +138,7 @@ class Drone:
         self.current_target_ids=[]
         self.lock_state = threading.Lock()
         self.lock_neighbor_list = threading.Lock()
+        self.lock_demanders_timer =threading.Lock()
         self.demanders_received_data = threading.Event()
         self.forming_border_msg_recived= threading.Event()
         self.VESPA_termination= threading.Event() 
@@ -171,13 +172,15 @@ class Drone:
     def initialize_timer_demand(self):
         self.reset_timer_demand()
         while True:
-            self.remaining_time_demand -= 0.1
-            if self.remaining_time_demand <= 0:
-                    break
+            with self.lock_demanders_timer:
+                self.remaining_time_demand -= 0.1
+                if self.remaining_time_demand <= 0:
+                        break
             time.sleep(0.1)
 
     def reset_timer_demand(self):
-        self.remaining_time_demand=exchange_data_latency
+        with self.lock_demanders_timer:
+            self.remaining_time_demand=exchange_data_latency
 
     def initialize_timer_resposnse(self):
         self.reset_timer_resposnse()
