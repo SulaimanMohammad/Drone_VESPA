@@ -265,7 +265,7 @@ def save_unoccupied_spots_around_border(self):
 
 def expand_and_form_border(self,vehicle):
     spatial_observation(self)
-    while self.state !=Owner:
+    while self.get_state() !=Owner:
         set_priorities(self)
         destination_spot= find_priority(self)
         self.elected_id= neighbors_election(self)
@@ -299,7 +299,7 @@ def expand_and_form_border(self,vehicle):
     Forme_border(self)# will not return until the drones receive boradcast of forming border
     
     # Save the spots they are unoccupied to dont back behind border in the next expansion
-    if self.state==Border or self.state==Irremovable_boarder:
+    if self.get_state()==Border or self.get_state()==Irremovable_boarder:
         save_unoccupied_spots_around_border(self)     
 
     # Time guarantees that all drones begin the searching procedure simultaneously and synchronized.
@@ -347,9 +347,9 @@ def further_expansion (self,vehicle):
     xbee_receive_message_thread = threading.Thread(target=expansion_listener, args=(self,)) #pass the function reference and arguments separately to the Thread constructor.
     xbee_receive_message_thread.start()
     
-    if self.state == Border:
+    if self.get_state() == Border:
         self.change_state_to(Owner) # The border save it is own spot
-    elif self.state == Irremovable_boarder:
+    elif self.get_state() == Irremovable_boarder:
         self.change_state_to(Irremovable)
     else: # State is Free
         expand_and_form_border(self,vehicle)

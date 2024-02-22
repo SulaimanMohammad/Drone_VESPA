@@ -72,7 +72,7 @@ def circle_completed(self):
             self.Forming_Border_Broadcast_REC.set() # to end the the loop
         else:
             # the drone got new neigbors and became Free
-            if self.state != Free:
+            if self.get_state() != Free:
                 self.change_state_to(Free)
 
 def border_broadcast_respond(self, candidate):
@@ -151,7 +151,7 @@ def count_element_occurrences(self):
         return random.choice(max_indices)
     
 def check_border_candidate_eligibility(self):
-    if self.state != Owner:
+    if self.get_state() != Owner:
         self.border_candidate=False
         return self.border_candidate
     
@@ -177,7 +177,7 @@ def check_border_candidate_eligibility(self):
         neighbor = next((n for n in self.neighbor_list if n["name"] == "s" + str(check)), None)
         if neighbor and (neighbor ["drones_in"] == 0 ): # spot also is not occupied
             unoccupied_spots_counter += 1
-    if unoccupied_spots_counter>0 and self.spot ["drones_in"]==1 and self.state==Owner: # At least one spot is empty so the drone can be part of the border
+    if unoccupied_spots_counter>0 and self.spot ["drones_in"]==1 and self.get_state()==Owner: # At least one spot is empty so the drone can be part of the border
         self.border_candidate=True
     else: 
         self.border_candidate=False

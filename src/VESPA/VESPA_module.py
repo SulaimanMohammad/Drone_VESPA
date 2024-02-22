@@ -142,7 +142,7 @@ class Drone:
         self.forming_border_msg_recived= threading.Event()
         self.VESPA_termination= threading.Event() 
         self.elected_droen_arrived= None    
-        self.Forming_Border_Broadcast_REC= None
+        self.Forming_Border_Broadcast_REC= threading.Event()
         self.start_expanding= None
         self.end_of_balancin= None
         self.demanders_list=[]
@@ -282,9 +282,8 @@ class Drone:
         message += self.encode_float_to_int(self.positionX)
         message += self.encode_float_to_int(self.positionY)
         # Encode state
-        # print("state",self.state, "codes as", struct.pack('>B', self.state))
-        message += struct.pack('>B', self.state)
-        message += struct.pack('>B', self.previous_state)
+        message += struct.pack('>B',self.get_state())
+        message += struct.pack('>B', self.get_previous_state())
         # Determine and append max byte count for self.id
         max_byte_count = determine_max_byte_size(self.id)
         # Append the id 
@@ -509,10 +508,21 @@ class Drone:
         with open(Operational_Data_path, 'w') as file:
             file.writelines(new_content)
  
+    def get_neighbor_list(self):
+        #self.list_finished_update.wait()
+        with self.exchange_data_lock: # dont allow excahnge msg and rest the list 
+            with self.lock_neighbor_list:
+                return self.neighbor_list
+    
+    # To read state, thread-safe
     def get_state(self):
         with self.lock_state:
             return self.state
-
+   
+    def get_previous_state(self):
+        with self.lock_state:
+            return self.previous_state
+        
     def write_state(self, state):
         with self.lock_state:
             self.state= state
@@ -525,7 +535,7 @@ class Drone:
                 self.spot["states"][0]= self.state
 
     def check_Ownership(self):
-        if self.state != Owner:
+        if self.get_state() != Owner:
             if self.spot["drones_in"]==1: # the drone is alone 
                 self.change_state_to (Owner)
             # Many drone on the spot but non is owner( if drones arrived to same spot at same time)
@@ -684,7 +694,7 @@ class Drone:
     def search_for_target(self): # find if there is target in the area or not
         # move in the place and couver it to check if there is target or not
         self.target_detected= True
-        if self.state == Border:
+        if self.get_state() == Border:
             self.change_state_to(Irremovable_boarder)
         else: 
             self.change_state_to(Irremovable)

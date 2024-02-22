@@ -99,7 +99,7 @@ def path_around_exist(self):
     
 
 def check_continuity_of_listening(self):
-    if self.state==Irremovable:
+    if self.get_state()==Irremovable:
         if self.VESPA_termination.is_set():
             return False
     else:
@@ -108,7 +108,7 @@ def check_continuity_of_listening(self):
     return True
 
 def retrieve_msg_from_buffer_spanning(self):
-    if self.state==Irremovable:
+    if self.get_state()==Irremovable:
         msg= retrieve_msg_from_buffer(self.VESPA_termination)
     else:
         msg= retrieve_msg_from_buffer(listener_end_of_spanning)
@@ -272,7 +272,7 @@ def xbee_listener(self):
             id_rec, data= decode_target_message(msg)       
             if id_rec == self.id :
                 if data==0:
-                    if self.state== Border: 
+                    if self.get_state()== Border: 
                         self.change_state_to(Irremovable_boarder)
                     else: 
                         self.change_state_to(Irremovable)
@@ -283,7 +283,7 @@ def xbee_listener(self):
                 elif data == Border_sink_confirm:
                     # It's a meaage flow from border to sink to verfiry the path and end the pahse
                     # verfiy if became already irremovable drone (part of the path)
-                    if (self.state == Irremovable):
+                    if (self.get_state() == Irremovable):
                         forward_confirm_msg(self,Border_sink_confirm)
 
             elif id_rec == spanning_terminator: # Message sent by the sink announcing the end of spanning phase
@@ -405,7 +405,7 @@ def build_path(self):
         msg= build_target_message(target_id)
         send_msg(msg)
     
-    if self.state != Irremovable_boarder:  # it is irrmovable doesnt belong to boarder no need to check (self.state != " irremovable- border" ) 
+    if self.get_state() != Irremovable_boarder:  # it is irrmovable doesnt belong to boarder no need to check (self.state != " irremovable- border" ) 
         target_id= find_close_neigboor_2border(self)  # since it doesnt belong to border then find to path to border 
         if target_id != -1 : 
             append_id_to_path(self.drone_id_to_border, target_id)
@@ -433,14 +433,14 @@ def spanning(self, vehicle):
         self.demand_neighbors_info()
 
         # Free drone wait for msg to become irremovable by another drone or wait broadcast from sink of finihing Spainning
-        if self.state== Free or self.state== Border:
+        if self.get_state()== Free or self.get_state()== Border:
             # Wait for xbee_listener to signal that state has been changed ( doesn't keep the CPU busy.)
             while not listener_current_updated_irremovable.is_set() or ( not listener_end_of_spanning.is_set()):
                 time.sleep(1)
             listener_current_updated_irremovable.clear() # need to be cleared for the next spanning 
         
         # For Irremovables and Free drones that were changed  
-        if (self.state== Irremovable) or (self.state == Irremovable_boarder):
+        if (self.get_state()== Irremovable) or (self.get_state() == Irremovable_boarder):
             self.demand_neighbors_info()
             build_path(self)
             # Time needed so the drone in the sink direction received msg,  changed its state and try to build its path 
@@ -455,13 +455,13 @@ def spanning(self, vehicle):
                     send_msg(coordinates_msg)
 
         # Send a message that will travel from border to sink and that will annouce end of the pahse 
-        if self.state== Irremovable_boarder:
+        if self.get_state()== Irremovable_boarder:
             while not self.drone_id_to_sink: # wait until list not empty 
                 time.sleep(1)
             forward_confirm_msg(self,Border_sink_confirm)
 
 
-        if self.state==Irremovable:
+        if self.get_state()==Irremovable:
             self.VESPA_termination.wait()
             self.VESPA_termination.clear()
             clear_buffer()

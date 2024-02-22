@@ -280,11 +280,11 @@ def search_to_border(self):
 def balancing(self, vehicle):
 
     # Border is the chef of the spot 
-    if self.state== Border or Irremovable_boarder:
+    if self.get_state()== Border or Irremovable_boarder:
         border_process=Boarder_Timer()
         border_process.run()
     
-    elif self.state == Free: 
+    elif self.get_state() == Free: 
         xbee_receive_message_thread = threading.Thread(target=communication_balancing_free_drones, args=(self,vehicle,)) #pass the function reference and arguments separately to the Thread constructor.
         xbee_receive_message_thread.start()
         border_found= False
