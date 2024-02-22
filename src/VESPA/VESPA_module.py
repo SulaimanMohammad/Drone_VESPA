@@ -150,6 +150,11 @@ class Drone:
         self.demand_timer=None
         self.remaining_time_demand=None
         self.remaining_time_resposnse=None
+        # Event refer if exchanging messages done or not, clear measn in progress, set = done 
+        self.list_finished_update= threading.Event()
+        self.list_finished_update.set()
+        self.exchange_data_lock= threading.Lock() # demanding and reciving data should not be done by multiple threads
+
         if uart:
             connect_xbee(xbee_serial_port, baud_rate)
         else:
@@ -226,13 +231,15 @@ class Drone:
         return id
     
     def demand_neighbors_info(self):
-        # This function is caled out of the listener thread because it contains timer and that would block the listening thtrad
-        # Send request 
-        demand_msg= self.build_data_demand_message()
-        send_msg(demand_msg)
-        
-        # wait for resposnse , wait all resposnse  
-        self.initialize_timer_resposnse()
+        # This function will be called by many threads and since it contains reset of data, and need to finish receiving data so list updated
+        # So the function should not be called until it is completly finished or the list will be wrong if 2 threads called it at the same time  
+        with self.exchange_data_lock: 
+            self.list_finished_update.clear()
+            self.rest_neighbor_list()
+            demand_msg= self.build_data_demand_message()
+            send_msg(demand_msg)
+            self.initialize_timer_resposnse()
+            self.list_finished_update.set()
         
     def build_ACK_data_message(self, target_id):
         message= ACK_header.encode()
@@ -352,7 +359,9 @@ class Drone:
         if self.demanders_list: # there are drone demaneded 
             data_msg= self.build_spot_info_message(Response_header) # Build message that contains all data
             send_msg(data_msg)
-            # wait Ack from the demander and in case not all recived re-send 
+            # wait Ack from the demander and in case not all recived re-send
+            with self.demander_lock:
+                self.demanders_list=[]
             self.initialize_timer_demand()
             self.resend_data()
         
@@ -363,7 +372,8 @@ class Drone:
             if not self.demanders_list: # empty demander then launch the thread of timer 
                 self.demand_timer = threading.Thread(target=self.collect_demands, args=()) #pass the function reference and arguments separately to the Thread constructor.
                 self.demand_timer.start()  
-            self.append_id_demanders_list(id_need_data)
+            with self.demander_lock: 
+                self.append_id_demanders_list(id_need_data)
             self.reset_timer_demand()
                 
         if msg.startswith(ACK_header.encode()) and msg.endswith(b'\n'):
@@ -599,6 +609,27 @@ class Drone:
     def update_candidate_spot_info_to_neighbors(self):
         msg= self.build_spot_info_message(Arrival_header)
         send_msg(msg)
+
+    def rest_neighbor_list(self):
+        with self.lock_neighbor_list: # Locker needed since it is writing 
+            for neighbor in self.neighbor_list:
+                if 'drones_in_id' in neighbor and self.id in neighbor['drones_in_id']:
+                    # Find the index of the target_id in drones_in_id
+                    index = neighbor['drones_in_id'].index(self.id )
+                    # Keep the target_id and corresponding states and previous_states
+                    neighbor['drones_in_id'] = [self.id ]
+                    neighbor['states'] = [neighbor['states'][index]] if index < len(neighbor['states']) else []
+                    neighbor['previous_state'] = [neighbor['previous_state'][index]] if index < len(neighbor['previous_state']) else []
+                    neighbor['drones_in'] = 1  # Reduce drones_in by removing all but the target_id
+                else:
+                    # For neighbors not containing the target_id, clear drones_in_id and adjust drones_in accordingly
+                    neighbor['drones_in_id'] = []
+                    neighbor['drones_in'] = 0
+                    # Ensure 'states' and 'previous_state' are properly formatted even if empty
+                    if 'states' in neighbor:
+                        neighbor['states'] = []
+                    if 'previous_state' in neighbor:
+                        neighbor['previous_state'] = []
 
     def update_neighbors_list(self, positionX, positionY, state, previous_state, id_rec):
         s_index= self.find_relative_spot(positionX, positionY)
