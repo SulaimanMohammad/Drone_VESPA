@@ -11,6 +11,9 @@ parent_directory = os.path.abspath(os.path.join(os.path.dirname(__file__), '..')
 sys.path.append(parent_directory)
 from drone.drone_ardupilot import *
 from .headers_variables import * 
+import asyncio
+from datetime import datetime
+from multiprocessing import Process, Queue
 
 
 '''
@@ -115,7 +118,7 @@ class Drone:
         self.drone_id_to_sink=[]
         self.drone_id_to_border=[]
         self. min_distance_dicts=[] # nigboor close to the sink
-        self.allowed_spots=[]    # contains the spots that are not occupied while forming the border
+        self.allowed_spots=[0,1,2,3,4,5,6]    # contains the spots that are not occupied while forming the border
         self.direction_taken=[]  # direction path (spots) that are taken in the phase
         self.neighbor_list = []  # list that contains the 6 neighbors around the current location
         self.rec_propagation_indicator=[]
@@ -138,18 +141,29 @@ class Drone:
         self.current_target_ids=[]
         self.lock_state = threading.Lock()
         self.lock_neighbor_list = threading.Lock()
+        self.lock_timer =threading.Lock()
+        self.exchange_data_lock= threading.Lock()
+        self.lock_boder_timer =threading.Lock()        
+        self.demander_lock=threading.Lock()
+        self.Forming_Border_Broadcast_REC = threading.Event()
         self.demanders_received_data = threading.Event()
-        self.forming_border_msg_recived= threading.Event()
         self.VESPA_termination= threading.Event() 
-        self.in_movement= threading.Event()
+        self.list_finished_update= threading.Event()
+        self.list_finished_update.set()
         self.elected_droen_arrived= None    
-        self.Forming_Border_Broadcast_REC= None
         self.start_expanding= None
         self.end_of_balancin= None
         self.demanders_list=[]
         self.demand_timer=None
         self.remaining_time_demand=None
         self.remaining_time_resposnse=None
+        self.current_task= None
+        self.messages_to_be_sent=[]
+        self.sending_messgae_list= threading.Lock()
+        self.candidate_in_msg=None
+        self.border_msg_nonreceived= threading.Event()
+        self.participated= False
+
         # if uart:
         #     connect_xbee(xbee_serial_port, baud_rate)
         # else:
@@ -172,13 +186,15 @@ class Drone:
     def initialize_timer_demand(self):
         self.reset_timer_demand()
         while True:
-            self.remaining_time_demand -= 0.1
-            if self.remaining_time_demand <= 0:
+            with self.lock_timer:
+                self.remaining_time_demand -= 0.1
+                if self.remaining_time_demand <= 0:
                     break
             time.sleep(0.1)
-
+    # This function is called from the thread of listener while the timer count is in another thread 
     def reset_timer_demand(self):
-        self.remaining_time_demand=exchange_data_latency
+        with self.lock_timer:
+            self.remaining_time_demand=exchange_data_latency
 
     def initialize_timer_resposnse(self):
         self.reset_timer_resposnse()
@@ -224,14 +240,15 @@ class Drone:
         return id
     
     def demand_neighbors_info(self):
-        # This function is caled out of the listener thread because it contains timer and that would block the listening thtrad
-        # Send request 
-        demand_msg= self.build_data_demand_message()
-        send_msg(demand_msg)
-        
-        # wait for resposnse , wait all resposnse  
-        self.initialize_timer_resposnse()
-        
+        with self.exchange_data_lock: 
+            self.list_finished_update.clear()
+            self.rest_neighbor_list()
+            demand_msg= self.build_data_demand_message()
+            send_msg(demand_msg)
+            self.initialize_timer_resposnse()
+            self.list_finished_update.set()
+
+
     def build_ACK_data_message(self, target_id):
         message= ACK_header.encode()
         max_byte_count = max([determine_max_byte_size(self.id)]+
@@ -284,7 +301,7 @@ class Drone:
         message += self.encode_float_to_int(self.positionY)
         # Encode state
         # print("state",self.state, "codes as", struct.pack('>B', self.state))
-        message += struct.pack('>B', self.state)
+        message += struct.pack('>B', self.get_state())
         message += struct.pack('>B', self.previous_state)
         # Determine and append max byte count for self.id
         max_byte_count = determine_max_byte_size(self.id)
@@ -336,6 +353,7 @@ class Drone:
     '''
     def get_neighbors_info(self,msg):
         decoded_msg= self.decode_spot_info_message(msg) # If the message is invalid decode will return [-1]
+        print(" rec x,y,state, prestat, id", decoded_msg)
         # Ack will be sent only if the message is correct, Otherwise the lack of ACK will force the target of resending data 
         if len(decoded_msg)>1 : # No erorr of receiving
             positionX, positionY, state, previous_state, id_value= decoded_msg
@@ -352,18 +370,25 @@ class Drone:
             data_msg= self.build_spot_info_message(Response_header) # Build message that contains all data
             send_msg(data_msg)
             # wait Ack from the demander and in case not all recived re-send 
+            with self.demander_lock:
+                self.demanders_list=[]
             self.initialize_timer_demand()
             self.resend_data()
         
     def exchange_neighbors_info_communication(self,msg):
+    
         # Receiving message asking for data 
         if msg.startswith(Demand_header.encode()) and msg.endswith(b'\n'):
+            # data_msg= self.build_spot_info_message(Response_header) # Build message that contains all data
+            # send_msg(data_msg)
             id_need_data= self.decode_data_demand_message(msg)
-            if not self.demanders_list: # empty demander then launch the thread of timer 
-                self.demand_timer = threading.Thread(target=self.collect_demands, args=()) #pass the function reference and arguments separately to the Thread constructor.
-                self.demand_timer.start()  
-            self.append_id_demanders_list(id_need_data)
+            if not self.demanders_list: #  empty demander then launch the thread of timer 
+                self.demand_timer = threading.Thread(target=self.collect_demands, args=())
+                self.demand_timer.start()
+            with self.demander_lock: 
+                self.append_id_demanders_list(id_need_data)
             self.reset_timer_demand()
+
                 
         if msg.startswith(ACK_header.encode()) and msg.endswith(b'\n'):
                 sender_id, target_id =self.decode_ACK_data_message(msg)
@@ -381,25 +406,55 @@ class Drone:
         # Receiving message containing data     
         if msg.startswith(Response_header.encode()) and msg.endswith(b'\n'):
             self.get_neighbors_info(msg)
-    
+        
     '''
     -------------------------------------------------------------------------------------
     -------------------------------- Update upon movement--------------------------------
     -------------------------------------------------------------------------------------
     '''
+    def all_neighbor_spots_owned(self):
+        for neighbor in self.get_neighbor_list():
+            num_drones_in = neighbor["drones_in"]
+            states = neighbor["states"]
+            if num_drones_in >0 and not all(state == Owner for state in states):
+                return False
+        return True
 
+    # writing in the list 
+    def rest_neighbor_list(self):
+        with self.lock_neighbor_list:
+            for neighbor in self.neighbor_list:
+                if 'drones_in_id' in neighbor and self.id in neighbor['drones_in_id']:
+                    # Find the index of the target_id in drones_in_id
+                    index = neighbor['drones_in_id'].index(self.id )
+                    # Keep the target_id and corresponding states and previous_states
+                    neighbor['drones_in_id'] = [self.id ]
+                    neighbor['states'] = [neighbor['states'][index]] if index < len(neighbor['states']) else []
+                    neighbor['previous_state'] = [neighbor['previous_state'][index]] if index < len(neighbor['previous_state']) else []
+                    neighbor['drones_in'] = 1  # Reduce drones_in by removing all but the target_id
+                else:
+                    # For neighbors not containing the target_id, clear drones_in_id and adjust drones_in accordingly
+                    neighbor['drones_in_id'] = []
+                    neighbor['drones_in'] = 0
+                    # Ensure 'states' and 'previous_state' are properly formatted even if empty
+                    if 'states' in neighbor:
+                        neighbor['states'] = []
+                    if 'previous_state' in neighbor:
+                        neighbor['previous_state'] = []
+    # writing to the list 
     def calculate_neighbors_distance_sink(self):
         DxDy2 = ((self.positionX * self.positionX) + (self.positionY * self.positionY))
         DxDy3a2 = (DxDy2 + 3 * a * a)
         sqDx = (sq3 * self.positionX)
         aDx = ((2*sq3) * self.positionX)
         Dy= (self.positionY)
-        for s in self.neighbor_list:
-            formula = formula_dict.get(s["name"])
-            if formula:
-                distance = eval(formula, {'sqrt': sqrt, 'DxDy2': DxDy2, 'DxDy3a2': DxDy3a2, 'a': a, 'aDx': aDx, 'sqDx': sqDx, 'Dy': Dy})
-                s["distance"] = round(distance,2)
-        self.distance_from_sink=self.spot["distance"] # where spot is the data of s0 the current position
+        with self.lock_neighbor_list:
+            for s in self.neighbor_list:
+                formula = formula_dict.get(s["name"])
+                if formula:
+                    distance = eval(formula, {'sqrt': sqrt, 'DxDy2': DxDy2, 'DxDy3a2': DxDy3a2, 'a': a, 'aDx': aDx, 'sqDx': sqDx, 'Dy': Dy})
+                    s["distance"] = round(distance,2)
+            self.distance_from_sink=self.spot["distance"] # where spot is the data of s0 the current position
 
 
     def rearrange_neighbor_statically_upon_movement(self,move_spot):
@@ -415,7 +470,7 @@ class Drone:
         }
 
         # Create a dictionary for faster spot lookup
-        spot_lookup = {spot['name']: spot for spot in self.neighbor_list}
+        spot_lookup = {spot['name']: spot for spot in self.get_neighbor_list()}
 
         # Empty the specified spots
         for spot_name in movement_rules[move_spot]['empty']:
@@ -464,30 +519,30 @@ class Drone:
         source_spot = None
         drone_states = []
         drone_previous_state = []
+        with self.lock_neighbor_list:
+            # Find and update source spot
+            for spot in self.neighbor_list:
+                if elected_drone_id in spot['drones_in_id']:
+                    source_spot = spot
+                    drone_index = spot['drones_in_id'].index(elected_drone_id)
+                    drone_states = spot['states'][drone_index]
+                    drone_previous_state = spot['previous_state'][drone_index]
 
-        # Find and update source spot
-        for spot in self.neighbor_list:
-            if elected_drone_id in spot['drones_in_id']:
-                source_spot = spot
-                drone_index = spot['drones_in_id'].index(elected_drone_id)
-                drone_states = spot['states'][drone_index]
-                drone_previous_state = spot['previous_state'][drone_index]
+                    # Update source spot
+                    spot['drones_in'] -= 1
+                    spot['drones_in_id'].remove(elected_drone_id)
+                    del spot['states'][drone_index]
+                    del spot['previous_state'][drone_index]
+                    break
 
-                # Update source spot
-                spot['drones_in'] -= 1
-                spot['drones_in_id'].remove(elected_drone_id)
-                del spot['states'][drone_index]
-                del spot['previous_state'][drone_index]
-                break
-
-        # Update target spot
-        for spot in self.neighbor_list:
-            if spot['name'] == target_spot_name:
-                spot['drones_in'] += 1
-                spot['drones_in_id'].append(elected_drone_id)
-                spot['states'].append(drone_states)
-                spot['previous_state'].append(drone_previous_state)
-                break
+            # Update target spot
+            for spot in self.neighbor_list:
+                if spot['name'] == target_spot_name:
+                    spot['drones_in'] += 1
+                    spot['drones_in_id'].append(elected_drone_id)
+                    spot['states'].append(drone_states)
+                    spot['previous_state'].append(drone_previous_state)
+                    break
         self.check_Ownership()
         
     def update_xbee_range(self,new_a):
@@ -509,7 +564,14 @@ class Drone:
         # Write the updated content back to the file
         with open(Operational_Data_path, 'w') as file:
             file.writelines(new_content)
- 
+    
+    def get_neighbor_list(self):
+        # if self.list_finished_update.is_set(): #there should not ba waiting or reading
+        #self.list_finished_update.wait()
+        with self.exchange_data_lock: # dont allow excahnge and rest the list 
+            with self.lock_neighbor_list:
+                return self.neighbor_list
+
     def get_state(self):
         with self.lock_state:
             return self.state
@@ -519,14 +581,14 @@ class Drone:
             self.state= state
 
     def change_state_to( self, new_state):
-            with self.lock_state:
-                self.previous_state= self.state # save the preivious state
-                self.spot["previous_state"][0]= self.state
-                self.state= new_state # change the state
-                self.spot["states"][0]= self.state
+        with self.lock_state:
+            self.previous_state= self.state # save the preivious state
+            self.spot["previous_state"][0]= self.state
+            self.state= new_state # change the state
+            self.spot["states"][0]= self.state
 
     def check_Ownership(self):
-        if self.state != Owner:
+        if self.get_state() != Owner:
             if self.spot["drones_in"]==1: # the drone is Owner
                 self.change_state_to (Owner)
             elif self.spot["drones_in"]>1:
@@ -549,7 +611,7 @@ class Drone:
     def correct_states_after_comm(self):
         # If another spot contains only one drone but did not change yet it is state then do it here 
         # That can happen if the drone is still in movement and did not arrive yet but its corrdiantes were set to destination 
-        for s in self.neighbor_list[1:]: 
+        for s in self.get_neighbor_list()[1:]: 
             if s["drones_in"]==1:
                 for i, state in enumerate (s["states"]):
                     if state != Owner:
@@ -587,46 +649,46 @@ class Drone:
     def update_neighbors_list(self, positionX, positionY, state, previous_state, id_rec):
         s_index= self.find_relative_spot(positionX, positionY)
         # Check if index is valid ( index between 0 and 6 )
-        if 0 <= s_index <= self.num_neigbors+1:
-            with self.lock_neighbor_list:
-                # Check if the id_rec of the drone is already in neighbor_list
+        with self.lock_neighbor_list:
+            if 0 <= s_index <= self.num_neigbors+1:
+                    # Check if the id_rec of the drone is already in neighbor_list
+                    for s in self.neighbor_list:
+                        if id_rec in s["drones_in_id"]:
+                            # The drone was in another neighborhood spot
+                            if int(s["name"][1:]) != s_index :
+                                # Find the index of the drone_id
+                                idx = s['drones_in_id'].index(id_rec)
+                                # Remove from drones_in_id and states
+                                s['drones_in_id'].pop(idx)
+                                s['states'].pop(idx)
+                                s['previous_state'].pop(idx)
+                                # Decrement drones_in count
+                                s['drones_in'] -= 1
+                            else: # The id of drone is in the same spot just update the satates
+                                idx = s['drones_in_id'].index(id_rec)
+                                s['states'][idx]= state
+                                s['previous_state'][idx]=previous_state
+                                return  # Exit the function
+
+                    # If the ID of drone doesnt exist at all or it was deleted after was in another neighborhood spot
+                    # Retrieve the corresponding spot
+                    s = self.neighbor_list[s_index]
+                    # Append drone_id to drones_in_id and state_rec to states
+                    s['drones_in_id'].append(id_rec)
+                    s['states'].append(state)
+                    s['previous_state'].append(previous_state)
+                    # Increment drones_in count
+                    s['drones_in'] += 1
+            else:
+                print("Signal originating from outside the region")
+                # Receive signal from drone out of the 6 neighbors 
                 for s in self.neighbor_list:
                     if id_rec in s["drones_in_id"]:
-                        # The drone was in another neighborhood spot
-                        if int(s["name"][1:]) != s_index :
-                            # Find the index of the drone_id
-                            idx = s['drones_in_id'].index(id_rec)
-                            # Remove from drones_in_id and states
-                            s['drones_in_id'].pop(idx)
-                            s['states'].pop(idx)
-                            s['previous_state'].pop(idx)
-                            # Decrement drones_in count
-                            s['drones_in'] -= 1
-                        else: # The id of drone is in the same spot just update the satates
-                            idx = s['drones_in_id'].index(id_rec)
-                            s['states'][idx]= state
-                            s['previous_state'][idx]=previous_state
-                            return  # Exit the function
-
-                # If the ID of drone doesnt exist at all or it was deleted after was in another neighborhood spot
-                # Retrieve the corresponding spot
-                s = self.neighbor_list[s_index]
-                # Append drone_id to drones_in_id and state_rec to states
-                s['drones_in_id'].append(id_rec)
-                s['states'].append(state)
-                s['previous_state'].append(previous_state)
-                # Increment drones_in count
-                s['drones_in'] += 1
-        else:
-            print("Signal originating from outside the region")
-            # Receive signal from drone out of the 6 neighbors 
-            for s in self.neighbor_list:
-                if id_rec in s["drones_in_id"]:
-                    idx = s['drones_in_id'].index(id_rec)
-                    s['drones_in_id'].pop(idx)
-                    s['states'].pop(idx)
-                    s['previous_state'].pop(idx)
-                    s['drones_in'] -= 1
+                        idx = s['drones_in_id'].index(id_rec)
+                        s['drones_in_id'].pop(idx)
+                        s['states'].pop(idx)
+                        s['previous_state'].pop(idx)
+                        s['drones_in'] -= 1
 
 
     def update_state_in_neighbors_list( self, id, state):
@@ -678,16 +740,16 @@ class Drone:
             vehicle.close()
         hover(vehicle)
 
-    def manage_xbee_while_movement(self):
-        while self.in_movement.is_set():           
-            time.sleep(0.01)
-        #clear_buffer()
+    # def manage_xbee_while_movement(self):
+    #     while self.in_movement.is_set():           
+    #         time.sleep(0.01)
+    #     #clear_buffer()
 
 
     def search_for_target(self): # find if there is target in the area or not
         # move in the place and couver it to check if there is target or not
         self.target_detected= True
-        if self.state == Border:
+        if self.get_state() == Border:
             self.change_state_to(Irremovable_boarder)
         else: 
             self.change_state_to(Irremovable)
