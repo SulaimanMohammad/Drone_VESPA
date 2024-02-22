@@ -153,6 +153,10 @@ class Sink_Timer:
                 append_id_to_path( self.drone_id_to_border, target_id ) 
                 msg= build_target_message(target_id)
                 send_msg(msg)
+        
+        for station in self.get_neighbor_list():
+            if station['drones_in'] > 0:
+                print(station)
         self.VESPA_termination.wait()
         self.VESPA_termination.clear()
         clear_buffer()
@@ -411,6 +415,7 @@ def build_path(self):
             append_id_to_path(self.drone_id_to_border, target_id)
             msg= build_target_message(target_id)
             send_msg(msg)
+
     
 
 '''
@@ -462,7 +467,6 @@ def spanning(self, vehicle=0):
             while not self.drone_id_to_sink: # wait until list not empty 
                 time.sleep(1)
             forward_confirm_msg(self,Border_sink_confirm)
-
 
         if self.state==Irremovable:
             self.VESPA_termination.wait()
