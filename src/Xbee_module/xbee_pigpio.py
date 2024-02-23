@@ -56,7 +56,7 @@ def send_msg(msg):
 
         pi.wave_send_once(wave_id)  # Send the waveform
         while pi.wave_tx_busy():  # Wait until the waveform is sent
-            time.sleep(0.05)
+            time.sleep(0.1)
 
 
 message_buffer = bytearray()

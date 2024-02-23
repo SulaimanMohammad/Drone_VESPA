@@ -16,6 +16,8 @@ def connect_xbee(xbee_serial_port, baud_rate, timeout=1):
 def send_msg(message):
     """ Send a message via XBee. """
     ser.write(message)
+    time.sleep(0.1)
+
 
 message_buffer = bytearray()
 def retrieve_msg_from_buffer(stop_flag):

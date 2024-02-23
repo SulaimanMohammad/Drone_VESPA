@@ -717,7 +717,7 @@ class Drone:
     def convert_spot_angle_distance(self, dir):
         return DIR_VECTORS[dir][0], DIR_VECTORS[dir][1]
 
-    def find_relative_spot(self, x, y, tolerance=0.5):
+    def find_relative_spot(self, x, y, tolerance=1): # tolerence in m 
         # Calculate the difference
         dx = x - self.positionX
         dy = y - self.positionY
