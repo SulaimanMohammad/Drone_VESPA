@@ -234,6 +234,25 @@ def calibration_ping_pong(self, vehicle, msg ):
 '''
 
 def Forme_border(self):
+    
+    while (self.spot['drones_in']>1) or (not(all(neighbor['drones_in'] in [0, 1] for neighbor in self.get_neighbor_list()))) or not self.all_neighbor_spots_owned():
+        ''' 
+        Before initiating the border procedure, it's important to wait for some time to ensures that the drone is alone in its spot.
+        Also wait until all neighbor contains one drone (owner) or empty, in case many are in neighbor spot that would cause change in distrbution becaue 
+        of movemnt and the one that moves can be part of the new border so it is better to wait 
+        This step eliminates the possibility of erroneously considering a drone as a border-candidate when another drone in the same spot is about to move.
+        '''
+        '''
+        The loop continues as long as any of these conditions are true:
+
+        - The current spot has more than one drone: so it is not alone and one of the drone will populate one of the neigbor spot so ait for that to consider border cndidiate 
+        - Any neighbor has more than one drone: so the neighbor has many and some will move and occupy a spot around wait this before check the border  
+        - If the spots not owned then should wait, and that is important because while movement a drone can send its destination which can be spot not owned 
+            so there is need until the drone arrive and collect the ownership of the spot. 
+        '''
+        time.sleep(sync_time)
+        self.demand_neighbors_info() # return after gathering all info
+
     wait_message_rec = threading.Thread(target=send_msg_border_until_confirmation, args=(self,Forming_border_header)) #pass the function reference and arguments separately to the Thread constructor.
     wait_message_rec.start()
     #Continue checking in case of not forming border the process will start again 
@@ -261,6 +280,12 @@ def Forme_border(self):
     self.Forming_Border_Broadcast_REC.wait()
     wait_message_rec.join() # wait wait_message_rec thread to finish and detect the Forming_Border_Broadcast_REC flag
     self.Forming_Border_Broadcast_REC.clear()
+
+    # Save the spots they are unoccupied to dont back behind border in the next expansion
+    if self.get_state()==Border or self.get_state()==Irremovable_boarder:
+        save_unoccupied_spots_around_border(self)     
+    # Time guarantees that all drones begin the searching procedure simultaneously and synchronized.
+    time.sleep(sync_time)
 
 def save_unoccupied_spots_around_border(self):
     # save spots that doesnt contains any drone from the point of border 
@@ -306,41 +331,7 @@ def expand_and_form_border(self,vehicle):
 
         print("checking for update the state")
         spatial_observation(self)
-    
-    while (self.spot['drones_in']>1) or (not(all(neighbor['drones_in'] in [0, 1] for neighbor in self.get_neighbor_list()))) or not self.all_neighbor_spots_owned():
-        ''' 
-        Before initiating the border procedure, it's important to wait for some time to ensures that the drone is alone in its spot.
-        Also wait until all neighbor contains one drone (owner) or empty, in case many are in neighbor spot that would cause change in distrbution becaue 
-        of movemnt and the one that moves can be part of the new border so it is better to wait 
-        This step eliminates the possibility of erroneously considering a drone as a border-candidate when another drone in the same spot is about to move.
-        '''
-        '''
-        The loop continues as long as any of these conditions are true:
-
-        - The current spot has more than one drone: so it is not alone and one of the drone will populate one of the neigbor spot so ait for that to consider border cndidiate 
-        - Any neighbor has more than one drone: so the neighbor has many and some will move and occupy a spot around wait this before check the border  
-        - If the spots not owned then should wait, and that is important because while movement a drone can send its destination which can be spot not owned 
-          so there is need until the drone arrive and collect the ownership of the spot. 
-        '''
-        time.sleep(sync_time)
-        self.demand_neighbors_info() # return after gathering all info
-
-    Forme_border(self)# will not return until the drones receive boradcast of forming border
-    
-    # Save the spots they are unoccupied to dont back behind border in the next expansion
-    if self.get_state()==Border or self.get_state()==Irremovable_boarder:
-        save_unoccupied_spots_around_border(self)     
-
-    # Time guarantees that all drones begin the searching procedure simultaneously and synchronized.
-    time.sleep(sync_time)
-    self.search_for_target() # This is blocking until the end of movement
-
-    # Reset variables for the next iteration
-    self.rec_propagation_indicator=[] 
-    self.rec_candidate=[]
-    self.direction_taken=[] 
-    self.elected_id=None     
-    
+        
 def first_exapnsion (self, vehicle):
     # Lance a thread to read messages continuously
     xbee_receive_message_thread = threading.Thread(target=expansion_listener, args=(self,)) #pass the function reference and arguments separately to the Thread constructor.
@@ -366,6 +357,14 @@ def first_exapnsion (self, vehicle):
         self.start_expanding.clear()
     expand_and_form_border(self, vehicle)
     
+    Forme_border(self)# will not return until the drones receive boradcast of forming border
+    self.search_for_target() # This is blocking until the end of movement
+    
+    # Reset variables for the next iteration
+    self.rec_propagation_indicator=[] 
+    self.rec_candidate=[]
+    self.direction_taken=[] 
+    self.elected_id=None 
     # Since broadcast messages might still be circulating while retrieval has stopped, there could be leftover messages in the buffer.
     # It's essential to clear the buffer before the next phase to prevent any surplus.
     clear_buffer()
@@ -383,6 +382,15 @@ def further_expansion (self,vehicle):
     else: # State is Free the only free will move 
         self.movemnt_from_border=False
         expand_and_form_border(self,vehicle)
+    
+    Forme_border(self)# will not return until the drones receive boradcast of forming border
+    self.search_for_target() # This is blocking until the end of movement
+    
+    # Reset variables for the next iteration
+    self.rec_propagation_indicator=[] 
+    self.rec_candidate=[]
+    self.direction_taken=[] 
+    self.elected_id=None 
     
     clear_buffer()
     xbee_receive_message_thread.join() 
