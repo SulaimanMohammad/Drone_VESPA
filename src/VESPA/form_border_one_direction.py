@@ -105,6 +105,8 @@ def border_broadcast_respond(self, candidate):
 
 def form_border_one_direction(self,header,msg):
     sender_id, target_ids, candidate= decode_border_message(msg)
+    reset_timer_forme_border(self)
+
     if sender_id in target_ids:
         self.forming_border_msg_recived.set()
     if len(target_ids)==1 and target_ids[0]==-1:
@@ -112,11 +114,14 @@ def form_border_one_direction(self,header,msg):
             border_broadcast_respond(self, candidate)
         # Here any drone in any state needs to forward the boradcast message and rise ending flag
         forward_broadcast_message(self, Forming_border_header,candidate)
+        finish_timer_forme_border(self)
         self.Forming_Border_Broadcast_REC.set()
 
     if self.id in  target_ids:
         if self.id == candidate:
             circle_completed(self)
+            finish_timer_forme_border(self)
+
         else: 
             check_border_candidate_eligibility(self) # check eligibility each time to be more rsponsive to any changes
             if self.border_candidate == True:
@@ -133,6 +138,17 @@ def form_border_one_direction(self,header,msg):
 ----------------------------------- Main functions ----------------------------------
 -------------------------------------------------------------------------------------
 '''
+
+def reset_timer_forme_border(self):
+    with self.lock_boder_timer:
+        self.remaining_time_forme_border=30*exchange_data_latency
+
+# called by other threads 
+def finish_timer_forme_border(self):
+    with self.lock_boder_timer:
+        self.remaining_time_forme_border=0
+
+
 def count_element_occurrences(self):
         # Find the maximum element in the direction_taken list
         max_element = 7  # s0 to s6

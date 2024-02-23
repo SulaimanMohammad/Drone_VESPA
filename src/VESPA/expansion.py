@@ -244,15 +244,33 @@ def send_msg_border_upon_confirmation(self,msg):
 '''
 
 def Forme_border(self):
-    check_border_candidate_eligibility(self)
-    if self.border_candidate :
-        self.update_candidate_spot_info_to_neighbors() # Useful if the drone arrived and filled a spot made others sourounded
-        '''launch a message circulation for current candidat'''
-        start_msg_one_direction(self,Forming_border_header)
+    wait_message_rec = threading.Thread(target=send_msg_border_until_confirmation, args=(self,)) #pass the function reference and arguments separately to the Thread constructor.
+    wait_message_rec.start()
+    #Continue checking in case of not forming border the process will start again 
+    while not self.Forming_Border_Broadcast_REC.is_set():
+        self.demand_neighbors_info()
+        check_border_candidate_eligibility(self)
+        if self.border_candidate :
+            self.current_target_ids= choose_spot_right_handed(self) # chose spot only when it is candidate 
+            self.update_candidate_spot_info_to_neighbors() # Useful if the drone arrived and filled a spot made others sourounded
+            '''launch a message circulation for current candidat'''
+            start_msg_one_direction(self,Forming_border_header)
+            print(self.messages_to_be_sent)
+        
+        # This timer will be reset upon each border message is recived 
+        # It will be also stopped when forming border broadcast is received 
+        # Note in case the border is not formed with absance of new messages, when the timer is up the while loop will re-executed 
+        reset_timer_forme_border(self)
+        while True:
+            with self.lock_boder_timer:
+                self.remaining_time_forme_border -= 0.5
+                if self.remaining_time_forme_border <= 0:
+                        break
+            time.sleep(0.5)
 
-    # wait until the border procesdure is finished
     self.Forming_Border_Broadcast_REC.wait()
-    self.Forming_Border_Broadcast_REC.clear() # reset for the next expansion
+    wait_message_rec.join() # wait wait_message_rec thread to finish and detect the Forming_Border_Broadcast_REC flag
+    self.Forming_Border_Broadcast_REC.clear()
 
 def save_unoccupied_spots_around_border(self):
     # save spots that doesnt contains any drone from the point of border 
