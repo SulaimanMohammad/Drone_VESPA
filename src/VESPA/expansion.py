@@ -76,7 +76,6 @@ def check_continuity_of_listening(self):
         return False
 
 def expansion_listener (self):
-    self.Forming_Border_Broadcast_REC = threading.Event()
 
     while check_continuity_of_listening(self):
 
@@ -123,11 +122,12 @@ def findMinDistances_niegboor(self):
     self.min_distance_dicts =[s["name"] for s in self.neighbor_list if s["distance"] == min_distance]
 
 def set_priorities(self):
+    self.list_finished_update.wait()
     with self.lock_neighbor_list: # Writing in the list should be locked 
         denom= 4.0 * self.neighbor_list[0]["distance"] # 4*distance of s0 from sink
         findMinDistances_niegboor(self)
         for s in self.neighbor_list:
-            if  s["name"] not in self.allowed_spots:
+            if  int(s["name"][1:]) in self.allowed_spots:
                 if s["drones_in"] == 0 and denom !=0: # free spot
                     s["priority"]= s["distance"]* C /denom
                 else: # s is occupied
@@ -230,13 +230,6 @@ def calibration_ping_pong(self, vehicle, msg ):
         set_a(a)
         clear_buffer()
 
-def send_msg_border_upon_confirmation(self,msg):
-    # here the drone will keep sending until see the drone targets recives the message 
-    while not self.forming_border_msg_recived.is_set():
-        time.sleep(0.1)
-        send_msg(msg)
-    self.forming_border_msg_recived.clear()
-
 '''
 -------------------------------------------------------------------------------------
 --------------------------------- Forming the border---------------------------------
@@ -274,7 +267,7 @@ def Forme_border(self):
 
 def save_unoccupied_spots_around_border(self):
     # save spots that doesnt contains any drone from the point of border 
-    self.allowed_spots = [neighbor['name'] for neighbor in self.get_neighbor_list() if neighbor['drones_in'] == 0]
+    self.allowed_spots = [int(neighbor['name'][1:]) for neighbor in self.get_neighbor_list() if neighbor['drones_in'] == 0]
 
 '''
 -------------------------------------------------------------------------------------
@@ -304,16 +297,23 @@ def expand_and_form_border(self,vehicle):
         print("checking for update the state")
         spatial_observation(self)
     
-    while self.spot['drones_in']>1 and (not(all(neighbor['drones_in'] in [0, 1] for neighbor in self.get_neighbor_list()) )):
+    while (self.spot['drones_in']>1) or (not(all(neighbor['drones_in'] in [0, 1] for neighbor in self.get_neighbor_list()))) or not self.all_neighbor_spots_owned():
         ''' 
         Before initiating the border procedure, it's important to wait for some time to ensures that the drone is alone in its spot.
         Also wait until all neighbor contains one drone (owner) or empty, in case many are in neighbor spot that would cause change in distrbution becaue 
         of movemnt and the one that moves can be part of the new border so it is better to wait 
         This step eliminates the possibility of erroneously considering a drone as a border-candidate when another drone in the same spot is about to move.
         '''
+        '''
+        The loop continues as long as any of these conditions are true:
+
+        - The current spot has more than one drone: so it is not alone and one of the drone will populate one of the neigbor spot so ait for that to consider border cndidiate 
+        - Any neighbor has more than one drone: so the neighbor has many and some will move and occupy a spot around wait this before check the border  
+        - If the spots not owned then should wait, and that is important because while movement a drone can send its destination which can be spot not owned 
+          so there is need until the drone arrive and collect the ownership of the spot. 
+        '''
         time.sleep(sync_time)
         self.demand_neighbors_info() # return after gathering all info
-        self.correct_states_after_comm()
 
     Forme_border(self)# will not return until the drones receive boradcast of forming border
     

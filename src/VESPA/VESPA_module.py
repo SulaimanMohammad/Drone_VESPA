@@ -402,7 +402,15 @@ class Drone:
     -------------------------------- Update upon movement--------------------------------
     -------------------------------------------------------------------------------------
     '''
-
+    
+    def all_neighbor_spots_owned(self):
+        for neighbor in self.get_neighbor_list():
+            num_drones_in = neighbor["drones_in"]
+            states = neighbor["states"]
+            if num_drones_in >0 and not all(state == Owner for state in states):
+                return False
+        return True
+    
     def calculate_neighbors_distance_sink(self):
         DxDy2 = ((self.positionX * self.positionX) + (self.positionY * self.positionY))
         DxDy3a2 = (DxDy2 + 3 * a * a)
