@@ -161,6 +161,7 @@ class Drone:
         self.candidate_to_send=[] # list saves the candidate to send thier msg and confirm arriving 
         self.candidate_to_send_lock= threading.Lock()
         
+        self.movemnt_from_border=False # used to detect first movement to reset allowed spot
         if uart:
             connect_xbee(xbee_serial_port, baud_rate)
         else:

@@ -266,6 +266,14 @@ def save_unoccupied_spots_around_border(self):
     # save spots that doesnt contains any drone from the point of border 
     self.allowed_spots = [int(neighbor['name'][1:]) for neighbor in self.get_neighbor_list() if neighbor['drones_in'] == 0]
 
+
+def reset_allowed_spots(self):
+    # This only done only after leaving the border not before 
+    # very possible to have election beween all dronens one the border so if this delted the drone will back 
+    # This constraint should be used only one time after the balancing to avoid going behind the border again
+    if (not self.get_previous_state()==Border) or (not self.get_previous_state()==Irremovable_boarder):
+        self.allowed_spots =[0,1,2,3,4,5,6]
+
 '''
 -------------------------------------------------------------------------------------
 ----------------------------------- Main functions ----------------------------------
@@ -278,6 +286,7 @@ def expand_and_form_border(self,vehicle):
         set_priorities(self)
         destination_spot= find_priority(self)
         self.elected_id= neighbors_election(self)
+        
         if self.elected_id== self.id: # current drone is elected one to move
             if destination_spot != 0: # Movement to another spot not staying 
                 print ("go to S", destination_spot)
@@ -285,6 +294,10 @@ def expand_and_form_border(self,vehicle):
                 # After move_to_spot retuen it means arrivale 
                 movement_done_msg= build_expan_elected(self.id)
                 send_msg(movement_done_msg)
+                
+                if self.movemnt_from_border==False:
+                   reset_allowed_spots(self)
+                   self.movemnt_from_border=True
         else:
            # Wait untile the elected drone to arrive to next spot.
            self.elected_droen_arrived.wait() 
@@ -367,7 +380,8 @@ def further_expansion (self,vehicle):
         self.change_state_to(Owner) # The border save it is own spot
     elif self.get_state() == Irremovable_boarder:
         self.change_state_to(Irremovable)
-    else: # State is Free
+    else: # State is Free the only free will move 
+        self.movemnt_from_border=False
         expand_and_form_border(self,vehicle)
     
     clear_buffer()
