@@ -89,7 +89,7 @@ def decode_shared_allowed_spots_message(message):
     # Determine the start and end indices for the guidance numbers
     allowed_spots_indices = [(i + allowed_spots_start + 1, i + allowed_spots_start + 2) for i in range(allowed_spots_length)]
     # Extract the numbers in guidance_list and convert to string with "S" prefix
-    allowed_spots = ["S" + str(int.from_bytes(message[start:end], 'big')) for start, end in allowed_spots_indices]
+    allowed_spots = [int.from_bytes(message[start:end], 'big') for start, end in allowed_spots_indices]    
     return targets_id, allowed_spots
 
 def check_continuity_of_listening(self):
