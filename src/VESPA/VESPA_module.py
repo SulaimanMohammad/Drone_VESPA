@@ -115,7 +115,9 @@ class Drone:
         self.drone_id_to_sink=[]
         self.drone_id_to_border=[]
         self. min_distance_dicts=[] # nigboor close to the sink
-        self.allowed_spots=[]    # contains the spots that are not occupied while forming the border
+        # allowed_spots contains the spots that are not occupied while forming the border
+        # At the beginning all allowed and that is needed for first expansion 
+        self.allowed_spots=[0,1,2,3,4,5,6]   
         self.direction_taken=[]  # direction path (spots) that are taken in the phase
         self.neighbor_list = []  # list that contains the 6 neighbors around the current location
         self.rec_propagation_indicator=[]

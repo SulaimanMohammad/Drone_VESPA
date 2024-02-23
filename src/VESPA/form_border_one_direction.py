@@ -64,24 +64,33 @@ def decode_border_message(message):
     return sender_id, target_ids, candidate
 
 def circle_completed(self):
-        if check_border_candidate_eligibility(self):
-            self.change_state_to(Border)
+        if check_border_candidate_eligibility(self):    
+            # These cases should be considered for the 
+            if self.get_state() == Irremovable:
+                self.change_state_to(Irremovable_boarder)
+            else: 
+                self.change_state_to(Border) 
+            
             Broadcast_Msg= build_border_message(self,Forming_border_header,[-1], self.id)
             #send_msg_border_upon_confirmation(self, Broadcast_Msg)
             send_msg(Broadcast_Msg)
             self.Forming_Border_Broadcast_REC.set() # to end the the loop
         else:
-            # the drone got new neigbors and became Free
-            if self.get_state() != Free:
+            # the drone got new neigbors and became Free            
+            if self.get_state() == Owner: # the one for example a irremovable should not change and stay irremovabe 
                 self.change_state_to(Free)
 
 def border_broadcast_respond(self, candidate):
     if candidate in self.rec_candidate: # the sender of broadcast already sent msg to the current drone so it is part of the circle
         # re-check the the droen around still have same situation and still can be border
         if check_border_candidate_eligibility():
-            self.change_state_to(Border)
+            if self.get_state() == Irremovable:
+                self.change_state_to(Irremovable_boarder)
+            else: 
+                self.change_state_to(Border) 
     else: # if drone doesnt have the candidate or the sourounding has changed
-        self.change_state_to(Free)
+         if self.get_state() == Owner: # the one for example a irremovable should not change and stay irremovabe 
+                self.change_state_to(Free)
 
 
 def forward_broadcast_message(self,header,candidate):
@@ -198,30 +207,22 @@ def check_border_candidate_eligibility(self):
         self.border_candidate=False
         return self.border_candidate
     
-    self.demand_neighbors_info() # return after gathering all info
-    self.correct_states_after_comm()
-    
     self.border_candidate=False
-    self.dominated_direction= count_element_occurrences(self)
-    # Define a dictionary to map directions to the corresponding spots_to_check_for_border values
-    direction_to_check_map = {
-        0: [1,2,3,4,5,6],
-        1: [1, 2, 6],
-        2: [1, 2, 3],
-        3: [3, 2, 4],
-        4: [3, 4, 5],
-        5: [4, 5, 6],
-        6: [1, 5, 6]
-    }
-    self.spots_to_check_for_border=direction_to_check_map.get(self.dominated_direction, [])
+
     unoccupied_spots_counter = 0
-    for check in self.spots_to_check_for_border:
-        # Find the corresponding entry in neighbor_list by its name
-        neighbor = next((n for n in self.get_neighbor_list() if n["name"] == "s" + str(check)), None)
-        if neighbor and (neighbor ["drones_in"] == 0 ): # spot also is not occupied
-            unoccupied_spots_counter += 1
-    if unoccupied_spots_counter>0 and self.spot ["drones_in"]==1 and self.get_state()==Owner: # At least one spot is empty so the drone can be part of the border
-        self.border_candidate=True
+    for neighbor in self.get_neighbor_list():
+        # This is in the further expansion is needed , where the candidate is decides based on the allowed_spots
+        if self.get_previous_state()==Border or self.get_previous_state()==Irremovable_boarder:
+            if int(neighbor["name"][1:]) in self.allowed_spots:
+                if neighbor["drones_in"] == 0:
+                    unoccupied_spots_counter += 1               
+        else: # the drone was not part of the previous border
+           if neighbor["drones_in"] == 0: # spot also is not occupied
+               unoccupied_spots_counter += 1
+
+    if unoccupied_spots_counter>0 and self.spot ["drones_in"]==1 and self.state==Owner: # at least one spot is empty so the drone can be part of he border
+        if  self.all_neighbor_spots_owned(): 
+            self.border_candidate=True
     else: 
         self.border_candidate=False
         
@@ -263,5 +264,3 @@ def start_msg_one_direction(self):
         if self.id not in self.candidate_to_send:
             self.candidate_to_send.append(self.id)
             self.rec_candidate.append(self.id)
-    
-

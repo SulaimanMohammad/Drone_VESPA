@@ -138,9 +138,6 @@ def set_priorities(self):
             else:
                 s["priority"]= float("inf")
 
-    if self.allowed_spots: # This constraint should be used only one time after the balancing to avoid going behind the border again
-        self.allowed_spots=[]
-
 def find_priority(self):
     min_Priority = min(self.get_neighbor_list(), key=lambda x: x["priority"])["priority"]
     spot_to_go =[s["name"] for s in self.get_neighbor_list() if s["priority"] == min_Priority]
