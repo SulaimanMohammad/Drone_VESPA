@@ -154,7 +154,11 @@ class Drone:
         self.list_finished_update= threading.Event()
         self.list_finished_update.set()
         self.exchange_data_lock= threading.Lock() # demanding and reciving data should not be done by multiple threads
+        self.lock_boder_timer =threading.Lock() 
 
+        self.candidate_to_send=[] # list saves the candidate to send thier msg and confirm arriving 
+        self.candidate_to_send_lock= threading.Lock()
+        
         if uart:
             connect_xbee(xbee_serial_port, baud_rate)
         else:

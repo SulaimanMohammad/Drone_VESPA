@@ -244,7 +244,7 @@ def send_msg_border_upon_confirmation(self,msg):
 '''
 
 def Forme_border(self):
-    wait_message_rec = threading.Thread(target=send_msg_border_until_confirmation, args=(self,)) #pass the function reference and arguments separately to the Thread constructor.
+    wait_message_rec = threading.Thread(target=send_msg_border_until_confirmation, args=(self,Forming_border_header)) #pass the function reference and arguments separately to the Thread constructor.
     wait_message_rec.start()
     #Continue checking in case of not forming border the process will start again 
     while not self.Forming_Border_Broadcast_REC.is_set():
@@ -254,7 +254,7 @@ def Forme_border(self):
             self.current_target_ids= choose_spot_right_handed(self) # chose spot only when it is candidate 
             self.update_candidate_spot_info_to_neighbors() # Useful if the drone arrived and filled a spot made others sourounded
             '''launch a message circulation for current candidat'''
-            start_msg_one_direction(self,Forming_border_header)
+            start_msg_one_direction(self)
             print(self.messages_to_be_sent)
         
         # This timer will be reset upon each border message is recived 

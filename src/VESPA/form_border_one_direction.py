@@ -107,8 +107,12 @@ def form_border_one_direction(self,header,msg):
     sender_id, target_ids, candidate= decode_border_message(msg)
     reset_timer_forme_border(self)
 
-    if sender_id in target_ids:
-        self.forming_border_msg_recived.set()
+    if sender_id in self.current_target_ids and candidate in self.rec_candidate:
+        # MESSAGR REC"
+        with self.candidate_to_send_lock:
+            if candidate in self.candidate_to_send:
+                self.candidate_to_send.remove(candidate)
+
     if len(target_ids)==1 and target_ids[0]==-1:
         if self.border_candidate==True:
             border_broadcast_respond(self, candidate)
@@ -117,21 +121,44 @@ def form_border_one_direction(self,header,msg):
         finish_timer_forme_border(self)
         self.Forming_Border_Broadcast_REC.set()
 
-    if self.id in  target_ids:
+    if self.id in  target_ids  and target_ids :# targets exist not empty s
         if self.id == candidate:
             circle_completed(self)
             finish_timer_forme_border(self)
 
         else: 
-            check_border_candidate_eligibility(self) # check eligibility each time to be more rsponsive to any changes
-            if self.border_candidate == True:
+            with self.candidate_to_send_lock:
+                if candidate not in self.candidate_to_send:
+                    self.candidate_to_send.append(candidate)
+
+
+def send_msg_border_until_confirmation(self,header):
+    while not self.Forming_Border_Broadcast_REC.is_set():
+        
+        # Copy messages_to_be_sent and iterate in it trying to send all the msg 
+        # self.sending_messgae_list will change when a message is received the candidate will be pulled out 
+        candidates_to_process = []
+        with self.candidate_to_send_lock:
+            if  self.candidate_to_send :
+                candidates_to_process = list(self.candidate_to_send)
+        
+        if not self.Forming_Border_Broadcast_REC.is_set(): # dont reset at the end of phase since it listeners will be bloked
+            self.demand_neighbors_info()
+            check_border_candidate_eligibility(self)
+            self.current_target_ids= choose_spot_right_handed(self)
+      
+        if self.border_candidate == True:
+            for candidate in candidates_to_process: 
                 if candidate not in self.rec_candidate:
                     self.rec_candidate.append(candidate)
-                # Forward only if it is self.border_candidate
-                self.current_target_ids= choose_spot_right_handed(self)
-                msg= build_border_message(self,header,self.current_target_ids, candidate)
-                # send_msg_border_upon_confirmation(self, msg)
+                if self.Forming_Border_Broadcast_REC.is_set():
+                    break
+                if self.current_target_ids is not None:
+                    msg= build_border_message(self,header,self.current_target_ids, candidate) 
                 send_msg(msg)
+                time.sleep(exchange_data_latency)# time untile the message arrives 
+            time.sleep(exchange_data_latency*2)
+            
 
 ''''
 -------------------------------------------------------------------------------------
@@ -231,10 +258,10 @@ def create_target_list(self, header):
                 target_ids.extend(s["drones_in_id"]) # add the id of all the niegbors including the current
         return target_ids
 
-def start_msg_one_direction(self,header):
-    self.current_target_ids= choose_spot_right_handed(self)
-    if self.current_target_ids: # send message only if there is target found ( to avoid send wronf message) 
-        msg= build_border_message(self,header,self.current_target_ids, self.id)
-        # send_msg_border_upon_confirmation(self, msg)
-        send_msg(msg)
+def start_msg_one_direction(self):
+    with self.candidate_to_send_lock:
+        if self.id not in self.candidate_to_send:
+            self.candidate_to_send.append(self.id)
+            self.rec_candidate.append(self.id)
+    
 
