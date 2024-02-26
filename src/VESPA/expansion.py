@@ -145,7 +145,7 @@ def find_priority(self):
 
 def neighbors_election(self):
     # Only free whil be consider in the election 
-    id_free = [id for id, state in zip(self.spot["drones_in_id"], self.spot["states"]) if state == Free]
+    id_free = [id for id, state in zip(self.get_current_spot()["drones_in_id"], self.get_current_spot()["states"]) if state == Free]
     return min(id_free) # return the min id of a drone is in state Free
 
 def sink_movement_command(self,vehicle,id):
@@ -235,7 +235,7 @@ def calibration_ping_pong(self, vehicle, msg ):
 
 def Forme_border(self):
     
-    while (self.spot['drones_in']>1) or (not(all(neighbor['drones_in'] in [0, 1] for neighbor in self.get_neighbor_list()))) or not self.all_neighbor_spots_owned():
+    while (self.get_current_spot()['drones_in']>1) or (not(all(neighbor['drones_in'] in [0, 1] for neighbor in self.get_neighbor_list()))) or not self.all_neighbor_spots_owned():
         ''' 
         Before initiating the border procedure, it's important to wait for some time to ensures that the drone is alone in its spot.
         Also wait until all neighbor contains one drone (owner) or empty, in case many are in neighbor spot that would cause change in distrbution becaue 

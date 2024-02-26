@@ -220,7 +220,7 @@ def check_border_candidate_eligibility(self):
            if neighbor["drones_in"] == 0: # spot also is not occupied
                unoccupied_spots_counter += 1
 
-    if unoccupied_spots_counter>0 and self.spot ["drones_in"]==1 and self.state==Owner: # at least one spot is empty so the drone can be part of he border
+    if unoccupied_spots_counter>0 and self.get_current_spot() ["drones_in"]==1 and self.state==Owner: # at least one spot is empty so the drone can be part of he border
         if  self.all_neighbor_spots_owned(): 
             self.border_candidate=True
     else: 
