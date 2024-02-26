@@ -587,25 +587,30 @@ class Drone:
             self.state= new_state # change the state
             self.spot["states"][0]= self.state
 
+    def get_current_spot(self):
+        with self.lock_state:
+            return self.spot
+
     def check_Ownership(self):
         if self.get_state() != Owner:
-            if self.spot["drones_in"]==1: # the drone is Owner
+            if self.get_current_spot()["drones_in"]==1: # the drone is Owner
                 self.change_state_to (Owner)
-            elif self.spot["drones_in"]>1:
-                non_free = all(state != Free for state in self.spot["states"])
+            elif self.get_current_spot()["drones_in"]>1:
+                non_free = all(state != Free for state in self.get_current_spot()["states"])
                 # Check if there is irremovable or border because they are considered as owner 
                 if non_free==0: # only free there 
-                    all_free = all(state == Free for state in self.spot["states"])
+                    all_free = all(state == Free for state in self.get_current_spot()["states"])
                     if all_free: 
-                        min_id = min(self.spot["drones_in_id"])
+                        min_id = min(self.get_current_spot()["drones_in_id"])
                         print ( "\n chosed from many in same point:")
                         print( min_id)
                         # current drone is chosen
                         if  min_id == self.id:
                             self.change_state_to (Owner)
                         else:
-                            min_id_index = self.spot["drones_in_id"].index(min_id)
-                            self.spot["states"][min_id_index] = Owner
+                            min_id_index =self.get_current_spot()["drones_in_id"].index(min_id)
+                            with self.lock_state:
+                                self.spot["states"][min_id_index] = Owner
 
 
     def correct_states_after_comm(self):

@@ -179,7 +179,7 @@ def find_priority(self):
     return int(spot_to_go[0][1:])
 
 def neighbors_election(self):
-    id_free = [id for id, state in zip(self.spot["drones_in_id"], self.spot["states"]) if state == Free] #only free whill be consider in the election 
+    id_free = [id for id, state in zip(self.get_current_spot()["drones_in_id"],self.get_current_spot()["states"]) if state == Free] #only free whill be consider in the election 
     return min(id_free) # return the min id of a drone is in state Free
 
 def sink_movement_command(self,vehicle,id):
@@ -384,7 +384,7 @@ def expand_and_form_border_try(self):
 
     self.demand_neighbors_info()       
     # check also that no electin message around                                         ):
-    while (self.spot['drones_in']>1) or (not(all(neighbor['drones_in'] in [0, 1] for neighbor in self.get_neighbor_list()))) or not self.all_neighbor_spots_owned():
+    while ( self.get_current_spot()['drones_in']>1) or (not(all(neighbor['drones_in'] in [0, 1] for neighbor in self.get_neighbor_list()))) or not self.all_neighbor_spots_owned():
 
         # Before initiating the border procedure, it's important to wait for some time to ensures that the drone is alone in its spot.
         # This step eliminates the possibility of erroneously considering a drone as a border-candidate when another drone in the same spot is about to move.
