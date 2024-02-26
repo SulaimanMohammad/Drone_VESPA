@@ -5,6 +5,7 @@ import sys
 import os
 import threading
 import time
+import copy
 # Get the parent directory path
 parent_directory = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 # Add the parent directory to sys.path
@@ -239,17 +240,36 @@ class Drone:
         id = int.from_bytes(id_bytes, 'big')
         return id
     
+
+    def compare_with_neighbor_list(self, list1, key):
+        for item1, item2 in zip(sorted( self.neighbor_list , key=lambda x: x['name']), sorted(list1, key=lambda x: x['name'])):
+            if item1[key] != item2[key]:
+                return False
+        return True    
+    
     def demand_neighbors_info(self):
         # This function will be called by many threads and since it contains reset of data, and need to finish receiving data so list updated
         # So the function should not be called until it is completly finished or the list will be wrong if 2 threads called it at the same time  
         with self.exchange_data_lock: 
             self.list_finished_update.clear()
+            copy_neighbor_list= copy.deepcopy(self.neighbor_list) # use deepcopy or it will be reference not copy 
+            recollect_data=0
             self.rest_neighbor_list()
-            demand_msg= self.build_data_demand_message()
-            send_msg(demand_msg)
-            self.initialize_timer_resposnse()
+            reseted_neighbor_list= copy.deepcopy(self.neighbor_list) 
+            
+            while self.compare_with_neighbor_list(reseted_neighbor_list,'drones_in') and recollect_data<2: 
+                demand_msg= self.build_data_demand_message()
+                send_msg(demand_msg)
+                self.initialize_timer_resposnse()
+                recollect_data= recollect_data +1
+                time.sleep(exchange_data_latency)
+
+            if self.resposnse_rec_counter==0: # No response recieved so it is blocked thread restor the old list 
+                with self.lock_neighbor_list:
+                  self.neighbor_list=  copy.deepcopy(copy_neighbor_list) 
+
             self.list_finished_update.set()
-        
+
     def build_ACK_data_message(self, target_id):
         message= ACK_header.encode()
         max_byte_count = max([determine_max_byte_size(self.id)]+
