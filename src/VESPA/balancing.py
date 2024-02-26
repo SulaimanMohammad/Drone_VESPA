@@ -298,9 +298,7 @@ def balancing(self, vehicle):
         self.end_of_balancing.clear() 
     
     # rest this indecator for the next use in the border formation
-    self.rec_propagation_indicator=[]  
-    self.rec_candidate=[]   
-    self.direction_taken=[]
+    # self.rec_candidate=[]   
     clear_buffer()
     xbee_receive_message_thread.join()
     

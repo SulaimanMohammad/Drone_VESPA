@@ -109,7 +109,6 @@ class Drone:
         self.a=None
         self.target_detected= False
         self.border_candidate=False
-        self.dominated_direction=0
         self.phase= Expan_header
         self.spots_to_check_for_border=[]
         self.rec_candidate=[] # contains ids of drone that fired a messaging circle
@@ -119,9 +118,7 @@ class Drone:
         # allowed_spots contains the spots that are not occupied while forming the border
         # At the beginning all allowed and that is needed for first expansion 
         self.allowed_spots=[0,1,2,3,4,5,6]   
-        self.direction_taken=[]  # direction path (spots) that are taken in the phase
         self.neighbor_list = []  # list that contains the 6 neighbors around the current location
-        self.rec_propagation_indicator=[]
         self.elected_id=None
         set_a(a)
         self.id=id
@@ -143,12 +140,10 @@ class Drone:
         self.lock_neighbor_list = threading.Lock()
         self.lock_demanders_timer =threading.Lock()
         self.demanders_received_data = threading.Event()
-        self.forming_border_msg_recived= threading.Event()
         self.VESPA_termination= threading.Event() 
         self.elected_droen_arrived= None    
         self.Forming_Border_Broadcast_REC= threading.Event()
         self.start_expanding= None
-        self.end_of_balancin= None
         self.demanders_list=[]
         self.demand_timer=None
         self.remaining_time_demand=None
@@ -758,7 +753,6 @@ class Drone:
     def move_to_spot(self,vehicle, destination_spot):
         self.update_location(destination_spot)
         set_to_move(vehicle)
-        self.direction_taken.append( destination_spot)
         angle, distance = self.convert_spot_angle_distance(destination_spot)
         try:
             move_body_PID(vehicle,angle, distance)

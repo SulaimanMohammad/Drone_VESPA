@@ -174,7 +174,6 @@ def initial_movement(self,vehicle,id, spot, lon, lat):
             vehicle.mode    = VehicleMode("LOITER") #loiter mode and hover in your place
             time.sleep(1)
             vehicle.mode     = VehicleMode("GUIDED")
-            self.direction_taken.append(spot)
         else:
             #use image to fly on the top of sink
             search_for_sink_tag(vehicle)
@@ -327,7 +326,6 @@ def expand_and_form_border(self,vehicle):
            # Wait untile the elected drone to arrive to next spot.
            self.elected_droen_arrived.wait() 
            self.elected_droen_arrived.clear()
-           self.rearrange_neighbor_statically_upon_elected_arrival (self.elected_id, destination_spot)
 
         print("checking for update the state")
         spatial_observation(self)
