@@ -5,6 +5,7 @@ import sys
 import os
 import threading
 import time
+import copy
 # Get the parent directory path
 parent_directory = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 # Add the parent directory to sys.path
@@ -163,7 +164,7 @@ class Drone:
         self.candidate_in_msg=None
         self.border_msg_nonreceived= threading.Event()
         self.participated= False
-
+        self.msg_rec_counter=0
         # if uart:
         #     connect_xbee(xbee_serial_port, baud_rate)
         # else:
@@ -198,6 +199,7 @@ class Drone:
 
     def initialize_timer_resposnse(self):
         self.reset_timer_resposnse()
+        self.msg_rec_counter=0
         while True:
             self.remaining_time_resposnse -= 0.1
             if self.remaining_time_resposnse <= 0:
@@ -238,14 +240,36 @@ class Drone:
         id_bytes = encoded_message[id_start_index:id_end_index]
         id = int.from_bytes(id_bytes, 'big')
         return id
-    
+   
+    def compare_key_in_lists(self, list2, key):
+        # print("reseted_neighbor_list\n", list2 )
+
+        # print(" current list \n", self.neighbor_list)
+
+        for item1, item2 in zip(sorted( self.neighbor_list , key=lambda x: x['name']), sorted(list2, key=lambda x: x['name'])):
+            if item1[key] != item2[key]:
+                return False
+        return True
+
     def demand_neighbors_info(self):
         with self.exchange_data_lock: 
             self.list_finished_update.clear()
+            copy_neighbor_list= copy.deepcopy(self.neighbor_list)
+            re_collect_data=0
             self.rest_neighbor_list()
-            demand_msg= self.build_data_demand_message()
-            send_msg(demand_msg)
-            self.initialize_timer_resposnse()
+            reseted_neighbor_list= copy.deepcopy(self.neighbor_list) 
+            # print( " before loop reset:\n ",reseted_neighbor_list )
+            while self.compare_key_in_lists(reseted_neighbor_list,'drones_in') and re_collect_data<2: 
+                demand_msg= self.build_data_demand_message()
+                send_msg(demand_msg)
+                self.initialize_timer_resposnse()
+                re_collect_data= re_collect_data +1
+                # print("         re_collect_data: ", re_collect_data, " msg rec", self.msg_rec_counter )
+                time.sleep(exchange_data_latency)
+            if self.msg_rec_counter==0:
+                print( " retrive old copy")
+                with self.lock_neighbor_list:
+                  self.neighbor_list=  copy.deepcopy(copy_neighbor_list) 
             self.list_finished_update.set()
 
 
@@ -359,6 +383,7 @@ class Drone:
             positionX, positionY, state, previous_state, id_value= decoded_msg
             if self.remaining_time_resposnse: # timer already initialized 
                 self.reset_timer_resposnse()
+                self.msg_rec_counter=self.msg_rec_counter+1
             Ack_msg=self.build_ACK_data_message(id_value)
             send_msg(Ack_msg)
             self.update_neighbors_list(positionX, positionY, state, previous_state,id_value)
