@@ -645,7 +645,7 @@ class Drone:
             y= DIR_xy_distance_VECTORS[dir][1]
             self.positionX =round(self.positionX + x,2) # Add the value not assign because it is movement
             self.positionY = round(self.positionY+ y ,2)
-            self.rearrange_neighbor_statically_upon_movement(dir)
+            # self.rearrange_neighbor_statically_upon_movement(dir)
             # Find the distance of the neigboors at the new position
             self.calculate_neighbors_distance_sink()
 
