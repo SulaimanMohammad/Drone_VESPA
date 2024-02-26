@@ -188,22 +188,7 @@ def revaluate_reforward(self,header, candidate):
         msg= build_border_message(self,header,self.current_target_ids, candidate)   
     return msg 
 
-def count_element_occurrences(self):
-        # Find the maximum element in the direction_taken list
-        max_element = 7  # s0 to s6
-        # Create a dictionary to store the frequencies, similar to hash map to count occurrences
-        frequency_dict = {i: 0 for i in range(max_element + 1)}
-        # Count the occurrences of each element
-        for direction in self.direction_taken:
-            frequency_dict[direction] += 1
-        # Find the maximum frequency
-        max_freq = max(frequency_dict.values())
-        max_indices = [key for key, value in frequency_dict.items() if value == max_freq]
-        # If there is only one occurrence of the maximum frequency, return its index
-        if len(max_indices) == 1:
-            return max_indices[0]
-        # If there are multiple occurrences of the maximum frequency, choose randomly
-        return random.choice(max_indices)
+
     
 def check_border_candidate_eligibility(self):
     # self.list_finished_update.wait()
@@ -264,18 +249,6 @@ def choose_spot_right_handed(self):
         if neighbor_list_x[next_index]["drones_in"] > 0:
             return [neighbor_list_x[next_index]["drones_in_id"][0]]
     return []
-
-def create_target_list(self, header):
-        target_ids=[]
-        if header==Balance_header: # Targets are only the border ones
-            for s in self.get_neighbor_list():
-                if 'border' in s['states']:
-                    border_indices = [idx for idx, state in enumerate(s['states']) if state == 'border']
-                    target_ids.extend([s['drones_in_id'][idx] for idx in border_indices])
-        else:
-            for s in self.get_neighbor_list():
-                target_ids.extend(s["drones_in_id"]) # add the id of all the niegbors including the current
-        return target_ids
 
 def start_msg_one_direction(self,header):
     # self.current_target_ids= choose_spot_right_handed(self)
