@@ -358,12 +358,8 @@ def first_exapnsion (self, vehicle):
     expand_and_form_border(self, vehicle)
     
     Forme_border(self)# will not return until the drones receive boradcast of forming border
+    reset_border_variables(self)
     self.search_for_target() # This is blocking until the end of movement
-    
-    # Reset variables for the next iteration
-    self.rec_propagation_indicator=[] 
-    self.rec_candidate=[]
-    self.direction_taken=[] 
     self.elected_id=None 
     # Since broadcast messages might still be circulating while retrieval has stopped, there could be leftover messages in the buffer.
     # It's essential to clear the buffer before the next phase to prevent any surplus.
@@ -383,15 +379,10 @@ def further_expansion (self,vehicle):
         self.movemnt_from_border=False
         expand_and_form_border(self,vehicle)
     
-    Forme_border(self)# will not return until the drones receive boradcast of forming border
+    Forme_border(self) #  Irremovable will participate in forming the border 
+    reset_border_variables(self)
     self.search_for_target() # This is blocking until the end of movement
-    
-    # Reset variables for the next iteration
-    self.rec_propagation_indicator=[] 
-    self.rec_candidate=[]
-    self.direction_taken=[] 
     self.elected_id=None 
-    
     clear_buffer()
     xbee_receive_message_thread.join() 
     

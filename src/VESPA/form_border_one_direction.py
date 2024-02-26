@@ -264,3 +264,10 @@ def start_msg_one_direction(self):
         if self.id not in self.candidate_to_send:
             self.candidate_to_send.append(self.id)
             self.rec_candidate.append(self.id)
+
+def reset_border_variables(self): 
+    self.current_target_ids=[]
+    self.candidate_to_send=[]
+    self.rec_candidate=[]
+    self.direction_taken=[] 
+    self.border_candidate=False
