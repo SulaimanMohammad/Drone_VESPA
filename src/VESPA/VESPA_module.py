@@ -433,7 +433,7 @@ class Drone:
         for neighbor in self.get_neighbor_list():
             num_drones_in = neighbor["drones_in"]
             states = neighbor["states"]
-            if num_drones_in >0 and not all(state == Owner for state in states):
+            if num_drones_in >0 and not all( (state == Owner or state== Irremovable) for state in states):
                 return False
         return True
     
