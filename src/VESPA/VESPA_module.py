@@ -152,6 +152,7 @@ class Drone:
         self.demand_timer=None
         self.remaining_time_demand=None
         self.remaining_time_resposnse=None
+        self.resposnse_rec_counter=0
         # Event refer if exchanging messages done or not, clear measn in progress, set = done 
         self.list_finished_update= threading.Event()
         self.list_finished_update.set()
@@ -196,6 +197,7 @@ class Drone:
 
     def initialize_timer_resposnse(self):
         self.reset_timer_resposnse()
+        self.resposnse_rec_counter=0
         while True:
             self.remaining_time_resposnse -= 0.1
             if self.remaining_time_resposnse <= 0:
@@ -356,6 +358,7 @@ class Drone:
             positionX, positionY, state, previous_state, id_value= decoded_msg
             if self.remaining_time_resposnse: # timer already initialized
                 self.reset_timer_resposnse()
+                self.resposnse_rec_counter=self.resposnse_rec_counter+1
             Ack_msg=self.build_ACK_data_message(id_value)
             send_msg(Ack_msg)
             self.update_neighbors_list(positionX, positionY, state, previous_state,id_value)
