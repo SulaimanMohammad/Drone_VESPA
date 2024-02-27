@@ -177,7 +177,7 @@ def send_msg_border_until_confirmation(self,header):
 
 def reset_timer_forme_border(self):
     with self.lock_boder_timer:
-        self.remaining_time_forme_border=30*exchange_data_latency
+        self.remaining_time_forme_border=300
 
 # called by other threads 
 def finish_timer_forme_border(self):
