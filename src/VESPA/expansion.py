@@ -70,7 +70,8 @@ def handel_elected_drone_arrivale(self,msg):
         self.elected_droen_arrived.set()
 
 def check_continuity_of_listening(self):
-    if not self.Forming_Border_Broadcast_REC.is_set():
+    #if not self.Forming_Border_Broadcast_REC.is_set():
+    if not self.expansion_stop.is_set():
         return True
     else: 
         return False
@@ -95,10 +96,10 @@ def expansion_listener (self):
     while check_continuity_of_listening(self):
         # time.sleep(0.1)
         #self.manage_xbee_while_movement()        
-        msg= retrieve_msg_from_buffer(self.Forming_Border_Broadcast_REC)
+        msg= retrieve_msg_from_buffer(self.expansion_stop)
         #if not msg_queue.empty():
         #    msg = msg_queue.get()  # Retrieve a message from the queue        
-        #     #print("msg rec start with ", msg[:1].decode())
+        #print("msg rec start with ", msg[:1].decode())
 
         self.exchange_neighbors_info_communication(msg)
         if msg.startswith(Movement_command.encode()) and msg.endswith("\n"):
@@ -127,6 +128,10 @@ def expansion_listener (self):
             #if self.state==Owner:  
             form_border_one_direction(self,Forming_border_header,msg)
                 #form_border_two_direction(self,Forming_border_header,msg)
+
+        elif msg.startswith(Verify_Border.encode()) and msg.endswith(b'\n'):
+            verify_border(self,Verify_Border,msg)
+            
     now = datetime.now()
     print(now.strftime("%H:%M:%S.%f"),":finished lsitene",)
     #p.join()
@@ -269,41 +274,7 @@ def calibration_ping_pong(self, vehicle, msg ):
 --------------------------------- Forming the border---------------------------------
 -------------------------------------------------------------------------------------
 '''
-def Forme_border(self):
-    wait_message_rec = threading.Thread(target=send_msg_border_until_confirmation, args=(self,)) #pass the function reference and arguments separately to the Thread constructor.
-    wait_message_rec.start()
-    # need to continue checking because it can be not border but can be after 
-    while not self.Forming_Border_Broadcast_REC.is_set():
-        print(" send demane from Forme_border")
-        self.demand_neighbors_info()
-        print( "Done reading data")
-        for station in self.get_neighbor_list():
-            if station['drones_in'] > 0:
-                print(station)
 
-        check_border_candidate_eligibility(self)
-        print("self.border_candidate",self.border_candidate )
-
-        if self.border_candidate :
-            self.current_target_ids= choose_spot_right_handed(self) # chose spot only when it is candidate 
-            print( "current_target_ids", self.current_target_ids)
-            self.update_candidate_spot_info_to_neighbors() # Useful if the drone arrived and filled a spot made others sourounded
-            print( " it is elgibale ")
-            '''launch a message circulation for current candidat'''
-            start_msg_one_direction(self,Forming_border_header)
-            print(self.messages_to_be_sent)
-        
-        reset_timer_forme_border(self)
-        while True:
-            with self.lock_boder_timer:
-                self.remaining_time_forme_border -= 0.5
-                if self.remaining_time_forme_border <= 0:
-                        break
-            time.sleep(0.5)
-
-    self.Forming_Border_Broadcast_REC.wait()
-    wait_message_rec.join() # wait it to be done 
-    self.Forming_Border_Broadcast_REC.clear()
 
 def save_unoccupied_spots_around_border(self):
     # save spots number that doesnt contains any drone from the point of border 
@@ -342,8 +313,6 @@ def expand_and_form_border_try(self):
         if station['drones_in'] > 0:
             print(station)
     while self.get_state() !=Owner:
-        
-
         set_priorities(self)
         print("set_priorities")
         self.destination_spot= find_priority(self)
@@ -355,7 +324,7 @@ def expand_and_form_border_try(self):
                 print ("move to S", self.destination_spot)
                 #self.move_to_spot(vehicle, destination_spot)
                 self.update_location(self.destination_spot)
-                time.sleep(10)
+                time.sleep(2)
                 print("arrived from main")
                 # After move_to_spot retuen it means arrivale 
                 movement_done_msg= build_expan_elected(self.id)
@@ -382,7 +351,7 @@ def expand_and_form_border_try(self):
 
     self.demand_neighbors_info()       
     # check also that no electin message around                                         ):
-    while ( self.get_current_spot()['drones_in']>1) or (not(all(neighbor['drones_in'] in [0, 1] for neighbor in self.get_neighbor_list()))) or not self.all_neighbor_spots_owned():
+    while (self.get_current_spot()['drones_in']>1) or (not(all(neighbor['drones_in'] in [0, 1] for neighbor in self.get_neighbor_list()))) or not self.all_neighbor_spots_owned():
 
         # Before initiating the border procedure, it's important to wait for some time to ensures that the drone is alone in its spot.
         # This step eliminates the possibility of erroneously considering a drone as a border-candidate when another drone in the same spot is about to move.
@@ -407,10 +376,18 @@ def expand_and_form_border_try(self):
         if station['drones_in'] > 0:
             print(station)
     Forme_border(self)
-    xbee_receive_message_thread.join() # stop listening to message    
+    clear_buffer()
+    self.demand_neighbors_info() # needed to update what neigbor become border 
     for station in self.get_neighbor_list():
         if station['drones_in'] > 0:
             print(station)
+    time.sleep(20)
+    print(" VERFIFY ")
+    confirm_border_connection(self)
+    self.expansion_stop.set()
+    xbee_receive_message_thread.join() # stop listening to message    
+    self.expansion_stop.clear()
+
     time.sleep(5)
     alive_threads = threading.enumerate()
     for t in alive_threads:

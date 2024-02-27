@@ -161,6 +161,11 @@ class Drone:
         self.border_msg_nonreceived= threading.Event()
         self.participated= False
         self.msg_rec_counter=0
+
+        self.border_verified=threading.Event()
+        self.neighbor_list_upon_border_formation=[] 
+        self.expansion_stop= threading.Event()
+    
         # if uart:
         #     connect_xbee(xbee_serial_port, baud_rate)
         # else:
