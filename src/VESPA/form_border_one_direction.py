@@ -113,32 +113,33 @@ def border_broadcast_respond(self, candidate):
         self.change_state_to(Free)
 
 def form_border_one_direction(self,header,msg):
-    sender_id, target_ids, candidate= decode_border_message(msg)
-    reset_timer_forme_border(self)
+    if not self.Forming_Border_Broadcast_REC.is_set(): # React only if border is not formed yet 
+        sender_id, target_ids, candidate= decode_border_message(msg)
+        reset_timer_forme_border(self)
 
-    if sender_id in self.current_target_ids and candidate in self.rec_candidate:
-        # MESSAGR REC"
-        with self.candidate_to_send_lock:
-            if candidate in self.candidate_to_send:
-                self.candidate_to_send.remove(candidate)
-
-    if len(target_ids)==1 and target_ids[0]==-1:
-        if self.border_candidate==True:
-            border_broadcast_respond(self, candidate)
-        # Here any drone in any state needs to forward the boradcast message and rise ending flag
-        forward_broadcast_message(self, Forming_border_header,candidate)
-        finish_timer_forme_border(self)
-        self.Forming_Border_Broadcast_REC.set()
-
-    if self.id in  target_ids  and target_ids :# targets exist not empty s
-        if self.id == candidate:
-            circle_completed(self)
-            finish_timer_forme_border(self)
-
-        else: 
+        if sender_id in self.current_target_ids and candidate in self.rec_candidate:
+            # MESSAGR REC"
             with self.candidate_to_send_lock:
-                if candidate not in self.candidate_to_send:
-                    self.candidate_to_send.append(candidate)
+                if candidate in self.candidate_to_send:
+                    self.candidate_to_send.remove(candidate)
+
+        if len(target_ids)==1 and target_ids[0]==-1:
+            if self.border_candidate==True:
+                border_broadcast_respond(self, candidate)
+            # Here any drone in any state needs to forward the boradcast message and rise ending flag
+            forward_broadcast_message(self, Forming_border_header,candidate)
+            finish_timer_forme_border(self)
+            self.Forming_Border_Broadcast_REC.set()
+
+        if self.id in  target_ids  and target_ids :# targets exist not empty s
+            if self.id == candidate:
+                circle_completed(self)
+                finish_timer_forme_border(self)
+
+            else: 
+                with self.candidate_to_send_lock:
+                    if candidate not in self.candidate_to_send:
+                        self.candidate_to_send.append(candidate)
 
 
 def send_msg_border_until_confirmation(self,header):
@@ -164,9 +165,9 @@ def send_msg_border_until_confirmation(self,header):
                     break
                 if self.current_target_ids is not None:
                     msg= build_border_message(self,header,self.current_target_ids, candidate) 
-                send_msg(msg)
-                time.sleep(exchange_data_latency)# time untile the message arrives 
-            time.sleep(exchange_data_latency*2)
+                    send_msg(msg)
+                    time.sleep(exchange_data_latency)# time untile the message arrives 
+        time.sleep(exchange_data_latency)
             
 
 ''''
