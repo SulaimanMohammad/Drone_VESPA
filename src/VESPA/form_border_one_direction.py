@@ -104,8 +104,8 @@ def forward_broadcast_message(self,header,candidate):
 def form_border_one_direction(self,header,msg):
     sender_id, target_ids, candidate= decode_border_message(msg)
     reset_timer_forme_border(self)
-    # now = datetime.now()
-    #print(now.strftime("%H:%M:%S.%f"), ": Sender_id, target_ids, candidate, elg",sender_id, target_ids, candidate, self.border_candidate )
+    now = datetime.now()
+    print(now.strftime("%H:%M:%S.%f"), ":REC Sender_id, target_ids, candidate, elg",sender_id, target_ids, candidate, self.border_candidate )
     # the sender of message was in the self.current_target_ids means it recived a message and reponde to it  
     #check_border_candidate_eligibility(self)
     #self.current_target_ids= choose_spot_right_handed(self)
@@ -150,7 +150,6 @@ def send_msg_border_until_confirmation(self):
             if  self.messages_to_be_sent :# it is empty 
                 #candidate= self.messages_to_be_sent.pop(0)
                 candidates_to_process = list(self.messages_to_be_sent)
-                print("         Messages_to_be_sent", self.messages_to_be_sent)
         
         if not self.Forming_Border_Broadcast_REC.is_set(): # dont reset at the end of phase since it listeners will be bloked
             self.demand_neighbors_info()
@@ -164,12 +163,15 @@ def send_msg_border_until_confirmation(self):
                 if self.Forming_Border_Broadcast_REC.is_set():
                     break
                 msg=revaluate_reforward(self,header, candidate)
+                now = datetime.now()
+                print(now.strftime("%H:%M:%S.%f"), ": SENDSender_id, target_ids, candidate",self.id, self.current_target_ids, candidate )
+
                 send_msg(msg)
                 time.sleep(exchange_data_latency)# time untile the message arrives 
-            time.sleep(exchange_data_latency*2)
+        time.sleep(exchange_data_latency*2)
 
 
-''''
+''''*
 -------------------------------------------------------------------------------------
 ----------------------------------- Main functions ----------------------------------
 -------------------------------------------------------------------------------------

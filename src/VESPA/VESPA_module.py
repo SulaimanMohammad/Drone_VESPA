@@ -373,7 +373,7 @@ class Drone:
     '''
     def get_neighbors_info(self,msg):
         decoded_msg= self.decode_spot_info_message(msg) # If the message is invalid decode will return [-1]
-        print(" rec x,y,state, prestat, id", decoded_msg)
+        #print(" rec x,y,state, prestat, id", decoded_msg)
         # Ack will be sent only if the message is correct, Otherwise the lack of ACK will force the target of resending data 
         if len(decoded_msg)>1 : # No erorr of receiving
             positionX, positionY, state, previous_state, id_value= decoded_msg

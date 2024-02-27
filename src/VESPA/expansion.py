@@ -208,7 +208,8 @@ def initial_movement(self,vehicle,id, spot, lon, lat):
             vehicle.mode    = VehicleMode("LOITER") #loiter mode and hover in your place
             time.sleep(1)
             vehicle.mode     = VehicleMode("GUIDED")
-            self.direction_taken.append(spot)
+
+
         else:
             #use image to fly on the top of sink
             search_for_sink_tag(vehicle)
@@ -322,7 +323,6 @@ def expand_and_form_border_try(self):
     # xbee_receive_message_process.join() # Optionally wait for the process to finish
     self.elected_droen_arrived= threading.Event()
     if self.id==0:
-        self.direction_taken.append(0)
         self.update_location(0)
         self.change_state_to(Owner)
         # for station in self.neighbor_list:
@@ -333,7 +333,6 @@ def expand_and_form_border_try(self):
     else:
         destination_spot_random = 2
         print ("go to S", destination_spot_random)
-        self.direction_taken.append( destination_spot_random)
         self.update_location(destination_spot_random)
     
     print("spot", self.spot)
@@ -355,7 +354,6 @@ def expand_and_form_border_try(self):
             if self.destination_spot != 0: # Movement to another spot not staying 
                 print ("move to S", self.destination_spot)
                 #self.move_to_spot(vehicle, destination_spot)
-                self.direction_taken.append( self.destination_spot)
                 self.update_location(self.destination_spot)
                 time.sleep(10)
                 print("arrived from main")
