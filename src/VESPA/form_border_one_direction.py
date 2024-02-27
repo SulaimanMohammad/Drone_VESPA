@@ -170,15 +170,42 @@ def send_msg_border_until_confirmation(self,header):
         time.sleep(exchange_data_latency)
             
 
+def verify_border(self,header, msg):
+    if not self.border_verified.is_set():
+        sender_id, target_ids, candidate= decode_border_message(msg)
+        reset_timer_forme_border(self, header)
+
+        if len(target_ids)==1 and target_ids[0]==-1:
+            # Here any drone in any state needs to forward the boradcast message and rise ending flag
+            forward_broadcast_message(self, header,candidate)
+            finish_timer_forme_border(self)
+            self.border_verified.set()
+
+        if self.id in  target_ids and target_ids :# targets exist not empty s
+            if self.id == candidate and (self.get_state()== Border or self.get_state()== Irremovable_boarder) :
+                Broadcast_Msg= build_border_message(self,header,[-1], self.id)
+                #send_msg_border_upon_confirmation(self, Broadcast_Msg)
+                send_msg(Broadcast_Msg) # bordacst doent need to be waiting conformation 
+                finish_timer_forme_border(self)
+                self.border_verified.set() # to end the the loop
+            else:
+                if self.get_state()== Border or self.get_state()== Irremovable_boarder:
+                    self.current_target_ids= choose_spot_right_handed(self,self.neighbor_list_upon_border_formation )
+                    msg= build_border_message(self,header,self.current_target_ids, candidate)
+                    send_msg(msg) 
+
 ''''
 -------------------------------------------------------------------------------------
 ----------------------------------- Main functions ----------------------------------
 -------------------------------------------------------------------------------------
 '''
 
-def reset_timer_forme_border(self):
+def reset_timer_forme_border(self, header):
     with self.lock_boder_timer:
-        self.remaining_time_forme_border=300
+        if header== Forming_border_header:
+            self.remaining_time_forme_border=600 # Contains waiting and confim the msg arrival 
+        else:
+            self.remaining_time_forme_border=30   # This used in case of verfiy the border the messages flow fast
 
 # called by other threads 
 def finish_timer_forme_border(self):
@@ -211,8 +238,13 @@ def check_border_candidate_eligibility(self):
         
     return self.border_candidate
 
-def choose_spot_right_handed(self):
-    neighbor_list_x = self.get_neighbor_list()[1:]
+def choose_spot_right_handed(self, neighbor_list_upon_border=None):
+    
+    if neighbor_list_upon_border==None:
+        neighbor_list_x = self.get_neighbor_list()[1:]
+    else:
+        neighbor_list_x= neighbor_list_upon_border[1:] # Use the saved list to verfiy the border still same 
+
     n = len(neighbor_list_x)
     first_empty_index = None
     # Find the first empty zone
@@ -296,3 +328,31 @@ def forme_border(self):
     self.neighbor_list_upon_border_formation=copy.deepcopy( self.get_neighbor_list()) # Save the Topology arround so it can be used to verfiy the border
     
     reset_border_variables(self)
+
+
+def confirm_border_connectivity(self):
+    if self.get_state()== Border or self.get_state()==Irremovable_boarder: 
+        self.current_target_ids= choose_spot_right_handed(self,self.neighbor_list_upon_border_formation) 
+        if self.current_target_ids is not None:
+            msg= build_border_message(self,Verify_border_header,self.current_target_ids, self.id)
+            send_msg(msg)
+    
+        reset_timer_forme_border(self, Verify_border_header)
+        while True:
+            with self.lock_boder_timer:
+                self.remaining_time_forme_border -= 0.5
+                if self.remaining_time_forme_border <= 0:
+                        break
+            time.sleep(0.5)
+
+    if self.border_verified.is_set():
+        print("Border confirmed")
+    else:
+        print("Border Non confirmed")
+        reset_border_variables(self)
+        if self.get_state() == Border:
+            self.change_state_to(Owner)
+        if self.get_state() == Irremovable_boarder:
+            self.change_state_to(Irremovable)
+        forme_border(self)
+    self.border_verified.clear()

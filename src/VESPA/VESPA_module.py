@@ -160,6 +160,7 @@ class Drone:
         
         self.movemnt_from_border=False # used to detect first movement to reset allowed spot
         self.neighbor_list_upon_border_formation=[] # Contains the toplogy around upon forming the border 
+        self.border_verified=threading.Event()
         if uart:
             connect_xbee(xbee_serial_port, baud_rate)
         else:

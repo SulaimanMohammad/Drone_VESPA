@@ -105,7 +105,8 @@ def expansion_listener (self):
         elif msg.startswith(Forming_border_header.encode()) and msg.endswith(b'\n'): # message starts with F end with \n
             form_border_one_direction(self,Forming_border_header,msg)
             #form_border_two_direction(self,Forming_border_header,msg)
-                        
+        elif msg.startswith(Verify_border_header.encode()) and msg.endswith(b'\n'):
+            verify_border(self,Verify_border_header,msg)                
 '''
 -------------------------------------------------------------------------------------
 -------------------------------- Movement calculation -------------------------------
@@ -234,7 +235,6 @@ def calibration_ping_pong(self, vehicle, msg ):
 def save_unoccupied_spots_around_border(self):
     # Save the spots they are unoccupied to dont back behind border in the next expansion
     if self.get_state()==Border or self.get_state()==Irremovable_boarder:
-        # save spots that doesnt contains any drone from the point of border 
         self.allowed_spots = [int(neighbor['name'][1:]) for neighbor in self.get_neighbor_list() if neighbor['drones_in'] == 0]
 
 
@@ -311,6 +311,7 @@ def first_exapnsion (self, vehicle):
     # Since broadcast messages might still be circulating while retrieval has stopped, there could be leftover messages in the buffer.
     # It's essential to clear the buffer before the next phase to prevent any surplus.
     clear_buffer()
+    confirm_border_connectivity(self)
     xbee_receive_message_thread.join() # stop listening to message
     
 def further_expansion (self,vehicle):
