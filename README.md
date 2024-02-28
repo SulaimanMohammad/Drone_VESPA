@@ -3,55 +3,69 @@
 ## Setup Raspberry pi
 - Connect raspberry pi to pixhawk using Telemetry 2 port
 - Configure raspberry pi to be able to communicate with pixhawk 
-
 ```bash
         sudo apt install git
         git clone https://github.com/SulaimanMohammad/Drone_VESPA.git
         cd Drone_VESPA/configuration
 ``` 
+- Configure RPI to be used with pixhawk and VESAP
 ```bash
         ./rpi_setup.sh
 ```
-- Create logs directory, set permissions 
+- Set variables needed for the drone, dimensions of drone are needed to be provided 
+```bash
+        ./setup_drone_info.sh
+``` 
 
+- Create logs directory, set permissions 
 ```bash
         ./update_repo.sh
 ``` 
 - Monitoring the data from all the drones and also set variables
-
 ```bash
         ./monitoring.sh
 ```
 
 ## Scripts Map
+- ** **
 ```
-├── Configuration 
-├── src /
-│   ├── VESPA/
+├── Configuration
+├── src/
+│   ├── VESPA
 │   │   ├── VESPA_module.py
 │   │   ├── expansion.py
-│   │   ├── spanning.py 
-│   │   └── balancing.py
-│   ├── done 
-│   ├── drone_ardupilot.py
-│   ├── Opertional_data.text
-│   └── unit_test/
-│       ├── Calibration/
-│       │   ├── measure_acc.py
-│       │   └── extract.py
-│       └── other_test...
+│   │   ├── spanning.py
+│   │   ├── balancing.py
+│   │   ├── headers_variables.py
+│   │   ├── form_border_one_direction.py
+│   ├── drone/
+│   │   ├── drone_ardupilot.py
+│   ├── unit_test
+│   │   ├── Calibration
+│   │   │   ├── measure_acc.py
+│   │   │   └── extract.py
+│   │   └── unit_tests...
+│   ├── Xbee_module/
+│   │   ├── xbee_pigpio.py
+│   │   ├── xbee_usb.py
+│   ├── Lidar/
+│   ├── Operational_data.txt
 └── monitoring_interface
 ```
-- **VESPA**: it contains all the pahses of VESPA Algoithm 
-    To see more about this algorithm check the [**simulation here**](https://github.com/SulaimanMohammad/self-organized-uav)
+- **VESPA**: It contains all the phases of VESPA Algorithm. To see more about this algorithm, check the [Simulation here](https://github.com/SulaimanMohammad/self-organized-uav).
 
-- **Drone**: "drone_ardupilot.py" API take off and move in specific angle and distance, 
-         "Opertional_data" contains the acceleration and id drone and all data needed theough the algorithm 
-          "unit_test": contains many tests to check the movement of the drone, also calibration directory that will move 
-          the drone and measure the accelration and set it in Opertional_data to be a start point (optional)
+- **Drone**: "drone_ardupilot.py" API takes off and moves at a specific angle and distance. The "unit_test" directory contains many tests to check the movement of the drone, including a calibration directory that moves the drone, measures the acceleration, and sets it in Operational_data as a starting point (optional).
 
-- **Configuration**: It contains the bash to configure raspberry pi and also there is one script to get the hardware address of pixhawk  
-- **monitoring_interface**: contains the html file to see the locations of targets 
+- **Xbee_module**: Module to send/read data using XBee.
+
+- **Lidar**: Object Detection Using LiDAR and DBSCAN Algorithm. An ESP32 and Lidar need to be connected. [Repo here](https://github.com/SulaimanMohammad/Object_detection_Lidar).
+
+- **Configuration**: Contains the bash scripts to configure the Raspberry Pi and also includes a script to get the hardware address of the Pixhawk.
+
+- **Monitoring_interface**: Contains the HTML file to view the locations of targets.
+
+- **Operational_data.txt**: Contains the acceleration and ID of the drone and all data needed through the algorithm.
+
 
 ## Run tests 
 - All tests in unit_tests can be used to commuinicate with raspberry pi, telemetry and simulation 
