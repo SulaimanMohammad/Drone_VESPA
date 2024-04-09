@@ -6,7 +6,7 @@
 
 # Define the path of the file
 FILE_PATH="../src/Operational_Data.txt"
-INO_PATH="../src/Lidar/ESP/Characterization.h"
+INO_PATH="../src/Lidar/ESP/Objects_detection_lidar/Characterization.h"
 read_dimensions() {
     grep "$1=" $FILE_PATH | awk -F '=' '{print $2}'
 }
@@ -66,7 +66,7 @@ esac
 x=$(echo "$drone_width $drone_length" | awk '{print ($1>$2)?$1:$2}')
 
 # Calculate argent_warning_distance
-argent_warning_distance=$(awk -v x="$x" 'BEGIN{print int(x * 1.5 + 0.5)}')
+argent_warning_distance=$(awk -v x="$x" 'BEGIN{print int(x *10 *1.5 + 0.5)}')
 #argent_warning_distance=$(echo "$x * 1.5" | bc | awk '{print int($1+0.5)}') // Only if bc is installed
 
 # Update the value in DBSCAN_lidar_3D.ino
