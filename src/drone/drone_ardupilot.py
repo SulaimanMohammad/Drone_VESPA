@@ -15,6 +15,8 @@ from pathlib import Path
 
 from dronekit import Command
 from pymavlink import mavutil
+
+from ..Lidar.RPI import  observe_env
 # Declare global variables for logs 
 filename = " "
 
@@ -737,12 +739,25 @@ def move_body_PID(self, angl_dir, distance, max_acceleration=0.5, max_decelerati
     previous_desired_vel_x=0
     estimated_acceleration=1
 
+    check_objects_time=0 
+
     check_mode(self) 
     max_acceleration,max_deceleration= get_acceleration()
     
     [ angl_dir, velocity_direction ]= convert_angle_to_set_dir(self, angl_dir)
     set_yaw_to_dir_PID( self, angl_dir)
-    
+
+    Z_to_go_ditance, x_distance= observe_env()
+    if (Z_to_go_ditance != 0):
+        check_objects_time= time.time()
+        if( Z_to_go_ditance>0):
+            velocity_z=1 # 1 m/s
+        else: 
+            velocity_z=-1 # go down 
+    else:
+        velocity_z=0 # 1 m/s
+
+
     # Desired yaw and velocities
     desired_vel_x = velocity_direction* get_desired_speed(0, distance,max_acceleration, max_deceleration, max_velocity) 
     desired_vel_z = 0
@@ -757,9 +772,23 @@ def move_body_PID(self, angl_dir, distance, max_acceleration=0.5, max_decelerati
     send_control_body(self, desired_vel_x, desired_vel_y, desired_vel_z)     
     while remaining_distance >= 0.1:
         print( "---------------------------------------------------------------------")
+        if( check_objects_time ==0):
+            Z_to_go_ditance, x_distance= observe_env()
+            if (Z_to_go_ditance != 0):
+                check_objects_time= time.time()
+                if( Z_to_go_ditance>0):
+                    velocity_z=1 # 1 m/s
+                else: 
+                    velocity_z=-1 # go down 
+            else:
+                velocity_z=0 # 1 m/s
+                
+        if (check_objects_time!=0 and check_objects_time-time.time()== Z_to_go_ditance):  # distance traveled t=d/v= d
+          desired_vel_y=0
+       
 
         new_velocity_data.wait()
-        
+
         # Get current velocities from NED frame to body 
         velocity_body   =ned_to_body(self,velocity_listener )
         velocity_current_x=(velocity_body[0])
@@ -791,6 +820,8 @@ def move_body_PID(self, angl_dir, distance, max_acceleration=0.5, max_decelerati
             velocity_x= desired_vel_x
             velocity_y=0
             velocity_z=0
+
+
 
         if previous_desired_vel_x < desired_vel_x and velocity_current_x < desired_vel_x and previous_velocity_x <= velocity_current_x:
             print( "                    Calcul ACC")

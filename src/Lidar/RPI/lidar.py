@@ -1,63 +1,107 @@
-import board
-import adafruit_vl53l4cd
+import serial
+import threading
+import queue
 import time
+import re  # Import the regular expression module
 
-# Declare vl53 as a global variable
-vl53 = None
+# Function to send the start command
+def send_start_command(ser):
+    print("Sending START command to ESP...")
+    ser.write(b"START\n")  # Sending the start command
 
-def initialize_sensor():
-    global vl53
 
-    # Initialize I2C and sensor
-    i2c = board.I2C()
-    vl53 = adafruit_vl53l4cd.VL53L4CD(i2c)
+def process_centroids(centroids_z):
+    print("centroids_z",centroids_z)
+    D = 50
+    # Correctly applying the logic based on the explanation
+    all_objects_sufficiently_distant = all((z + D <= 0) if z < 0 else (z - D >= 0) for z in centroids_z)
 
-    # Start ranging
-    vl53.start_ranging()
+    # Determine the best position for the Raspberry Pi based on the check
+    best_position = -1
+    if all_objects_sufficiently_distant:
+        best_position=0
+    else:
+        movements={}
+        for z in centroids_z:
+            movements[z+D]=z
+            movements[z-D]=z
 
-def read_sensor(stop_event, queue):
-    global vl53
+        #print("movements",movements)
 
-    # Ensure the sensor is initialized
-    if vl53 is None:
-        raise Exception("Sensor not initialized")
+        accepted={}
+        for mov,value in movements.items():
+            #print(mov,value)
+            match=True
+            for z in centroids_z:
+                if abs(z-mov)<D:
+                    match=False
+            if match and mov not in accepted:
+                accepted[mov]=value
 
-    # Moving average parameters
-    num_readings = 15
-    readings = [0] * num_readings
-    index = 0
-    total = 0
-    last_queued_distance = None
-    last_update_time = time.time()
-    update_interval = 0.5  # Update the queue every 0.5 second
+        #print("accepted",accepted)
 
-    warm_up_period = 0.5  # Warm-up period in seconds
-    start_time = time.time()
+        if accepted.keys():
+#            best_position= min(accepted.keys())
+             best_position= min(accepted.keys(),key=abs)
 
-    while not stop_event.is_set():
-        while not vl53.data_ready:
-            pass
-        vl53.clear_interrupt()
+    #print("best_position",best_position)
+    return best_position
+# Define a function to extract the Z component of the centroid from a string
+def extract_centroid_coordinates(data):
+    print(data) 
+#    match = re.search(r'Cluster Centroid: \((?:[\d\.-]+), (?:[\d\.-]+), ([\d\.-]+)\)', data)
+    match = re.search(r'Cluster Centroid: \(([\d\.-]+), [\d\.-]+, ([\d\.-]+)\)', data)
 
-        # Remove the oldest reading and add the newest
-        total -= readings[index]
-        readings[index] = vl53.distance
-        total += readings[index]
+    #print(match)
+    if match:
+        print(match.group(1), match.group(2))
+        x = float(match.group(1))  # Convert the matched X component to float
+        z = float(match.group(2))  # Convert the matched Z component to float
+        return x, z
+    return None,None
 
-        index += 1
-        if index >= num_readings:
-            index = 0
+# Define a function to run in a separate thread for listening to serial port
+def serial_listener(port, baud_rate,dataQueue):
+    with serial.Serial(port, baud_rate, timeout=1) as ser:
+        send_start_command(ser)
+        while True:
+            if ser.in_waiting > 0:
+                data = ser.readline().decode('utf-8').rstrip()
+                dataQueue.put(data)  # Put the received data into the queue
 
-        # Calculate the average
-        average_distance = total / num_readings
 
-        # Check if warm-up period has passed
-        if time.time() - start_time > warm_up_period:
-            # Check for significant change or if update interval has passed
-            if (last_queued_distance is None or 
-                abs(average_distance - last_queued_distance) >= 5 or 
-                time.time() - last_update_time >= update_interval):
-                print("Average Distance: {} cm".format(average_distance))
-                queue.put(average_distance)
-                last_queued_distance = average_distance
-                last_update_time = time.time()
+def observe_env(): 
+    # Create a thread-safe queue
+    dataQueue = queue.Queue()
+    centroids_z = []  # List to store Z components of centroids
+    centroids_x = []  # List to store Z components of centroids
+    # Start the serial listener thread
+    listener_thread = threading.Thread(target=serial_listener, args=('/dev/ttyUSB0', 115200, dataQueue))
+    listener_thread.daemon = True  # This thread dies when the main thread dies
+    listener_thread.start()
+
+    try:
+    #    send_start_command()  # Send the command to ESP to start its operation
+        while True:
+            # Process data if available
+            if not dataQueue.empty():
+                received_data = dataQueue.get()
+                if received_data == "Done":
+                    Z_to_go_ditance= process_centroids(centroids_z)  # Call the processing function
+                    x_distance= min(centroids_x)
+                    return Z_to_go_ditance, x_distance
+                    # centroids_z.clear()  # Reset the list for potential future data sets
+                    # centroids_x.clear()
+                else:
+                    x, z = extract_centroid_coordinates(received_data)  # Extract both coordinates
+                    if x is not None and z is not None:
+                        centroids_z.append(z)  # Append Z component to list
+                        centroids_x.append(x)
+                    #z = extract_centroid_z(received_data)
+                    #if z is not None:
+                    #    centroids_z.append(z)
+                        #print(f"Z component added: {z}")
+            else:
+                time.sleep(0.1)  # Short sleep to avoid maxing out CPU when there's no data
+    except KeyboardInterrupt:
+        print("Program terminated!")
