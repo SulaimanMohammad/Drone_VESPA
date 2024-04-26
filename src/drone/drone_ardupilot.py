@@ -12,7 +12,7 @@ import numpy as np
 from simple_pid import PID
 import threading
 from pathlib import Path
-
+import queue
 from dronekit import Command
 from pymavlink import mavutil
 # Declare global variables for logs 
@@ -59,7 +59,6 @@ def parse_connect():
     parser.add_argument('--connect')
     args = parser.parse_args()
     connection_string = args.connect
-    #print ("Connection to the vehicle on %s"%connection_string)
     # Connect to the Vehicle (in this case a simulator running the same computer)
     return connection_string
 
@@ -442,7 +441,6 @@ def yaw_listener(self, name, message):
     # If this is not the first event, print the time difference
     if last_event_time_yaw is not None:
         interval_between_events_yaw = current_time - last_event_time_yaw
-        #print(f"YAW Time between two events: {interval_between_events_yaw} seconds")
 
     # Update the last event time
     last_event_time_yaw = current_time
@@ -453,6 +451,7 @@ def yaw_listener(self, name, message):
     yaw_rad = message.yaw
 
 new_velocity_data = threading.Event()
+
 def on_velocity(self, attribute_name, value):
     global velocity_listener
     global last_event_time
@@ -462,16 +461,12 @@ def on_velocity(self, attribute_name, value):
     # If this is not the first event, print the time difference
     if last_event_time is not None:
         interval_between_events = current_time - last_event_time
-        print(f"Time between two events: {interval_between_events} seconds")
-
     # Update the last event time
     last_event_time = current_time
-
     # Signal that new data is available
     velocity_components = value
     # Convert string values to float
     velocity_listener = [float(v) for v in velocity_components]
-    print(velocity_listener)
     new_velocity_data.set()
 
 def set_yaw_PID(self, yaw_angle, yaw_speed, direction, relative=False):
@@ -603,10 +598,8 @@ def get_desired_speed(current_speed, remaining_distance, max_acceleration, max_d
     # Deceleration phase calculations with safety margin
     decel_time = max_speed / (max_deceleration * safety_margin)
     decel_distance = max_speed * decel_time - 0.5 * (max_deceleration * safety_margin) * decel_time**2
-    print("decel_time=",decel_time,"decel_distance",decel_distance )
     # Check if we should start decelerating
     if remaining_distance <= decel_distance:
-        print( "In dec phase")
         # If within deceleration distance, calculate desired speed for smooth stop
         desired_speed = (1 * max_deceleration * remaining_distance)**0.5
     else:
@@ -753,10 +746,25 @@ def move_body_PID(self, angl_dir, distance, max_acceleration=0.5, max_decelerati
     
     some_velocity_threshold=0.08
     velocity_updated=False
+
+    #--------------- Launch Lidar for avoiding objects------------
+    lidar_queue = queue.Queue()
+    read_lidar= threading.Event() 
+    read_lidar.set()
+    emergecy_stop= threading.Event() 
+    data_ready= threading.Event() 
+    ref_alt= 9.7
+    check_objects_time=0 
+    min_x_close_object= None 
+    velocity_z_lidar=0
+    observer_thread = start_observer(self, lidar_queue, read_lidar, emergecy_stop,data_ready, ref_alt)
+    time.sleep (3) # Wait 3 second to be sure that the Lidar is connected 
+
+
+
     start_time = time.time()
     send_control_body(self, desired_vel_x, desired_vel_y, desired_vel_z)     
     while remaining_distance >= 0.1:
-        print( "---------------------------------------------------------------------")
 
         new_velocity_data.wait()
         
@@ -775,7 +783,6 @@ def move_body_PID(self, angl_dir, distance, max_acceleration=0.5, max_decelerati
         
         # Update desired_vel_x based on conditions
         if is_close_to_desired:
-            print("update called", "velocity_current_x", velocity_current_x ,"desired_vel_x", desired_vel_x)
             previous_desired_vel_x = desired_vel_x
             desired_vel_x = get_desired_speed(velocity_current_x, remaining_distance, max_acceleration, max_deceleration, max_velocity)            
             velocity_updated=True
@@ -785,7 +792,6 @@ def move_body_PID(self, angl_dir, distance, max_acceleration=0.5, max_decelerati
             PID_time=time.time()
             velocity_x, velocity_y, velocity_z= velocity_PID(desired_vel_x, velocity_body)
             hold_yaw_PID(self, desired_yaw)
-            print("PID called")
             velocity_updated=False
         else:
             velocity_x= desired_vel_x
@@ -793,23 +799,20 @@ def move_body_PID(self, angl_dir, distance, max_acceleration=0.5, max_decelerati
             velocity_z=0
 
         if previous_desired_vel_x < desired_vel_x and velocity_current_x < desired_vel_x and previous_velocity_x <= velocity_current_x:
-            print( "                    Calcul ACC")
+            #Calcul ACC
             max_acceleration= update_acceleration_estimate(max_acceleration, velocity_current_x, previous_velocity_x, interval_between_events)
             estimated_acceleration= max_acceleration
         elif previous_desired_vel_x > desired_vel_x and velocity_current_x > desired_vel_x and previous_velocity_x >= velocity_current_x: 
-            print( "                    Calcul DEAC")
+            #Calcul DEAC
             max_deceleration= update_acceleration_estimate(max_deceleration, velocity_current_x, previous_velocity_x, interval_between_events)
             estimated_acceleration= abs(max_deceleration) #Need to be used to detmin when PID will be called
             
         
-        
-        print( "acc=", max_acceleration,"deacc=", max_deceleration)
         # Check the current altitude
         current_altitude = self.location.global_relative_frame.alt
 
         # Send control to the drone reguraly 
         if (time.time() - start_control_timer > 0.2):
-            print("desired_vel_x= " , desired_vel_x)
             send_control_body(self, velocity_x, velocity_y, velocity_z)
             start_control_timer= time.time()
         
@@ -818,8 +821,9 @@ def move_body_PID(self, angl_dir, distance, max_acceleration=0.5, max_decelerati
         previous_velocity_x= velocity_current_x 
         
         print( "\nvx ",velocity_current_x , "vy",velocity_current_y, "vz",velocity_current_z, "current alt= ", current_altitude  )
-        print( "time", time.time() - start_time , "distance left : ",remaining_distance, "dis speed", desired_vel_x,"\n" )
-        
+        print( "time", time.time() - start_time , "distance left : ",remaining_distance, "desired_vel_x speed", desired_vel_x,"\n" )
+        print( "---------------------------------------------------------------------")
+
         # Clear the event so we can wait for the next update
         new_velocity_data.clear()
 
