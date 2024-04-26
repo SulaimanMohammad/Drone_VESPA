@@ -4,15 +4,39 @@ import queue
 import time
 import re  
 
-# Function to send the start command
-def send_start_command(ser):
-    ser.write(b"START\n")  # Sending the start command
 
 def find_key_by_value(dictionary, target_value):
     for key, value in dictionary.items():
         if value == target_value:
             return key
     return None 
+
+def clear_queue_except_last(q):
+    try:
+        # Temporarily store the last item
+        last_item = q.get_nowait()
+        # Clear remaining items
+        while True:
+            try:
+                q.get_nowait()
+            except queue.Empty:
+                break
+        # Put the last item back
+        q.put(last_item)
+    except queue.Empty:
+        pass
+
+def clear_queue(q):
+    while True:
+        try:
+            q.get_nowait()
+        except queue.Empty:
+            break  
+
+# Function to send the start command
+def send_start_command(ser):
+    ser.write(b"START\n")  # Sending the start command
+
 
 def process_centroids(centroids_z, current_alt, ref_alt):
     max_altitude= (ref_alt *2) *1000
@@ -58,7 +82,8 @@ def process_centroids(centroids_z, current_alt, ref_alt):
             return best_position
         else:
             return -1
-        
+
+# Define a function to extract the Z component of the centroid from a string
 def extract_centroid_coordinates(data):
     match = re.search(r'Cluster Centroid: \(([\d\.-]+), [\d\.-]+, ([\d\.-]+)\)', data)
     if match:
@@ -68,6 +93,18 @@ def extract_centroid_coordinates(data):
         return x, z
     return None,None
 
+def extract_emergency_value(data):
+    try:
+        # Splits the data string on spaces and extracts the numeric part.
+        parts = data.split()
+        if len(parts) > 1 and parts[0] == "EMERGENCY":
+            # Attempt to convert the second part of the data into a float.
+            return float(parts[1])
+    except ValueError:
+        print("Error: Unable to extract numeric value from data")
+    return None
+
+
 def serial_listener(ser, dataQueue, stop_event):
     while not stop_event.is_set():  # Check if the stop event is signaled
         if ser.in_waiting > 0:
@@ -75,15 +112,53 @@ def serial_listener(ser, dataQueue, stop_event):
             dataQueue.put(data)
         else:
             time.sleep(0.1)
-
+            
 def observe_env(hostVehicle, output_queue, read_lidar,emergecy_stop,data_ready, ref_alt):
     ser = None
     try: 
         ser = serial.Serial('/dev/ttyUSB0', 115200, timeout=1)
     except: 
         print("No sensor")
-        read_lidar.clear()
+        read_lidar.clear() # This flag used to exit the loop and not process reading data
         time.sleep (1)
+
+    while read_lidar.is_set() :
+        send_start_command(ser)
+        emergecy_stop.clear()
+        centroids_z = []
+        centroids_x = []
+        data_rec=0
+        try:
+            while True :
+                if ser.in_waiting > 0:
+                    data = ser.readline().decode('utf-8').rstrip()
+                    if data == "Done":
+                        data_rec=1 
+                        break
+                    if data== "Finished":
+                        clear_queue(output_queue)
+                        break
+                    if "EMERGENCY" in data:
+                        emergecy_stop.set()
+                    else: 
+                        x, z = extract_centroid_coordinates(data)
+                        if x is not None and z is not None:
+                            centroids_z.append(z)
+                            centroids_x.append(x)
+                else:
+                    time.sleep(0.1)
+        except:
+            print( "Problem of reading data")
+
+        if(data_rec==1):
+            Z_to_go_distance = process_centroids(centroids_z, hostVehicle.location.global_relative_frame.alt*1000 ,ref_alt)
+            if Z_to_go_distance != -1 :
+                Z_to_go_distance=Z_to_go_distance / 1000.0
+            else: 
+                Z_to_go_distance=0
+            x_distance = min(centroids_x, default=None)
+            output_queue.put((Z_to_go_distance, x_distance/1000.0))
+            data_ready.set() 
     if ser:
         ser.close()
 
