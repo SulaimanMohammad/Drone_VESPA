@@ -24,7 +24,7 @@ set_env(globals())
 sq3=sqrt(3)
 a=xbee_range
 multiplier=100
- 
+effective_a= ((int)(a / sq3 * 1000) / 1000.0)
 '''Dictionary to hold the variables 
 drones_number, id ,xbee_range, C, eps , speed_of_drone,  movement_time= a*speed_of_drone*(1+ 0.2)  
 scanning_time, sync_time, multiplier, defined_groundspeed '''
@@ -33,13 +33,13 @@ global DIR_xy_distance_VECTORS
 def update_DIR_xy_distance_VECTORS():
     global DIR_xy_distance_VECTORS
     DIR_xy_distance_VECTORS = [
-    [0, 0],                               # s0 // don't move, stay
-    [(sq3 * a), 0],                       # s1
-    [(sq3 / 2.0) * a, (3.0 / 2.0) * a],   # s2
-    [-(sq3 / 2.0) * a, (3.0 / 2.0) * a],  # s3
-    [-sq3 * a, 0],                        # s4
-    [-(sq3 / 2.0) * a, -(3.0/ 2.0) * a],  # s5
-    [(sq3 / 2.0) * a, -(3.0 / 2.0) * a]   # s6
+    [0, 0],                                         # s0 // don't move, stay
+    [a, 0],                                         # s1
+    [(1.0 / 2.0) * a, (3.0 / 2.0) * effective_a],   # s2
+    [-(1.0 / 2.0) * a, (3.0 / 2.0) * effective_a],  # s3
+    [-(1 * a), 0],                                  # s4
+    [-(1.0 / 2.0) * a, -(3.0/ 2.0) * effective_a],  # s5
+    [(1.0 / 2.0) * a, -(3.0 / 2.0) * effective_a]   # s6
     ]
     global DIR_VECTORS
     DIR_VECTORS = [
