@@ -107,6 +107,26 @@ def scan_befor_movement(self,lidar_queue,data_ready,emergecy_stop,ref_alt):
     # Returned data will be used to send signal to drone to move 
     return velocity_z, Z_to_go_distance, min_x_close_object, check_objects_time, goal_altitude
 
+def regular_scan(self,lidar_queue,data_ready,emergecy_stop,ref_alt,velocity_z, min_x_close_object, check_objects_time,goal_altitude,Z_to_go_distance):
+    # Check emergency first 
+    output_read= avoidance_emergency(self, lidar_queue,emergecy_stop, ref_alt, data_ready)     
+    if not output_read==None: 
+        velocity_z, Z_to_go_distance, min_x_close_object, check_objects_time, goal_altitude=output_read      
+    
+    # If no emergency and data is ready and the drone is not in process of changing altitude from previous scan 
+    if( check_objects_time ==0 and abs( goal_altitude-self.location.global_relative_frame.alt)<0.2 and data_ready.is_set() ):
+        output_read= full_scan_avoidence(self, lidar_queue,data_ready )
+        if not output_read==None: 
+            velocity_z, Z_to_go_distance, min_x_close_object, check_objects_time, goal_altitude=output_read
+    
+    # If the drone arrived to alitude for avoiding object from previous scan then reset vars to start another scan 
+    if ( check_objects_time>0 and (abs( goal_altitude- self.location.global_relative_frame.alt)<0.2 or time.time()-check_objects_time>=abs(Z_to_go_distance*1.2) ) ):  # distance traveled t=d/0.5= d*0.5
+        min_x_close_object= None
+        Z_to_go_distance=0
+        check_objects_time=0
+        velocity_z=0
+    
+    return velocity_z, Z_to_go_distance, min_x_close_object, check_objects_time, goal_altitude
 #-------------------------------------------------------------
 #-------------------------------------------------------------
 
@@ -869,11 +889,16 @@ def move_body_PID(self, angl_dir, distance, max_acceleration=0.5, max_decelerati
     desired_vel_z= velocity_z_lidar
     #-------------------------------------------------------------
     #-------------------------------------------------------------
+
     start_time = time.time()
     send_control_body(self, desired_vel_x, desired_vel_y, desired_vel_z)     
     
     while remaining_distance >= 0.1:
-
+        
+        old_velocity_z= velocity_z_lidar
+        velocity_z_lidar, Z_to_go_distance, min_x_close_object, check_objects_time, goal_altitude= regular_scan(self,lidar_queue,data_ready,emergecy_stop,ref_alt,velocity_z_lidar, min_x_close_object, check_objects_time,goal_altitude,Z_to_go_distance)
+        desired_vel_z=velocity_z_lidar
+        
         new_velocity_data.wait()
         
         # Get current velocities from NED frame to body 
