@@ -48,24 +48,17 @@ angl_dir= 90#-45
 try:
     # angle dir in degree 
     move_body_PID(vehicle,angl_dir, distance)
+    go_to_ref_altitude(vehicle)
+    time.sleep(2)
+    vehicle.mode = VehicleMode("GUIDED")
+    vehicle.mode = VehicleMode ("LAND")
+    time.sleep(2) 
+    # Close connection
+    vehicle.close()
+
 except Exception as e:
     print(f"An error occurred: {str(e)}")
     vehicle.mode = VehicleMode ("LAND")
     time.sleep(2) 
     vehicle.close()
 
-vehicle.mode    = VehicleMode("LOITER") #loiter mode and hover in your place 
-time.sleep(2)
-vehicle.mode     = VehicleMode("GUIDED")
-
-# print( "move to the other direction")
-# angl_dir= -180#135
-# move_body_PID(vehicle,angl_dir, distance,1)
-
-
-# write_log_message(f" Coming Home")
-vehicle.mode = VehicleMode ("LAND")
-time.sleep(2) 
-
-# Close connection
-vehicle.close()
