@@ -21,6 +21,95 @@ parent_directory = os.path.acbspath(os.path.join(os.path.dirname(__file__), '../
 sys.path.append(parent_directory)
 from lidar import *
 
+#-------------------------------------------------------------
+#------------------  Lidar Functions -------------------------
+#-------------------------------------------------------------
+def avoidance_emergency(self, lidar_queue,emergecy_stop, ref_alt, data_ready):
+    # If an object found in the emergency zone ( very close object to the drone)
+    if emergecy_stop.is_set():
+        safe_zone= 1
+        check_objects_time=0
+        goal_altitude=0
+        actual_alt=self.location.global_relative_frame.alt
+        if (actual_alt+safe_zone)<(ref_alt*2) : # Not close to the max then go up  
+            v_z= -0.5 #"go up "
+            target_alt= (actual_alt+1)
+        elif  (actual_alt-safe_zone)>(ref_alt-2) :# Not close to the min alt then go down 
+            v_z= +0.5 #"go down
+            target_alt= (actual_alt-safe_zone)
+
+        # Wait until the current altitude arrives to target_alt 
+        while abs(self.location.global_relative_frame.alt - target_alt)>0.5: 
+            send_control_body(self, 0, 0, v_z)
+            time.sleep(0.2)
+            
+        send_control_body(self, 0, 0, 0)
+        time.sleep(0.2)
+        send_control_body(self, 0, 0, 0)
+        time.sleep(0.2)
+
+        # Clear flags 
+        emergecy_stop.clear()
+        data_ready.clear() 
+        # Wait until an emergency or a objects data in case of no emergency 
+        while ( (not data_ready.is_set()) and (not emergecy_stop.is_set()) ):
+            time.sleep(0.1)
+        # If no emergency and objects found then find velcoity to avoid them 
+        if data_ready.is_set(): 
+            output_read=full_scan_avoidence(self, lidar_queue,data_ready )
+            if not output_read==None: 
+                velocity_z, Z_to_go_distance, min_x_close_object, check_objects_time, goal_altitude=output_read    
+        # another emergency (close object) then change the alt again and wait untile clear env 
+        else: 
+            output_read = avoidance_emergency(self, lidar_queue,emergecy_stop, ref_alt,data_ready) 
+            if not output_read==None: 
+                velocity_z, Z_to_go_distance, min_x_close_object, check_objects_time, goal_altitude=output_read   
+        return [velocity_z, Z_to_go_distance, min_x_close_object, check_objects_time, goal_altitude]
+    else:
+        return None 
+    
+def full_scan_avoidence(self, lidar_queue,data_ready ):
+    #scan and find all avilable objects and corresponding veloxity on z to avoid it  
+    # check_objects_time is used check when the drone arrived to the alt ( in case parometer was not accurate)
+    velocity_z=0
+    check_objects_time=0 
+    goal_altitude= self.location.global_relative_frame.alt
+    min_x_close_object= None
+    if( data_ready.is_set() ):
+        try: 
+            Z_to_go_distance, min_x_close_object = lidar_queue.get(timeout=1)  # Adjust timeout as needed
+            data_ready.clear()
+            if (Z_to_go_distance and Z_to_go_distance != 0 ):
+                check_objects_time= time.time()
+                if( Z_to_go_distance>0):
+                    velocity_z=-0.5 # 0.5 m/s 
+                else: 
+                    velocity_z=+0.5 # go down  
+                goal_altitude= self.location.global_relative_frame.alt + Z_to_go_distance
+        except:
+            print("No data received from observer")
+            velocity_z=0      
+    return [velocity_z, Z_to_go_distance, min_x_close_object ,check_objects_time, goal_altitude]        
+
+
+def scan_befor_movement(self,lidar_queue,data_ready,emergecy_stop,ref_alt):    
+    # wait until data came back "emergency or data of objects"
+    while ( (not data_ready.is_set()) and (not emergecy_stop.is_set()) ):
+        time.sleep(0.1)
+
+    if not emergecy_stop.is_set():     
+        output_read = full_scan_avoidence(self, lidar_queue,data_ready )
+    else:
+        output_read = avoidance_emergency(self, lidar_queue,emergecy_stop, ref_alt, data_ready) 
+    
+    if not output_read==None: 
+        velocity_z,Z_to_go_distance,min_x_close_object, check_objects_time, goal_altitude=output_read 
+    # Returned data will be used to send signal to drone to move 
+    return velocity_z, Z_to_go_distance, min_x_close_object, check_objects_time, goal_altitude
+
+#-------------------------------------------------------------
+#-------------------------------------------------------------
+
 # Declare global variables for logs 
 filename = " "
 
@@ -744,16 +833,19 @@ def move_body_PID(self, angl_dir, distance, max_acceleration=0.5, max_decelerati
     
     # Desired yaw and velocities
     desired_vel_x = velocity_direction* get_desired_speed(0, distance,max_acceleration, max_deceleration, max_velocity) 
-    desired_vel_z = 0
     desired_vel_y=0
+    desired_vel_z = 0
     desired_yaw = normalize_angle(angl_dir) # baed on the direction  needed 
 
     self.add_attribute_listener('velocity', on_velocity)
     
     some_velocity_threshold=0.08
     velocity_updated=False
-
+    
+    #-------------------------------------------------------------
     #--------------- Launch Lidar for avoiding objects------------
+    #-------------------------------------------------------------
+    # In case the Lidar is not used comment this section 
     lidar_queue = queue.Queue()
     read_lidar= threading.Event() 
     read_lidar.set()
@@ -769,9 +861,17 @@ def move_body_PID(self, angl_dir, distance, max_acceleration=0.5, max_decelerati
         send_control_body(self, 0, 0, 0)
         self.remove_attribute_listener('velocity', on_velocity)
         raise Exception("No Lidar found")
-
+    try:
+       velocity_z_lidar,Z_to_go_distance, min_x_close_object, check_objects_time, goal_altitude= scan_befor_movement(self,lidar_queue,data_ready,emergecy_stop,ref_alt)
+    except:
+        print("First scan is failed")
+        velocity_z_lidar=0 
+    desired_vel_z= velocity_z_lidar
+    #-------------------------------------------------------------
+    #-------------------------------------------------------------
     start_time = time.time()
     send_control_body(self, desired_vel_x, desired_vel_y, desired_vel_z)     
+    
     while remaining_distance >= 0.1:
 
         new_velocity_data.wait()
@@ -871,3 +971,5 @@ def set_to_move(self):
 
 def search_for_sink_tag(slef):
     pass 
+
+
