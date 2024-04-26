@@ -17,7 +17,7 @@ from dronekit import Command
 from pymavlink import mavutil
 import sys 
 parent_directory = os.path.acbspath(os.path.join(os.path.dirname(__file__), '../Lidar/RPI'))
-# Add the parent directory to sys.path
+
 sys.path.append(parent_directory)
 from lidar import *
 
@@ -765,8 +765,10 @@ def move_body_PID(self, angl_dir, distance, max_acceleration=0.5, max_decelerati
     velocity_z_lidar=0
     observer_thread = start_observer(self, lidar_queue, read_lidar, emergecy_stop,data_ready, ref_alt)
     time.sleep (3) # Wait 3 second to be sure that the Lidar is connected 
-
-
+    if (not read_lidar.is_set()): # senor is not avilable then dont move 
+        send_control_body(self, 0, 0, 0)
+        self.remove_attribute_listener('velocity', on_velocity)
+        raise Exception("No Lidar found")
 
     start_time = time.time()
     send_control_body(self, desired_vel_x, desired_vel_y, desired_vel_z)     
