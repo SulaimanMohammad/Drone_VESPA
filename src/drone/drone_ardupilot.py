@@ -826,7 +826,7 @@ def velocity_PID(desired_vel_x,desired_vel_z, velocity_body_vector):
 
     return velocity_x, velocity_y, velocity_z
 
-def move_body_PID(self, angl_dir, distance, max_acceleration=0.5, max_deceleration= -0.5 , max_velocity=2): #max_velocity=2
+def move_body_PID(self, angl_dir, distance,ref_alt=9.7, max_acceleration=0.5, max_deceleration= -0.5 , max_velocity=2): #max_velocity=2
      
     global velocity_listener
     velocity_listener=0
@@ -869,7 +869,6 @@ def move_body_PID(self, angl_dir, distance, max_acceleration=0.5, max_decelerati
     read_lidar.set()
     emergecy_stop= threading.Event() 
     data_ready= threading.Event() 
-    ref_alt= 9.7
     check_objects_time=0 
     min_x_close_object= None 
     velocity_z_lidar=0
@@ -977,7 +976,32 @@ def move_body_PID(self, angl_dir, distance, max_acceleration=0.5, max_decelerati
     save_acceleration(max_acceleration, max_deceleration)
     self.remove_attribute_listener('velocity', on_velocity)
     
+def go_to_ref_altitude(self,ref_alt=9.7):
+    time.sleep(0.5) # stablize Z 
+
+    if( self.location.global_relative_frame.alt > ref_alt * 0.95 ): # ref_alt is under , go downe 
+        desired_vel_Z= 0.5
+    elif( self.location.global_relative_frame.alt < ref_alt * 0.95 ): 
+        desired_vel_Z=-0.5
+    else: 
+        desired_vel_Z=0 
+
+    if desired_vel_Z!=0: 
+        start_control_timer=0 
+        while ( abs(self.location.global_relative_frame.alt - ref_alt)>=0.2 and  (self.location.global_relative_frame.alt > ref_alt-1 or self.location.global_relative_frame.alt < ref_alt+1 )  ):
+            if (time.time() - start_control_timer > 0.2):
+                print("alt= " , self.location.global_relative_frame.alt,"velocity_z",desired_vel_Z )
+                send_control_body(self, 0, 0, desired_vel_Z)
+                start_control_timer= time.time()
+
+        # Ensure stop 
+        send_control_body(self, 0, 0, 0)
+        time.sleep(0.2)
+        send_control_body(self, 0, 0, 0)
     
+    time.sleep(1)
+
+
 def convert_angle_to_set_dir(self, angle): 
     '''
     supppose you want the drone to have yaw -90 and move forward in respect to -90 yaw 
