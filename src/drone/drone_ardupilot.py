@@ -770,7 +770,7 @@ def hold_yaw_PID(self, desired_yaw):
     set_yaw_PID(self, abs(error), abs(yaw_speed), direction_yaw)
     print("yaw error=",error )
 
-def velocity_PID(desired_vel_x, velocity_body_vector):
+def velocity_PID(desired_vel_x,desired_vel_z, velocity_body_vector):
     # PID gains for yaw, X, and Y control
     Kp_vel_x = 1.2
     Ki_vel_x = 0.02
@@ -794,8 +794,6 @@ def velocity_PID(desired_vel_x, velocity_body_vector):
     integral_vel_z = 0
 
     desired_vel_y=0.0
-    desired_vel_z=0.0
-
 
     velocity_current_x=(velocity_body_vector[0])
     velocity_current_y=(velocity_body_vector[1])
@@ -875,6 +873,7 @@ def move_body_PID(self, angl_dir, distance, max_acceleration=0.5, max_decelerati
     check_objects_time=0 
     min_x_close_object= None 
     velocity_z_lidar=0
+    old_velocity_z= 0
     observer_thread = start_observer(self, lidar_queue, read_lidar, emergecy_stop,data_ready, ref_alt)
     time.sleep (3) # Wait 3 second to be sure that the Lidar is connected 
     if (not read_lidar.is_set()): # senor is not avilable then dont move 
@@ -928,15 +927,15 @@ def move_body_PID(self, angl_dir, distance, max_acceleration=0.5, max_decelerati
             velocity_updated=True
     
         time_elaps = time.time() - PID_time
-        if is_accelerating and velocity_current_x >= desired_vel_x or (is_decelerating and velocity_current_x <= desired_vel_x) or velocity_updated or time_elaps > (desired_vel_x/estimated_acceleration)/2:
+        if is_accelerating and velocity_current_x >= desired_vel_x or (is_decelerating and velocity_current_x <= desired_vel_x) or (velocity_updated or time_elaps > (desired_vel_x/estimated_acceleration)/2) or (old_velocity_z !=desired_vel_z ): # (old_velocity_z !=desired_vel_z ) in case the lidar found object and new movement on Z 
             PID_time=time.time()
-            velocity_x, velocity_y, velocity_z= velocity_PID(desired_vel_x, velocity_body)
+            velocity_x, velocity_y, velocity_z= velocity_PID(desired_vel_x,desired_vel_z, velocity_body)
             hold_yaw_PID(self, desired_yaw)
             velocity_updated=False
         else:
             velocity_x= desired_vel_x
             velocity_y=0
-            velocity_z=0
+            velocity_z=desired_vel_z
 
         if previous_desired_vel_x < desired_vel_x and velocity_current_x < desired_vel_x and previous_velocity_x <= velocity_current_x:
             #Calcul ACC
