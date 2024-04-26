@@ -15,6 +15,12 @@ from pathlib import Path
 import queue
 from dronekit import Command
 from pymavlink import mavutil
+import sys 
+parent_directory = os.path.acbspath(os.path.join(os.path.dirname(__file__), '../Lidar/RPI'))
+# Add the parent directory to sys.path
+sys.path.append(parent_directory)
+from lidar import *
+
 # Declare global variables for logs 
 filename = " "
 
