@@ -381,7 +381,7 @@ def expand_and_form_border_try(self):
     for station in self.get_neighbor_list():
         if station['drones_in'] > 0:
             print(station)
-    time.sleep(20)
+    time.sleep(5)
     print(" VERFIFY ")
     confirm_border_connection(self)
     self.expansion_stop.set()
@@ -393,7 +393,7 @@ def expand_and_form_border_try(self):
     for t in alive_threads:
         print(f"Thread Name: {t.name}. Alive: {t.is_alive()}")
 
-
+    print( "x", self.positionX , "y",self.positionY)
     print("end ")
 
 def expand_and_form_border(self,vehicle):
