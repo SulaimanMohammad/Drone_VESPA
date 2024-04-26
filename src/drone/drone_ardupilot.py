@@ -865,7 +865,7 @@ def move_body_PID(self, angl_dir, distance, max_acceleration=0.5, max_decelerati
     #-------------------------------------------------------------
     #--------------- Launch Lidar for avoiding objects------------
     #-------------------------------------------------------------
-    # In case the Lidar is not used comment this section 
+    # In case the Lidar is not used, comment this section 
     lidar_queue = queue.Queue()
     read_lidar= threading.Event() 
     read_lidar.set()
@@ -894,10 +894,17 @@ def move_body_PID(self, angl_dir, distance, max_acceleration=0.5, max_decelerati
     send_control_body(self, desired_vel_x, desired_vel_y, desired_vel_z)     
     
     while remaining_distance >= 0.1:
-        
+        #-------------------------------------------------------------
+        #--------------------- Lidar for regular_scan-----------------
+        #-------------------------------------------------------------
+        # In case the Lidar is not used, comment this section 
         old_velocity_z= velocity_z_lidar
         velocity_z_lidar, Z_to_go_distance, min_x_close_object, check_objects_time, goal_altitude= regular_scan(self,lidar_queue,data_ready,emergecy_stop,ref_alt,velocity_z_lidar, min_x_close_object, check_objects_time,goal_altitude,Z_to_go_distance)
         desired_vel_z=velocity_z_lidar
+        # Send the segnal and dont wait for the next round of PID 
+        if(old_velocity_z != velocity_z_lidar and velocity_z_lidar==0 ):
+            send_control_body(self, velocity_x, velocity_y, velocity_z)
+        #-------------------------------------------------------------
         
         new_velocity_data.wait()
         
@@ -939,11 +946,17 @@ def move_body_PID(self, angl_dir, distance, max_acceleration=0.5, max_decelerati
             #Calcul DEAC
             max_deceleration= update_acceleration_estimate(max_deceleration, velocity_current_x, previous_velocity_x, interval_between_events)
             estimated_acceleration= abs(max_deceleration) #Need to be used to detmin when PID will be called
-            
         
-        # Check the current altitude
-        current_altitude = self.location.global_relative_frame.alt
+        #-------------------------------------------------------------
+        #------Lidar for reduce velocity close ti the objects --------
+        #-------------------------------------------------------------
+        # In case the Lidar is not used, comment this section 
+        # reduce the velocity on X to avoid any collision and give time to increase altitude  
+        if(min_x_close_object != None and min_x_close_object < remaining_distance):
+            velocity_x=desired_vel_x*0.5
+        #-------------------------------------------------------------
 
+        
         # Send control to the drone reguraly 
         if (time.time() - start_control_timer > 0.2):
             send_control_body(self, velocity_x, velocity_y, velocity_z)
@@ -953,7 +966,7 @@ def move_body_PID(self, angl_dir, distance, max_acceleration=0.5, max_decelerati
         # save the current for next iteration to calculate the traveld distance 
         previous_velocity_x= velocity_current_x 
         
-        print( "\nvx ",velocity_current_x , "vy",velocity_current_y, "vz",velocity_current_z, "current alt= ", current_altitude  )
+        print( "\nvx ",velocity_current_x , "vy",velocity_current_y, "vz",velocity_current_z, "current alt= ", self.location.global_relative_frame.alt  )
         print( "time", time.time() - start_time , "distance left : ",remaining_distance, "desired_vel_x speed", desired_vel_x,"\n" )
         print( "---------------------------------------------------------------------")
 
