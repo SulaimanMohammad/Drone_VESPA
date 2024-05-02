@@ -71,7 +71,7 @@ def handel_elected_drone_arrivale(self,msg):
 
 def check_continuity_of_listening(self):
     #if not self.Forming_Border_Broadcast_REC.is_set():
-    if not self.expansion_stop.is_set():
+    if (not self.expansion_stop.is_set()) and (not self.Emergency_stop.is_set()):
         return True
     else: 
         return False
@@ -85,7 +85,7 @@ def retrieve_messages_process(queue, shared_object):
         queue.put(msg)  # Put the message into the queue
 
 
-def expansion_listener (self):
+def expansion_listener (self,vehicle):
     # Create a Queue for process-thread communication
     # msg_queue = Queue()
 
@@ -99,15 +99,24 @@ def expansion_listener (self):
         msg= retrieve_msg_from_buffer(self.expansion_stop)
         #if not msg_queue.empty():
         #    msg = msg_queue.get()  # Retrieve a message from the queue        
-        #print("msg rec start with ", msg[:1].decode())
+        #print("msg rec start with ",msg)
+        if msg.startswith(Emergecy_header.encode()) and msg.endswith(b'\n'):
+            # brodcast it again
+            emergency_msg= self.build_emergency_message()
+            send_msg(emergency_msg)
+            print("retuen home")
+            self.Emergency_stop.set()
+            self.return_home(vehicle)
+            break
+            # need to send preodically 
 
         self.exchange_neighbors_info_communication(msg)
-        if msg.startswith(Movement_command.encode()) and msg.endswith("\n"):
+        if msg.startswith(Movement_command.encode()) and msg.endswith(b'\n'):
             id, spot, lon, lat= decode_movement_command_message(msg)
             if id==-1 and spot==-1 and lon==0 and lat==0: # mean all drone are in sky
                 self.start_expanding.set()
-            # else:
-            #     initial_movement(self, vehicle,id, spot, lon, lat)
+            else:
+                initial_movement(self, vehicle,id, spot, lon, lat)
 
         # elif msg.startswith(Calibration) and msg.endswith("\n"):
         #     calibration_ping_pong(self, vehicle, msg )
@@ -188,29 +197,38 @@ def neighbors_election(self):
     return min(id_free) # return the min id of a drone is in state Free
 
 def sink_movement_command(self,vehicle,id):
-    destination_spot_random = int(random.randint(1, 6))
+    #destination_spot_random = int(random.randint(1, 6))
+    if id==1:
+        destination_spot_random=3
+    else:
+        destination_spot_random=6
+
     angle, distance = self.convert_spot_angle_distance(destination_spot_random)
     if check_gps_fix(vehicle): # GPS data are correct
         current_lat = vehicle.location.global_relative_frame.lat
         current_lon = vehicle.location.global_relative_frame.lon
         long, lat= new_coordinates(current_lon, current_lat, distance , angle)
+        print(long, lat)
         msg= build_movement_command_message(id,destination_spot_random, long, lat)
+        print("sink_movement_command",msg )
         send_msg(msg)
-        time.sleep((a/defined_groundspeed)+1 )# wait until arrival
+        time.sleep(((a/defined_groundspeed)+1)+ (id*spacing + self.ref_alt))# wait until arrival
     else:
         # It is command to drone to start,( 0,0) is null island where it is imposible to start from
         msg= build_movement_command_message(id,destination_spot_random, 0, 0)
 
 def initial_movement(self,vehicle,id, spot, lon, lat):
     if id !=0 and id==self.id: # drone is not sink and it is targeted
-        arm_and_takeoff(vehicle,self.hight)
+        self.update_location(spot) # update the destination even before arriving ( better for commuiniaation)
+        arm_and_takeoff(vehicle,self.drone_alt)
         if lon!=0 and lat!=0:
             time.sleep(2)
-            point1 = LocationGlobalRelative(lat,lon ,self.hight)
+            point1 = LocationGlobalRelative(lat,lon ,self.drone_alt)
             vehicle.simple_goto( point1, groundspeed=defined_groundspeed)
             # simple_goto will retuen after the command is sent, thus you need to sleep to give the drone time to move
             time.sleep((a/defined_groundspeed)+1 )
-            vehicle.mode    = VehicleMode("LOITER") #loiter mode and hover in your place
+            print("arrived")
+            #vehicle.mode    = VehicleMode("LOITER") #loiter mode and hover in your place
             time.sleep(1)
             vehicle.mode     = VehicleMode("GUIDED")
 
@@ -219,12 +237,12 @@ def initial_movement(self,vehicle,id, spot, lon, lat):
             #use image to fly on the top of sink
             search_for_sink_tag(vehicle)
             self.move_to_spot(vehicle, spot)
-        #loiter mode and hover in your place if it is before sleep then the drone will not move
-        angle, distance = self.convert_spot_angle_distance(spot)
-        set_yaw_to_dir_PID( vehicle, angle) # set the angle in the same direction taken since simple goto can include rotation
-        if self.id==1: # only first drone does the range calibration
-            msg= build_calibration_message(1,0)
-            send_msg(msg)
+        # #loiter mode and hover in your place if it is before sleep then the drone will not move
+        # angle, distance = self.convert_spot_angle_distance(spot)
+        # set_yaw_to_dir_PID( vehicle, angle) # set the angle in the same direction taken since simple goto can include rotation
+        # if self.id==1: # only first drone does the range calibration
+        #     msg= build_calibration_message(1,0)
+        #     send_msg(msg)
 
 def calibration_ping_pong(self, vehicle, msg ):
     indicator, xbee_range= decode_calibration_message(msg)
@@ -286,9 +304,9 @@ def save_unoccupied_spots_around_border(self):
 ----------------------------------- Main functions ----------------------------------
 -------------------------------------------------------------------------------------
 '''
-def expand_and_form_border_try(self):
-    xbee_receive_message_thread = threading.Thread(target=expansion_listener, args=(self,)) #pass the function reference and arguments separately to the Thread constructor.
-    xbee_receive_message_thread.start()
+def expand_and_form_border_try(self, vehicle):
+    # xbee_receive_message_thread = threading.Thread(target=expansion_listener, args=(self,vehicle,)) #pass the function reference and arguments separately to the Thread constructor.
+    # xbee_receive_message_thread.start()
     # xbee_receive_message_thread = Process(target=expansion_listener, args=(self,))
     # xbee_receive_message_thread.start()
     # xbee_receive_message_process.join() # Optionally wait for the process to finish
@@ -301,10 +319,15 @@ def expand_and_form_border_try(self):
         #         print(station)
         #self.Forming_Border_Broadcast_REC.wait()
         #time.sleep(10)
-    else:
-        destination_spot_random = 2
-        print ("go to S", destination_spot_random)
-        self.update_location(destination_spot_random)
+    # else:
+    #     destination_spot_random = 2
+    #     print("before movement distance is:", self.spot["distance"])
+    #     print ("go to S", destination_spot_random)
+    #     self.move_to_spot(vehicle, destination_spot_random)
+    #     print("after move_to_spot distance is:", self.spot["distance"])
+    #     #self.update_location(destination_spot_random)
+    #     print("after update_location distance is:", self.spot["distance"])
+
     
     print("spot", self.spot)
     spatial_observation(self)
@@ -312,6 +335,9 @@ def expand_and_form_border_try(self):
     for station in self.get_neighbor_list():
         if station['drones_in'] > 0:
             print(station)
+    print(self.state)
+    print(self.spot )        
+    print(self.get_neighbor_list() )        
     while self.get_state() !=Owner:
         set_priorities(self)
         print("set_priorities")
@@ -322,9 +348,9 @@ def expand_and_form_border_try(self):
             print("elected", self.elected_id)
             if self.destination_spot != 0: # Movement to another spot not staying 
                 print ("move to S", self.destination_spot)
-                #self.move_to_spot(vehicle, destination_spot)
-                self.update_location(self.destination_spot)
-                time.sleep(2)
+                self.move_to_spot(vehicle, self.destination_spot)
+                #self.update_location(self.destination_spot)
+                #time.sleep(2)
                 print("arrived from main")
                 # After move_to_spot retuen it means arrivale 
                 movement_done_msg= build_expan_elected(self.id)
@@ -375,7 +401,13 @@ def expand_and_form_border_try(self):
     for station in self.get_neighbor_list():
         if station['drones_in'] > 0:
             print(station)
+
+    if self.spot["drones_in"]==1:
+        print (" Drone is Alone ")
+        print ( "Go to ref", self.ref_alt)
+
     Forme_border(self)
+    print(" after finished border drone is ", self.state)
     clear_buffer()
     self.demand_neighbors_info() # needed to update what neigbor become border 
     for station in self.get_neighbor_list():
@@ -383,9 +415,16 @@ def expand_and_form_border_try(self):
             print(station)
     time.sleep(5)
     print(" VERFIFY ")
-    confirm_border_connection(self)
+    if self.border_formed != False:
+        confirm_border_connection(self)
+    else:
+        emergency_msg= self.build_emergency_message()
+        send_msg(emergency_msg)
+        print("retuen home")
+        self.return_home(vehicle)
+
     self.expansion_stop.set()
-    xbee_receive_message_thread.join() # stop listening to message    
+    # xbee_receive_message_thread.join() # stop listening to message    
     self.expansion_stop.clear()
 
     time.sleep(5)
@@ -445,19 +484,21 @@ def expand_and_form_border(self,vehicle):
     
 def first_exapnsion (self, vehicle):
     # Lance a thread to read messages continuously
-    xbee_receive_message_thread = threading.Thread(target=expansion_listener, args=(self,)) #pass the function reference and arguments separately to the Thread constructor.
+    xbee_receive_message_thread = threading.Thread(target=expansion_listener, args=(self,vehicle,)) #pass the function reference and arguments separately to the Thread constructor.
     xbee_receive_message_thread.start()
     self.start_expanding= threading.Event()
     self.elected_droen_arrived= threading.Event()
     # First movement started by commands of the sink
     if self.id==0: #sink:
-        arm_and_takeoff(vehicle,self.hight)
+        arm_and_takeoff(vehicle,self.drone_alt)
         time.sleep(2)
-        with open('Operational_Data.txt', 'r') as file:
-            for line in file:
-                # Check if line contains max_acceleration
-                if "drones_number" in line:
-                    drones_number = float(line.split('=')[1].strip())
+        # with open('Operational_Data.txt', 'r') as file:
+        #     for line in file:
+        #         # Check if line contains max_acceleration
+        #         if "drones_number" in line:
+        #             drones_number = float(line.split('=')[1].strip())
+        #     print(drones_number )
+        drones_number=2
         for i in range(1,drones_number+1):
             sink_movement_command(self,vehicle,i)
         # The end send message referes that all in position
@@ -466,7 +507,8 @@ def first_exapnsion (self, vehicle):
     else:
         self.start_expanding.wait()
         self.start_expanding.clear()
-    expand_and_form_border(self, vehicle)
+    # expand_and_form_border(self, vehicle)
+    expand_and_form_border_try(self, vehicle)
     
     # Since broadcast messages might still be circulating while retrieval has stopped, there could be leftover messages in the buffer.
     # It's essential to clear the buffer before the next phase to prevent any surplus.

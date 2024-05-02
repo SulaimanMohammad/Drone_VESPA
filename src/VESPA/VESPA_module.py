@@ -120,9 +120,13 @@ class Drone:
         self. min_distance_dicts=[] # nigboor close to the sink
         self.allowed_spots=[0,1,2,3,4,5,6]    # contains the spots that are not occupied while forming the border
         self.neighbor_list = []  # list that contains the 6 neighbors around the current location
+        self.message_sent_for_border=0
+        self.border_formed=False
         self.elected_id=None
         set_a(a)
         self.id=id
+        self.ref_alt= sqrt(pow(a,2)- pow((a/sq3),2))
+        self.drone_alt= (self.id*spacing)+ self.ref_alt
         # init s0 and it will be part of the spots list
         self.neighbor_list=[{"name": "s" + str(0), "distance": 0, "priority": 0, "drones_in": 1,"drones_in_id":[], "states": [] , "previous_state": []}]
         # save the first spot which is s0 the current place of the drone
@@ -144,6 +148,7 @@ class Drone:
         self.lock_boder_timer =threading.Lock()        
         self.demander_lock=threading.Lock()
         self.Forming_Border_Broadcast_REC = threading.Event()
+        self.Emergency_stop = threading.Event()
         self.demanders_received_data = threading.Event()
         self.VESPA_termination= threading.Event() 
         self.list_finished_update= threading.Event()
@@ -176,6 +181,11 @@ class Drone:
     ---------------- Timers and managment of Demand response-----------------------------
     -------------------------------------------------------------------------------------
     '''
+
+    def build_emergency_message(self):
+        message= Emergecy_header.encode()
+        message += b'\n'
+        return message
 
     def append_id_demanders_list(self,value):
         if value not in self.demanders_list:
@@ -221,7 +231,13 @@ class Drone:
     ---------------------------------- Communication ------------------------------------
     -------------------------------------------------------------------------------------
     '''
-
+    def position_sensitive_checksum(self, message):
+        checksum = 0
+        for index, byte in enumerate(message):
+            # Multiply each byte by its position index (position + 1 to avoid multiplication by zero)
+            checksum += (index + 1) * byte
+        return checksum % 256
+    
     def build_data_demand_message(self):
         message= Demand_header.encode()
         max_byte_count = determine_max_byte_size(self.id)
@@ -334,8 +350,10 @@ class Drone:
         message += struct.pack('>B', max_byte_count)        
         message += self.id.to_bytes(max_byte_count, 'big')
         # Calculate checksum
-        checksum = sum(message) % 256
+        checksum = self.position_sensitive_checksum(message)
+        #sum(message) % 256
         message += struct.pack('>B', checksum) + b'\n'
+        #print("spot info is ", message)
         return message
 
     def decode_spot_info_message(self,message):
@@ -343,7 +361,8 @@ class Drone:
         # Extract checksum from the message
         received_checksum = struct.unpack('>B', message_without_newline[-1:])[0]
         # Recalculate checksum for the message excluding the checksum byte itself
-        calculated_checksum = sum(message_without_newline[:-1]) % 256
+        #calculated_checksum = sum(message_without_newline[:-1]) % 256
+        calculated_checksum = self.position_sensitive_checksum(message_without_newline[:-1])
         if received_checksum != calculated_checksum:
             #print(" Bad message recived")
             return [-1]
@@ -371,6 +390,7 @@ class Drone:
         # Decode the id
         id_value = int.from_bytes(message[index:index+max_byte_count], 'big')
         index += max_byte_count
+        #print("rec message from ",id_value ,positionX, positionY  )
         return [positionX, positionY, state, previous_state, id_value]
     
     ''' 
@@ -470,7 +490,8 @@ class Drone:
     # writing to the list 
     def calculate_neighbors_distance_sink(self):
         DxDy2 = ((self.positionX * self.positionX) + (self.positionY * self.positionY))
-        DxDy3a2 = (DxDy2 + 3 * a * a)
+        print("DxDy2",sqrt(DxDy2) )
+        DxDy3a2 = (DxDy2 + 3 *effective_a * effective_a)
         sqDx = (sq3 * self.positionX)
         aDx = ((2*sq3) * self.positionX)
         Dy= (self.positionY)
@@ -478,10 +499,10 @@ class Drone:
             for s in self.neighbor_list:
                 formula = formula_dict.get(s["name"])
                 if formula:
-                    distance = eval(formula, {'sqrt': sqrt, 'DxDy2': DxDy2, 'DxDy3a2': DxDy3a2, 'a': a, 'aDx': aDx, 'sqDx': sqDx, 'Dy': Dy})
+                    distance = eval(formula, {'sqrt': sqrt, 'DxDy2': DxDy2, 'DxDy3a2': DxDy3a2, 'a': effective_a, 'aDx': aDx, 'sqDx': sqDx, 'Dy': Dy})
                     s["distance"] = round(distance,2)
-            self.distance_from_sink=self.spot["distance"] # where spot is the data of s0 the current position
-
+            #self.distance_from_sink=self.spot["distance"] # where spot is the data of s0 the current position
+            self.distance_from_sink=self.neighbor_list[0]["distance"]
 
     def rearrange_neighbor_statically_upon_movement(self,move_spot):
         moving_drone_id=self.id
@@ -609,18 +630,23 @@ class Drone:
     def change_state_to( self, new_state):
         with self.lock_state:
             self.previous_state= self.state # save the preivious state
-            self.spot["previous_state"][0]= self.state
+            #self.spot["previous_state"][0]= self.state
+            self.neighbor_list[0]["previous_state"][0]=self.state
             self.state= new_state # change the state
-            self.spot["states"][0]= self.state
+            #self.spot["states"][0]= self.state
+            self.neighbor_list[0]["states"][0]=self.state
 
     def get_current_spot(self):
         with self.lock_state:
-            return self.spot
-
+            #return self.spot
+            return  self.neighbor_list[0]
+        
     def check_Ownership(self):
         if self.get_state() != Owner:
             if self.get_current_spot()["drones_in"]==1: # the drone is Owner
                 self.change_state_to (Owner)
+                print(" changed to free", self.spot)
+
             elif self.get_current_spot()["drones_in"]>1:
                 non_free = all(state != Free for state in self.get_current_spot()["states"])
                 # Check if there is irremovable or border because they are considered as owner 
@@ -636,7 +662,10 @@ class Drone:
                         else:
                             min_id_index =self.get_current_spot()["drones_in_id"].index(min_id)
                             with self.lock_state:
-                                self.spot["states"][min_id_index] = Owner
+                                #self.spot["states"][min_id_index] = Owner
+                                 self.neighbor_list[0]["states"][min_id_index]=Owner
+
+
 
 
     def correct_states_after_comm(self):
@@ -762,13 +791,14 @@ class Drone:
         self.update_location(destination_spot)
         set_to_move(vehicle)
         angle, distance = self.convert_spot_angle_distance(destination_spot)
+        print("distance to move, angle",distance, angle )
         try:
             move_body_PID(vehicle,angle, distance)
         except Exception as e:
             print(f"An error occurred: {str(e)}")
             vehicle.mode = VehicleMode ("RTL")
             vehicle.close()
-        hover(vehicle)
+        #hover(vehicle)
 
     # def manage_xbee_while_movement(self):
     #     while self.in_movement.is_set():           
@@ -792,3 +822,15 @@ class Drone:
             vehicle.mode = VehicleMode ("RTL")
         vehicle.close() 
 
+    def interrupt(self, vehicle):
+        print("Interrupted!")
+        if vehicle is not None:
+            emergency_msg= self.build_emergency_message()
+            send_msg(emergency_msg)
+            print("retuen home")
+            self.Emergency_stop.set()
+            vehicle.remove_attribute_listener('velocity', on_velocity)
+            self.return_home(vehicle)
+            time.sleep(3) 
+            vehicle.close()
+            sys.exit()

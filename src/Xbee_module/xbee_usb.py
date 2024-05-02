@@ -6,6 +6,10 @@ parent_directory = os.path.abspath(os.path.join(os.path.dirname(__file__), '..')
 sys.path.append(parent_directory)
 from VESPA.headers_variables import *
 import serial
+from serial.serialutil import SerialException
+import threading
+
+send_lock = threading.Lock()
 
 
 def connect_xbee(xbee_serial_port, baud_rate, timeout=1):
@@ -14,19 +18,28 @@ def connect_xbee(xbee_serial_port, baud_rate, timeout=1):
     ser = serial.Serial(port=xbee_serial_port, baudrate=baud_rate, timeout=timeout)
 
 def send_msg(message):
-    """ Send a message via XBee. """
-    ser.write(message)
-    time.sleep(0.1)
+    with send_lock:
+        """ Send a message via XBee. """
+        ser.write(message)
+        time.sleep(0.1)
 
 message_buffer = bytearray()
 def retrieve_msg_from_buffer(stop_flag):
+    current_thread = threading.current_thread()
+    print(f"        Function is being executed by thread: {current_thread.name}")
+
     global message_buffer 
     while not stop_flag.is_set(): # Keep checking for a complete message or condition related to the phase is not set
-        # Read data from USB serial if available
-        while ser.in_waiting > 0:
-            byte = ser.read(1)
-            message_buffer.extend(byte)
-        
+        try:
+            with send_lock:
+                # Read data from USB serial if available
+                while ser.in_waiting > 0:
+                    byte = ser.read(1)
+                    message_buffer.extend(byte)
+        except SerialException as e:
+            print(f"Serial error: {e}")
+            continue  # Optional: decide if you want to continue or stop the loop
+   
         # Process buffer if it has data
         while len(message_buffer) > 0:
             # Search for a valid header

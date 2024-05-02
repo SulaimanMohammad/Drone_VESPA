@@ -1,0 +1,30 @@
+15:33:21: arm_and_takeoff called:
+15:33:21: Arming motors
+15:33:21:  Waiting for arming...
+15:33:22: Taking off starts
+15:33:22:  Altitude: 0.002
+15:33:23:  Altitude: 0.002
+15:33:24:  Altitude: 0.003
+15:33:25:  Altitude: 0.134
+15:33:26:  Altitude: 1.337
+15:33:27:  Altitude: 2.971
+15:33:28:  Altitude: 5.445
+15:33:29:  Altitude: 7.395
+15:33:30:  Altitude: 8.777
+15:33:31:  Altitude: 9.61
+15:33:31: Reached target altitude
+15:33:46: arm_and_takeoff called:
+15:33:46: Arming motors
+15:33:46:  Waiting for arming...
+15:33:47: Taking off starts
+15:33:47:  Altitude: 0.002
+15:33:48:  Altitude: 0.002
+15:33:49:  Altitude: 0.002
+15:33:50:  Altitude: 0.005
+15:33:51:  Altitude: 0.584
+15:33:52:  Altitude: 3.758
+15:33:53:  Altitude: 6.3
+15:33:54:  Altitude: 8.506
+15:33:55:  Altitude: 10.162
+15:33:56:  Altitude: 11.267
+15:33:56: Reached target altitude

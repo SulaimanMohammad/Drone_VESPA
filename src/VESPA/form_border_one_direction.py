@@ -126,8 +126,16 @@ def form_border_one_direction(self,header,msg):
 
         if self.id in  target_ids and target_ids :# targets exist not empty s
             if self.id == candidate:
-                circle_completed(self)
-                finish_timer_forme_border(self)
+                print("sender, message_sent_for_border", sender_id, self.message_sent_for_border)
+                if sender_id in self.message_sent_for_border:
+                    print ("message backwarrds")
+                    self.border_formed=False
+                    finish_timer_forme_border(self)
+
+                else: 
+                    circle_completed(self)
+                    self.border_formed= True
+                    finish_timer_forme_border(self)
 
             else: 
                 #print(" from listener")
@@ -142,7 +150,7 @@ def form_border_one_direction(self,header,msg):
                     #send_msg(msg)
                 
 def send_msg_border_until_confirmation(self):
-    while not self.Forming_Border_Broadcast_REC.is_set():
+    while not self.Forming_Border_Broadcast_REC.is_set() and  (not self.expansion_stop.is_set()) and (not self.Emergency_stop.is_set()):
         header= Forming_border_header
         # that is  needed or it will be blocked trying to send same candidate 
         candidates_to_process = []
@@ -208,7 +216,7 @@ def verify_border(self,header, msg):
 def reset_timer_forme_border(self, header):
     with self.lock_boder_timer:
         if header== Forming_border_header:
-            self.remaining_time_forme_border=600 # contains waiting and confim 
+            self.remaining_time_forme_border=10 # contains waiting and confim 
         else:
             self.remaining_time_forme_border=5
 
@@ -329,9 +337,9 @@ def confirm_border_connection(self):
         self.messages_to_be_sent=[]
         self.rec_candidate=[]
         self.border_candidate=False
-        print(self.state)
+        print("self.state",self.state)
         self.change_state_to(Owner)
-        print(self.state)
+        print("self.state",self.state)
         Forme_border(self)
     self.border_verified.clear()
 
@@ -340,8 +348,9 @@ def confirm_border_connection(self):
 def Forme_border(self):
     wait_message_rec = threading.Thread(target=send_msg_border_until_confirmation, args=(self,)) #pass the function reference and arguments separately to the Thread constructor.
     wait_message_rec.start()
+    number_of_try=0
     # need to continue checking because it can be not border but can be after 
-    while not self.Forming_Border_Broadcast_REC.is_set():
+    while (not self.Forming_Border_Broadcast_REC.is_set()) and number_of_try<=3 and (not self.expansion_stop.is_set()) and (not self.Emergency_stop.is_set()):
         print(" send demane from Forme_border")
         self.demand_neighbors_info()
         print( "Done reading data")
@@ -354,24 +363,36 @@ def Forme_border(self):
 
         if self.border_candidate :
             self.current_target_ids= choose_spot_right_handed(self) # chose spot only when it is candidate 
+            self.message_sent_for_border= self.current_target_ids
+            print(  self.message_sent_for_border)
             print( "current_target_ids", self.current_target_ids)
             self.update_candidate_spot_info_to_neighbors() # Useful if the drone arrived and filled a spot made others sourounded
             print( " it is elgibale ")
             '''launch a message circulation for current candidat'''
             start_msg_one_direction(self,Forming_border_header)
-            print(self.messages_to_be_sent)
+            print("self.messages_to_be_sent", self.messages_to_be_sent)
         
         reset_timer_forme_border(self,Forming_border_header )
-        while True:
+        # This will be broke in case the the timer is up or the emergency is done 
+        while (not self.Emergency_stop.is_set()):
             with self.lock_boder_timer:
                 self.remaining_time_forme_border -= 0.5
                 if self.remaining_time_forme_border <= 0:
-                        break
+                        break 
             time.sleep(0.5)
-
-    self.Forming_Border_Broadcast_REC.wait()
-    wait_message_rec.join() # wait it to be done 
-    self.Forming_Border_Broadcast_REC.clear()
-    self.demand_neighbors_info() # needed to update what neigbor become border 
-    self.neighbor_list_upon_border_formation=copy.deepcopy( self.get_neighbor_list())
+        if self.border_formed== False: 
+            number_of_try=number_of_try+1
+        
+        print("NEW ITERZTOion , border_formed, number_of_try", self.border_formed,number_of_try)
+    
+    print (" BREAK THE LOOP ")
+    if self.border_formed== False:
+        print(" need to abort mession")
+       
+    else: 
+        self.Forming_Border_Broadcast_REC.wait()
+        wait_message_rec.join() # wait it to be done 
+        self.Forming_Border_Broadcast_REC.clear()
+        self.demand_neighbors_info() # needed to update what neigbor become border 
+        self.neighbor_list_upon_border_formation=copy.deepcopy( self.get_neighbor_list())
 

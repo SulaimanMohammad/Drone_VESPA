@@ -13,20 +13,129 @@ from simple_pid import PID
 import threading
 from pathlib import Path
 import queue
-
 from dronekit import Command
 from pymavlink import mavutil
+# import sys 
+# parent_directory = os.path.acbspath(os.path.join(os.path.dirname(__file__), '../Lidar/RPI'))
 
-# import sys
-# parent_directory = os.path.abspath(os.path.join(os.path.dirname(__file__), '../'))
-# # Add the parent directory to sys.path
 # sys.path.append(parent_directory)
-# from Lidar.lidar import initialize_sensor, read_sensor
+# from lidar import *
+
+#-------------------------------------------------------------
+#------------------  Lidar Functions -------------------------
+#-------------------------------------------------------------
+def avoidance_emergency(self, lidar_queue,emergecy_stop, ref_alt, data_ready):
+    # If an object found in the emergency zone ( very close object to the drone)
+    if emergecy_stop.is_set():
+        safe_zone= 1
+        check_objects_time=0
+        goal_altitude=0
+        actual_alt=self.location.global_relative_frame.alt
+        if (actual_alt+safe_zone)<(ref_alt*2) : # Not close to the max then go up  
+            v_z= -0.5 #"go up "
+            target_alt= (actual_alt+1)
+        elif  (actual_alt-safe_zone)>(ref_alt-2) :# Not close to the min alt then go down 
+            v_z= +0.5 #"go down
+            target_alt= (actual_alt-safe_zone)
+
+        # Wait until the current altitude arrives to target_alt 
+        while abs(self.location.global_relative_frame.alt - target_alt)>0.5: 
+            send_control_body(self, 0, 0, v_z)
+            time.sleep(0.2)
+            
+        send_control_body(self, 0, 0, 0)
+        time.sleep(0.2)
+        send_control_body(self, 0, 0, 0)
+        time.sleep(0.2)
+
+        # Clear flags 
+        emergecy_stop.clear()
+        data_ready.clear() 
+        # Wait until an emergency or a objects data in case of no emergency 
+        while ( (not data_ready.is_set()) and (not emergecy_stop.is_set()) ):
+            time.sleep(0.1)
+        # If no emergency and objects found then find velcoity to avoid them 
+        if data_ready.is_set(): 
+            output_read=full_scan_avoidence(self, lidar_queue,data_ready )
+            if not output_read==None: 
+                velocity_z, Z_to_go_distance, min_x_close_object, check_objects_time, goal_altitude=output_read    
+        # another emergency (close object) then change the alt again and wait untile clear env 
+        else: 
+            output_read = avoidance_emergency(self, lidar_queue,emergecy_stop, ref_alt,data_ready) 
+            if not output_read==None: 
+                velocity_z, Z_to_go_distance, min_x_close_object, check_objects_time, goal_altitude=output_read   
+        return [velocity_z, Z_to_go_distance, min_x_close_object, check_objects_time, goal_altitude]
+    else:
+        return None 
+    
+def full_scan_avoidence(self, lidar_queue,data_ready ):
+    #scan and find all avilable objects and corresponding veloxity on z to avoid it  
+    # check_objects_time is used check when the drone arrived to the alt ( in case parometer was not accurate)
+    velocity_z=0
+    check_objects_time=0 
+    goal_altitude= self.location.global_relative_frame.alt
+    min_x_close_object= None
+    if( data_ready.is_set() ):
+        try: 
+            Z_to_go_distance, min_x_close_object = lidar_queue.get(timeout=1)  # Adjust timeout as needed
+            data_ready.clear()
+            if (Z_to_go_distance and Z_to_go_distance != 0 ):
+                check_objects_time= time.time()
+                if( Z_to_go_distance>0):
+                    velocity_z=-0.5 # 0.5 m/s 
+                else: 
+                    velocity_z=+0.5 # go down  
+                goal_altitude= self.location.global_relative_frame.alt + Z_to_go_distance
+        except:
+            print("No data received from observer")
+            velocity_z=0      
+    return [velocity_z, Z_to_go_distance, min_x_close_object ,check_objects_time, goal_altitude]        
+
+
+def scan_befor_movement(self,lidar_queue,data_ready,emergecy_stop,ref_alt):    
+    # wait until data came back "emergency or data of objects"
+    while ( (not data_ready.is_set()) and (not emergecy_stop.is_set()) ):
+        time.sleep(0.1)
+
+    if not emergecy_stop.is_set():     
+        output_read = full_scan_avoidence(self, lidar_queue,data_ready )
+    else:
+        output_read = avoidance_emergency(self, lidar_queue,emergecy_stop, ref_alt, data_ready) 
+    
+    if not output_read==None: 
+        velocity_z,Z_to_go_distance,min_x_close_object, check_objects_time, goal_altitude=output_read 
+    # Returned data will be used to send signal to drone to move 
+    return velocity_z, Z_to_go_distance, min_x_close_object, check_objects_time, goal_altitude
+
+def regular_scan(self,lidar_queue,data_ready,emergecy_stop,ref_alt,velocity_z, min_x_close_object, check_objects_time,goal_altitude,Z_to_go_distance):
+    # Check emergency first 
+    output_read= avoidance_emergency(self, lidar_queue,emergecy_stop, ref_alt, data_ready)     
+    if not output_read==None: 
+        velocity_z, Z_to_go_distance, min_x_close_object, check_objects_time, goal_altitude=output_read      
+    
+    # If no emergency and data is ready and the drone is not in process of changing altitude from previous scan 
+    if( check_objects_time ==0 and abs( goal_altitude-self.location.global_relative_frame.alt)<0.2 and data_ready.is_set() ):
+        output_read= full_scan_avoidence(self, lidar_queue,data_ready )
+        if not output_read==None: 
+            velocity_z, Z_to_go_distance, min_x_close_object, check_objects_time, goal_altitude=output_read
+    
+    # If the drone arrived to alitude for avoiding object from previous scan then reset vars to start another scan 
+    if ( check_objects_time>0 and (abs( goal_altitude- self.location.global_relative_frame.alt)<0.2 or time.time()-check_objects_time>=abs(Z_to_go_distance*1.2) ) ):  # distance traveled t=d/0.5= d*0.5
+        min_x_close_object= None
+        Z_to_go_distance=0
+        check_objects_time=0
+        velocity_z=0
+    
+    return velocity_z, Z_to_go_distance, min_x_close_object, check_objects_time, goal_altitude
+#-------------------------------------------------------------
+#-------------------------------------------------------------
+
 # Declare global variables for logs 
 filename = " "
 
 def create_log_file(log_dir_name="mission_log", script_name="mission"):
     base_dir=os.path.abspath(os.path.join(os.path.dirname(__file__), '../..'))
+    print(base_dir )
     # Get the current timestamp
     global timestamp 
     timestamp = datetime.datetime.now().strftime("%H-%M|%Y-%m-%d")
@@ -66,7 +175,6 @@ def parse_connect():
     parser.add_argument('--connect')
     args = parser.parse_args()
     connection_string = args.connect
-    #print ("Connection to the vehicle on %s"%connection_string)
     # Connect to the Vehicle (in this case a simulator running the same computer)
     return connection_string
 
@@ -95,7 +203,6 @@ def arm_and_takeoff(self, aTargetAltitude):
     """
     Arms vehicle and fly to aTargetAltitude.
     """
-    #initialize_sensor()
     if self.mode.name == "INITIALISING":
         print ("initialise the self") 
         write_log_message ("initialise the self") 
@@ -450,7 +557,6 @@ def yaw_listener(self, name, message):
     # If this is not the first event, print the time difference
     if last_event_time_yaw is not None:
         interval_between_events_yaw = current_time - last_event_time_yaw
-        #print(f"YAW Time between two events: {interval_between_events_yaw} seconds")
 
     # Update the last event time
     last_event_time_yaw = current_time
@@ -461,6 +567,7 @@ def yaw_listener(self, name, message):
     yaw_rad = message.yaw
 
 new_velocity_data = threading.Event()
+
 def on_velocity(self, attribute_name, value):
     global velocity_listener
     global last_event_time
@@ -470,16 +577,12 @@ def on_velocity(self, attribute_name, value):
     # If this is not the first event, print the time difference
     if last_event_time is not None:
         interval_between_events = current_time - last_event_time
-        print(f"Time between two events: {interval_between_events} seconds")
-
     # Update the last event time
     last_event_time = current_time
-
     # Signal that new data is available
     velocity_components = value
     # Convert string values to float
     velocity_listener = [float(v) for v in velocity_components]
-    print(velocity_listener)
     new_velocity_data.set()
 
 def set_yaw_PID(self, yaw_angle, yaw_speed, direction, relative=False):
@@ -611,10 +714,8 @@ def get_desired_speed(current_speed, remaining_distance, max_acceleration, max_d
     # Deceleration phase calculations with safety margin
     decel_time = max_speed / (max_deceleration * safety_margin)
     decel_distance = max_speed * decel_time - 0.5 * (max_deceleration * safety_margin) * decel_time**2
-    print("decel_time=",decel_time,"decel_distance",decel_distance )
     # Check if we should start decelerating
     if remaining_distance <= decel_distance:
-        print( "In dec phase")
         # If within deceleration distance, calculate desired speed for smooth stop
         desired_speed = (1 * max_deceleration * remaining_distance)**0.5
     else:
@@ -670,7 +771,7 @@ def hold_yaw_PID(self, desired_yaw):
     set_yaw_PID(self, abs(error), abs(yaw_speed), direction_yaw)
     print("yaw error=",error )
 
-def velocity_PID(desired_vel_x, velocity_body_vector):
+def velocity_PID(desired_vel_x,desired_vel_z, velocity_body_vector):
     # PID gains for yaw, X, and Y control
     Kp_vel_x = 1.2
     Ki_vel_x = 0.02
@@ -695,8 +796,6 @@ def velocity_PID(desired_vel_x, velocity_body_vector):
 
     desired_vel_y=0.0
     desired_vel_z=0.0
-
-
     velocity_current_x=(velocity_body_vector[0])
     velocity_current_y=(velocity_body_vector[1])
     velocity_current_z=(velocity_body_vector[2])
@@ -728,29 +827,7 @@ def velocity_PID(desired_vel_x, velocity_body_vector):
 
     return velocity_x, velocity_y, velocity_z
 
-def object_avoidance(self,sensor_queue):
-    if not sensor_queue.empty():
-        sensor_value = sensor_queue.get()
-
-        # Check if sensor value is less than 80
-        if sensor_value < 80:
-            print("Sensor value below 80, entering special handling loop.")
-            while sensor_value < 80:
-                send_control_body(self, 0, 0, -2)
-                if not sensor_queue.empty():
-                    sensor_value = sensor_queue.get()
-                    print(f"Waiting in loop, sensor value: {sensor_value}")
-                time.sleep(0.1)  # Adjust as needed for responsiveness
-            print("Sensor value above 80, exiting special handling loop.")
-        if sensor_value > 80:
-            while self.location.global_relative_frame.alt>=2*0.95:
-                send_control_body(self, 0, 0, 2)
-
-
-
-   
-
-def move_body_PID(self, angl_dir, distance, max_acceleration=0.5, max_deceleration= -0.5 , max_velocity=2): #max_velocity=2
+def move_body_PID(self, angl_dir, distance,ref_alt=9.7, max_acceleration=0.5, max_deceleration= -0.5 , max_velocity=2): #max_velocity=2
      
     global velocity_listener
     velocity_listener=0
@@ -766,35 +843,70 @@ def move_body_PID(self, angl_dir, distance, max_acceleration=0.5, max_decelerati
     PID_time=0
     previous_desired_vel_x=0
     estimated_acceleration=1
-    
+
     check_mode(self) 
     max_acceleration,max_deceleration= get_acceleration()
     
-    [ angl_dir, velocity_direction ]= convert_angle_to_set_dir(self, angl_dir)
+    # [ angl_dir, velocity_direction ]= convert_angle_to_set_dir(self, angl_dir)
     set_yaw_to_dir_PID( self, angl_dir)
     
     # Desired yaw and velocities
-    desired_vel_x = velocity_direction* get_desired_speed(0, distance,max_acceleration, max_deceleration, max_velocity) 
-    desired_vel_z = 0
+    desired_vel_x = get_desired_speed(0, distance,max_acceleration, max_deceleration, max_velocity) 
     desired_vel_y=0
+    desired_vel_z = 0
     desired_yaw = normalize_angle(angl_dir) # baed on the direction  needed 
 
     self.add_attribute_listener('velocity', on_velocity)
     
-    # stop_event = threading.Event()
-    # sensor_queue = queue.Queue()
-    # thread = threading.Thread(target=read_sensor, args=(stop_event, sensor_queue))
-    # thread.start()
-
     some_velocity_threshold=0.08
     velocity_updated=False
+    
+    #-------------------------------------------------------------
+    #--------------- Launch Lidar for avoiding objects------------
+    #-------------------------------------------------------------
+    # In case the Lidar is not used, comment this section 
+    # lidar_queue = queue.Queue()
+    # read_lidar= threading.Event() 
+    # read_lidar.set()
+    # emergecy_stop= threading.Event() 
+    # data_ready= threading.Event() 
+    # check_objects_time=0 
+    # min_x_close_object= None 
+    # velocity_z_lidar=0
+    old_velocity_z= 0
+    # observer_thread = start_observer(self, lidar_queue, read_lidar, emergecy_stop,data_ready, ref_alt)
+    # time.sleep (3) # Wait 3 second to be sure that the Lidar is connected 
+    # if (not read_lidar.is_set()): # senor is not avilable then dont move 
+    #     send_control_body(self, 0, 0, 0)
+    #     self.remove_attribute_listener('velocity', on_velocity)
+    #     raise Exception("No Lidar found")
+    # try:
+    #    velocity_z_lidar,Z_to_go_distance, min_x_close_object, check_objects_time, goal_altitude= scan_befor_movement(self,lidar_queue,data_ready,emergecy_stop,ref_alt)
+    # except:
+    #     print("First scan is failed")
+    #     velocity_z_lidar=0 
+    # desired_vel_z= velocity_z_lidar
+    #-------------------------------------------------------------
+    #-------------------------------------------------------------
+
     start_time = time.time()
     send_control_body(self, desired_vel_x, desired_vel_y, desired_vel_z)     
+    
     while remaining_distance >= 0.1:
-        print( "---------------------------------------------------------------------")
-
+        #-------------------------------------------------------------
+        #--------------------- Lidar for regular_scan-----------------
+        #-------------------------------------------------------------
+        # In case the Lidar is not used, comment this section 
+        # old_velocity_z= velocity_z_lidar
+        # velocity_z_lidar, Z_to_go_distance, min_x_close_object, check_objects_time, goal_altitude= regular_scan(self,lidar_queue,data_ready,emergecy_stop,ref_alt,velocity_z_lidar, min_x_close_object, check_objects_time,goal_altitude,Z_to_go_distance)
+        # desired_vel_z=velocity_z_lidar
+        # # Send the segnal and dont wait for the next round of PID 
+        # if(old_velocity_z != velocity_z_lidar and velocity_z_lidar==0 ):
+        #     send_control_body(self, velocity_x, velocity_y, velocity_z)
+        #-------------------------------------------------------------
+        
         new_velocity_data.wait()
-        #object_avoidance(self,sensor_queue)
+        
         # Get current velocities from NED frame to body 
         velocity_body   =ned_to_body(self,velocity_listener )
         velocity_current_x=(velocity_body[0])
@@ -810,62 +922,88 @@ def move_body_PID(self, angl_dir, distance, max_acceleration=0.5, max_decelerati
         
         # Update desired_vel_x based on conditions
         if is_close_to_desired:
-            print("update called", "velocity_current_x", velocity_current_x ,"desired_vel_x", desired_vel_x)
             previous_desired_vel_x = desired_vel_x
             desired_vel_x = get_desired_speed(velocity_current_x, remaining_distance, max_acceleration, max_deceleration, max_velocity)            
             velocity_updated=True
     
         time_elaps = time.time() - PID_time
-        if is_accelerating and velocity_current_x >= desired_vel_x or (is_decelerating and velocity_current_x <= desired_vel_x) or velocity_updated or time_elaps > (desired_vel_x/estimated_acceleration)/2:
+        if is_accelerating and velocity_current_x >= desired_vel_x or (is_decelerating and velocity_current_x <= desired_vel_x) or (velocity_updated or time_elaps > (desired_vel_x/estimated_acceleration)/2) or (old_velocity_z !=desired_vel_z ): # (old_velocity_z !=desired_vel_z ) in case the lidar found object and new movement on Z 
             PID_time=time.time()
-            velocity_x, velocity_y, velocity_z= velocity_PID(desired_vel_x, velocity_body)
+            velocity_x, velocity_y, velocity_z= velocity_PID(desired_vel_x,desired_vel_z, velocity_body)
             hold_yaw_PID(self, desired_yaw)
-            print("PID called")
             velocity_updated=False
         else:
             velocity_x= desired_vel_x
             velocity_y=0
-            velocity_z=0
+            velocity_z=desired_vel_z
 
         if previous_desired_vel_x < desired_vel_x and velocity_current_x < desired_vel_x and previous_velocity_x <= velocity_current_x:
-            print( "                    Calcul ACC")
+            #Calcul ACC
             max_acceleration= update_acceleration_estimate(max_acceleration, velocity_current_x, previous_velocity_x, interval_between_events)
             estimated_acceleration= max_acceleration
         elif previous_desired_vel_x > desired_vel_x and velocity_current_x > desired_vel_x and previous_velocity_x >= velocity_current_x: 
-            print( "                    Calcul DEAC")
+            #Calcul DEAC
             max_deceleration= update_acceleration_estimate(max_deceleration, velocity_current_x, previous_velocity_x, interval_between_events)
             estimated_acceleration= abs(max_deceleration) #Need to be used to detmin when PID will be called
-            
         
-        
-        print( "acc=", max_acceleration,"deacc=", max_deceleration)
-        # Check the current altitude
-        current_altitude = self.location.global_relative_frame.alt
+        #-------------------------------------------------------------
+        #------Lidar for reduce velocity close ti the objects --------
+        #-------------------------------------------------------------
+        # # In case the Lidar is not used, comment this section 
+        # # reduce the velocity on X to avoid any collision and give time to increase altitude  
+        # if(min_x_close_object != None and min_x_close_object < remaining_distance):
+        #     velocity_x=desired_vel_x*0.5
+        #-------------------------------------------------------------
 
+        
         # Send control to the drone reguraly 
         if (time.time() - start_control_timer > 0.2):
-            print("desired_vel_x= " , desired_vel_x)
-            send_control_body(self, velocity_x, velocity_y, velocity_z)
+            print("velocity_x PID",velocity_x,"velocity_z PID", velocity_z)
+            send_control_body(self, velocity_x, 0, -1*velocity_z)
             start_control_timer= time.time()
         
         remaining_distance= remaining_distance - (float(interval_between_events* abs( (velocity_current_x + previous_velocity_x)/2.0 )))
         # save the current for next iteration to calculate the traveld distance 
         previous_velocity_x= velocity_current_x 
         
-        print( "\nvx ",velocity_current_x , "vy",velocity_current_y, "vz",velocity_current_z, "current alt= ", current_altitude  )
-        print( "time", time.time() - start_time , "distance left : ",remaining_distance, "dis speed", desired_vel_x,"\n" )
-        
+        print( "\nvx ",velocity_current_x , "vy",velocity_current_y, "vz",velocity_current_z, "current alt= ", self.location.global_relative_frame.alt  )
+        print( "time", time.time() - start_time , "distance left : ",remaining_distance, "desired_vel_x speed", desired_vel_x,"desired_vel_z speed", desired_vel_z, "\n" )
+        print( "---------------------------------------------------------------------")
+
         # Clear the event so we can wait for the next update
         new_velocity_data.clear()
 
     # Arrive to destination stop  
     send_control_body(self, 0, 0, 0)
     save_acceleration(max_acceleration, max_deceleration)
-    stop_event.set()
-    thread.join()
     self.remove_attribute_listener('velocity', on_velocity)
     
+def go_to_ref_altitude(self,ref_alt=9.7):
+    time.sleep(0.5) # stablize Z 
+
+    if( self.location.global_relative_frame.alt > ref_alt * 0.95 ): # ref_alt is under , go downe 
+        desired_vel_Z= 0.5
+    elif( self.location.global_relative_frame.alt < ref_alt * 0.95 ): 
+        desired_vel_Z=-0.5
+    else: 
+        desired_vel_Z=0 
+
+    if desired_vel_Z!=0: 
+        start_control_timer=0 
+        while ( abs(self.location.global_relative_frame.alt - ref_alt)>=0.2 and  (self.location.global_relative_frame.alt > ref_alt-1 or self.location.global_relative_frame.alt < ref_alt+1 )  ):
+            if (time.time() - start_control_timer > 0.2):
+                print("alt= " , self.location.global_relative_frame.alt,"velocity_z",desired_vel_Z )
+                send_control_body(self, 0, 0, desired_vel_Z)
+                start_control_timer= time.time()
+
+        # Ensure stop 
+        send_control_body(self, 0, 0, 0)
+        time.sleep(0.2)
+        send_control_body(self, 0, 0, 0)
     
+    time.sleep(1)
+
+
 def convert_angle_to_set_dir(self, angle): 
     '''
     supppose you want the drone to have yaw -90 and move forward in respect to -90 yaw 
