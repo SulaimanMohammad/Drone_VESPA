@@ -468,51 +468,51 @@ class Drone:
             5: {'s0': 's2', 's4': 's3', 's5': 's0', 's6': 's1', 'empty': ['s1', 's2', 's3']},
             6: {'s0': 's3', 's1': 's2', 's5': 's4', 's6': 's0', 'empty': ['s2', 's3', 's4']}
         }
+        with self.lock_neighbor_list:
+            # Create a dictionary for faster spot lookup
+            spot_lookup = {spot['name']: spot for spot in self.neighbor_list}
 
-        # Create a dictionary for faster spot lookup
-        spot_lookup = {spot['name']: spot for spot in self.neighbor_list}
+            # Empty the specified spots
+            for spot_name in movement_rules[moveTOspot]['empty']:
+                spot_lookup[spot_name].update({'drones_in': 0, 'drones_in_id': [], 'states': [], 'previous_state': []})
 
-        # Empty the specified spots
-        for spot_name in movement_rules[moveTOspot]['empty']:
-            spot_lookup[spot_name].update({'drones_in': 0, 'drones_in_id': [], 'states': [], 'previous_state': []})
+            # Move the drones based on movement rules, excluding the 'empty' key
+            for spot_name, new_spot_name in {k: v for k, v in movement_rules[moveTOspot].items() if k != 'empty'}.items():
+                spot = spot_lookup[spot_name]
+                new_spot = spot_lookup[new_spot_name]
 
-        # Move the drones based on movement rules, excluding the 'empty' key
-        for spot_name, new_spot_name in {k: v for k, v in movement_rules[moveTOspot].items() if k != 'empty'}.items():
-            spot = spot_lookup[spot_name]
-            new_spot = spot_lookup[new_spot_name]
+                # Special handling for s0 and the moving drone
+                if spot_name == 's0' and moving_drone_id in spot['drones_in_id']:
+                    drone_index = spot['drones_in_id'].index(moving_drone_id)
+                    moving_drone_states = spot['states'][drone_index]
+                    moving_drone_previous_state = spot['previous_state'][drone_index]
 
-            # Special handling for s0 and the moving drone
-            if spot_name == 's0' and moving_drone_id in spot['drones_in_id']:
-                drone_index = spot['drones_in_id'].index(moving_drone_id)
-                moving_drone_states = spot['states'][drone_index]
-                moving_drone_previous_state = spot['previous_state'][drone_index]
+                    # Move other drones
+                    drones_to_move = [d_id for d_id in spot['drones_in_id'] if d_id != moving_drone_id]
+                    states_to_move = [state for i, state in enumerate(spot['states']) if i != drone_index]
+                    prev_states_to_move = [state for i, state in enumerate(spot['previous_state']) if i != drone_index]
 
-                # Move other drones
-                drones_to_move = [d_id for d_id in spot['drones_in_id'] if d_id != moving_drone_id]
-                states_to_move = [state for i, state in enumerate(spot['states']) if i != drone_index]
-                prev_states_to_move = [state for i, state in enumerate(spot['previous_state']) if i != drone_index]
+                    new_spot['drones_in_id'].extend(drones_to_move)
+                    new_spot['states'].extend(states_to_move)
+                    new_spot['previous_state'].extend(prev_states_to_move)
 
-                new_spot['drones_in_id'].extend(drones_to_move)
-                new_spot['states'].extend(states_to_move)
-                new_spot['previous_state'].extend(prev_states_to_move)
+                    # Update s0 to only have the moving drone
+                    spot['drones_in_id'] = [moving_drone_id]
+                    spot['states'] = [moving_drone_states]
+                    spot['previous_state'] = [moving_drone_previous_state]
+                    spot['drones_in'] = 1
+                else:
+                    # Move all drones for other spots
+                    new_spot['drones_in_id'].extend(spot['drones_in_id'])
+                    new_spot['states'].extend(spot['states'])
+                    new_spot['previous_state'].extend(spot['previous_state'])
 
-                # Update s0 to only have the moving drone
-                spot['drones_in_id'] = [moving_drone_id]
-                spot['states'] = [moving_drone_states]
-                spot['previous_state'] = [moving_drone_previous_state]
-                spot['drones_in'] = 1
-            else:
-                # Move all drones for other spots
-                new_spot['drones_in_id'].extend(spot['drones_in_id'])
-                new_spot['states'].extend(spot['states'])
-                new_spot['previous_state'].extend(spot['previous_state'])
-
-                spot['drones_in_id'] = []
-                spot['states'] = []
-                spot['previous_state'] = []
-                spot['drones_in'] = 0
-            # Update the 'drones_in' count for the new spot
-            new_spot['drones_in'] = len(new_spot['drones_in_id'])    
+                    spot['drones_in_id'] = []
+                    spot['states'] = []
+                    spot['previous_state'] = []
+                    spot['drones_in'] = 0
+                # Update the 'drones_in' count for the new spot
+                new_spot['drones_in'] = len(new_spot['drones_in_id'])    
 
     def rearrange_neighbor_statically_upon_elected_arrival (self,elected_drone_id, target_spot):
         target_spot_name = f's{target_spot}'
