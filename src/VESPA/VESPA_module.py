@@ -216,7 +216,14 @@ class Drone:
     ---------------------------------- Communication ------------------------------------
     -------------------------------------------------------------------------------------
     '''
-
+    
+    def position_sensitive_checksum(self, message):
+        checksum = 0
+        for index, byte in enumerate(message):
+            # Multiply each byte by its position index (position + 1 to avoid multiplication by zero)
+            checksum += (index + 1) * byte
+        return checksum % 256
+    
     def build_data_demand_message(self):
         message= Demand_header.encode()
         max_byte_count = determine_max_byte_size(self.id)
@@ -326,7 +333,7 @@ class Drone:
         message += struct.pack('>B', max_byte_count)        
         message += self.id.to_bytes(max_byte_count, 'big')
         # Calculate checksum
-        checksum = sum(message) % 256
+        checksum = self.position_sensitive_checksum(message)
         message += struct.pack('>B', checksum) + b'\n'
         return message
 
@@ -335,7 +342,8 @@ class Drone:
         # Extract checksum from the message
         received_checksum = struct.unpack('>B', message_without_newline[-1:])[0]
         # Recalculate checksum for the message excluding the checksum byte itself
-        calculated_checksum = sum(message_without_newline[:-1]) % 256
+        calculated_checksum = self.position_sensitive_checksum(message_without_newline[:-1])
+
         if received_checksum != calculated_checksum:
             #print(" Bad message recived")
             return [-1]
