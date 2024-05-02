@@ -125,11 +125,11 @@ class Drone:
         # init s0 and it will be part of the spots list
         self.neighbor_list=[{"name": "s" + str(0), "distance": 0, "priority": 0, "drones_in": 1,"drones_in_id":[], "states": [] , "previous_state": []}]
         # save the first spot which is s0 the current place of the drone
-        # spot is another name of s_list[0] so any changes will be seen in spot
-        self.spot= self.neighbor_list[0]
-        self.spot["drones_in_id"].append(self.id)
-        self.spot["states"].append(self.state)
-        self.spot["previous_state"].append(self.previous_state)
+        # spot is another name of s_lself.neighbor_list[0]ist[0] so any changes will be seen in spot
+        self.current_spot= self.neighbor_list[0]
+        self.current_spot["drones_in_id"].append(self.id)
+        self.current_spot["states"].append(self.state)
+        self.current_spot["previous_state"].append(self.previous_state)
         self.num_neigbors = 6
         for i in range(1, self.num_neigbors+1):
             s = {"name": "s" + str(i), "distance": 0, "priority": 0,"drones_in": 0,"drones_in_id":[] , "states": [], "previous_state": []}
@@ -454,7 +454,7 @@ class Drone:
                 if formula:
                     distance = eval(formula, {'sqrt': sqrt, 'DxDy2': DxDy2, 'DxDy3a2': DxDy3a2, 'effective_a': effective_a, 'aDx': aDx, 'sqDx': sqDx, 'Dy': Dy})
                     s["distance"] = round(distance,2)
-            self.distance_from_sink=self.spot["distance"] # where spot is the data of s0 the current position
+            self.distance_from_sink=self.current_spot["distance"] # where spot is the data of s0 the current position
 
 
     def rearrange_neighbor_statically_upon_movement(self,moveTOspot):
@@ -581,19 +581,21 @@ class Drone:
             return self.previous_state
     
     def get_current_spot(self):
-        with self.lock_state:
-            return self.spot
+        with self.lock_neighbor_list:
+            return self.current_spot
             
     def write_state(self, state):
         with self.lock_state:
             self.state= state
 
     def change_state_to( self, new_state):
-            with self.lock_state:
-                self.previous_state= self.state # save the preivious state
-                self.spot["previous_state"][0]= self.state
-                self.state= new_state # change the state
-                self.spot["states"][0]= self.state
+        with self.lock_state:
+            self.previous_state= self.state # save the preivious state
+            self.state= new_state # change the state
+        with self.lock_neighbor_list:
+            # Change state in neighbor_list where first entry is the drone spot
+            self.current_spot["previous_state"][0]=self.state
+            self.current_spot["states"][0]=self.state
 
     def check_Ownership(self):
         if self.get_state() != Owner:
@@ -607,7 +609,7 @@ class Drone:
                 if non_free==0: # Only free there
                     all_free = all(state == Free for state in self.get_current_spot()["states"])
                     if all_free:
-                        min_id = min(self.spot["drones_in_id"])
+                        min_id = min(self.get_current_spot()["drones_in_id"])
                         print ( "\n chosed from many in same point:")
                         print( min_id)
                         # current drone is chosen
@@ -615,8 +617,8 @@ class Drone:
                             self.change_state_to (Owner)
                         else:
                             min_id_index =  self.get_current_spot()["drones_in_id"].index(min_id)
-                            with self.lock_state:
-                                self.spot["states"][min_id_index] = Owner
+                            with self.lock_neighbor_list: # change state of entry in the current spot
+                                self.current_spot["states"][min_id_index]=Owner
 
     
     def correct_states_after_comm(self):
