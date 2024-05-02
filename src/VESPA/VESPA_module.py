@@ -77,12 +77,12 @@ def determine_max_byte_size(number):
 
 formula_dict = {
     "s0": "sqrt(DxDy2)",
-    "s1": "sqrt(DxDy3a2 + a * aDx)",
-    "s2": "sqrt(DxDy3a2 + a * (sqDx + (3 * Dy)))",
-    "s3": "sqrt(DxDy3a2 + a * (3 * Dy - sqDx))",
-    "s4": "sqrt(DxDy3a2 - (aDx*a))",
-    "s5": "sqrt(DxDy3a2 - a * (sqDx + (3 * Dy)))",
-    "s6": "sqrt(DxDy3a2 - a * (3 * Dy - sqDx))"
+    "s1": "sqrt(DxDy3a2 + effective_a * aDx)",
+    "s2": "sqrt(DxDy3a2 + effective_a * (sqDx + (3 * Dy)))",
+    "s3": "sqrt(DxDy3a2 + effective_a * (3 * Dy - sqDx))",
+    "s4": "sqrt(DxDy3a2 - (aDx*effective_a))",
+    "s5": "sqrt(DxDy3a2 - effective_a * (sqDx + (3 * Dy)))",
+    "s6": "sqrt(DxDy3a2 - effective_a * (3 * Dy - sqDx))"
 }
 
 Owner=0
@@ -436,7 +436,7 @@ class Drone:
     
     def calculate_neighbors_distance_sink(self):
         DxDy2 = ((self.positionX * self.positionX) + (self.positionY * self.positionY))
-        DxDy3a2 = (DxDy2 + 3 * a * a)
+        DxDy3a2 = (DxDy2 + 3 * effective_a * effective_a)
         sqDx = (sq3 * self.positionX)
         aDx = ((2*sq3) * self.positionX)
         Dy= (self.positionY)
@@ -444,7 +444,7 @@ class Drone:
             for s in self.neighbor_list:
                 formula = formula_dict.get(s["name"])
                 if formula:
-                    distance = eval(formula, {'sqrt': sqrt, 'DxDy2': DxDy2, 'DxDy3a2': DxDy3a2, 'a': a, 'aDx': aDx, 'sqDx': sqDx, 'Dy': Dy})
+                    distance = eval(formula, {'sqrt': sqrt, 'DxDy2': DxDy2, 'DxDy3a2': DxDy3a2, 'effective_a': effective_a, 'aDx': aDx, 'sqDx': sqDx, 'Dy': Dy})
                     s["distance"] = round(distance,2)
             self.distance_from_sink=self.spot["distance"] # where spot is the data of s0 the current position
 
