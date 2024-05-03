@@ -302,7 +302,7 @@ def first_exapnsion (self, vehicle):
         self.start_expanding.clear()
     expand_and_form_border(self, vehicle)
     
-    forme_border(self)# will not return until the drones receive boradcast of forming border
+    Forme_border(self)# will not return until the drones receive boradcast of forming border
     save_unoccupied_spots_around_border(self)
     # Time guarantees that all drones begin the searching procedure simultaneously and synchronized.
     time.sleep(sync_time)

@@ -152,15 +152,17 @@ class Drone:
         # Event refer if exchanging messages done or not, clear measn in progress, set = done 
         self.list_finished_update= threading.Event()
         self.list_finished_update.set()
+        self.demander_lock=threading.Lock()
         self.exchange_data_lock= threading.Lock() # demanding and reciving data should not be done by multiple threads
         self.lock_boder_timer =threading.Lock() 
 
         self.candidate_to_send=[] # list saves the candidate to send thier msg and confirm arriving 
         self.candidate_to_send_lock= threading.Lock()
-        
+        self.border_formed= True #  Used to loop many times trying to forme the border when the border successfully formed adn no need to try more 
         self.movemnt_from_border=False # used to detect first movement to reset allowed spot
         self.neighbor_list_upon_border_formation=[] # Contains the toplogy around upon forming the border 
         self.border_verified=threading.Event()
+
         if uart:
             connect_xbee(xbee_serial_port, baud_rate)
         else:

@@ -106,7 +106,7 @@ def forward_broadcast_message(self,header,candidate):
 def form_border_one_direction(self,header,msg):
     if not self.Forming_Border_Broadcast_REC.is_set(): # React only if border is not formed yet 
         sender_id, target_ids, candidate= decode_border_message(msg)
-        reset_timer_forme_border(self)
+        reset_timer_forme_border(self,header)
 
         if sender_id in self.current_target_ids and candidate in self.rec_candidate:
             # MESSAGR REC"
@@ -124,9 +124,14 @@ def form_border_one_direction(self,header,msg):
 
         if self.id in  target_ids  and target_ids :# targets exist not empty s
             if self.id == candidate:
-                circle_completed(self)
-                finish_timer_forme_border(self)
+                if sender_id in self.message_sent_for_border: # The mesage came backward not in circle
+                    self.border_formed=False
+                    finish_timer_forme_border(self)
 
+                else: 
+                    circle_completed(self)
+                    self.border_formed= True
+                    finish_timer_forme_border(self)
             else: 
                 with self.candidate_to_send_lock:
                     if candidate not in self.candidate_to_send:
@@ -194,7 +199,7 @@ def verify_border(self,header, msg):
 def reset_timer_forme_border(self, header):
     with self.lock_boder_timer:
         if header== Forming_border_header:
-            self.remaining_time_forme_border=600 # Contains waiting and confim the msg arrival 
+            self.remaining_time_forme_border=60 # Contains waiting and confim the msg arrival 
         else:
             self.remaining_time_forme_border=30   # This used in case of verfiy the border the messages flow fast
 
@@ -204,7 +209,7 @@ def finish_timer_forme_border(self):
         self.remaining_time_forme_border=0
   
 def check_border_candidate_eligibility(self):
-    if self.get_state() != Owner or self.get_state() != Irremovable:
+    if self.get_state() == Owner :
         self.border_candidate=False
         return self.border_candidate
     
@@ -221,7 +226,7 @@ def check_border_candidate_eligibility(self):
            if neighbor["drones_in"] == 0: # spot also is not occupied
                unoccupied_spots_counter += 1
 
-    if unoccupied_spots_counter>0 and self.get_current_spot() ["drones_in"]==1 and (self.get_state()==Owner or self.get_state()==Irremovable ) : # at least one spot is empty so the drone can be part of he border
+    if unoccupied_spots_counter>0 and (self.get_current_spot() ["drones_in"]==1) : # at least one spot is empty so the drone can be part of he border
         if  self.all_neighbor_spots_owned(): 
             self.border_candidate=True
     else: 
@@ -267,7 +272,7 @@ def reset_border_variables(self):
 
 
 
-def forme_border(self):
+def Forme_border(self):
 
     while (self.get_current_spot()['drones_in']>1) or (not(all(neighbor['drones_in'] in [0, 1] for neighbor in self.get_neighbor_list()))) or not self.all_neighbor_spots_owned():
         ''' 
@@ -286,16 +291,19 @@ def forme_border(self):
         '''
         time.sleep(sync_time)
         self.demand_neighbors_info() # return after gathering all info
-
+    
     wait_message_rec = threading.Thread(target=send_msg_border_until_confirmation, args=(self,Forming_border_header)) #pass the function reference and arguments separately to the Thread constructor.
     wait_message_rec.start()
+    
+    number_of_try=0
     #Continue checking in case of not forming border the process will start again 
-    while not self.Forming_Border_Broadcast_REC.is_set():
+    while not self.Forming_Border_Broadcast_REC.is_set() and number_of_try<=3:
         self.demand_neighbors_info()
         check_border_candidate_eligibility(self)
         if self.border_candidate :
             self.current_target_ids= choose_spot_right_handed(self) # chose spot only when it is candidate 
             self.update_candidate_spot_info_to_neighbors() # Useful if the drone arrived and filled a spot made others sourounded
+            self.message_sent_for_border= self.current_target_ids
             '''launch a message circulation for current candidat'''
             start_msg_one_direction(self)
             print(self.messages_to_be_sent)
@@ -303,21 +311,27 @@ def forme_border(self):
         # This timer will be reset upon each border message is recived 
         # It will be also stopped when forming border broadcast is received 
         # Note in case the border is not formed with absance of new messages, when the timer is up the while loop will re-executed 
-        reset_timer_forme_border(self)
+        reset_timer_forme_border(self,Forming_border_header)
+
         while True:
             with self.lock_boder_timer:
                 self.remaining_time_forme_border -= 0.5
                 if self.remaining_time_forme_border <= 0:
                         break
             time.sleep(0.5)
+        
+        if self.border_formed== False: 
+            number_of_try=number_of_try+1
 
-    self.Forming_Border_Broadcast_REC.wait()
-    wait_message_rec.join() # wait wait_message_rec thread to finish and detect the Forming_Border_Broadcast_REC flag
-    self.Forming_Border_Broadcast_REC.clear()
 
-    self.demand_neighbors_info() # Update neighbor_list to see the changes in the drones states ( like owner became border)
-    self.neighbor_list_upon_border_formation=copy.deepcopy( self.get_neighbor_list()) # Save the Topology arround so it can be used to verfiy the border
-    
+    if self.border_formed == True:
+        self.Forming_Border_Broadcast_REC.wait()
+        wait_message_rec.join() # wait wait_message_rec thread to finish and detect the Forming_Border_Broadcast_REC flag
+        self.Forming_Border_Broadcast_REC.clear()
+
+        self.demand_neighbors_info() # Update neighbor_list to see the changes in the drones states ( like owner became border)
+        self.neighbor_list_upon_border_formation=copy.deepcopy( self.get_neighbor_list()) # Save the Topology arround so it can be used to verfiy the border
+        
     reset_border_variables(self)
 
 
