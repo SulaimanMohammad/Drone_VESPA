@@ -64,8 +64,7 @@ def decode_border_message(message):
     return sender_id, target_ids, candidate
 
 def circle_completed(self):
-        if check_border_candidate_eligibility(self):    
-            # These cases should be considered for the 
+        if self.border_candidate:    
             if self.get_state() == Irremovable:
                 self.change_state_to(Irremovable_boarder)
             else: 
@@ -83,7 +82,7 @@ def circle_completed(self):
 def border_broadcast_respond(self, candidate):
     if candidate in self.rec_candidate: # the sender of broadcast already sent msg to the current drone so it is part of the circle
         # re-check the the droen around still have same situation and still can be border
-        if check_border_candidate_eligibility():
+        if self.border_candidate:
             if self.get_state() == Irremovable:
                 self.change_state_to(Irremovable_boarder)
             else: 
@@ -103,14 +102,6 @@ def forward_broadcast_message(self,header,candidate):
     '''
     msg= build_border_message(self, header,[-1],candidate) # as you see the candidate is resent as it was recived
     send_msg(msg)
-
-def border_broadcast_respond(self, candidate):
-    if candidate in self.rec_candidate: # the sender of broadcast already sent msg to the current drone so it is part of the circle
-        # re-check the the droen around still have same situation and still can be border
-        if check_border_candidate_eligibility(self):
-            self.change_state_to(Border)
-    else: # if drone doesnt have the candidate or the sourounding has changed
-        self.change_state_to(Free)
 
 def form_border_one_direction(self,header,msg):
     if not self.Forming_Border_Broadcast_REC.is_set(): # React only if border is not formed yet 
