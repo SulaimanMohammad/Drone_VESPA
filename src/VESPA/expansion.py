@@ -75,11 +75,11 @@ def check_continuity_of_listening(self):
     else: 
         return False
 
-def expansion_listener (self):
+def expansion_listener (self,vehicle):
 
     while check_continuity_of_listening(self):
 
-        msg= retrieve_msg_from_buffer(self.Forming_Border_Broadcast_REC)
+        msg= retrieve_msg_from_buffer(self.expansion_stop)
 
         self.exchange_neighbors_info_communication(msg)
 
@@ -165,6 +165,7 @@ def sink_movement_command(self,vehicle,id):
 
 def initial_movement(self,vehicle,id, spot, lon, lat):
     if id !=0 and id==self.id: # drone is not sink and it is targeted
+        self.update_location(spot) # update the destination even before arriving ( all drones in sky will know the next drone heading in advance)
         arm_and_takeoff(vehicle,self.hight)
         if lon!=0 and lat!=0:
             time.sleep(2)
@@ -252,16 +253,22 @@ def reset_allowed_spots(self):
 '''
 
 def expand_and_form_border(self,vehicle):
+    
+    self.elected_droen_arrived= threading.Event()
+    if self.id==0:
+        self.update_location(0)
+        self.change_state_to(Owner)
+
     spatial_observation(self)
     while self.get_state() !=Owner:
         set_priorities(self)
-        destination_spot= find_priority(self)
+        self.destination_spot= find_priority(self)
         self.elected_id= neighbors_election(self)
         
         if self.elected_id== self.id: # current drone is elected one to move
-            if destination_spot != 0: # Movement to another spot not staying 
-                print ("go to S", destination_spot)
-                self.move_to_spot(vehicle, destination_spot)
+            if self.destination_spot != 0: # Movement to another spot not staying 
+                print ("go to S", self.destination_spot)
+                self.move_to_spot(vehicle, self.destination_spot)
                 # After move_to_spot retuen it means arrivale 
                 movement_done_msg= build_expan_elected(self.id)
                 send_msg(movement_done_msg)
@@ -273,10 +280,44 @@ def expand_and_form_border(self,vehicle):
            # Wait untile the elected drone to arrive to next spot.
            self.elected_droen_arrived.wait() 
            self.elected_droen_arrived.clear()
+           self.rearrange_neighbor_statically_upon_elected_arrival (self.elected_id, self.destination_spot)  
+
 
         print("checking for update the state")
         spatial_observation(self)
-        
+    
+    send_msg(self.build_spot_info_message(Response_header))
+    self.demand_neighbors_info()       
+    # check also that no electin message around                                         ):
+    while (self.get_current_spot()['drones_in']>1) or (not(all(neighbor['drones_in'] in [0, 1] for neighbor in self.get_neighbor_list()))) or not self.all_neighbor_spots_owned():
+
+        # Before initiating the border procedure, it's important to wait for some time to ensures that the drone is alone in its spot.
+        # This step eliminates the possibility of erroneously considering a drone as a border-candidate when another drone in the same spot is about to move.
+        '''
+        The loop continues as long as any of these conditions are true:
+
+        The current spot has more than one drone: so it is not alone and one of the drone will populate one of the neigbor spot so ait for that to consider border cndidiate 
+        Any neighbor has more than one drone: oso the neigbor has many and some will move and occupy a spot around wait this before check the border  
+        All neighbors have at least one drone
+        '''
+        time.sleep(1)
+        print(" waiting to check for border")
+        self.demand_neighbors_info()
+        print( " finished observing")
+        for station in self.get_neighbor_list():
+            if station['drones_in'] > 0:
+                print(station)       
+
+    spatial_observation(self)
+    Forme_border(self)
+    clear_buffer()
+    self.demand_neighbors_info() # needed to update what neigbor become border 
+
+    time.sleep(5)
+    print(" VERFIFY ")
+    if self.border_formed != False:
+        confirm_border_connectivity(self)
+           
 def first_exapnsion (self, vehicle):
     # Lance a thread to read messages continuously
     xbee_receive_message_thread = threading.Thread(target=expansion_listener, args=(self,)) #pass the function reference and arguments separately to the Thread constructor.
@@ -302,7 +343,11 @@ def first_exapnsion (self, vehicle):
         self.start_expanding.clear()
     expand_and_form_border(self, vehicle)
     
-    Forme_border(self)# will not return until the drones receive boradcast of forming border
+    self.expansion_stop.set()
+    xbee_receive_message_thread.join() # stop listening to message
+    self.expansion_stop.clear()
+    clear_buffer()
+
     save_unoccupied_spots_around_border(self)
     # Time guarantees that all drones begin the searching procedure simultaneously and synchronized.
     time.sleep(sync_time)
@@ -310,9 +355,6 @@ def first_exapnsion (self, vehicle):
     self.elected_id=None 
     # Since broadcast messages might still be circulating while retrieval has stopped, there could be leftover messages in the buffer.
     # It's essential to clear the buffer before the next phase to prevent any surplus.
-    clear_buffer()
-    confirm_border_connectivity(self)
-    xbee_receive_message_thread.join() # stop listening to message
     
 def further_expansion (self,vehicle):
     # Lance a thread to read messages continuously
@@ -325,15 +367,18 @@ def further_expansion (self,vehicle):
         self.change_state_to(Irremovable)
     else: # State is Free the only free will move 
         self.movemnt_from_border=False
-        expand_and_form_border(self,vehicle)
     
-    forme_border(self) #  Irremovable will participate in forming the border 
+    # All drones should follow same process (sync between all drones)
+    expand_and_form_border(self,vehicle)
+    self.expansion_stop.set()
+    xbee_receive_message_thread.join() # stop listening to message
+    self.expansion_stop.clear()
+    clear_buffer()
+    
     save_unoccupied_spots_around_border(self)
     # Time guarantees that all drones begin the searching procedure simultaneously and synchronized.
     time.sleep(sync_time)
     self.search_for_target() # This is blocking until the end of movement
     self.elected_id=None 
-    clear_buffer()
-    xbee_receive_message_thread.join() 
     
 

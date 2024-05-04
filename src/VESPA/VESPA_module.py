@@ -120,6 +120,7 @@ class Drone:
         self.allowed_spots=[0,1,2,3,4,5,6]   
         self.neighbor_list = []  # list that contains the 6 neighbors around the current location
         self.elected_id=None
+        self.destination_spot=0
         set_a(a)
         self.id=id
         # init s0 and it will be part of the spots list
