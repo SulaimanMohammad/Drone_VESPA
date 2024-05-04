@@ -162,7 +162,8 @@ def sink_movement_command(self,vehicle,id):
         long, lat= new_coordinates(current_lon, current_lat, distance , angle)
         msg= build_movement_command_message(id,destination_spot_random, long, lat)
         send_msg(msg)
-        time.sleep((a/defined_groundspeed)+1 )# wait until arrival
+        # Wait until arrival, id*spacing + self.ref_alt time for take off where the hight depend on the drone ID
+        time.sleep(((a/defined_groundspeed)+1)+ (id*spacing + self.ref_alt))
     else:
         # It is command to drone to start,( 0,0) is null island where it is imposible to start from
         msg= build_movement_command_message(id,destination_spot_random, 0, 0)
@@ -170,13 +171,13 @@ def sink_movement_command(self,vehicle,id):
 def initial_movement(self,vehicle,id, spot, lon, lat):
     if id !=0 and id==self.id: # drone is not sink and it is targeted
         self.update_location(spot) # update the destination even before arriving ( all drones in sky will know the next drone heading in advance)
-        arm_and_takeoff(vehicle,self.hight)
+        arm_and_takeoff(vehicle,self.drone_alt)
         if lon!=0 and lat!=0:
             time.sleep(2)
-            point1 = LocationGlobalRelative(lat,lon ,self.hight)
+            point1 = LocationGlobalRelative(lat,lon ,self.drone_alt)
             vehicle.simple_goto( point1, groundspeed=defined_groundspeed)
             # simple_goto will retuen after the command is sent, thus you need to sleep to give the drone time to move
-            time.sleep((a/defined_groundspeed)+1 )
+            time.sleep(((a/defined_groundspeed)+1)+ (id*spacing + self.ref_alt))
             vehicle.mode    = VehicleMode("LOITER") #loiter mode and hover in your place
             time.sleep(1)
             vehicle.mode     = VehicleMode("GUIDED")
@@ -313,6 +314,12 @@ def expand_and_form_border(self,vehicle):
                 print(station)       
 
     spatial_observation(self)
+
+    # Drone is owner and alone goes to reference altitude 
+    if self.spot["drones_in"]==1 and self.get_state()==Owner:
+        print (" Drone is Alone Go to ref ")
+        go_to_ref_altitude(vehicle,self.ref_alt)
+
     Forme_border(self)
     clear_buffer()
     self.demand_neighbors_info() # needed to update what neigbor become border 
@@ -330,7 +337,7 @@ def first_exapnsion (self, vehicle):
     self.elected_droen_arrived= threading.Event()
     # First movement started by commands of the sink
     if self.id==0: #sink:
-        arm_and_takeoff(vehicle,self.hight)
+        arm_and_takeoff(vehicle,self.drone_alt)
         time.sleep(2)
         with open('Operational_Data.txt', 'r') as file:
             for line in file:
