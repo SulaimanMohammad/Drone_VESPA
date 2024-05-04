@@ -164,6 +164,8 @@ class Drone:
         self.neighbor_list_upon_border_formation=[] # Contains the toplogy around upon forming the border 
         self.border_verified=threading.Event()
 
+        self.Emergency_stop = threading.Event() # Flag in case a problem or abort is needed
+
         if uart:
             connect_xbee(xbee_serial_port, baud_rate)
         else:
@@ -219,6 +221,10 @@ class Drone:
     ---------------------------------- Communication ------------------------------------
     -------------------------------------------------------------------------------------
     '''
+    def build_emergency_message(self):
+        message= Emergecy_header.encode()
+        message += b'\n'
+        return message
     
     def position_sensitive_checksum(self, message):
         checksum = 0
@@ -794,3 +800,14 @@ class Drone:
             vehicle.mode = VehicleMode ("RTL")
         vehicle.close() 
 
+    def interrupt(self, vehicle):
+            if vehicle is not None:
+                emergency_msg= self.build_emergency_message()
+                send_msg(emergency_msg)
+                print("retuen home")
+                self.Emergency_stop.set()
+                vehicle.remove_attribute_listener('velocity', on_velocity)
+                self.return_home(vehicle)
+                time.sleep(100) 
+                vehicle.close()
+                sys.exit()

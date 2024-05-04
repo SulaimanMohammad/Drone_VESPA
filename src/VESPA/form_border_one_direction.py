@@ -139,8 +139,8 @@ def form_border_one_direction(self,header,msg):
 
 
 def send_msg_border_until_confirmation(self,header):
-    while not self.Forming_Border_Broadcast_REC.is_set():
-        
+    while not self.Forming_Border_Broadcast_REC.is_set() and (not self.expansion_stop.is_set()) and (not self.Emergency_stop.is_set()):
+
         # Copy messages_to_be_sent and iterate in it trying to send all the msg 
         # self.sending_messgae_list will change when a message is received the candidate will be pulled out 
         candidates_to_process = []
@@ -297,7 +297,7 @@ def Forme_border(self):
     
     number_of_try=0
     #Continue checking in case of not forming border the process will start again 
-    while not self.Forming_Border_Broadcast_REC.is_set() and number_of_try<=3:
+    while (not self.Forming_Border_Broadcast_REC.is_set()) and number_of_try<=3 and (not self.expansion_stop.is_set()) and (not self.Emergency_stop.is_set()):
         self.demand_neighbors_info()
         check_border_candidate_eligibility(self)
         if self.border_candidate :
@@ -313,7 +313,7 @@ def Forme_border(self):
         # Note in case the border is not formed with absance of new messages, when the timer is up the while loop will re-executed 
         reset_timer_forme_border(self,Forming_border_header)
 
-        while True:
+        while (not self.Emergency_stop.is_set()):
             with self.lock_boder_timer:
                 self.remaining_time_forme_border -= 0.5
                 if self.remaining_time_forme_border <= 0:

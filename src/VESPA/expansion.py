@@ -70,7 +70,7 @@ def handel_elected_drone_arrivale(self,msg):
         self.elected_droen_arrived.set()
 
 def check_continuity_of_listening(self):
-    if not self.Forming_Border_Broadcast_REC.is_set():
+    if not self.Forming_Border_Broadcast_REC.is_set() and (not self.expansion_stop.is_set()) and (not self.Emergency_stop.is_set()):
         return True
     else: 
         return False
@@ -80,6 +80,16 @@ def expansion_listener (self,vehicle):
     while check_continuity_of_listening(self):
 
         msg= retrieve_msg_from_buffer(self.expansion_stop)
+
+        if msg.startswith(Emergecy_header.encode()) and msg.endswith(b'\n'):
+            # brodcast it again
+            emergency_msg= self.build_emergency_message()
+            send_msg(emergency_msg)
+            print("Retuen home")
+            self.Emergency_stop.set()
+            self.expansion_stop.set()
+            self.return_home(vehicle)
+            break
 
         self.exchange_neighbors_info_communication(msg)
 
@@ -95,12 +105,6 @@ def expansion_listener (self,vehicle):
 
         elif msg.startswith(Expan_header.encode()) and msg.endswith(b'\n'):
             handel_elected_drone_arrivale(self, msg)
-
-        elif msg.startswith(Arrival_header.encode()) and msg.endswith(b'\n'):
-            handel_broken_into_spot(self, msg)
-
-        elif msg.startswith(Inherit_header.encode()) and msg.endswith(b'\n'):
-            handel_inheritence_message(self, msg)
             
         elif msg.startswith(Forming_border_header.encode()) and msg.endswith(b'\n'): # message starts with F end with \n
             form_border_one_direction(self,Forming_border_header,msg)

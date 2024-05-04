@@ -26,12 +26,14 @@ Guidance_header= 'G'
 Balance_header= 'B'
 Algorithm_termination_header='O'
 
+Emergecy_header= 'Y'
+
 # Create an array of headers
 headers = [
     Movement_command, Calibration, Demand_header, Response_header,ACK_header,
     Expan_header, Arrival_header, Inherit_header, Forming_border_header,Verify_border_header,
     Spanning_header, Target_coordinates_header, Local_balance_header,
-    Guidance_header, Balance_header, Algorithm_termination_header
+    Guidance_header, Balance_header, Algorithm_termination_header, Emergecy_header
 ]
 
 # Generate an array of ASCII values to be used in retiveing messages 
