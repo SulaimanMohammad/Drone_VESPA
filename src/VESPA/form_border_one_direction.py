@@ -354,10 +354,14 @@ def confirm_border_connectivity(self):
         print("Border confirmed")
     else:
         print("Border Non confirmed")
-        reset_border_variables(self)
+        reset_border_variables(self)   
+        self.border_verified.clear()
+
+
+def re_form_border(self):
+    if not self.border_verified.is_set():
         if self.get_state() == Border:
             self.change_state_to(Owner)
         if self.get_state() == Irremovable_boarder:
             self.change_state_to(Irremovable)
-        forme_border(self)
-    self.border_verified.clear()
+        Forme_border(self)
