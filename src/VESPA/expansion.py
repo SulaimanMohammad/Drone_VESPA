@@ -293,28 +293,7 @@ def expand_and_form_border(self,vehicle):
     
     send_msg(self.build_spot_info_message(Response_header))
     self.demand_neighbors_info()       
-    # check also that no electin message around                                         ):
-    while (self.get_current_spot()['drones_in']>1) or (not(all(neighbor['drones_in'] in [0, 1] for neighbor in self.get_neighbor_list()))) or not self.all_neighbor_spots_owned():
-
-        # Before initiating the border procedure, it's important to wait for some time to ensures that the drone is alone in its spot.
-        # This step eliminates the possibility of erroneously considering a drone as a border-candidate when another drone in the same spot is about to move.
-        '''
-        The loop continues as long as any of these conditions are true:
-
-        The current spot has more than one drone: so it is not alone and one of the drone will populate one of the neigbor spot so ait for that to consider border cndidiate 
-        Any neighbor has more than one drone: oso the neigbor has many and some will move and occupy a spot around wait this before check the border  
-        All neighbors have at least one drone
-        '''
-        time.sleep(1)
-        print(" waiting to check for border")
-        self.demand_neighbors_info()
-        print( " finished observing")
-        for station in self.get_neighbor_list():
-            if station['drones_in'] > 0:
-                print(station)       
-
-    spatial_observation(self)
-
+    
     # Drone is owner and alone goes to reference altitude 
     if self.spot["drones_in"]==1 and self.get_state()==Owner:
         print (" Drone is Alone Go to ref ")
@@ -328,6 +307,11 @@ def expand_and_form_border(self,vehicle):
     print(" VERFIFY ")
     if self.border_formed != False:
         confirm_border_connectivity(self)
+    else:
+        emergency_msg= self.build_emergency_message()
+        send_msg(emergency_msg)
+        print("Retuen home border not formed")
+        self.return_home(vehicle)
            
 def first_exapnsion (self, vehicle):
     # Lance a thread to read messages continuously

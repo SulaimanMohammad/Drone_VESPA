@@ -123,13 +123,13 @@ class Drone:
         self.destination_spot=0
         set_a(a)
         self.id=id
-        # 
+        # Alt for each drone related to ID to avoid collision while movement
         self.ref_alt= sqrt(pow(a,2)- pow((a/sq3),2)) # Reference alt (drone hight when it is alone )
-        self.drone_alt= (self.id*spacing)+ self.ref_alt # Alt for each drone related to ID to avoid collision while movement
+        self.drone_alt= (self.id*spacing)+ self.ref_alt 
         # init s0 and it will be part of the spots list
         self.neighbor_list=[{"name": "s" + str(0), "distance": 0, "priority": 0, "drones_in": 1,"drones_in_id":[], "states": [] , "previous_state": []}]
         # save the first spot which is s0 the current place of the drone
-        # spot is another name of s_lself.neighbor_list[0]ist[0] so any changes will be seen in spot
+        # spot is another name of self.neighbor_list[0] so any changes will be seen in spot
         self.current_spot= self.neighbor_list[0]
         self.current_spot["drones_in_id"].append(self.id)
         self.current_spot["states"].append(self.state)
