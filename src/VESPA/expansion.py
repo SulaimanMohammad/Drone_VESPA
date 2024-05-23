@@ -295,7 +295,7 @@ def expand_and_form_border(self,vehicle):
     self.demand_neighbors_info()       
     
     # Drone is owner and alone goes to reference altitude 
-    if self.spot["drones_in"]==1 and self.get_state()==Owner:
+    if self.get_current_spot()["drones_in"]==1 and self.get_state()==Owner:
         print (" Drone is Alone Go to ref ")
         go_to_ref_altitude(vehicle,self.ref_alt)
 
