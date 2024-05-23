@@ -209,7 +209,7 @@ def finish_timer_forme_border(self):
         self.remaining_time_forme_border=0
   
 def check_border_candidate_eligibility(self):
-    if self.get_state() == Owner :
+    if self.get_state() != Owner :
         self.border_candidate=False
         return self.border_candidate
     
