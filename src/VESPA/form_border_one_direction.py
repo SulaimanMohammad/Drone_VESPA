@@ -306,8 +306,7 @@ def Forme_border(self):
             self.message_sent_for_border= self.current_target_ids
             '''launch a message circulation for current candidat'''
             start_msg_one_direction(self)
-            print(self.messages_to_be_sent)
-        
+                    
         # This timer will be reset upon each border message is recived 
         # It will be also stopped when forming border broadcast is received 
         # Note in case the border is not formed with absance of new messages, when the timer is up the while loop will re-executed 
