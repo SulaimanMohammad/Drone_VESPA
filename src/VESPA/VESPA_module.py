@@ -168,6 +168,7 @@ class Drone:
         self.border_verified=threading.Event()
 
         self.Emergency_stop = threading.Event() # Flag in case a problem or abort is needed
+        self.expansion_stop=  threading.Event() # Flage refer that the expansion is ended 
 
         if uart:
             connect_xbee(xbee_serial_port, baud_rate)
@@ -450,7 +451,7 @@ class Drone:
         for neighbor in self.get_neighbor_list():
             num_drones_in = neighbor["drones_in"]
             states = neighbor["states"]
-            if num_drones_in >0 and not all( (state == Owner or state== Irremovable) for state in states):
+            if num_drones_in >0 and not all( (state == Owner or state== Irremovable or state==Irremovable_boarder ) for state in states):
                 return False
         return True
     
