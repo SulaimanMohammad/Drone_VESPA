@@ -70,7 +70,7 @@ def handel_elected_drone_arrivale(self,msg):
         self.elected_droen_arrived.set()
 
 def check_continuity_of_listening(self):
-    if not self.Forming_Border_Broadcast_REC.is_set() and (not self.expansion_stop.is_set()) and (not self.Emergency_stop.is_set()):
+    if (not self.expansion_stop.is_set()) and (not self.Emergency_stop.is_set()):
         return True
     else: 
         return False
@@ -142,6 +142,8 @@ def set_priorities(self):
                         s["priority"]= random.uniform(s["drones_in"]* C + eps, (s["drones_in"]+1)*C)
             else:
                 s["priority"]= float("inf")
+        if self.allowed_spots: # This constraint should be used only one time after the balancing to avoid going behind the border again
+            self.allowed_spots=[]
 
 def find_priority(self):
     min_Priority = min(self.get_neighbor_list(), key=lambda x: x["priority"])["priority"]
