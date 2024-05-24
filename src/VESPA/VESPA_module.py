@@ -469,7 +469,7 @@ class Drone:
                     s["distance"] = round(distance,2)
             self.distance_from_sink=self.current_spot["distance"] # where spot is the data of s0 the current position
 
-
+    # This function is used for the drone elected and move so it will rearrange the old list corresponding to the movement 
     def rearrange_neighbor_statically_upon_movement(self,moveTOspot):
         moving_drone_id=self.id
         # Define the movement rules
