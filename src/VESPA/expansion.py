@@ -1,6 +1,5 @@
 from .VESPA_module import *
 from .form_border_one_direction import *
-# from .form_border_tow_direction import *
 
 set_env(globals())
 
@@ -317,7 +316,7 @@ def expand_and_form_border(self,vehicle):
            
 def first_exapnsion (self, vehicle):
     # Lance a thread to read messages continuously
-    xbee_receive_message_thread = threading.Thread(target=expansion_listener, args=(self,)) #pass the function reference and arguments separately to the Thread constructor.
+    xbee_receive_message_thread = threading.Thread(target=expansion_listener, args=(self,vehicle)) #pass the function reference and arguments separately to the Thread constructor.
     xbee_receive_message_thread.start()
     self.start_expanding= threading.Event()
     self.elected_droen_arrived= threading.Event()
@@ -355,7 +354,7 @@ def first_exapnsion (self, vehicle):
     
 def further_expansion (self,vehicle):
     # Lance a thread to read messages continuously
-    xbee_receive_message_thread = threading.Thread(target=expansion_listener, args=(self,)) #pass the function reference and arguments separately to the Thread constructor.
+    xbee_receive_message_thread = threading.Thread(target=expansion_listener, args=(self,vehicle)) #pass the function reference and arguments separately to the Thread constructor.
     xbee_receive_message_thread.start()
     
     if self.get_state() == Border:
