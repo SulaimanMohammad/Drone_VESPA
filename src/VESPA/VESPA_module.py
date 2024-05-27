@@ -12,6 +12,7 @@ parent_directory = os.path.abspath(os.path.join(os.path.dirname(__file__), '..')
 sys.path.append(parent_directory)
 from drone.drone_ardupilot import *
 from .headers_variables import * 
+import signal
 
 
 '''
@@ -783,6 +784,8 @@ class Drone:
         except Exception as e:
             print(f"An error occurred: {str(e)}")
             vehicle.mode = VehicleMode ("RTL")
+            emergency_msg= self.build_emergency_message()
+            send_msg(emergency_msg)
             vehicle.close()
         # Arrive to steady state and hover then start observing the location
         hover(vehicle)
@@ -801,7 +804,7 @@ class Drone:
             vehicle.mode = VehicleMode ("LAND")
         else:
             vehicle.mode = VehicleMode ("RTL")
-        vehicle.close() 
+        
 
     def interrupt(self, vehicle):
             if vehicle is not None:
@@ -809,8 +812,9 @@ class Drone:
                 send_msg(emergency_msg)
                 print("retuen home")
                 self.Emergency_stop.set()
+                self.expansion_stop.set()
                 vehicle.remove_attribute_listener('velocity', on_velocity)
                 self.return_home(vehicle)
-                time.sleep(100) 
+                time.sleep(10)
                 vehicle.close()
-                sys.exit()
+                raise SystemExit()

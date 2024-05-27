@@ -87,12 +87,12 @@ def expansion_listener (self,vehicle):
             print("Retuen home")
             self.Emergency_stop.set()
             self.expansion_stop.set()
-            self.return_home(vehicle)
+            os.kill(os.getpid(), signal.SIGINT)
             break
 
         self.exchange_neighbors_info_communication(msg)
 
-        if msg.startswith(Movement_command.encode()) and msg.endswith("\n"):
+        if msg.startswith(Movement_command.encode()) and msg.endswith(b'\n'):
             id, spot, lon, lat= decode_movement_command_message(msg)
             if id==-1 and spot==-1 and lon==0 and lat==0: # mean all drone are in sky
                 self.start_expanding.set()
