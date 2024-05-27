@@ -303,11 +303,14 @@ def expand_and_form_border(self,vehicle):
     Forme_border(self)
     clear_buffer()
     self.demand_neighbors_info() # needed to update what neigbor become border 
-
-    time.sleep(5)
+    time.sleep(5) # Stabilizing 
+    
     print(" VERFIFY ")
     if self.border_formed != False:
         confirm_border_connectivity(self)
+        if self.get_current_spot()["drones_in"]==1:
+            print (" Drone is Alone Go to ref ")
+            go_to_ref_altitude(vehicle,self.ref_alt)
     else:
         emergency_msg= self.build_emergency_message()
         send_msg(emergency_msg)
