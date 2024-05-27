@@ -145,7 +145,6 @@ class Drone:
         self.lock_demanders_timer =threading.Lock()
         self.demanders_received_data = threading.Event()
         self.VESPA_termination= threading.Event() 
-        self.elected_droen_arrived= None    
         self.Forming_Border_Broadcast_REC= threading.Event()
         self.start_expanding= None
         self.demanders_list=[]
@@ -780,7 +779,7 @@ class Drone:
         set_to_move(vehicle)
         angle, distance = self.convert_spot_angle_distance(destination_spot)
         try:
-            move_body_PID(vehicle,angle, distance)
+            move_body_PID(vehicle,angle, distance, self.Emergency_stop)
         except Exception as e:
             print(f"An error occurred: {str(e)}")
             vehicle.mode = VehicleMode ("RTL")

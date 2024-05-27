@@ -847,7 +847,7 @@ def velocity_PID(desired_vel_x,desired_vel_z, velocity_body_vector):
 
     return velocity_x, velocity_y, velocity_z
 
-def move_body_PID(self, angl_dir, distance,ref_alt=9.7, max_acceleration=0.5, max_deceleration= -0.5 , max_velocity=2): #max_velocity=2
+def move_body_PID(self, angl_dir, distance, emergency_message_flag ,ref_alt=9.7, max_acceleration=0.5, max_deceleration= -0.5 , max_velocity=2): #max_velocity=2
      
     global velocity_listener
     velocity_listener=0
@@ -912,7 +912,7 @@ def move_body_PID(self, angl_dir, distance,ref_alt=9.7, max_acceleration=0.5, ma
     start_time = time.time()
     send_control_body(self, desired_vel_x, desired_vel_y, desired_vel_z)     
     
-    while remaining_distance >= 0.1:
+    while remaining_distance >= 0.1 and (not emergency_message_flag.is_set()):
         #-------------------------------------------------------------
         #--------------------- Lidar for regular_scan-----------------
         #-------------------------------------------------------------
