@@ -164,7 +164,7 @@ def sink_movement_command(self,vehicle,id):
         msg= build_movement_command_message(id,destination_spot_random, long, lat)
         send_msg(msg)
         # Wait until arrival, id*spacing + self.ref_alt time for take off where the hight depend on the drone ID
-        time.sleep(((a/defined_groundspeed)+1)+ (id*spacing + self.ref_alt))
+        time.sleep(((a/defined_groundspeed)+1)+ (id*spacing + self.ref_alt)+2) # +2 more time to enusre that the drone arrived 
     else:
         # It is command to drone to start,( 0,0) is null island where it is imposible to start from
         msg= build_movement_command_message(id,destination_spot_random, 0, 0)
@@ -178,7 +178,7 @@ def initial_movement(self,vehicle,id, spot, lon, lat):
             point1 = LocationGlobalRelative(lat,lon ,self.drone_alt)
             vehicle.simple_goto( point1, groundspeed=defined_groundspeed)
             # simple_goto will retuen after the command is sent, thus you need to sleep to give the drone time to move
-            time.sleep(((a/defined_groundspeed)+1)+ (id*spacing + self.ref_alt))
+            # Can't use sleep to wate arriving because this function in listenerand will block the listener and the new drone will not respond and also that is safe since no other movement will be done until all drone are in spot  
             vehicle.mode    = VehicleMode("LOITER") #loiter mode and hover in your place
             time.sleep(1)
             vehicle.mode     = VehicleMode("GUIDED")
