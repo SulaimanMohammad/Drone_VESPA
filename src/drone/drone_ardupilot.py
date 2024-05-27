@@ -639,7 +639,7 @@ def send_control_body(self, velocity_x, velocity_y, altitude_rate):
     self.send_mavlink(msg)
     self.flush()
 
-def set_yaw_to_dir_PID(self, target_yaw, relative=True, max_yaw_speed=20):
+def set_yaw_to_dir_PID(self, target_yaw, relative=True, max_yaw_speed=10):
     
     global yaw_rad
     yaw_rad = normalize_angle(math.degrees(self.attitude.yaw))
@@ -648,7 +648,7 @@ def set_yaw_to_dir_PID(self, target_yaw, relative=True, max_yaw_speed=20):
     global last_event_time_yaw
     last_event_time_yaw=None
 
-    kp= abs(yaw_rad - normalize_angle(target_yaw) )/190.0  #1.1
+    kp= (abs(yaw_rad - normalize_angle(target_yaw) )/180.0)/2  #1.1
     ki=0.02
     kd=0.02
     print(kp)
