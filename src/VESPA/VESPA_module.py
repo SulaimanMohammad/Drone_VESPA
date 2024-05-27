@@ -467,6 +467,7 @@ class Drone:
                 if formula:
                     distance = eval(formula, {'sqrt': sqrt, 'DxDy2': DxDy2, 'DxDy3a2': DxDy3a2, 'effective_a': effective_a, 'aDx': aDx, 'sqDx': sqDx, 'Dy': Dy})
                     s["distance"] = round(distance,2)
+            # Note that current_spot accesed directly no need to use get_cuurent_spot since the lock is already used above ( or it will be deadlock)
             self.distance_from_sink=self.current_spot["distance"] # where spot is the data of s0 the current position
 
     # This function is used for the drone elected and move so it will rearrange the old list corresponding to the movement 
