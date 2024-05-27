@@ -1,6 +1,7 @@
 # Drone variables
 max_acceleration = 0.7
 max_deceleration = -0.7
+lidar_scan=False
 speed_of_drone=2 # m/s
 defined_groundspeed=1
 drone_length=60
@@ -16,7 +17,7 @@ sync_time= 10
 scanning_time= 10
 exchange_data_latency=0.5
 # movement_time= a*speed_of_drone*(1+ 0.2)  # add 20% of time for safty
-spacing=2 # Space between a drone and another  
+spacing=2 # Space between a drone and another, Preferred to be 2 minimum where low barometer accuracy cause oscillation of height
 # Xbee variables
 xbee_serial_port='/dev/ttyUSB0'
 Tx=23

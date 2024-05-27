@@ -16,8 +16,7 @@ import queue
 from dronekit import Command
 from pymavlink import mavutil
 import sys 
-parent_directory = os.path.acbspath(os.path.join(os.path.dirname(__file__), '../Lidar/RPI'))
-
+parent_directory = os.path.abspath(os.path.join(os.path.dirname(__file__), '../Lidar/RPI/'))
 sys.path.append(parent_directory)
 from lidar import *
 
@@ -485,6 +484,28 @@ def get_acceleration():
     
     return max_acceleration,max_deceleration 
 
+def get_lidar_setting():
+    # Current script directory
+    current_dir = Path(__file__).resolve().parent
+    # Path to the parent directory
+    parent_dir = current_dir.parent
+    global Operational_Data_path
+    Operational_Data_path = parent_dir/'Operational_Data.txt'
+    lidar_scan= False
+    with open(Operational_Data_path, 'r') as file:
+        for line in file:
+            # Check if line contains max_acceleration
+            if "lidar_scan" in line:
+                print(line )
+                lidar_scan_val =(line.split('=')[1].strip())
+                if lidar_scan_val == "True":
+                    lidar_scan = True
+                else:
+                    lidar_scan = False         
+    # Output the extracted values
+    print(f"lidar_scan: {lidar_scan}")
+    return lidar_scan 
+
 def save_acceleration(max_acceleration, max_deceleration): 
     # Open the file in write mode and write the new values
     new_content = []
@@ -845,7 +866,7 @@ def move_body_PID(self, angl_dir, distance,ref_alt=9.7, max_acceleration=0.5, ma
 
     check_mode(self) 
     max_acceleration,max_deceleration= get_acceleration()
-    
+    lidar_scan=get_lidar_setting() 
     [ angl_dir, velocity_direction ]= convert_angle_to_set_dir(self, angl_dir)
     set_yaw_to_dir_PID( self, angl_dir)
     
@@ -863,28 +884,28 @@ def move_body_PID(self, angl_dir, distance,ref_alt=9.7, max_acceleration=0.5, ma
     #-------------------------------------------------------------
     #--------------- Launch Lidar for avoiding objects------------
     #-------------------------------------------------------------
-    # In case the Lidar is not used, comment this section 
-    lidar_queue = queue.Queue()
-    read_lidar= threading.Event() 
-    read_lidar.set()
-    emergecy_stop= threading.Event() 
-    data_ready= threading.Event() 
-    check_objects_time=0 
-    min_x_close_object= None 
-    velocity_z_lidar=0
-    old_velocity_z= 0
-    observer_thread = start_observer(self, lidar_queue, read_lidar, emergecy_stop,data_ready, ref_alt)
-    time.sleep (3) # Wait 3 second to be sure that the Lidar is connected 
-    if (not read_lidar.is_set()): # senor is not avilable then dont move 
-        send_control_body(self, 0, 0, 0)
-        self.remove_attribute_listener('velocity', on_velocity)
-        raise Exception("No Lidar found")
-    try:
-       velocity_z_lidar,Z_to_go_distance, min_x_close_object, check_objects_time, goal_altitude= scan_befor_movement(self,lidar_queue,data_ready,emergecy_stop,ref_alt)
-    except:
-        print("First scan is failed")
-        velocity_z_lidar=0 
-    desired_vel_z= velocity_z_lidar
+    if lidar_scan:  
+        lidar_queue = queue.Queue()
+        read_lidar= threading.Event() 
+        read_lidar.set()
+        emergecy_stop= threading.Event() 
+        data_ready= threading.Event() 
+        check_objects_time=0 
+        min_x_close_object= None 
+        velocity_z_lidar=0
+        old_velocity_z= 0
+        observer_thread = start_observer(self, lidar_queue, read_lidar, emergecy_stop,data_ready, ref_alt)
+        time.sleep (3) # Wait 3 second to be sure that the Lidar is connected 
+        if (not read_lidar.is_set()): # senor is not avilable then dont move 
+            send_control_body(self, 0, 0, 0)
+            self.remove_attribute_listener('velocity', on_velocity)
+            raise Exception("No Lidar found")
+        try:
+            velocity_z_lidar,Z_to_go_distance, min_x_close_object, check_objects_time, goal_altitude= scan_befor_movement(self,lidar_queue,data_ready,emergecy_stop,ref_alt)
+        except:
+            print("First scan is failed")
+            velocity_z_lidar=0 
+        desired_vel_z= velocity_z_lidar
     #-------------------------------------------------------------
     #-------------------------------------------------------------
 
@@ -895,13 +916,13 @@ def move_body_PID(self, angl_dir, distance,ref_alt=9.7, max_acceleration=0.5, ma
         #-------------------------------------------------------------
         #--------------------- Lidar for regular_scan-----------------
         #-------------------------------------------------------------
-        # In case the Lidar is not used, comment this section 
-        old_velocity_z= velocity_z_lidar
-        velocity_z_lidar, Z_to_go_distance, min_x_close_object, check_objects_time, goal_altitude= regular_scan(self,lidar_queue,data_ready,emergecy_stop,ref_alt,velocity_z_lidar, min_x_close_object, check_objects_time,goal_altitude,Z_to_go_distance)
-        desired_vel_z=velocity_z_lidar
-        # Send the segnal and dont wait for the next round of PID 
-        if(old_velocity_z != velocity_z_lidar and velocity_z_lidar==0 ):
-            send_control_body(self, velocity_x, velocity_y, velocity_z)
+        if lidar_scan: 
+            old_velocity_z= velocity_z_lidar
+            velocity_z_lidar, Z_to_go_distance, min_x_close_object, check_objects_time, goal_altitude= regular_scan(self,lidar_queue,data_ready,emergecy_stop,ref_alt,velocity_z_lidar, min_x_close_object, check_objects_time,goal_altitude,Z_to_go_distance)
+            desired_vel_z=velocity_z_lidar
+            # Send the segnal and dont wait for the next round of PID 
+            if(old_velocity_z != velocity_z_lidar and velocity_z_lidar==0 ):
+                send_control_body(self, velocity_x, velocity_y, velocity_z)
         #-------------------------------------------------------------
         
         new_velocity_data.wait()
@@ -948,10 +969,10 @@ def move_body_PID(self, angl_dir, distance,ref_alt=9.7, max_acceleration=0.5, ma
         #-------------------------------------------------------------
         #------Lidar for reduce velocity close ti the objects --------
         #-------------------------------------------------------------
-        # In case the Lidar is not used, comment this section 
         # reduce the velocity on X to avoid any collision and give time to increase altitude  
-        if(min_x_close_object != None and min_x_close_object < remaining_distance):
-            velocity_x=desired_vel_x*0.5
+        if lidar_scan: 
+            if(min_x_close_object != None and min_x_close_object < remaining_distance):
+                velocity_x=desired_vel_x*0.5
         #-------------------------------------------------------------
 
         
@@ -975,6 +996,8 @@ def move_body_PID(self, angl_dir, distance,ref_alt=9.7, max_acceleration=0.5, ma
     send_control_body(self, 0, 0, 0)
     save_acceleration(max_acceleration, max_deceleration)
     self.remove_attribute_listener('velocity', on_velocity)
+    time.sleep(5)
+
     
 def go_to_ref_altitude(self,ref_alt=9.7):
     time.sleep(0.5) # stablize Z 
