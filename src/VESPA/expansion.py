@@ -81,13 +81,7 @@ def expansion_listener (self,vehicle):
         msg= retrieve_msg_from_buffer(self.expansion_stop)
 
         if msg.startswith(Emergecy_header.encode()) and msg.endswith(b'\n'):
-            # brodcast it again
-            emergency_msg= self.build_emergency_message()
-            send_msg(emergency_msg)
-            print("Retuen home")
-            self.Emergency_stop.set()
-            self.expansion_stop.set()
-            os.kill(os.getpid(), signal.SIGINT)
+            self.emergency_stop()
             break
 
         self.exchange_neighbors_info_communication(msg)
@@ -315,7 +309,7 @@ def expand_and_form_border(self,vehicle):
         emergency_msg= self.build_emergency_message()
         send_msg(emergency_msg)
         print("Retuen home border not formed")
-        self.return_home(vehicle)
+        self.emergency_stop()
            
 def first_exapnsion (self, vehicle):
     # Lance a thread to read messages continuously

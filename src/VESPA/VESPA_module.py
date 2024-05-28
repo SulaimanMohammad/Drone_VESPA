@@ -126,7 +126,8 @@ class Drone:
         self.id=id
         # Alt for each drone related to ID to avoid collision while movement
         self.ref_alt= sqrt(pow(a,2)- pow((a/sq3),2)) # Reference alt (drone hight when it is alone )
-        self.drone_alt= (self.id*spacing)+ self.ref_alt 
+        self.drone_alt= (self.id*spacing)+ self.ref_alt
+        self.defined_groundspeed= defined_groundspeed
         # init s0 and it will be part of the spots list
         self.neighbor_list=[{"name": "s" + str(0), "distance": 0, "priority": 0, "drones_in": 1,"drones_in_id":[], "states": [] , "previous_state": []}]
         # save the first spot which is s0 the current place of the drone
@@ -811,7 +812,7 @@ class Drone:
             if vehicle is not None:
                 emergency_msg= self.build_emergency_message()
                 send_msg(emergency_msg)
-                print("retuen home")
+                printerruptint("retuen home")
                 self.Emergency_stop.set()
                 self.expansion_stop.set()
                 vehicle.remove_attribute_listener('velocity', on_velocity)
@@ -819,3 +820,13 @@ class Drone:
                 time.sleep(10)
                 vehicle.close()
                 raise SystemExit()
+            
+    def emergency_stop(self):
+        print("Emergency stop detected. Exiting function.")
+        # brodcast it again
+        emergency_msg= self.build_emergency_message()
+        send_msg(emergency_msg)
+        print("Retuen home")
+        self.Emergency_stop.set()
+        self.expansion_stop.set()
+        os.kill(os.getpid(), signal.SIGINT) # That will call interrupt which use vehicle object to return home
