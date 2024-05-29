@@ -52,12 +52,9 @@ try:
         # NO need to do same for border because VESPA_termination will be set in balancing and then while evaluation comes
         balancing(drone, vehicle )
 
-except KeyboardInterrupt:
-    print("Interrupt received, stopping...")
-    running = False  # Signal the reading thread to stop
-    close_xbee_port()
-    vehicle.close()
-    print("Serial connection closed.")
+except:
+    print("Error in performing VESPA")
+    drone.emergency_stop()
 finally:
     drone.return_home(vehicle) 
     close_xbee_port()

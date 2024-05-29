@@ -169,8 +169,12 @@ def initial_movement(self,vehicle,id, spot, lon, lat):
         arm_and_takeoff(vehicle,self.drone_alt)
         if lon!=0 and lat!=0:
             time.sleep(2)
-            point1 = LocationGlobalRelative(lat,lon ,self.drone_alt)
-            vehicle.simple_goto( point1, groundspeed=defined_groundspeed)
+            try: 
+                point1 = LocationGlobalRelative(lat,lon ,self.drone_alt)
+                vehicle.simple_goto( point1, groundspeed=defined_groundspeed)
+            except:
+                print("An error occurred while move with simple_goto")
+                self.emergency_stop()
             # simple_goto will retuen after the command is sent, thus you need to sleep to give the drone time to move
             # Can't use sleep to wate arriving because this function in listenerand will block the listener and the new drone will not respond and also that is safe since no other movement will be done until all drone are in spot  
             vehicle.mode    = VehicleMode("LOITER") #loiter mode and hover in your place
@@ -304,7 +308,11 @@ def expand_and_form_border(self,vehicle):
         confirm_border_connectivity(self)
         if self.get_current_spot()["drones_in"]==1:
             print (" Drone is Alone Go to ref ")
-            go_to_ref_altitude(vehicle,self.ref_alt)
+            try: 
+                go_to_ref_altitude(vehicle,self.ref_alt)
+            except:
+                print("An error occurred while go_to_ref_altitude")
+                self.emergency_stop()    
     else:
         emergency_msg= self.build_emergency_message()
         send_msg(emergency_msg)

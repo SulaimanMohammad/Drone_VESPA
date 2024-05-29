@@ -783,12 +783,9 @@ class Drone:
         angle, distance = self.convert_spot_angle_distance(destination_spot)
         try:
             move_body_PID(vehicle,angle, distance, self.Emergency_stop)
-        except Exception as e:
-            print(f"An error occurred: {str(e)}")
-            vehicle.mode = VehicleMode ("RTL")
-            emergency_msg= self.build_emergency_message()
-            send_msg(emergency_msg)
-            vehicle.close()
+        except:
+            print("An error occurred while move_body_PID")
+            self.emergency_stop()
         # Arrive to steady state and hover then start observing the location
         hover(vehicle)
 
