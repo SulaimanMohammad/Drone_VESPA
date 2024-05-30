@@ -166,25 +166,24 @@ def sink_movement_command(self,vehicle,id):
 def initial_movement(self,vehicle,id, spot, lon, lat):
     if id !=0 and id==self.id: # drone is not sink and it is targeted
         self.update_location(spot) # update the destination even before arriving ( all drones in sky will know the next drone heading in advance)
-        arm_and_takeoff(vehicle,self.drone_alt)
+        self.take_off_drone(vehicle)
+        
         if lon!=0 and lat!=0:
-            time.sleep(2)
-            try: 
-                point1 = LocationGlobalRelative(lat,lon ,self.drone_alt)
-                vehicle.simple_goto( point1, groundspeed=defined_groundspeed)
-            except:
-                print("An error occurred while move with simple_goto")
+            if check_gps_fix(vehicle) and use_GPS:
+                self.move_using_coord(vehicle, lon, lat)
+            elif (not check_gps_fix(vehicle))  and (not use_GPS):
+              search_for_sink_tag(vehicle)
+              self.move_to_spot(vehicle, spot)              
+            else: # GPS fixed not fixed with use gps set true 
                 self.emergency_stop()
-            # simple_goto will retuen after the command is sent, thus you need to sleep to give the drone time to move
-            # Can't use sleep to wate arriving because this function in listenerand will block the listener and the new drone will not respond and also that is safe since no other movement will be done until all drone are in spot  
-            vehicle.mode    = VehicleMode("LOITER") #loiter mode and hover in your place
-            time.sleep(1)
-            vehicle.mode     = VehicleMode("GUIDED")
         else:
-            #use image to fly on the top of sink
-            search_for_sink_tag(vehicle)
-            self.move_to_spot(vehicle, spot)
-        #loiter mode and hover in your place if it is before sleep then the drone will not move
+            if not use_GPS:
+                #use image to fly on the top of sink
+                search_for_sink_tag(vehicle)
+                self.move_to_spot(vehicle, spot)
+            else:
+                self.emergency_stop()
+        
         angle, distance = self.convert_spot_angle_distance(spot)
         set_yaw_to_dir_PID( vehicle, angle) # set the angle in the same direction taken since simple goto can include rotation
         if self.id==1: # only first drone does the range calibration
@@ -303,7 +302,7 @@ def expand_and_form_border(self,vehicle):
     self.demand_neighbors_info() # needed to update what neigbor become border 
     time.sleep(5) # Stabilizing 
     
-    print(" VERFIFY ")
+    print("Verify the border formation")
     if self.border_formed != False:
         confirm_border_connectivity(self)
         if self.get_current_spot()["drones_in"]==1:
@@ -316,7 +315,7 @@ def expand_and_form_border(self,vehicle):
     else:
         emergency_msg= self.build_emergency_message()
         send_msg(emergency_msg)
-        print("Retuen home border not formed")
+        print("Return home border is not formed")
         self.emergency_stop()
            
 def first_exapnsion (self, vehicle):
@@ -327,7 +326,7 @@ def first_exapnsion (self, vehicle):
     self.elected_droen_arrived= threading.Event()
     # First movement started by commands of the sink
     if self.id==0: #sink:
-        arm_and_takeoff(vehicle,self.drone_alt)
+        self.take_off_drone(vehicle)
         time.sleep(2)
         with open('Operational_Data.txt', 'r') as file:
             for line in file:
