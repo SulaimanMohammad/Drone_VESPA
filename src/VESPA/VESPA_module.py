@@ -112,6 +112,7 @@ class Drone:
         self.border_candidate=False
         self.phase= Expan_header
         self.spots_to_check_for_border=[]
+        self.neighbors_ids=[] # contains ids of all neighbors drones 
         self.rec_candidate=[] # contains ids of drone that fired a messaging circle
         self.drone_id_to_sink=[]
         self.drone_id_to_border=[]
@@ -730,15 +731,26 @@ class Drone:
                 # Increment drones_in count
                 s['drones_in'] += 1
         else:
-            print("Signal originating from outside the region")
-            # Receive signal from drone out of the 6 neighbors 
+            # Receive signal from drone out of the 6 neighbors
+            # If the drone was in neighbors and left hen it should be removed 
+            with self.lock_neighbor_list:
+                for s in self.neighbor_list:
+                    if id_rec in s["drones_in_id"]:
+                        idx = s['drones_in_id'].index(id_rec)
+                        s['drones_in_id'].pop(idx)
+                        s['states'].pop(idx)
+                        s['previous_state'].pop(idx)
+                        s['drones_in'] -= 1
+
+        self.neighbors_ids=[] 
+        '''
+        Don't use self.get_neighbor_list() because it contains exchange_data_lock, 
+        and update_neighbors_list is called within the exchange_data procedure which will cause a wrong answer due to waiting for exchange_data_lock 
+        which is released after the timer is up calling it here will block the list until the lock is released  which results in wrong communication 
+        '''
+        with self.lock_neighbor_list:
             for s in self.neighbor_list:
-                if id_rec in s["drones_in_id"]:
-                    idx = s['drones_in_id'].index(id_rec)
-                    s['drones_in_id'].pop(idx)
-                    s['states'].pop(idx)
-                    s['previous_state'].pop(idx)
-                    s['drones_in'] -= 1
+                self.neighbors_ids.extend(s['drones_in_id']) # save  all the ids in all spots 
 
 
     def update_state_in_neighbors_list( self, id, state):
