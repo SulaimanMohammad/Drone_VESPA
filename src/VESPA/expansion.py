@@ -173,20 +173,22 @@ def neighbors_election(self):
     id_free = [id for id, state in zip(self.get_current_spot()["drones_in_id"], self.get_current_spot()["states"]) if state == Free]
     return min(id_free) # return the min id of a drone is in state Free
 
-def sink_movement_command(self,vehicle,id):
-    destination_spot_random = int(random.randint(1, 6))
-    angle, distance = self.convert_spot_angle_distance(destination_spot_random)
-    if check_gps_fix(vehicle): # GPS data are correct
-        current_lat = vehicle.location.global_relative_frame.lat
-        current_lon = vehicle.location.global_relative_frame.lon
-        long, lat= new_coordinates(current_lon, current_lat, distance , angle)
-        msg= build_movement_command_message(id,destination_spot_random, long, lat)
-        send_msg(msg)
-        # Wait until arrival, id*spacing + self.ref_alt time for take off where the hight depend on the drone ID
-        time.sleep(((a/defined_groundspeed)+1)+ (id*spacing + self.ref_alt)+2) # +2 more time to enusre that the drone arrived 
-    else:
-        # It is command to drone to start,( 0,0) is null island where it is imposible to start from
-        msg= build_movement_command_message(id,destination_spot_random, 0, 0)
+def sink_movement_command(self,vehicle,drones_id):
+    assigned_spots=assign_spots(drones_id) 
+    if assigned_spots: 
+        for ids, spot in assigned_spots.items():
+            angle, distance = self.convert_spot_angle_distance(spot)
+            if check_gps_fix(vehicle): # GPS data are correct
+                current_lat = vehicle.location.global_relative_frame.lat
+                current_lon = vehicle.location.global_relative_frame.lon
+                long, lat= new_coordinates(current_lon, current_lat, distance , angle)
+                msg= build_movement_command_message(ids,spot, long, lat)
+                send_msg(msg)
+                # Wait until arrival, id*spacing + self.ref_alt time for take off where the hight depend on the drone ID
+                time.sleep(((a/defined_groundspeed)+1)+ (ids*spacing + self.ref_alt)+2) # +2 more time to enusre that the drone arrived 
+            else:
+                # It is command to drone to start,( 0,0) is null island where it is imposible to start from
+                msg= build_movement_command_message(id,spot, 0, 0)
 
 def initial_movement(self,vehicle,id, spot, lon, lat):
     if id !=0 and id==self.id: # drone is not sink and it is targeted
@@ -284,6 +286,19 @@ def update_initial_drones_around(self,msg):
     if (found_id not in self.collected_ids) and (self.remaining_collect_time>=0):
         self.collected_ids.append(found_id)
 
+def assign_spots(drones_id):
+    # Use round robin to assign a spot to each drone to maintain good equal distribution as possible
+    spots = [1,2, 3, 4, 5, 6]
+    assignments = {}
+    spot_index = 0
+
+    while drones_id:
+        num = drones_id.pop(0)  # Remove the first number from the list
+        spot = spots[spot_index % len(spots)]  # Assign it to a spot
+        assignments[num] = spot
+        spot_index += 1
+
+    return assignments
 
 '''
 -------------------------------------------------------------------------------------
@@ -382,13 +397,7 @@ def first_exapnsion (self, vehicle):
     if self.id==0: # Sink:
         initialize_collect_drones_info_timer(self) # Sink waiting for the drones to make themselves known befor start
         self.take_off_drone(vehicle)
-        with open('Operational_Data.txt', 'r') as file:
-            for line in file:
-                # Check if line contains max_acceleration
-                if "drones_number" in line:
-                    drones_number = float(line.split('=')[1].strip())
-        for i in range(1,drones_number+1):
-            sink_movement_command(self,vehicle,i)
+        sink_movement_command(self,vehicle,self.collected_ids)
         # The end send message referes that all in position
         msg= build_movement_command_message(-1,-1, 0, 0)
         send_msg(msg)
