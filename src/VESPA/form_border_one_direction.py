@@ -106,36 +106,36 @@ def forward_broadcast_message(self,header,candidate):
 def form_border_one_direction(self,header,msg):
     if not self.Forming_Border_Broadcast_REC.is_set(): # React only if border is not formed yet 
         sender_id, target_ids, candidate= decode_border_message(msg)
-        reset_timer_forme_border(self,header)
-
-        if sender_id in self.current_target_ids and candidate in self.rec_candidate:
-            # MESSAGR REC"
-            with self.candidate_to_send_lock:
-                if candidate in self.candidate_to_send:
-                    self.candidate_to_send.remove(candidate)
-
-        if len(target_ids)==1 and target_ids[0]==-1:
-            if self.border_candidate==True:
-                border_broadcast_respond(self, candidate)
-            # Here any drone in any state needs to forward the boradcast message and rise ending flag
-            forward_broadcast_message(self, Forming_border_header,candidate)
-            finish_timer_forme_border(self)
-            self.Forming_Border_Broadcast_REC.set()
-
-        if self.id in  target_ids  and target_ids :# targets exist not empty s
-            if self.id == candidate:
-                if sender_id in self.message_sent_for_border: # The mesage came backward not in circle
-                    self.border_formed=False
-                    finish_timer_forme_border(self)
-
-                else: 
-                    circle_completed(self)
-                    self.border_formed= True
-                    finish_timer_forme_border(self)
-            else: 
+        reset_timer_forme_border(self,header) # Reset for any message even from out the region because that means the border is not yet formed 
+        if sender_id in self.neighbors_ids: # Signal comes from the neighbor drone, dont consider messages out of the region 
+            if sender_id in self.current_target_ids and candidate in self.rec_candidate:
+                # MESSAGR REC, confirmed"
                 with self.candidate_to_send_lock:
-                    if candidate not in self.candidate_to_send:
-                        self.candidate_to_send.append(candidate)
+                    if candidate in self.candidate_to_send:
+                        self.candidate_to_send.remove(candidate)
+
+            if len(target_ids)==1 and target_ids[0]==-1:
+                if self.border_candidate==True:
+                    border_broadcast_respond(self, candidate)
+                # Here any drone in any state needs to forward the boradcast message and rise ending flag
+                forward_broadcast_message(self, Forming_border_header,candidate)
+                finish_timer_forme_border(self)
+                self.Forming_Border_Broadcast_REC.set()
+
+            if self.id in  target_ids  and target_ids :# targets exist not empty s
+                if self.id == candidate:
+                    if sender_id in self.message_sent_for_border: # The mesage came backward not in circle
+                        self.border_formed=False
+                        finish_timer_forme_border(self)
+
+                    else: 
+                        circle_completed(self)
+                        self.border_formed= True
+                        finish_timer_forme_border(self)
+                else: 
+                    with self.candidate_to_send_lock:
+                        if candidate not in self.candidate_to_send:
+                            self.candidate_to_send.append(candidate)
 
 
 def send_msg_border_until_confirmation(self,header):
@@ -170,25 +170,25 @@ def verify_border(self,header, msg):
     if not self.border_verified.is_set():
         sender_id, target_ids, candidate= decode_border_message(msg)
         reset_timer_forme_border(self, header)
-
-        if len(target_ids)==1 and target_ids[0]==-1:
-            # Here any drone in any state needs to forward the boradcast message and rise ending flag
-            forward_broadcast_message(self, header,candidate)
-            finish_timer_forme_border(self)
-            self.border_verified.set()
-
-        if self.id in  target_ids and target_ids :# targets exist not empty s
-            if self.id == candidate and (self.get_state()== Border or self.get_state()== Irremovable_boarder) :
-                Broadcast_Msg= build_border_message(self,header,[-1], self.id)
-                #send_msg_border_upon_confirmation(self, Broadcast_Msg)
-                send_msg(Broadcast_Msg) # bordacst doent need to be waiting conformation 
+        if sender_id in self.neighbors_ids: # Signal comes from the neighbor drone, dont consider messages out of the region 
+            if len(target_ids)==1 and target_ids[0]==-1:
+                # Here any drone in any state needs to forward the boradcast message and rise ending flag
+                forward_broadcast_message(self, header,candidate)
                 finish_timer_forme_border(self)
-                self.border_verified.set() # to end the the loop
-            else:
-                if self.get_state()== Border or self.get_state()== Irremovable_boarder:
-                    self.current_target_ids= choose_spot_right_handed(self,self.neighbor_list_upon_border_formation )
-                    msg= build_border_message(self,header,self.current_target_ids, candidate)
-                    send_msg(msg) 
+                self.border_verified.set()
+
+            if self.id in  target_ids and target_ids :# targets exist not empty s
+                if self.id == candidate and (self.get_state()== Border or self.get_state()== Irremovable_boarder) :
+                    Broadcast_Msg= build_border_message(self,header,[-1], self.id)
+                    #send_msg_border_upon_confirmation(self, Broadcast_Msg)
+                    send_msg(Broadcast_Msg) # bordacst doent need to be waiting conformation 
+                    finish_timer_forme_border(self)
+                    self.border_verified.set() # to end the the loop
+                else:
+                    if self.get_state()== Border or self.get_state()== Irremovable_boarder:
+                        self.current_target_ids= choose_spot_right_handed(self,self.neighbor_list_upon_border_formation )
+                        msg= build_border_message(self,header,self.current_target_ids, candidate)
+                        send_msg(msg) 
 
 ''''
 -------------------------------------------------------------------------------------
