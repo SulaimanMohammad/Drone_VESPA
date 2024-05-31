@@ -8,6 +8,26 @@ set_env(globals())
 ---------------------------------- Communication ------------------------------------
 -------------------------------------------------------------------------------------
 '''
+def build_identification_message(self):
+    message = Identification_header.encode()
+    max_byte_count = determine_max_byte_size(self.id)
+    message += struct.pack('>B', max_byte_count)
+    message += self.id.to_bytes(max_byte_count, 'big')
+    message += b'\n'
+    return message
+
+def decode_identification_message(encoded_message):
+    header_size = 1  
+    demand_header = encoded_message[:header_size].decode()
+    # Extract the max_byte_count which is the next byte after the header
+    max_byte_count = struct.unpack('>B', encoded_message[header_size:header_size+1])[0]
+    # Extract the ID using the max_byte_count
+    id_start_index = header_size + 1
+    id_end_index = id_start_index + max_byte_count
+    id_bytes = encoded_message[id_start_index:id_end_index]
+    id = int.from_bytes(id_bytes, 'big')
+    return id
+
 def build_movement_command_message(id, spot, float1, float2):
     # Movement messages are encoded using string beause they are done only once, efficiency accepted
     # Convert numbers to string and encode
@@ -86,7 +106,12 @@ def expansion_listener (self,vehicle):
 
         self.exchange_neighbors_info_communication(msg)
 
-        if msg.startswith(Movement_command.encode()) and msg.endswith(b'\n'):
+        if msg.startswith(Identification_header.encode()) and msg.endswith(b'\n'):
+            if self.id==0: # It is sink drone 
+                reset_collect_drones_info_timer(self)
+                update_initial_drones_around(self,msg)
+
+        elif msg.startswith(Movement_command.encode()) and msg.endswith(b'\n'):
             id, spot, lon, lat= decode_movement_command_message(msg)
             if id==-1 and spot==-1 and lon==0 and lat==0: # mean all drone are in sky
                 self.start_expanding.set()
@@ -231,6 +256,35 @@ def calibration_ping_pong(self, vehicle, msg ):
         set_a(a)
         clear_buffer()
 
+
+'''
+-------------------------------------------------------------------------------------
+--------------------------Identify drones by the sink only---------------------------
+-------------------------------------------------------------------------------------
+'''
+def initialize_collect_drones_info_timer(self):
+    self.collect_drones_info_timer_lock = threading.Lock()
+    self.collected_ids=[] # The list that contains all the drones that participate in VESPA
+    reset_collect_drones_info_timer(self)
+    while True:
+        with self.collect_drones_info_timer_lock:
+            self.remaining_collect_time -= 0.1
+            if self.remaining_collect_time <= 0:
+                    break
+        time.sleep(0.1)
+
+def reset_collect_drones_info_timer(self):
+    with self.collect_drones_info_timer_lock:
+        self.remaining_collect_time=60 # wait one minute 
+
+def update_initial_drones_around(self,msg):
+    # This function will be called by the listener thread 
+    # No need for lock to update collected_ids becauset this list will be used by main thread only after the timer is up  
+    found_id= decode_identification_message(msg)
+    if (found_id not in self.collected_ids) and (self.remaining_collect_time>=0):
+        self.collected_ids.append(found_id)
+
+
 '''
 -------------------------------------------------------------------------------------
 ---------------------------------Mange allowed spots---------------------------------
@@ -325,9 +379,9 @@ def first_exapnsion (self, vehicle):
     self.start_expanding= threading.Event()
     self.elected_droen_arrived= threading.Event()
     # First movement started by commands of the sink
-    if self.id==0: #sink:
+    if self.id==0: # Sink:
+        initialize_collect_drones_info_timer(self) # Sink waiting for the drones to make themselves known befor start
         self.take_off_drone(vehicle)
-        time.sleep(2)
         with open('Operational_Data.txt', 'r') as file:
             for line in file:
                 # Check if line contains max_acceleration
@@ -339,6 +393,9 @@ def first_exapnsion (self, vehicle):
         msg= build_movement_command_message(-1,-1, 0, 0)
         send_msg(msg)
     else:
+        # Each drone that is not sink send its id at the beginning and wait the message of movement and then wait for all first movements to finish.
+        msg=build_identification_message(self)
+        send_msg(msg)
         self.start_expanding.wait()
         self.start_expanding.clear()
     expand_and_form_border(self, vehicle)
