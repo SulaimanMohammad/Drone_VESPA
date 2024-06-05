@@ -23,7 +23,7 @@ import signal
 set_env(globals())
 
 sq3=sqrt(3)
-a=xbee_range
+a=xbee_range*xbee_proficiency_ratio
 multiplier=100
 effective_a= ((int)(a / sq3 * 1000) / 1000.0)
 '''Dictionary to hold the variables 
@@ -126,7 +126,7 @@ class Drone:
         set_a(a)
         self.id=id
         # Alt for each drone related to ID to avoid collision while movement
-        self.ref_alt= sqrt(pow(a,2)- pow((a/sq3),2)) # Reference alt (drone hight when it is alone )
+        self.ref_alt= round(sqrt(pow(a*ref_alt_ratio,2)- pow(((a*ref_alt_ratio)/sq3),2)),2) # Reference alt (drone hight when it is alone )
         self.drone_alt= (self.id*spacing)+ self.ref_alt
         self.defined_groundspeed= defined_groundspeed
         # init s0 and it will be part of the spots list

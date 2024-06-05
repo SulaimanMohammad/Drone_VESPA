@@ -19,6 +19,8 @@ exchange_data_latency=0.5
 spacing=2 # Space between a drone and another, Preferred to be 2 minimum where low barometer accuracy cause oscillation of height
 use_GPS= True # Not recommended to set it false due to need to GPS, #TODO If you want to fly without GPS, set off GPS check in ardupilot to be able to take off wihtout 
 Xbee_change_range=False # Calibration procedure used to define the limit of Xbee range, #TODO need to be tested 
+xbee_proficiency_ratio= 0.8 # Ratio to avoid being on the edge of xbee range
+ref_alt_ratio= 0.8 # Ensure that alitude of the drone doesn't arrive to the limit of xbee , refalt= ratio*xbee_proficiency_ratio
 
 #----------------Xbee variables---------------
 xbee_serial_port='/dev/ttyUSB0'
@@ -26,4 +28,3 @@ Tx=23
 Rx=24
 baud_rate=9600
 xbee_range=13
-
