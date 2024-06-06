@@ -2,8 +2,8 @@
 max_acceleration = 0.7
 max_deceleration = -0.7
 lidar_scan=False
-speed_of_drone=2 # m/s
-defined_groundspeed=1
+speed_of_drone=2 # m/s used while moving the drone by angle and distance to a specific spot 
+defined_groundspeed=1 # m/s speed used while moving using GPS coordinates
 drone_length=60
 drone_width=60
 drone_hight=40

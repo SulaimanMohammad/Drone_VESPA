@@ -27,8 +27,7 @@ a=xbee_range*xbee_proficiency_ratio
 multiplier=100
 effective_a= ((int)(a / sq3 * 1000) / 1000.0)
 '''Dictionary to hold the variables 
-drones_number, id ,xbee_range, C, eps , speed_of_drone,  movement_time= a*speed_of_drone*(1+ 0.2)  
-scanning_time, sync_time, multiplier, defined_groundspeed '''
+drones_number, id ,xbee_range, C, eps , scanning_time, sync_time, multiplier, defined_groundspeed '''
 global_vars = {}
 global DIR_xy_distance_VECTORS
 def update_DIR_xy_distance_VECTORS():
@@ -811,12 +810,35 @@ class Drone:
                 return i  
         return -1
 
+
+    def calculate_velocity_based_on_alt_differences(self,vehicle, destination_spot):
+        # The current drone knows the ids of the drones in the destination spot so it can estimate there altitude
+        # The function will see if there is enough gap so the drone get inside with high speed or should moce slowly
+        destination_spot_info= self.get_neighbor_list()[destination_spot]
+        movement_velocity=speed_of_drone
+        if destination_spot_info["drones_in"] >0: # The spot is not empty 
+            alitudes_diff=[]
+            for drone_id in destination_spot_info['drones_in_id']:
+                drone_in_spot_alitude= (drone_id*spacing)+ self.ref_alt
+                alitudes_diff.append( abs(drone_in_spot_alitude- get_altitude(vehicle))) # estimated alt of drones - acutal hight of current drone 
+            print("alitudes_diff", alitudes_diff )
+            if all(alts > 1.8*spacing for alts in alitudes_diff):
+                movement_velocity=speed_of_drone # can go in speed , there is enough place to move in 
+            else: #risky gap should move slowly 
+                movement_velocity=speed_of_drone-1  
+        else: # no drones in the spot 
+                movement_velocity=speed_of_drone 
+
+        return movement_velocity 
+    
+
     def move_to_spot(self,vehicle, destination_spot):
+        movement_velocity= self.calculate_velocity_based_on_alt_differences(vehicle, destination_spot)
         self.update_location(destination_spot)
         set_to_move(vehicle)
         angle, distance = self.convert_spot_angle_distance(destination_spot)
         try:
-            move_body_PID(vehicle,angle, distance, self.Emergency_stop)
+            move_body_PID(vehicle,angle, distance, self.Emergency_stop,self.ref_alt,max_velocity=movement_velocity )
         except:
             print("An error occurred while move_body_PID")
             self.emergency_stop()
