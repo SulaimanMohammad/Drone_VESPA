@@ -867,11 +867,10 @@ def move_body_PID(self, angl_dir, distance, emergency_message_flag ,ref_alt=9.7,
     check_mode(self) 
     max_acceleration,max_deceleration= get_acceleration()
     lidar_scan=get_lidar_setting() 
-    [ angl_dir, velocity_direction ]= convert_angle_to_set_dir(self, angl_dir)
     set_yaw_to_dir_PID( self, angl_dir)
     
     # Desired yaw and velocities
-    desired_vel_x = velocity_direction* get_desired_speed(0, distance,max_acceleration, max_deceleration, max_velocity) 
+    desired_vel_x = get_desired_speed(0, distance,max_acceleration, max_deceleration, max_velocity) 
     desired_vel_y=0
     desired_vel_z = 0
     desired_yaw = normalize_angle(angl_dir) # baed on the direction  needed 
