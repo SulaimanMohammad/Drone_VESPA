@@ -29,7 +29,7 @@ def avoidance_emergency(self, lidar_queue,emergecy_stop, ref_alt, data_ready):
         safe_zone= 1
         check_objects_time=0
         goal_altitude=0
-        actual_alt=self.location.global_relative_frame.alt
+        actual_alt=get_altitude(self)
         if (actual_alt+safe_zone)<(ref_alt*2) : # Not close to the max then go up  
             v_z= -0.5 #"go up "
             target_alt= (actual_alt+1)
@@ -38,7 +38,7 @@ def avoidance_emergency(self, lidar_queue,emergecy_stop, ref_alt, data_ready):
             target_alt= (actual_alt-safe_zone)
 
         # Wait until the current altitude arrives to target_alt 
-        while abs(self.location.global_relative_frame.alt - target_alt)>0.5: 
+        while abs(get_altitude(self) - target_alt)>0.5: 
             send_control_body(self, 0, 0, v_z)
             time.sleep(0.2)
             
@@ -72,7 +72,7 @@ def full_scan_avoidence(self, lidar_queue,data_ready ):
     # check_objects_time is used check when the drone arrived to the alt ( in case parometer was not accurate)
     velocity_z=0
     check_objects_time=0 
-    goal_altitude= self.location.global_relative_frame.alt
+    goal_altitude= get_altitude(self)
     min_x_close_object= None
     if( data_ready.is_set() ):
         try: 
@@ -84,7 +84,7 @@ def full_scan_avoidence(self, lidar_queue,data_ready ):
                     velocity_z=-0.5 # 0.5 m/s 
                 else: 
                     velocity_z=+0.5 # go down  
-                goal_altitude= self.location.global_relative_frame.alt + Z_to_go_distance
+                goal_altitude= get_altitude(self) + Z_to_go_distance
         except:
             print("No data received from observer")
             velocity_z=0      
@@ -113,13 +113,13 @@ def regular_scan(self,lidar_queue,data_ready,emergecy_stop,ref_alt,velocity_z, m
         velocity_z, Z_to_go_distance, min_x_close_object, check_objects_time, goal_altitude=output_read      
     
     # If no emergency and data is ready and the drone is not in process of changing altitude from previous scan 
-    if( check_objects_time ==0 and abs( goal_altitude-self.location.global_relative_frame.alt)<0.2 and data_ready.is_set() ):
+    if( check_objects_time ==0 and abs( goal_altitude-get_altitude(self))<0.2 and data_ready.is_set() ):
         output_read= full_scan_avoidence(self, lidar_queue,data_ready )
         if not output_read==None: 
             velocity_z, Z_to_go_distance, min_x_close_object, check_objects_time, goal_altitude=output_read
     
     # If the drone arrived to alitude for avoiding object from previous scan then reset vars to start another scan 
-    if ( check_objects_time>0 and (abs( goal_altitude- self.location.global_relative_frame.alt)<0.2 or time.time()-check_objects_time>=abs(Z_to_go_distance*1.2) ) ):  # distance traveled t=d/0.5= d*0.5
+    if ( check_objects_time>0 and (abs( goal_altitude- get_altitude(self))<0.2 or time.time()-check_objects_time>=abs(Z_to_go_distance*1.2) ) ):  # distance traveled t=d/0.5= d*0.5
         min_x_close_object= None
         Z_to_go_distance=0
         check_objects_time=0
@@ -237,10 +237,10 @@ def arm_and_takeoff(self, aTargetAltitude):
     #takeoff is asynchronous and can be interrupted if another command arrives before it reaches the target altitude so
     # check that arrived by reading the alitude relative from the ground 
     while True:
-        print (" Altitude: ", self.location.global_relative_frame.alt)
-        write_log_message (f" Altitude: {self.location.global_relative_frame.alt}")
+        print (" Altitude: ", get_altitude(self))
+        write_log_message (f" Altitude: {get_altitude(self)}")
         #Break and return from function just below target altitude.
-        if self.location.global_relative_frame.alt>=aTargetAltitude*0.95:  # arrived to 95% of the altitude s
+        if get_altitude(self)>=aTargetAltitude*0.95:  # arrived to 95% of the altitude s
             print ("Reached target altitude")
             write_log_message ("Reached target altitude")
             break
@@ -255,7 +255,7 @@ def calculate_relative_pos(self):
         # Get the drone's current GPS coordinates
         current_lat = self.location.global_relative_frame.lat
         current_lon = self.location.global_relative_frame.lon
-        current_alt = self.location.global_relative_frame.alt
+        current_alt = get_altitude(self)
 
         # Calculate the drone's position relative to the home position
         home_lat = self.home_location.lat
@@ -654,7 +654,7 @@ def set_yaw_to_dir_PID(self, target_yaw, relative=True, max_yaw_speed=10):
     print(kp)
 
     # Target values
-    target_altitude = self.location.global_relative_frame.alt
+    target_altitude = get_altitude(self)
     target_latitude = self.location.global_relative_frame.lat
     target_longitude = self.location.global_relative_frame.lon
 
@@ -985,7 +985,7 @@ def move_body_PID(self, angl_dir, distance, emergency_message_flag ,ref_alt=9.7,
         # save the current for next iteration to calculate the traveld distance 
         previous_velocity_x= velocity_current_x 
         
-        print( "\nvx ",velocity_current_x , "vy",velocity_current_y, "vz",velocity_current_z, "current alt= ", self.location.global_relative_frame.alt  )
+        print( "\nvx ",velocity_current_x , "vy",velocity_current_y, "vz",velocity_current_z, "current alt= ", get_altitude(self)  )
         print( "time", time.time() - start_time , "distance left : ",remaining_distance, "desired_vel_x speed", desired_vel_x,"\n" )
         print( "---------------------------------------------------------------------")
 
@@ -1002,18 +1002,18 @@ def move_body_PID(self, angl_dir, distance, emergency_message_flag ,ref_alt=9.7,
 def go_to_ref_altitude(self,ref_alt=9.7):
     time.sleep(0.5) # stablize Z 
 
-    if( self.location.global_relative_frame.alt > ref_alt * 0.95 ): # ref_alt is under , go downe 
+    if( get_altitude(self) > ref_alt * 0.95 ): # ref_alt is under , go downe 
         desired_vel_Z= 0.5
-    elif( self.location.global_relative_frame.alt < ref_alt * 0.95 ): 
+    elif( get_altitude(self) < ref_alt * 0.95 ): 
         desired_vel_Z=-0.5
     else: 
         desired_vel_Z=0 
 
     if desired_vel_Z!=0: 
         start_control_timer=0 
-        while ( abs(self.location.global_relative_frame.alt - ref_alt)>=0.2 and  (self.location.global_relative_frame.alt > ref_alt-1 or self.location.global_relative_frame.alt < ref_alt+1 )  ):
+        while ( abs(get_altitude(self) - ref_alt)>=0.2 and  (get_altitude(self) > ref_alt-1 or get_altitude(self) < ref_alt+1 )  ):
             if (time.time() - start_control_timer > 0.2):
-                print("alt= " , self.location.global_relative_frame.alt,"velocity_z",desired_vel_Z )
+                print("alt= " , get_altitude(self),"velocity_z",desired_vel_Z )
                 send_control_body(self, 0, 0, desired_vel_Z)
                 start_control_timer= time.time()
 
@@ -1052,6 +1052,10 @@ def hover(self):
 
 def set_to_move(self):
     self.mode     = VehicleMode("GUIDED")
+
+def get_altitude(self):
+    return self.location.global_relative_frame.alt
+
 
 def search_for_sink_tag(slef):
     pass 
