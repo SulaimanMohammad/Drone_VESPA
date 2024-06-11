@@ -123,7 +123,7 @@ class Drone:
         self.elected_id=None
         self.destination_spot=0
         set_a(a)
-        self.id=id
+        self.id=drone_id
         # Alt for each drone related to ID to avoid collision while movement
         self.ref_alt= round(sqrt(pow(a*ref_alt_ratio,2)- pow(((a*ref_alt_ratio)/sq3),2)),2) # Reference alt (drone hight when it is alone )
         self.drone_alt= (self.id*spacing)+ self.ref_alt

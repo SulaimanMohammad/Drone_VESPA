@@ -9,7 +9,7 @@ drone_width=60
 drone_hight=40
 
 #----------------VESPA variables---------------
-id=0
+drone_id=0
 C=100
 eps=20
 multiplier = 100 # Define the precision of floating-point data 

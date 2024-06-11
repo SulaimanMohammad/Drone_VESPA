@@ -101,14 +101,14 @@ fi
 # Check if a number was found
 if [ -n "$number" ]; then
   # Check if the file contains an "id=" line
-  if grep -q 'id=' "$output_file"; then
-    # Update the "id=" line with the new number
-    sed -i "s/id=[0-9]*/id=$number/" "$output_file"
-    echo "Updated id=$number in $output_filename"
+  if grep -q 'drone_id=' "$output_file"; then
+    # Update the id line with the new number
+    sed -i "s/drone_id=[0-9]*/drone_id=$number/" "$output_file"
+    echo "Updated drone_id=$number in $output_filename"
   else
     # Append a new "id=" line to the file
-    echo "id=$number" >> "$output_file"
-    echo "Appended id=$number to $output_filename"
+    echo "drone_id=$number" >> "$output_file"
+    echo "Appended drone_id=$number to $output_filename"
   fi
 else
   echo "No id found"
