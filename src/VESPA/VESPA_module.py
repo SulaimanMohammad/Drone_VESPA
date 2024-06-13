@@ -858,7 +858,7 @@ class Drone:
             self.change_state_to(Irremovable)
 
     def return_home(self, vehicle):
-        if self.id==0: # Sink
+        if self.id==1: # Sink
             time.sleep(10) 
             vehicle.mode = VehicleMode ("LAND")
         else:

@@ -108,7 +108,7 @@ def expansion_listener (self,vehicle):
             self.exchange_neighbors_info_communication(msg)
 
             if msg.startswith(Identification_header.encode()) and msg.endswith(b'\n'):
-                if self.id==0: # It is sink drone 
+                if self.id==1: # It is sink drone 
                     reset_collect_drones_info_timer(self)
                     update_initial_drones_around(self,msg)
 
@@ -219,18 +219,19 @@ def initial_movement(self,vehicle,id, spot, lon, lat):
         
         angle, distance = self.convert_spot_angle_distance(spot)
         set_yaw_to_dir_PID( vehicle, angle) # set the angle in the same direction taken since simple goto can include rotation
-        if self.id==1 and Xbee_change_range: # only first drone does the range calibration if this option is activated in operational_Data
+        
+        if self.id==2 and Xbee_change_range: # only first drone does the range calibration if this option is activated in operational_Data
             msg= build_calibration_message(1,0)
             send_msg(msg)
 
 def calibration_ping_pong(self, vehicle, msg ):
     indicator, xbee_range= decode_calibration_message(msg)
     if indicator==1 and xbee_range==0: # still calibrating
-        if self.id==0:# only the sink respond
+        if self.id==1:# only the sink respond
             respond_msg= build_calibration_message(1,0)
             send_msg( respond_msg)
 
-        elif self.id==1:
+        elif self.id==2: # Second drone 
             while True:
                 msg= build_calibration_message(1,0)
                 send_msg(msg)
@@ -256,7 +257,7 @@ def calibration_ping_pong(self, vehicle, msg ):
                     break
             msg= build_calibration_message(-1,a)
     elif indicator==-1 and xbee_range>0:
-        if self.id==0:
+        if self.id==1:
             respond_msg= build_calibration_message(0,xbee_range)
             self.send_msg(respond_msg)
     elif indicator==0 and xbee_range>0:
@@ -333,7 +334,7 @@ def reset_allowed_spots(self):
 def expand_and_form_border(self,vehicle):
     
     self.elected_droen_arrived= threading.Event()
-    if self.id==0:
+    if self.id==1:
         self.update_location(0)
         self.change_state_to(Owner)
 
@@ -400,7 +401,7 @@ def first_exapnsion (self, vehicle):
     self.start_expanding= threading.Event()
     self.elected_droen_arrived= threading.Event()
     # First movement started by commands of the sink
-    if self.id==0: # Sink:
+    if self.id==1: # Sink:
         initialize_collect_drones_info_timer(self) # Sink waiting for the drones to make themselves known befor start
         self.take_off_drone(vehicle)
         sink_movement_command(self,vehicle,self.collected_ids)

@@ -426,7 +426,7 @@ def build_path(self):
 '''     
 def spanning(self, vehicle): 
 
-    if self.id==0 and self.get_current_spot()["distance"]==0 : # if the drone is sink ( leader of the termination of the spaning phase)
+    if self.id==1 and self.get_current_spot()["distance"]==0 : # if the drone is sink ( leader of the termination of the spaning phase)
         self.demand_neighbors_info()
         spanning_sink(self)
     
