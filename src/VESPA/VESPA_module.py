@@ -403,16 +403,20 @@ class Drone:
             self.update_neighbors_list(positionX, positionY, state, previous_state,id_value)
         
     def collect_demands(self):
-        # wait for request , wait all requests and send only once 
-        self.initialize_timer_demand()
-        if self.demanders_list: # there are drone demaneded 
-            data_msg= self.build_spot_info_message(Response_header) # Build message that contains all data
-            send_msg(data_msg)
-            # wait Ack from the demander and in case not all recived re-send
-            with self.demander_lock:
-                self.demanders_list=[]
+        try: 
+            # wait for request , wait all requests and send only once 
             self.initialize_timer_demand()
-            self.resend_data()
+            if self.demanders_list: # there are drone demaneded 
+                data_msg= self.build_spot_info_message(Response_header) # Build message that contains all data
+                send_msg(data_msg)
+                # wait Ack from the demander and in case not all recived re-send
+                with self.demander_lock:
+                    self.demanders_list=[]
+                self.initialize_timer_demand()
+                self.resend_data()
+        except:
+            print("Thread collect_demands Interrupt received, stopping...")
+            self.emergency_stop()   
         
     def exchange_neighbors_info_communication(self,msg):
         # Receiving message asking for data 

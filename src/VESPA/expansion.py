@@ -97,38 +97,44 @@ def check_continuity_of_listening(self):
 def expansion_listener (self,vehicle):
 
     while check_continuity_of_listening(self):
+        try:
 
-        msg= retrieve_msg_from_buffer(self.expansion_stop)
+            msg= retrieve_msg_from_buffer(self.expansion_stop)
 
-        if msg.startswith(Emergecy_header.encode()) and msg.endswith(b'\n'):
-            self.emergency_stop()
-            break
+            if msg.startswith(Emergecy_header.encode()) and msg.endswith(b'\n'):
+                self.emergency_stop()
+                break
 
-        self.exchange_neighbors_info_communication(msg)
+            self.exchange_neighbors_info_communication(msg)
 
-        if msg.startswith(Identification_header.encode()) and msg.endswith(b'\n'):
-            if self.id==0: # It is sink drone 
-                reset_collect_drones_info_timer(self)
-                update_initial_drones_around(self,msg)
+            if msg.startswith(Identification_header.encode()) and msg.endswith(b'\n'):
+                if self.id==0: # It is sink drone 
+                    reset_collect_drones_info_timer(self)
+                    update_initial_drones_around(self,msg)
 
-        elif msg.startswith(Movement_command.encode()) and msg.endswith(b'\n'):
-            id, spot, lon, lat= decode_movement_command_message(msg)
-            if id==-1 and spot==-1 and lon==0 and lat==0: # mean all drone are in sky
-                self.start_expanding.set()
-            else:
-                initial_movement(self, vehicle,id, spot, lon, lat)
+            elif msg.startswith(Movement_command.encode()) and msg.endswith(b'\n'):
+                id, spot, lon, lat= decode_movement_command_message(msg)
+                if id==-1 and spot==-1 and lon==0 and lat==0: # mean all drone are in sky
+                    self.start_expanding.set()
+                else:
+                    initial_movement(self, vehicle,id, spot, lon, lat)
 
-        elif msg.startswith(Calibration) and msg.endswith("\n"):
-            calibration_ping_pong(self, vehicle, msg )
+            elif msg.startswith(Calibration) and msg.endswith("\n"):
+                calibration_ping_pong(self, vehicle, msg )
 
-        elif msg.startswith(Expan_header.encode()) and msg.endswith(b'\n'):
-            handel_elected_drone_arrivale(self, msg)
-            
-        elif msg.startswith(Forming_border_header.encode()) and msg.endswith(b'\n'): # message starts with F end with \n
-            form_border_one_direction(self,Forming_border_header,msg)
-            #form_border_two_direction(self,Forming_border_header,msg)
-        elif msg.startswith(Verify_border_header.encode()) and msg.endswith(b'\n'):
-            verify_border(self,Verify_border_header,msg)                
+            elif msg.startswith(Expan_header.encode()) and msg.endswith(b'\n'):
+                handel_elected_drone_arrivale(self, msg)
+                
+            elif msg.startswith(Forming_border_header.encode()) and msg.endswith(b'\n'): # message starts with F end with \n
+                form_border_one_direction(self,Forming_border_header,msg)
+                #form_border_two_direction(self,Forming_border_header,msg)
+            elif msg.startswith(Verify_border_header.encode()) and msg.endswith(b'\n'):
+                verify_border(self,Verify_border_header,msg)
+        
+        except:
+            print("Thread expansion_listener Interrupt received, stopping...")
+            self.emergency_stop()   
+                     
 '''
 -------------------------------------------------------------------------------------
 -------------------------------- Movement calculation -------------------------------

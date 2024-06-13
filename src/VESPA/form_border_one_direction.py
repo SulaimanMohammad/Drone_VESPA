@@ -140,30 +140,33 @@ def form_border_one_direction(self,header,msg):
 
 def send_msg_border_until_confirmation(self,header):
     while not self.Forming_Border_Broadcast_REC.is_set() and (not self.expansion_stop.is_set()) and (not self.Emergency_stop.is_set()):
-
-        # Copy messages_to_be_sent and iterate in it trying to send all the msg 
-        # self.sending_messgae_list will change when a message is received the candidate will be pulled out 
-        candidates_to_process = []
-        with self.candidate_to_send_lock:
-            if  self.candidate_to_send :
-                candidates_to_process = list(self.candidate_to_send)
+        try: 
+            # Copy messages_to_be_sent and iterate in it trying to send all the msg 
+            # self.sending_messgae_list will change when a message is received the candidate will be pulled out 
+            candidates_to_process = []
+            with self.candidate_to_send_lock:
+                if  self.candidate_to_send :
+                    candidates_to_process = list(self.candidate_to_send)
+            
+            if not self.Forming_Border_Broadcast_REC.is_set(): # dont reset at the end of phase since it listeners will be bloked
+                self.demand_neighbors_info()
+                check_border_candidate_eligibility(self)
+                self.current_target_ids= choose_spot_right_handed(self)
         
-        if not self.Forming_Border_Broadcast_REC.is_set(): # dont reset at the end of phase since it listeners will be bloked
-            self.demand_neighbors_info()
-            check_border_candidate_eligibility(self)
-            self.current_target_ids= choose_spot_right_handed(self)
-      
-        if self.border_candidate == True:
-            for candidate in candidates_to_process: 
-                if candidate not in self.rec_candidate:
-                    self.rec_candidate.append(candidate)
-                if self.Forming_Border_Broadcast_REC.is_set():
-                    break
-                if self.current_target_ids is not None:
-                    msg= build_border_message(self,header,self.current_target_ids, candidate) 
-                    send_msg(msg)
-                    time.sleep(exchange_data_latency)# time untile the message arrives 
-        time.sleep(exchange_data_latency)
+            if self.border_candidate == True:
+                for candidate in candidates_to_process: 
+                    if candidate not in self.rec_candidate:
+                        self.rec_candidate.append(candidate)
+                    if self.Forming_Border_Broadcast_REC.is_set():
+                        break
+                    if self.current_target_ids is not None:
+                        msg= build_border_message(self,header,self.current_target_ids, candidate) 
+                        send_msg(msg)
+                        time.sleep(exchange_data_latency)# time untile the message arrives 
+            time.sleep(exchange_data_latency)
+        except:
+            print("Thread send_msg_border_until_confirmation Interrupt received, stopping...")
+            self.emergency_stop()  
             
 
 def verify_border(self,header, msg):
