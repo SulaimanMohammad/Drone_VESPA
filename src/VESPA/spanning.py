@@ -168,6 +168,10 @@ def sink_listener(sink_t, self):
     while check_continuity_of_listening(self): # the end is not reached , keep listenning
         msg= retrieve_msg_from_buffer(self.VESPA_termination) 
 
+        if msg.startswith(Emergecy_header.encode()) and msg.endswith(b'\n'):
+            self.emergency_stop()
+            break
+
         self.exchange_neighbors_info_communication(msg)
 
         if msg.startswith(Spanning_header.encode()) and msg.endswith(b'\n'):
@@ -261,7 +265,11 @@ def xbee_listener(self):
     while check_continuity_of_listening(self): 
        
         msg= retrieve_msg_from_buffer_spanning(self)
-
+        
+        if msg.startswith(Emergecy_header.encode()) and msg.endswith(b'\n'):
+            self.emergency_stop()
+            break
+        
         self.exchange_neighbors_info_communication(msg)
         
         # Message of building the path 

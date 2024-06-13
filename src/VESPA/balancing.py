@@ -157,7 +157,11 @@ def border_listener(self,border_t):
     while check_continuity_of_listening(self): # the end is not reached , keep listenning 
         
         msg= self.retrieve_msg_from_buffer(self.end_of_balancing) 
-
+        
+        if msg.startswith(Emergecy_header.encode()) and msg.endswith(b'\n'):
+            self.emergency_stop()
+            break
+        
         self.exchange_neighbors_info_communication(msg)
 
         if msg.startswith(Arrival_header.encode()) and msg.endswith(b'\n'):
@@ -215,6 +219,10 @@ def communication_balancing_free_drones(self,vehicle):
     while check_continuity_of_listening(self): # the end is not reached , keep listenning 
         
         msg= self.retrieve_msg_from_buffer(self.end_of_balancing) 
+        
+        if msg.startswith(Emergecy_header.encode()) and msg.endswith(b'\n'):
+            self.emergency_stop()
+            break
         
         self.exchange_neighbors_info_communication(msg)
         
