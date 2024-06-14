@@ -37,11 +37,8 @@ print("id=", drone.id)
 config_parameters(vehicle, drone)
 signal.signal(signal.SIGINT, lambda sig, frame: drone.interrupt(vehicle))
 
-try:
-    first_exapnsion(drone, vehicle)
-except:
-    print("Error in performing VESPA")
-    drone.emergency_stop()
+first_exapnsion(drone, vehicle)
+
 finally:
     drone.return_home(vehicle) 
     close_xbee_port()
