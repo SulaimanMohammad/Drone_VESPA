@@ -100,7 +100,6 @@ def expansion_listener (self,vehicle):
         try:
 
             msg= retrieve_msg_from_buffer(self.expansion_stop)
-            print("msg", msg )
 
             self.exchange_neighbors_info_communication(msg)
 
