@@ -100,7 +100,7 @@ def expansion_listener (self,vehicle):
         #try:
 
             msg= retrieve_msg_from_buffer(self.expansion_stop)
-
+            
             self.exchange_neighbors_info_communication(msg)
 
             if msg.startswith(Emergecy_header.encode()) and msg.endswith(b'\n'):
