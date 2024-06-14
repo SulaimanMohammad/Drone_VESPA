@@ -51,5 +51,4 @@ else
     echo "Diverged"
 fi
 
-cd "$CLONE_PATH" 
-./Drone_VESPA/configuration/setup_drone_info.sh 
+."$CLONE_PATH"/configuration/setup_drone_info.sh 
