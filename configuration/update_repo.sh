@@ -13,15 +13,14 @@ cd  /home/$PI_DRONE_DIR/
 # If the branch name is passed as an argument, use it; otherwise, default to "main".
 BRANCH_NAME=${1:-"main"}
 
-# Navigate to the directory where your repository is located
-cd /home/$PI_DRONE_DIR/Drone_VESPA
-
-# Check if the repository is already cloned
-if [ ! -d "$CLONE_PATH" ]; then
-    #git clone "$REPO_URL" "$CLONE_PATH"
-    git clone -b "$BRANCH_NAME" "$REPO_URL" "$CLONE_PATH"
-
+# Check if the repository is already cloned and remove it if it exists
+if [ -d "$CLONE_PATH" ]; then
+    echo "Repository exists. Removing..."
+    rm -rf "$CLONE_PATH"
 fi
+
+# Clone the repository
+git clone -b "$BRANCH_NAME" "$REPO_URL" "$CLONE_PATH"
 
 # Adjust the ownership:
 sudo chown -R $USER:$USER "$CLONE_PATH"
@@ -51,3 +50,6 @@ elif [ $LOCAL = $BASE ]; then
 else
     echo "Diverged"
 fi
+
+cd "$CLONE_PATH" 
+./Drone_VESPA/configuration/setup_drone_info.sh 
