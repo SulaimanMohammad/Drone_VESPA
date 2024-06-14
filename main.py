@@ -2,17 +2,20 @@
 import sys
 import os
 
-parent_directory = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+parent_directory = os.path.abspath(os.path.join(os.path.dirname(__file__), './src'))
 # Add the parent directory to sys.path
 sys.path.append(parent_directory)
-from Xbee_module.xbee_usb import connect_xbee,close_xbee_port
+from Xbee_module.xbee_pigpio import connect_xbee,close_xbee_port
+parent_directory = os.path.abspath(os.path.join(os.path.dirname(__file__), './src'))
+# Add the parent directory to sys.path
+sys.path.append(parent_directory)
 
 from VESPA.VESPA_module import *
 from VESPA.expansion import first_exapnsion,further_expansion
 from VESPA.spanning import spanning
 from VESPA.balancing import balancing
 
-parent_directory = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+parent_directory = os.path.abspath(os.path.join(os.path.dirname(__file__), './src'))
 # Add the parent directory to sys.path
 sys.path.append(parent_directory)
 from drone.set_drone_parameters import * 
