@@ -11,7 +11,7 @@ This module is used to send messages by sending message only to one drone by sea
 ---------------------------------- Communication ------------------------------------
 -------------------------------------------------------------------------------------
 '''
-def build_border_message(self,header,target_ids, candidate_id)
+def build_border_message(self,header,target_ids, candidate_id):
     # Determine max byte count for numbers
     max_byte_count = max(
                         [determine_max_byte_size(num) for num in target_ids ]+
