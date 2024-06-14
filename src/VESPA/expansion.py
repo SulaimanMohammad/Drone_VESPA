@@ -97,7 +97,7 @@ def check_continuity_of_listening(self):
 def expansion_listener (self,vehicle):
 
     while check_continuity_of_listening(self):
-        # try:
+        try:
 
             msg= retrieve_msg_from_buffer(self.expansion_stop)
             print("msg", msg )
@@ -120,7 +120,7 @@ def expansion_listener (self,vehicle):
                 else:
                     initial_movement(self, vehicle,id, spot, lon, lat)
 
-            elif msg.startswith(Calibration) and msg.endswith("\n"):
+            elif msg.startswith(Calibration.encode()) and msg.endswith("\n"):
                 calibration_ping_pong(self, vehicle, msg )
 
             elif msg.startswith(Expan_header.encode()) and msg.endswith(b'\n'):
@@ -134,9 +134,9 @@ def expansion_listener (self,vehicle):
             else: 
                 print("no data avilable")
                 time.sleep(0.1)
-        # except:
-        #     print("Thread expansion_listener Interrupt received, stopping...")
-        #     self.emergency_stop()   
+        except:
+            print("Thread expansion_listener Interrupt received, stopping...")
+            self.emergency_stop()   
                      
 '''
 -------------------------------------------------------------------------------------
