@@ -98,7 +98,6 @@ def retrieve_msg_from_buffer(stop_flag):
             # Return the complete message
             return complete_message
         else:
-            print( "no data avilable")
             return bytearray(b'')
     
     except:
