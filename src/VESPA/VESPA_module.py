@@ -792,6 +792,7 @@ class Drone:
             try: 
                 point1 = LocationGlobalRelative(lat,lon ,self.drone_alt)
                 vehicle.simple_goto( point1, groundspeed=defined_groundspeed)
+                time.sleep(5)
             except:
                 print("An error occurred while move with simple_goto")
                 self.emergency_stop()
