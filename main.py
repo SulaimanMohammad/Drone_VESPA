@@ -39,8 +39,7 @@ signal.signal(signal.SIGINT, lambda sig, frame: drone.interrupt(vehicle))
 
 first_exapnsion(drone, vehicle)
 
-finally:
-    drone.return_home(vehicle) 
-    close_xbee_port()
-    vehicle.close()
-    print("Serial connection closed.")
+drone.return_home(vehicle) 
+close_xbee_port()
+vehicle.close()
+print("Serial connection closed.")
