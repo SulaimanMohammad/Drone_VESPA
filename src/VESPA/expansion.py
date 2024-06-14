@@ -132,7 +132,6 @@ def expansion_listener (self,vehicle):
             elif msg.startswith(Verify_border_header.encode()) and msg.endswith(b'\n'):
                 verify_border(self,Verify_border_header,msg)
             else: 
-                print("no data avilable")
                 time.sleep(0.1)
         except:
             print("Thread expansion_listener Interrupt received, stopping...")
