@@ -787,11 +787,14 @@ class Drone:
         else:
             #TODO in drone_ardupilot.py in drone repo # arm_and_takeoff_no_GPS(vehicle,self.drone_alt)
             pass
-
+    
+        
     def move_using_coord(self, vehicle, lon, lat):
+            set_to_move(vehicle)
             try: 
                 point1 = LocationGlobalRelative(lat,lon ,self.drone_alt)
                 vehicle.simple_goto( point1, groundspeed=defined_groundspeed)
+                time.sleep(((a/defined_groundspeed)+1)+ (ids*spacing + self.ref_alt)+2)
             except:
                 print("An error occurred while move with simple_goto")
                 self.emergency_stop()
@@ -800,6 +803,7 @@ class Drone:
             # vehicle.mode    = VehicleMode("LOITER") #loiter mode and hover in your place
             # time.sleep(1)
             # vehicle.mode     = VehicleMode("GUIDED")
+            hover(vehicle)
 
     def convert_spot_angle_distance(self, dir):
         return DIR_VECTORS[dir][0], DIR_VECTORS[dir][1]
