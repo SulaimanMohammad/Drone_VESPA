@@ -792,15 +792,14 @@ class Drone:
             try: 
                 point1 = LocationGlobalRelative(lat,lon ,self.drone_alt)
                 vehicle.simple_goto( point1, groundspeed=defined_groundspeed)
-                time.sleep(5)
             except:
                 print("An error occurred while move with simple_goto")
                 self.emergency_stop()
             # simple_goto will retuen after the command is sent, thus you need to sleep to give the drone time to move
             # Can't use sleep to wate arriving because this function in listenerand will block the listener and the new drone will not respond and also that is safe since no other movement will be done until all drone are in spot  
-            vehicle.mode    = VehicleMode("LOITER") #loiter mode and hover in your place
-            time.sleep(1)
-            vehicle.mode     = VehicleMode("GUIDED")
+            # vehicle.mode    = VehicleMode("LOITER") #loiter mode and hover in your place
+            # time.sleep(1)
+            # vehicle.mode     = VehicleMode("GUIDED")
 
     def convert_spot_angle_distance(self, dir):
         return DIR_VECTORS[dir][0], DIR_VECTORS[dir][1]
