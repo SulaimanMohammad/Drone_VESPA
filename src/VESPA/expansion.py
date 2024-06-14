@@ -100,7 +100,7 @@ def expansion_listener (self,vehicle):
         #try:
 
             msg= retrieve_msg_from_buffer(self.expansion_stop)
-            
+
             self.exchange_neighbors_info_communication(msg)
 
             if msg.startswith(Emergecy_header.encode()) and msg.endswith(b'\n'):
@@ -130,8 +130,6 @@ def expansion_listener (self,vehicle):
                 #form_border_two_direction(self,Forming_border_header,msg)
             elif msg.startswith(Verify_border_header.encode()) and msg.endswith(b'\n'):
                 verify_border(self,Verify_border_header,msg)
-            else: 
-                time.sleep(0.1)
         # except:
         #     print("Thread expansion_listener Interrupt received, stopping...")
         #     self.emergency_stop()   
@@ -369,11 +367,6 @@ def expand_and_form_border(self,vehicle):
     send_msg(self.build_spot_info_message(Response_header))
     self.demand_neighbors_info()       
     
-    # Drone is owner and alone goes to reference altitude 
-    if self.get_current_spot()["drones_in"]==1 and self.get_state()==Owner:
-        print (" Drone is Alone Go to ref ")
-        go_to_ref_altitude(vehicle,self.ref_alt)
-
     Forme_border(self)
     clear_buffer()
     self.demand_neighbors_info() # needed to update what neigbor become border 
