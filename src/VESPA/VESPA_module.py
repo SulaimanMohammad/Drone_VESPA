@@ -870,7 +870,7 @@ class Drone:
             if vehicle is not None:
                 emergency_msg= self.build_emergency_message()
                 send_msg(emergency_msg)
-                printerruptint("retuen home")
+                print("retuen home")
                 self.Emergency_stop.set()
                 self.expansion_stop.set()
                 vehicle.remove_attribute_listener('velocity', on_velocity)
