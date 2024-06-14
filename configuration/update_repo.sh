@@ -5,11 +5,6 @@ REPO_URL="https://github.com/SulaimanMohammad/Drone_VESPA.git"
 PI_DRONE_DIR=$(ls /home | grep drone)
 CLONE_PATH="/home/$PI_DRONE_DIR/Drone_VESPA"
 
-
-cp /home/$PI_DRONE_DIR/Drone_VESPA/configuration/update_repo.sh /home/$PI_DRONE_DIR
-
-cd  /home/$PI_DRONE_DIR/
-
 # If the branch name is passed as an argument, use it; otherwise, default to "main".
 BRANCH_NAME=${1:-"main"}
 
@@ -25,6 +20,8 @@ git clone -b "$BRANCH_NAME" "$REPO_URL" "$CLONE_PATH"
 # Adjust the ownership:
 sudo chown -R $USER:$USER "$CLONE_PATH"
 
+cp /home/$PI_DRONE_DIR/Drone_VESPA/configuration/update_repo.sh /home/$PI_DRONE_DIR
+cd  /home/$PI_DRONE_DIR/
 
 # Navigate to the directory
 cd "$CLONE_PATH" || exit # prevent the script from continuing if it can't enter the desired directory
@@ -51,4 +48,4 @@ else
     echo "Diverged"
 fi
 
-."$CLONE_PATH"/configuration/setup_drone_info.sh 
+./Drone_VESPA/configuration/setup_drone_info.sh 
