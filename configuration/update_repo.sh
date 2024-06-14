@@ -26,26 +26,4 @@ cd  /home/$PI_DRONE_DIR/
 # Navigate to the directory
 cd "$CLONE_PATH" || exit # prevent the script from continuing if it can't enter the desired directory
 
-
-# Configure Git to use the merge strategy for pulling
-git config --global pull.rebase false
-
-# Fetch updates from the remote repository
-git fetch
-
-# Check if there are any updates
-UPSTREAM=${1:-'@{u}'}
-LOCAL=$(git rev-parse @)
-REMOTE=$(git rev-parse "$UPSTREAM")
-BASE=$(git merge-base @ "$UPSTREAM")
-
-if [ $LOCAL = $REMOTE ]; then
-    echo "Up-to-date"
-elif [ $LOCAL = $BASE ]; then
-    echo "Need to pull"
-    git pull
-else
-    echo "Diverged"
-fi
-
 ./Drone_VESPA/configuration/setup_drone_info.sh 
