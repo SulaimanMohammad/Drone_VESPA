@@ -100,7 +100,7 @@ def expansion_listener (self,vehicle):
         try:
 
             msg= retrieve_msg_from_buffer(self.expansion_stop)
-
+            print("msg", msg )
             if msg.startswith(Emergecy_header.encode()) and msg.endswith(b'\n'):
                 self.emergency_stop()
                 break
@@ -130,7 +130,8 @@ def expansion_listener (self,vehicle):
                 #form_border_two_direction(self,Forming_border_header,msg)
             elif msg.startswith(Verify_border_header.encode()) and msg.endswith(b'\n'):
                 verify_border(self,Verify_border_header,msg)
-            time.sleep(0.1)
+            else: 
+                time.sleep(0.1)
         except:
             print("Thread expansion_listener Interrupt received, stopping...")
             self.emergency_stop()   
