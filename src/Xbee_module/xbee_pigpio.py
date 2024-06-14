@@ -98,7 +98,9 @@ def retrieve_msg_from_buffer(stop_flag):
 
                 # Return the complete message
                 return complete_message
-
+            else:
+                print( "no data avilable")
+                return bytearray(b'')
             # Short sleep to prevent high CPU usage
             time.sleep(0.1)
         
