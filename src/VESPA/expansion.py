@@ -97,7 +97,7 @@ def check_continuity_of_listening(self):
 def expansion_listener (self,vehicle):
 
     while check_continuity_of_listening(self):
-        try:
+        #try:
 
             msg= retrieve_msg_from_buffer(self.expansion_stop)
 
@@ -132,9 +132,9 @@ def expansion_listener (self,vehicle):
                 verify_border(self,Verify_border_header,msg)
             else: 
                 time.sleep(0.1)
-        except:
-            print("Thread expansion_listener Interrupt received, stopping...")
-            self.emergency_stop()   
+        # except:
+        #     print("Thread expansion_listener Interrupt received, stopping...")
+        #     self.emergency_stop()   
                      
 '''
 -------------------------------------------------------------------------------------
