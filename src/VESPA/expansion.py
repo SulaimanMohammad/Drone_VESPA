@@ -101,13 +101,14 @@ def expansion_listener (self,vehicle):
 
             msg= retrieve_msg_from_buffer(self.expansion_stop)
             print("msg", msg )
+
+            self.exchange_neighbors_info_communication(msg)
+
             if msg.startswith(Emergecy_header.encode()) and msg.endswith(b'\n'):
                 self.emergency_stop()
                 break
 
-            self.exchange_neighbors_info_communication(msg)
-
-            if msg.startswith(Identification_header.encode()) and msg.endswith(b'\n'):
+            elif msg.startswith(Identification_header.encode()) and msg.endswith(b'\n'):
                 if self.id==1: # It is sink drone 
                     reset_collect_drones_info_timer(self)
                     update_initial_drones_around(self,msg)
@@ -131,6 +132,7 @@ def expansion_listener (self,vehicle):
             elif msg.startswith(Verify_border_header.encode()) and msg.endswith(b'\n'):
                 verify_border(self,Verify_border_header,msg)
             else: 
+                print("no data avilable")
                 time.sleep(0.1)
         except:
             print("Thread expansion_listener Interrupt received, stopping...")
