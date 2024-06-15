@@ -885,7 +885,7 @@ class Drone:
                 self.expansion_stop.set()
                 vehicle.remove_attribute_listener('velocity', on_velocity)
                 self.return_home(vehicle)
-                time.sleep(1)
+                time.sleep(exchange_data_latency*2)
                 vehicle.close()
                 threads = threading.enumerate()
                 print(f" interrupt Number of active threads: {len(threads)}")
