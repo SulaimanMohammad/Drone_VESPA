@@ -202,10 +202,7 @@ def initial_movement(self,vehicle,id, spot, lon, lat):
         
         if lon!=0 and lat!=0:
             if check_gps_fix(vehicle) and use_GPS:
-                move_thread = threading.Thread(target= self.move_using_coord, args=(vehicle, lon, lat))
-                # Start the thread
-                move_thread.start()
-                #self.move_using_coord(vehicle, lon, lat)
+                self.move_using_coord(vehicle, lon, lat)
             elif (not check_gps_fix(vehicle))  and (not use_GPS):
               search_for_sink_tag(vehicle)
               self.move_to_spot(vehicle, spot)              

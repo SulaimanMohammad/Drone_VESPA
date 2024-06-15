@@ -788,8 +788,8 @@ class Drone:
             #TODO in drone_ardupilot.py in drone repo # arm_and_takeoff_no_GPS(vehicle,self.drone_alt)
             pass
     
-        
-    def move_using_coord(self, vehicle, lon, lat):
+    def simple_goto_thread(self, vehicle, lon, lat):
+            print("start moving")
             set_to_move(vehicle)
             try: 
                 point1 = LocationGlobalRelative(lat,lon ,self.drone_alt)
@@ -803,7 +803,13 @@ class Drone:
             # vehicle.mode    = VehicleMode("LOITER") #loiter mode and hover in your place
             # time.sleep(1)
             # vehicle.mode     = VehicleMode("GUIDED")
+            print("finished moving")
             hover(vehicle)
+
+    def move_using_coord(self, vehicle, lon, lat):
+            move_thread = threading.Thread(target= self.simple_goto_thread, args=(vehicle, lon, lat))
+            # Start the thread
+            move_thread.start()
 
     def convert_spot_angle_distance(self, dir):
         return DIR_VECTORS[dir][0], DIR_VECTORS[dir][1]
