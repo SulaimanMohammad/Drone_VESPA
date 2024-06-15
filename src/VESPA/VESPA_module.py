@@ -885,7 +885,7 @@ class Drone:
                 self.expansion_stop.set()
                 vehicle.remove_attribute_listener('velocity', on_velocity)
                 self.return_home(vehicle)
-                #time.sleep(10)
+                time.sleep(1)
                 vehicle.close()
                 print("Serial connection closed.")
                 close_xbee_port()

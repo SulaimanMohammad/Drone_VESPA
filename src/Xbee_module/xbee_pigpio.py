@@ -136,7 +136,8 @@ def cleanup():
     global pi
     global rx_pin
     try:
-        pi.bb_serial_read_close(rx_pin)
+        if pi.bb_serial_read(rx_pin) != []:  # Check if bit bang serial read is open
+            pi.bb_serial_read_close(rx_pin)
     except pigpio.error as e:
         print(f"Error during cleanup: {e}")
     pi.stop()
