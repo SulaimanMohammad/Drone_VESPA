@@ -891,6 +891,7 @@ class Drone:
                 print(f" interrupt Number of active threads: {len(threads)}")
                 for thread in threads:
                     print(f"Thread name: {thread.name}, Thread ID: {thread.ident}")
+                close_xbee_port()
                 threads = threading.enumerate()
                 print("Waiting for threads to finish...")
                 for thread in threads:
@@ -900,7 +901,7 @@ class Drone:
                     thread.join()
                 print("All threads have been joined.")
                 print("Serial connection closed.")
-                close_xbee_port()
+
                 threads = threading.enumerate()
                 print(f" interrupt ater close_xbee_port Number of active threads: {len(threads)}")
                 for thread in threads:
