@@ -887,15 +887,27 @@ class Drone:
                 self.return_home(vehicle)
                 time.sleep(1)
                 vehicle.close()
+                threads = threading.enumerate()
+                print(f" interrupt Number of active threads: {len(threads)}")
+                for thread in threads:
+                    print(f"Thread name: {thread.name}, Thread ID: {thread.ident}")
                 print("Serial connection closed.")
                 close_xbee_port()
+                print(f" interrupt ater close_xbee_port Number of active threads: {len(threads)}")
+                for thread in threads:
+                    print(f"Thread name: {thread.name}, Thread ID: {thread.ident}")
                 sys.exit(1)  # Exit the program with a non-zero status
-            
+ 
     def emergency_stop(self):
         print("Emergency stop detected. Exiting function.")
         # brodcast it again
         emergency_msg= self.build_emergency_message()
         send_msg(emergency_msg)
         print("Retuen home")
+        threads = threading.enumerate()
+        print(f"emergency_stop Number of active threads: {len(threads)}")
+        for thread in threads:
+            print(f"Thread name: {thread.name}, Thread ID: {thread.ident}")
+
         os.kill(os.getpid(), signal.SIGINT) # That will call interrupt which use vehicle object to return home
         #self.interrupt(vehicle)
