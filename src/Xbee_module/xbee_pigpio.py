@@ -4,26 +4,33 @@ from VESPA.headers_variables import *
 import threading
 send_lock = threading.Lock()
 
-def connect_xbee(TX,RX,baud_rate_set):
+def connect_xbee(TX, RX, baud_rate_set):
     global tx_pin
-    tx_pin=TX
+    tx_pin = TX
     global rx_pin
-    rx_pin=RX
+    rx_pin = RX
     global baud_rate
-    baud_rate= baud_rate_set
+    baud_rate = baud_rate_set
     
     # Open a serial connection
     global pi
     pi = pigpio.pi()
     if not pi.connected:
         raise Exception("Could not connect to pigpio daemon")
+
     # Set up the TX and RX pins for bit bang reading
     pi.set_mode(rx_pin, pigpio.INPUT)
-    pi.bb_serial_read_open(rx_pin, baud_rate, 8)  # Open RX pin with a baud rate
+    try:
+        pi.bb_serial_read_open(rx_pin, baud_rate, 8)  # Open RX pin with a baud rate
+    except pigpio.error as e:
+        print(f"Error opening RX pin: {e}")
+        pi.bb_serial_read_close(rx_pin)  # Close any existing serial read on the pin
+        pi.bb_serial_read_open(rx_pin, baud_rate, 8)  # Try opening again
+
     pi.set_mode(tx_pin, pigpio.OUTPUT)
-    pi.wave_clear() # Clear any existing waveforms before sending the first message
+    pi.wave_clear()  # Clear any existing waveforms before sending the first message
     time.sleep(0.5)
-    send_msg('test'.encode() ) # Warm up message 
+    send_msg('test'.encode())  # Warm up message
 
 def send_msg(msg):
     with send_lock:
