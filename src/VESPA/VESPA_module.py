@@ -887,7 +887,9 @@ class Drone:
                 self.return_home(vehicle)
                 time.sleep(10)
                 vehicle.close()
-                raise SystemExit()
+                print("Serial connection closed.")
+                close_xbee_port()
+                sys.exit(1)  # Exit the program with a non-zero status
             
     def emergency_stop(self):
         print("Emergency stop detected. Exiting function.")

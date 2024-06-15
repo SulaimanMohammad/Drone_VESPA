@@ -124,7 +124,8 @@ def retrieve_msg_from_buffer(stop_flag):
 def close_xbee_port():
     pi.bb_serial_read_close(rx_pin)  # Close the RX pin
     pi.wave_clear()  # Clear any waveforms
-    pi.stop()  # Stop the pigpio daemon
+    #pi.stop()  # Stop the pigpio daemon
+    cleanup()
 
 def clear_buffer():
     global message_buffer
