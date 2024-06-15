@@ -869,10 +869,10 @@ class Drone:
 
     def return_home(self, vehicle):
         if self.id==1: # Sink
-            time.sleep(10) 
+            #time.sleep(10) 
             vehicle.mode = VehicleMode ("LAND")
         else:
-            time.sleep(5 * (self.id)) # Wait time proportional to the id so not all back to home at the same time 
+            #time.sleep(5 * (self.id)) # Wait time proportional to the id so not all back to home at the same time 
             vehicle.mode = VehicleMode ("RTL")
         
 
@@ -885,7 +885,7 @@ class Drone:
                 self.expansion_stop.set()
                 vehicle.remove_attribute_listener('velocity', on_velocity)
                 self.return_home(vehicle)
-                time.sleep(10)
+                #time.sleep(10)
                 vehicle.close()
                 print("Serial connection closed.")
                 close_xbee_port()
@@ -897,5 +897,5 @@ class Drone:
         emergency_msg= self.build_emergency_message()
         send_msg(emergency_msg)
         print("Retuen home")
-        #os.kill(os.getpid(), signal.SIGINT) # That will call interrupt which use vehicle object to return home
-        self.interrupt(vehicle)
+        os.kill(os.getpid(), signal.SIGINT) # That will call interrupt which use vehicle object to return home
+        #self.interrupt(vehicle)
