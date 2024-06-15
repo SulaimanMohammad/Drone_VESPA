@@ -897,6 +897,5 @@ class Drone:
         emergency_msg= self.build_emergency_message()
         send_msg(emergency_msg)
         print("Retuen home")
-        self.Emergency_stop.set()
-        self.expansion_stop.set()
-        os.kill(os.getpid(), signal.SIGINT) # That will call interrupt which use vehicle object to return home
+        #os.kill(os.getpid(), signal.SIGINT) # That will call interrupt which use vehicle object to return home
+        self.interrupt(vehicle)

@@ -215,9 +215,9 @@ def initial_movement(self,vehicle,id, spot, lon, lat):
                 self.move_to_spot(vehicle, spot)
             else:
                 self.emergency_stop()
-        
-        angle, distance = self.convert_spot_angle_distance(spot)
-        set_yaw_to_dir_PID( vehicle, angle) # set the angle in the same direction taken since simple goto can include rotation
+        # noo need because the drone will be trying to move 
+        # angle, distance = self.convert_spot_angle_distance(spot)
+        # set_yaw_to_dir_PID( vehicle, angle) # set the angle in the same direction taken since simple goto can include rotation
         
         if self.id==2 and Xbee_change_range: # only first drone does the range calibration if this option is activated in operational_Data
             msg= build_calibration_message(1,0)
