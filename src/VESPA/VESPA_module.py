@@ -893,9 +893,13 @@ class Drone:
                     print(f"Thread name: {thread.name}, Thread ID: {thread.ident}")
                 print("Serial connection closed.")
                 close_xbee_port()
+                threads = threading.enumerate()
                 print(f" interrupt ater close_xbee_port Number of active threads: {len(threads)}")
                 for thread in threads:
-                    print(f"Thread name: {thread.name}, Thread ID: {thread.ident}")
+                    print(f"Thread name: {thread.name or 'Unnamed'}, "
+                        f"Thread ID: {thread.ident}, "
+                        f"Daemon: {thread.daemon}, "
+                        f"Alive: {thread.is_alive()}")
                 sys.exit(1)  # Exit the program with a non-zero status
  
     def emergency_stop(self):
@@ -907,7 +911,11 @@ class Drone:
         threads = threading.enumerate()
         print(f"emergency_stop Number of active threads: {len(threads)}")
         for thread in threads:
-            print(f"Thread name: {thread.name}, Thread ID: {thread.ident}")
+            print(f"Thread name: {thread.name or 'Unnamed'}, "
+                f"Thread ID: {thread.ident}, "
+                f"Daemon: {thread.daemon}, "
+                f"Alive: {thread.is_alive()}")
+
 
         os.kill(os.getpid(), signal.SIGINT) # That will call interrupt which use vehicle object to return home
         #self.interrupt(vehicle)
