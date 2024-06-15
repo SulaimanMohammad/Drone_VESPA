@@ -201,9 +201,9 @@ def verify_border(self,header, msg):
 def reset_timer_forme_border(self, header):
     with self.lock_boder_timer:
         if header== Forming_border_header:
-            self.remaining_time_forme_border=60 # Contains waiting and confim the msg arrival 
+            self.remaining_time_forme_border=20 # Contains waiting and confim the msg arrival 
         else:
-            self.remaining_time_forme_border=30   # This used in case of verfiy the border the messages flow fast
+            self.remaining_time_forme_border=10   # This used in case of verfiy the border the messages flow fast
 
 # called by other threads 
 def finish_timer_forme_border(self):
