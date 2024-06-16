@@ -34,7 +34,7 @@ set_data_rate(vehicle, 20)
 drone = Drone(0,0.0,0.0)
 print("id=", drone.id)
 # Configure parameter of drone based on VESPA
-config_parameters(vehicle, drone)
+#config_parameters(vehicle, drone)
 signal.signal(signal.SIGINT, lambda sig, frame: drone.interrupt(vehicle))
 
 first_exapnsion(drone, vehicle)
