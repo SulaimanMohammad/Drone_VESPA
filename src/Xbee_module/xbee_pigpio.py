@@ -141,4 +141,4 @@ def cleanup():
     except pigpio.error as e:
         print(f"Error during cleanup: {e}")
     pi.stop()
-    time.sleep(2)
+    time.sleep(3)
