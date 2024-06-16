@@ -898,6 +898,7 @@ class Drone:
                     if thread is threading.current_thread() or thread.daemon :
                         continue  # Skip the main thread
                     print(f"Joining thread: {thread.name or 'Unnamed'}, ID: {thread.ident}")
+                    print(not self.Forming_Border_Broadcast_REC.is_set() , (not self.expansion_stop.is_set()) , (not self.Emergency_stop.is_set()))
                     thread.join()
                 print("All threads have been joined.")
                 close_xbee_port()
