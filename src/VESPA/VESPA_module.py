@@ -895,7 +895,7 @@ class Drone:
                 threads = threading.enumerate()
                 print("Waiting for threads to finish...")
                 for thread in threads:
-                    if thread is threading.current_thread() and thread.daemon :
+                    if thread is threading.current_thread() or thread.daemon :
                         continue  # Skip the main thread
                     print(f"Joining thread: {thread.name or 'Unnamed'}, ID: {thread.ident}")
                     thread.join()
