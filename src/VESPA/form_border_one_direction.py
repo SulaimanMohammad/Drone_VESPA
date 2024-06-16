@@ -154,6 +154,7 @@ def send_msg_border_until_confirmation(self,header):
         
             if self.border_candidate == True:
                 for candidate in candidates_to_process: 
+                    print("still in the loop")
                     if candidate not in self.rec_candidate:
                         self.rec_candidate.append(candidate)
                     if self.Forming_Border_Broadcast_REC.is_set():
