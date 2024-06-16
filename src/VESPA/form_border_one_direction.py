@@ -149,7 +149,9 @@ def send_msg_border_until_confirmation(self,header):
             
             if not self.Forming_Border_Broadcast_REC.is_set(): # dont reset at the end of phase since it listeners will be bloked
                 self.demand_neighbors_info()
+                print(" befor eligibility")
                 check_border_candidate_eligibility(self)
+                print(" after eligibility")
                 self.current_target_ids= choose_spot_right_handed(self)
         
             if self.border_candidate == True:
@@ -160,9 +162,12 @@ def send_msg_border_until_confirmation(self,header):
                     if self.Forming_Border_Broadcast_REC.is_set():
                         break
                     if self.current_target_ids is not None:
+                        print(" befor build_border_message")
                         msg= build_border_message(self,header,self.current_target_ids, candidate) 
                         send_msg(msg)
+                        print(" after build_border_message")
                         time.sleep(exchange_data_latency)# time untile the message arrives 
+            print(" Finhs the loop")
             time.sleep(exchange_data_latency)
         # except:
         #     print("Thread send_msg_border_until_confirmation Interrupt received, stopping...")
