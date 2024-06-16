@@ -138,7 +138,7 @@ def form_border_one_direction(self,header,msg):
 
 
 def send_msg_border_until_confirmation(self,header):
-    while (not self.Forming_Border_Broadcast_REC.is_set()) or (not self.expansion_stop.is_set()) or (not self.Emergency_stop.is_set()):
+    while (not self.Forming_Border_Broadcast_REC.is_set()) and ((not self.expansion_stop.is_set()) or (not self.Emergency_stop.is_set())):
         # try: 
             # Copy messages_to_be_sent and iterate in it trying to send all the msg 
             # self.sending_messgae_list will change when a message is received the candidate will be pulled out 
