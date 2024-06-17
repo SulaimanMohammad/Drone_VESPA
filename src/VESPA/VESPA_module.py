@@ -902,9 +902,10 @@ class Drone:
             print( "flag are set")
             # set all the other stop flags for all the phases  
             emergency_msg= self.build_emergency_message()
+            print("build the message")
             send_msg(emergency_msg)
             print("retuen home")
-            vehicle.remove_attribute_listener('velocity', on_velocity)
+            #vehicle.remove_attribute_listener('velocity', on_velocity)
             self.return_home(vehicle)
             time.sleep(exchange_data_latency)
             vehicle.close()
