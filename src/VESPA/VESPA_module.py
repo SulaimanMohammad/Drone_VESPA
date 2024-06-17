@@ -192,7 +192,7 @@ class Drone:
 
     def initialize_timer_demand(self):
         self.reset_timer_demand()
-        while True: # it should be while true but the eergency should be taken into account 
+        while (not self.Emergency_stop.is_set()): # it should be while true but the eergency should be taken into account 
             with self.lock_demanders_timer:
                 self.remaining_time_demand -= 0.1
                 if self.remaining_time_demand <= 0:
@@ -206,7 +206,7 @@ class Drone:
     def initialize_timer_resposnse(self):
         self.reset_timer_resposnse()
         self.resposnse_rec_counter=0
-        while True:
+        while (not self.Emergency_stop.is_set()):
             self.remaining_time_resposnse -= 0.1
             if self.remaining_time_resposnse <= 0:
                     break
@@ -275,7 +275,7 @@ class Drone:
             self.rest_neighbor_list()
             reseted_neighbor_list= copy.deepcopy(self.neighbor_list) 
             
-            while self.compare_with_neighbor_list(reseted_neighbor_list,'drones_in') and recollect_data<2: 
+            while self.compare_with_neighbor_list(reseted_neighbor_list,'drones_in') and recollect_data<2 and (not self.Emergency_stop.is_set()): 
                 demand_msg= self.build_data_demand_message()
                 send_msg(demand_msg)
                 self.initialize_timer_resposnse()
