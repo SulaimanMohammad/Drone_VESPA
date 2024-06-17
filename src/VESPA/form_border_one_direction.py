@@ -149,7 +149,7 @@ def send_msg_border_until_confirmation(self,header):
             
             if not self.Forming_Border_Broadcast_REC.is_set(): # dont reset at the end of phase since it listeners will be bloked
                 print(" deman info")
-                self.demand_neighbors_info()
+                #self.demand_neighbors_info()
                 print(" befor eligibility")
                 check_border_candidate_eligibility(self)
                 print(" after eligibility")
