@@ -295,6 +295,8 @@ class Drone:
                         self.neighbor_list=  copy.deepcopy(copy_neighbor_list) 
 
                 self.list_finished_update.set()
+        else:
+            self.list_finished_update.wait()
 
     def build_ACK_data_message(self, target_id):
         message= ACK_header.encode()
