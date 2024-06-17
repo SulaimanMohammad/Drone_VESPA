@@ -169,8 +169,10 @@ class Drone:
         self.border_verified=threading.Event()
 
         self.Emergency_stop = threading.Event() # Flag in case a problem or abort is needed
+        
         self.expansion_stop=  threading.Event() # Flage refer that the expansion is ended 
-
+        self.Emergency_stop.clear()
+        self.expansion_stop.clear()
         if uart:
             connect_xbee(xbee_serial_port, baud_rate)
         else:
