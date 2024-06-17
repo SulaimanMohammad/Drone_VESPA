@@ -283,7 +283,7 @@ class Drone:
                 recollect_data= recollect_data +1
                 time.sleep(exchange_data_latency)
                 print(" still readig in demand")
-                
+
             print(" finished collecting data ")
             if self.resposnse_rec_counter==0: # No response recieved so it is blocked thread restor the old list 
                 with self.lock_neighbor_list:
@@ -889,7 +889,7 @@ class Drone:
                 print("retuen home")
                 vehicle.remove_attribute_listener('velocity', on_velocity)
                 self.return_home(vehicle)
-                #time.sleep(exchange_data_latency*5)
+                time.sleep(exchange_data_latency)
                 vehicle.close()
                 threads = threading.enumerate()
                 print(f" interrupt Number of active threads: {len(threads)}")
