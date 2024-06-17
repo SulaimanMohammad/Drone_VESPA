@@ -912,7 +912,7 @@ class Drone:
                         f"Thread ID: {thread.ident}, "
                         f"Daemon: {thread.daemon}, "
                         f"Alive: {thread.is_alive()}")
-                sys.exit(1)  # Exit the program with a non-zero status
+                os._exit(0)  # Exit the program with a non-zero status
  
     def emergency_stop(self):
         if not self.Emergency_stop.is_set():
