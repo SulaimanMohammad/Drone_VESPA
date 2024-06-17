@@ -899,6 +899,7 @@ class Drone:
         if (not self.Emergency_stop.is_set()):
             self.Emergency_stop.set()
             self.expansion_stop.set()
+            print( "flag are set")
             # set all the other stop flags for all the phases  
             emergency_msg= self.build_emergency_message()
             send_msg(emergency_msg)
