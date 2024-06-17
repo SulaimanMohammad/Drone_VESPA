@@ -894,48 +894,48 @@ class Drone:
         
 
     def interrupt(self, vehicle):
-            print("it is called ")
-            print( "not self.Emergency_stop.is_set() ",(not self.Emergency_stop.is_set()))
-            if (not self.Emergency_stop.is_set()):
-                self.Emergency_stop.set()
-                self.expansion_stop.set()
-                # set all the other stop flags for all the phases  
-                emergency_msg= self.build_emergency_message()
-                send_msg(emergency_msg)
-                print("retuen home")
-                vehicle.remove_attribute_listener('velocity', on_velocity)
-                self.return_home(vehicle)
-                time.sleep(exchange_data_latency)
-                vehicle.close()
-                threads = threading.enumerate()
-                print(f" interrupt Number of active threads: {len(threads)}")
-                for thread in threads:
-                    print(f"Thread name: {thread.name}, Thread ID: {thread.ident}")
-                
-                threads = threading.enumerate()
-                print("Waiting for threads to finish...")
-                for thread in threads:
-                    if thread is threading.current_thread() or thread.daemon :
-                        continue  # Skip the main thread
-                    print(f"Joining thread: {thread.name or 'Unnamed'}, ID: {thread.ident}")
-                    print(not self.Forming_Border_Broadcast_REC.is_set() , (not self.expansion_stop.is_set()) , (not self.Emergency_stop.is_set()))                    
-                    print(self.exchange_data_lock )
-                    print(self.lock_neighbor_list)
-                    #safe_release(self.exchange_data_lock)
-                    #safe_release(self.lock_neighbor_list)
-                    thread.join()
-                    print("joined")
-                print("All threads have been joined.")
-                close_xbee_port()
-                print("Serial connection closed.")
-                threads = threading.enumerate()
-                print(f" interrupt ater close_xbee_port Number of active threads: {len(threads)}")
-                for thread in threads:
-                    print(f"Thread name: {thread.name or 'Unnamed'}, "
-                        f"Thread ID: {thread.ident}, "
-                        f"Daemon: {thread.daemon}, "
-                        f"Alive: {thread.is_alive()}")
-                os._exit(0)  # Exit the program with a non-zero status
+        print("it is called ")
+        print( "not self.Emergency_stop.is_set() ",(not self.Emergency_stop.is_set()))
+        if (not self.Emergency_stop.is_set()):
+            self.Emergency_stop.set()
+            self.expansion_stop.set()
+            # set all the other stop flags for all the phases  
+            emergency_msg= self.build_emergency_message()
+            send_msg(emergency_msg)
+            print("retuen home")
+            vehicle.remove_attribute_listener('velocity', on_velocity)
+            self.return_home(vehicle)
+            time.sleep(exchange_data_latency)
+            vehicle.close()
+            threads = threading.enumerate()
+            print(f" interrupt Number of active threads: {len(threads)}")
+            for thread in threads:
+                print(f"Thread name: {thread.name}, Thread ID: {thread.ident}")
+            
+            threads = threading.enumerate()
+            print("Waiting for threads to finish...")
+            for thread in threads:
+                if thread is threading.current_thread() or thread.daemon :
+                    continue  # Skip the main thread
+                print(f"Joining thread: {thread.name or 'Unnamed'}, ID: {thread.ident}")
+                print(not self.Forming_Border_Broadcast_REC.is_set() , (not self.expansion_stop.is_set()) , (not self.Emergency_stop.is_set()))                    
+                print(self.exchange_data_lock )
+                print(self.lock_neighbor_list)
+                #safe_release(self.exchange_data_lock)
+                #safe_release(self.lock_neighbor_list)
+                thread.join()
+                print("joined")
+            print("All threads have been joined.")
+            close_xbee_port()
+            print("Serial connection closed.")
+            threads = threading.enumerate()
+            print(f" interrupt ater close_xbee_port Number of active threads: {len(threads)}")
+            for thread in threads:
+                print(f"Thread name: {thread.name or 'Unnamed'}, "
+                    f"Thread ID: {thread.ident}, "
+                    f"Daemon: {thread.daemon}, "
+                    f"Alive: {thread.is_alive()}")
+            os._exit(0)  # Exit the program with a non-zero status
  
     def emergency_stop(self):
         if not self.Emergency_stop.is_set():
