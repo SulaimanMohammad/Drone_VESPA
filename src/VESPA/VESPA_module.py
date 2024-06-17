@@ -192,7 +192,7 @@ class Drone:
 
     def initialize_timer_demand(self):
         self.reset_timer_demand()
-        while True:
+        while True: # it should be while true but the eergency should be taken into account 
             with self.lock_demanders_timer:
                 self.remaining_time_demand -= 0.1
                 if self.remaining_time_demand <= 0:
@@ -868,13 +868,13 @@ class Drone:
             self.change_state_to(Irremovable)
 
     def return_home(self, vehicle):
-        if vehicle is not None:
-            if self.id==1: # Sink
-                #time.sleep(10) 
-                vehicle.mode = VehicleMode ("LAND")
-            else:
-                #time.sleep(5 * (self.id)) # Wait time proportional to the id so not all back to home at the same time 
-                vehicle.mode = VehicleMode ("RTL")
+        
+        if self.id==1: # Sink
+            #time.sleep(10) 
+            vehicle.mode = VehicleMode ("LAND")
+        else:
+            #time.sleep(5 * (self.id)) # Wait time proportional to the id so not all back to home at the same time 
+            vehicle.mode = VehicleMode ("RTL")
         
 
     def interrupt(self, vehicle):
@@ -901,6 +901,7 @@ class Drone:
                     print(f"Joining thread: {thread.name or 'Unnamed'}, ID: {thread.ident}")
                     print(not self.Forming_Border_Broadcast_REC.is_set() , (not self.expansion_stop.is_set()) , (not self.Emergency_stop.is_set()))
                     thread.join()
+                    print("joined")
                 print("All threads have been joined.")
                 close_xbee_port()
                 print("Serial connection closed.")
