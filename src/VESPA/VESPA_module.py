@@ -882,6 +882,8 @@ class Drone:
             if not self.Emergency_stop.is_set():
                 self.Emergency_stop.set()
                 self.expansion_stop.set()
+                self.exchange_data_lock.release() # dont allow excahnge msg and rest the list 
+                self.lock_neighbor_list.release()
                 emergency_msg= self.build_emergency_message()
                 send_msg(emergency_msg)
                 print("retuen home")
