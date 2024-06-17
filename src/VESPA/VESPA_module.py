@@ -269,7 +269,8 @@ class Drone:
         # This function will be called by many threads and since it contains reset of data, and need to finish receiving data so list updated
         # So the function should not be called until it is completly finished or the list will be wrong if 2 threads called it at the same time  
         print(" demand_neighbors_info" ,self.exchange_data_lock)
-        with self.exchange_data_lock: 
+        with self.exchange_data_lock:
+            print("  get inside demand_neighbors_info")
             self.list_finished_update.clear()
             copy_neighbor_list= copy.deepcopy(self.neighbor_list) # use deepcopy or it will be reference not copy 
             print(" finished deep copy")
