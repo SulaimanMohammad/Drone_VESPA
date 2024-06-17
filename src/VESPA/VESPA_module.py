@@ -600,7 +600,6 @@ class Drone:
  
     def get_neighbor_list(self):
         #self.list_finished_update.wait()
-        print(" get_neighbor_list" ,self.exchange_data_lock)
         with self.exchange_data_lock: # dont allow excahnge msg and rest the list 
             with self.lock_neighbor_list:
                 return self.neighbor_list
