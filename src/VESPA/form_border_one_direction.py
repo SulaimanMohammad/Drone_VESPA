@@ -320,18 +320,19 @@ def Forme_border(self):
         # Note in case the border is not formed with absance of new messages, when the timer is up the while loop will re-executed 
         reset_timer_forme_border(self,Forming_border_header)
 
-        while (not self.Emergency_stop.is_set()) and (time.time()-start_forming_bordertime < 90):
+        while (not self.Emergency_stop.is_set()) :
             with self.lock_boder_timer:
                 self.remaining_time_forme_border -= 0.5
                 if self.remaining_time_forme_border <= 0:
                         break
-                print(time.time()-start_forming_bordertime , self.remaining_time_forme_border )
-
             time.sleep(0.5)
         
         if self.border_formed== False: 
             number_of_try=number_of_try+1
 
+        if (time.time()-start_forming_bordertime < 20):
+            print("finish gebera timer ")
+            break
 
     if self.border_formed == True:
         self.Forming_Border_Broadcast_REC.wait()
