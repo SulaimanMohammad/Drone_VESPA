@@ -172,7 +172,7 @@ def send_msg_border_until_confirmation(self,header):
         # except:
         #     print("Thread send_msg_border_until_confirmation Interrupt received, stopping...")
         #     self.emergency_stop()  
-            
+    print("exit the thread")
 
 def verify_border(self,header, msg):
     if not self.border_verified.is_set():
