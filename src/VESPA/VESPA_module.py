@@ -281,6 +281,7 @@ class Drone:
                 self.initialize_timer_resposnse()
                 recollect_data= recollect_data +1
                 time.sleep(exchange_data_latency)
+                print(" still readig in demand")
 
             if self.resposnse_rec_counter==0: # No response recieved so it is blocked thread restor the old list 
                 with self.lock_neighbor_list:
