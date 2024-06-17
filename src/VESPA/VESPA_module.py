@@ -210,7 +210,6 @@ class Drone:
         self.resposnse_rec_counter=0
         while (not self.Emergency_stop.is_set()):
             self.remaining_time_resposnse -= 0.1
-            print("self.remaining_time_resposnse",self.remaining_time_resposnse )
             if self.remaining_time_resposnse <= 0:
                     break
             time.sleep(0.1)
