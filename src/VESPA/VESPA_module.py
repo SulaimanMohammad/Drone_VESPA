@@ -879,11 +879,11 @@ class Drone:
 
     def interrupt(self, vehicle):
             if not self.Emergency_stop.is_set():
+                self.Emergency_stop.set()
+                self.expansion_stop.set()
                 emergency_msg= self.build_emergency_message()
                 send_msg(emergency_msg)
                 print("retuen home")
-                self.Emergency_stop.set()
-                self.expansion_stop.set()
                 vehicle.remove_attribute_listener('velocity', on_velocity)
                 self.return_home(vehicle)
                 #time.sleep(exchange_data_latency*5)
