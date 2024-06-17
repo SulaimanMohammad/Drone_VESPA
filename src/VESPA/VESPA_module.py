@@ -882,6 +882,8 @@ class Drone:
             if not self.Emergency_stop.is_set():
                 self.Emergency_stop.set()
                 self.expansion_stop.set()
+                safe_release(self.exchange_data_lock)
+                safe_release(self.lock_neighbor_list)
                 emergency_msg= self.build_emergency_message()
                 send_msg(emergency_msg)
                 print("retuen home")
@@ -900,9 +902,7 @@ class Drone:
                     if thread is threading.current_thread() or thread.daemon :
                         continue  # Skip the main thread
                     print(f"Joining thread: {thread.name or 'Unnamed'}, ID: {thread.ident}")
-                    print(not self.Forming_Border_Broadcast_REC.is_set() , (not self.expansion_stop.is_set()) , (not self.Emergency_stop.is_set()))
-                    self.exchange_data_lock.release() # dont allow excahnge msg and rest the list 
-                    self.lock_neighbor_list.release()
+                    print(not self.Forming_Border_Broadcast_REC.is_set() , (not self.expansion_stop.is_set()) , (not self.Emergency_stop.is_set()))                    
                     thread.join()
                     print("joined")
                 print("All threads have been joined.")
@@ -933,3 +933,13 @@ class Drone:
                     f"Alive: {thread.is_alive()}")
             os.kill(os.getpid(), signal.SIGINT) # That will call interrupt which use vehicle object to return home
             #self.interrupt(vehicle)
+
+def safe_release(lock):
+    while lock.locked():
+        try:
+            lock.release()
+            print("Lock released successfully.")
+            break
+        except RuntimeError:
+            print("Failed to release lock. Retrying...")
+            time.sleep(0.1)  # Wait a short period before trying again
