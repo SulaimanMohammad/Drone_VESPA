@@ -41,7 +41,6 @@ def connect_xbee(TX, RX, baud_rate_set):
 def send_msg(msg):
     with send_lock:
         try: 
-            print("msg send",msg )
             # Check if the message is empty or not in a byte-like format
             if not msg or not isinstance(msg, (bytes, bytearray)):
                 print("Error: Message is empty or not in byte format.")
@@ -71,7 +70,6 @@ def send_msg(msg):
 
             pi.wave_send_once(wave_id)  # Send the waveform
             while pi.wave_tx_busy():  # Wait until the waveform is sent
-                print("still waiting ")
                 time.sleep(0.1)
         except:
             raise Exception("Thread send_msg Interrupt received, stopping...")

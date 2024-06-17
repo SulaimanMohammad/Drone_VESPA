@@ -210,6 +210,7 @@ class Drone:
         self.resposnse_rec_counter=0
         while (not self.Emergency_stop.is_set()):
             self.remaining_time_resposnse -= 0.1
+            print("self.remaining_time_resposnse",self.remaining_time_resposnse )
             if self.remaining_time_resposnse <= 0:
                     break
             time.sleep(0.1)
@@ -894,15 +895,11 @@ class Drone:
         
 
     def interrupt(self, vehicle):
-        print("it is called ")
-        print( "not self.Emergency_stop.is_set() ",(not self.Emergency_stop.is_set()))
         if (not self.Emergency_stop.is_set()):
             self.Emergency_stop.set()
             self.expansion_stop.set()
-            print( "flag are set")
             # set all the other stop flags for all the phases  
             emergency_msg= self.build_emergency_message()
-            print("build the message")
             send_msg(emergency_msg)
             print("retuen home")
             #vehicle.remove_attribute_listener('velocity', on_velocity)
