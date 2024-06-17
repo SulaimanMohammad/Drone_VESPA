@@ -306,6 +306,7 @@ def Forme_border(self):
     start_forming_bordertime=time.time()
     #Continue checking in case of not forming border the process will start again 
     while (not self.Forming_Border_Broadcast_REC.is_set()) and number_of_try<=3 and (not self.expansion_stop.is_set()) and (not self.Emergency_stop.is_set()):
+        print("Demand info from maiN")
         self.demand_neighbors_info()
         check_border_candidate_eligibility(self)
         if self.border_candidate :
