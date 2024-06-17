@@ -223,7 +223,6 @@ def check_border_candidate_eligibility(self):
         return self.border_candidate
     
     self.border_candidate=False
-    print(" befor .get_neighbor_list")
     unoccupied_spots_counter = 0
     for neighbor in self.get_neighbor_list():
         # This is in the further expansion is needed , where the candidate is decides based on the allowed_spots
@@ -234,8 +233,6 @@ def check_border_candidate_eligibility(self):
         else: # the drone was not part of the previous border
            if neighbor["drones_in"] == 0: # spot also is not occupied
                unoccupied_spots_counter += 1
-        print("still in the of elegi")
-    print(" after .get_neighbor_list")
     if unoccupied_spots_counter>0 and (self.get_current_spot() ["drones_in"]==1) : # at least one spot is empty so the drone can be part of he border
         if  self.all_neighbor_spots_owned(): 
             self.border_candidate=True
@@ -306,6 +303,7 @@ def Forme_border(self):
     wait_message_rec.start()
     
     number_of_try=0
+    start_forming_bordertime=time.time()
     #Continue checking in case of not forming border the process will start again 
     while (not self.Forming_Border_Broadcast_REC.is_set()) and number_of_try<=3 and (not self.expansion_stop.is_set()) and (not self.Emergency_stop.is_set()):
         self.demand_neighbors_info()
@@ -322,13 +320,14 @@ def Forme_border(self):
         # Note in case the border is not formed with absance of new messages, when the timer is up the while loop will re-executed 
         reset_timer_forme_border(self,Forming_border_header)
 
-        while (not self.Emergency_stop.is_set()):
+        while (not self.Emergency_stop.is_set()) and (time.time()-start_forming_bordertime> 90):
             with self.lock_boder_timer:
                 self.remaining_time_forme_border -= 0.5
                 if self.remaining_time_forme_border <= 0:
                         break
             time.sleep(0.5)
         
+        print(time.time()-start_forming_bordertime , self.remaining_time_forme_border )
         if self.border_formed== False: 
             number_of_try=number_of_try+1
 
@@ -352,7 +351,7 @@ def confirm_border_connectivity(self):
             send_msg(msg)
     
         reset_timer_forme_border(self, Verify_border_header)
-        while True:
+        while (not self.Emergency_stop.is_set()):
             with self.lock_boder_timer:
                 self.remaining_time_forme_border -= 0.5
                 if self.remaining_time_forme_border <= 0:
