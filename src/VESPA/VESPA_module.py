@@ -275,7 +275,7 @@ class Drone:
             self.rest_neighbor_list()
             reseted_neighbor_list= copy.deepcopy(self.neighbor_list) 
             
-            while self.compare_with_neighbor_list(reseted_neighbor_list,'drones_in') and recollect_data<2 and (not self.Emergency_stop.is_set()): 
+            while (self.compare_with_neighbor_list(reseted_neighbor_list,'drones_in')) and (recollect_data<2) and (not self.Emergency_stop.is_set()): 
                 demand_msg= self.build_data_demand_message()
                 send_msg(demand_msg)
                 self.initialize_timer_resposnse()
@@ -901,8 +901,8 @@ class Drone:
                         continue  # Skip the main thread
                     print(f"Joining thread: {thread.name or 'Unnamed'}, ID: {thread.ident}")
                     print(not self.Forming_Border_Broadcast_REC.is_set() , (not self.expansion_stop.is_set()) , (not self.Emergency_stop.is_set()))                    
-                    safe_release(self.exchange_data_lock)
-                    safe_release(self.lock_neighbor_list)
+                    #safe_release(self.exchange_data_lock)
+                    #safe_release(self.lock_neighbor_list)
                     thread.join()
                     print("joined")
                 print("All threads have been joined.")
