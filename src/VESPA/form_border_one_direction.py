@@ -328,12 +328,12 @@ def Forme_border(self):
                         break
             time.sleep(0.5)
         
-        if self.border_formed== False: 
+        if self.border_formed == False: 
             number_of_try=number_of_try+1
 
-        if (time.time()-start_forming_bordertime < 20):
-            print("finish gebera timer ")
-            break
+        # if (time.time()-start_forming_bordertime < 20):
+        #     print("finish gebera timer ")
+        #     break
 
     if self.border_formed == True:
         self.Forming_Border_Broadcast_REC.wait()

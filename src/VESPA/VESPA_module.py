@@ -299,6 +299,7 @@ class Drone:
 
                 self.list_finished_update.set()
         else:
+            print("waiting to finish ongoing demand ")
             self.list_finished_update.wait()
 
     def build_ACK_data_message(self, target_id):
