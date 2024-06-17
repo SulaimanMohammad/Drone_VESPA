@@ -70,6 +70,7 @@ def send_msg(msg):
 
             pi.wave_send_once(wave_id)  # Send the waveform
             while pi.wave_tx_busy():  # Wait until the waveform is sent
+                print("still waiting ")
                 time.sleep(0.1)
         except:
             raise Exception("Thread send_msg Interrupt received, stopping...")
