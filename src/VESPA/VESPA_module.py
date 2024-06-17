@@ -901,6 +901,8 @@ class Drone:
                         continue  # Skip the main thread
                     print(f"Joining thread: {thread.name or 'Unnamed'}, ID: {thread.ident}")
                     print(not self.Forming_Border_Broadcast_REC.is_set() , (not self.expansion_stop.is_set()) , (not self.Emergency_stop.is_set()))                    
+                    print(self.exchange_data_lock )
+                    print(self.lock_neighbor_list)
                     #safe_release(self.exchange_data_lock)
                     #safe_release(self.lock_neighbor_list)
                     thread.join()
