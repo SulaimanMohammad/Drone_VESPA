@@ -269,6 +269,7 @@ class Drone:
         # This function will be called by many threads and since it contains reset of data, and need to finish receiving data so list updated
         # So the function should not be called until it is completly finished or the list will be wrong if 2 threads called it at the same time  
         print(" demand_neighbors_info" ,self.exchange_data_lock)
+        time.sleep(0.5)# time to chekc if the flag is set or not 
         if not self.list_finished_update.is_set(): # another thread doing the update 
             with self.exchange_data_lock:
                 print("  get inside demand_neighbors_info")
