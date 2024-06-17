@@ -895,6 +895,7 @@ class Drone:
 
     def interrupt(self, vehicle):
             print("it is called ")
+            print( "not self.Emergency_stop.is_set() ",not self.Emergency_stop.is_set())
             if not self.Emergency_stop.is_set():
                 self.Emergency_stop.set()
                 self.expansion_stop.set()
