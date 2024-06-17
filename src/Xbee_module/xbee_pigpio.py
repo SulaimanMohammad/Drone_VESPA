@@ -41,6 +41,7 @@ def connect_xbee(TX, RX, baud_rate_set):
 def send_msg(msg):
     with send_lock:
         try: 
+            print("msg send",msg )
             # Check if the message is empty or not in a byte-like format
             if not msg or not isinstance(msg, (bytes, bytearray)):
                 print("Error: Message is empty or not in byte format.")
