@@ -294,6 +294,8 @@ class Drone:
                 recollect_data= recollect_data +1
                 time.sleep(exchange_data_latency)
                 # print(" still readig in demand")
+                if(not self.Emergency_stop.is_set()):
+                    print(get_current_time(), " Emergency detected then stop" )
 
             # print(" finished collecting data ")
             if self.resposnse_rec_counter==0: # No response recieved so it is blocked thread restor the old list 
@@ -301,9 +303,13 @@ class Drone:
                     self.neighbor_list=  copy.deepcopy(copy_neighbor_list) 
 
             self.list_finished_update.set()
+            print(get_current_time(), " list_finished_update.set()" )
         else:
-            print("waiting to finish ongoing demand ")
+            print(get_current_time(), "waiting to finish ongoing demand ")
             self.list_finished_update.wait()
+        print(get_current_time(), " Leave demand " )
+
+            
 
     def build_ACK_data_message(self, target_id):
         message= ACK_header.encode()
