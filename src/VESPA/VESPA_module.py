@@ -964,7 +964,12 @@ class Drone:
 
 def get_current_time():
     now = datetime.now()
-    formatted_time = now.strftime("%H:%M:%S:%f")[:-3]  # Exclude the last 3 digits of microseconds to get milliseconds
+    hours = now.strftime("%H")
+    minutes = now.strftime("%M")
+    seconds = now.strftime("%S")
+    milliseconds = now.strftime("%f")[:3]  # First 3 digits of microseconds as milliseconds
+    microseconds = now.strftime("%f")  # Full microseconds
+    formatted_time = f"{hours}:{minutes}:{seconds}:{milliseconds}:{microseconds}"
     return formatted_time
 
 
