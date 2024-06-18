@@ -153,7 +153,7 @@ def send_msg_border_until_confirmation(self,header):
                 print(" befor eligibility")
                 #check_border_candidate_eligibility(self)
                 print(" after eligibility")
-                self.current_target_ids= choose_spot_right_handed(self)
+                #self.current_target_ids= choose_spot_right_handed(self)
         
             if self.border_candidate == True:
                 for candidate in candidates_to_process: 
