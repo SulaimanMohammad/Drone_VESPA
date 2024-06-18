@@ -273,49 +273,31 @@ class Drone:
     def demand_neighbors_info(self):
         # This function will be called by many threads and since it contains reset of data, and need to finish receiving data so list updated
         # So the function should not be called until it is completly finished or the list will be wrong if 2 threads called it at the same time  
-            # Save the original SIGINT handler
-        # original_handler = signal.getsignal(signal.SIGINT)
-        # # Temporarily ignore SIGINT
-        # signal.signal(signal.SIGINT, signal.SIG_IGN)
-        try:
-            time.sleep(0.1)# time to chekc if the flag is set or not 
-            if self.list_finished_update.is_set(): # another thread doing the update 
-                # with self.exchange_data_lock:
-                print(get_current_time(), " demand_neighbors_info Get inside demand_neighbors_info" )
-                self.list_finished_update.clear()
-                copy_neighbor_list= copy.deepcopy(self.neighbor_list) # use deepcopy or it will be reference not copy 
-                # print(" finished deep copy")
-                recollect_data=0
-                self.rest_neighbor_list()
-                reseted_neighbor_list= copy.deepcopy(self.neighbor_list) 
-                
-                print(get_current_time(), " demand_neighbors_info Reset list" )
-                while (self.compare_with_neighbor_list(reseted_neighbor_list,'drones_in')) and (recollect_data<2) and (not self.Emergency_stop.is_set()): 
-                    demand_msg= self.build_data_demand_message()
-                    send_msg(demand_msg)
-                    print(get_current_time(), " demand_neighbors_info in loop to read data " )
-                    self.initialize_timer_resposnse()
-                    recollect_data= recollect_data +1
-                    time.sleep(exchange_data_latency)
-                    # print(" still readig in demand")
-                    if(self.Emergency_stop.is_set()):
-                        print(get_current_time(), " demand_neighbors_info Emergency detected then stop" )
+        time.sleep(0.05)# time to chekc if the flag is set or not 
+        if self.list_finished_update.is_set(): # another thread doing the update 
+            # with self.exchange_data_lock:
+            self.list_finished_update.clear()
+            copy_neighbor_list= copy.deepcopy(self.neighbor_list) # use deepcopy or it will be reference not copy 
+            recollect_data=0
+            self.rest_neighbor_list()
+            reseted_neighbor_list= copy.deepcopy(self.neighbor_list) 
+            
+            while (self.compare_with_neighbor_list(reseted_neighbor_list,'drones_in')) and (recollect_data<2) and (not self.Emergency_stop.is_set()): 
+                demand_msg= self.build_data_demand_message()
+                send_msg(demand_msg)
+                self.initialize_timer_resposnse()
+                recollect_data= recollect_data +1
+                time.sleep(exchange_data_latency)
 
-                # print(" finished collecting data ")
-                if self.resposnse_rec_counter==0: # No response recieved so it is blocked thread restor the old list 
-                    print(get_current_time(), " Trying to acquire the lock" )
-                    with self.lock_neighbor_list:
-                        self.neighbor_list=  copy.deepcopy(copy_neighbor_list) 
+            # print(" finished collecting data ")
+            if self.resposnse_rec_counter==0: # No response recieved so it is blocked thread restor the old list 
+                with self.lock_neighbor_list:
+                    self.neighbor_list=  copy.deepcopy(copy_neighbor_list) 
 
-                self.list_finished_update.set()
-                print(get_current_time(), " list_finished_update.set()" )
-            else:
-                print(get_current_time(), "waiting to finish ongoing demand ")
-                self.list_finished_update.wait()
-            print(get_current_time(), " Leave demand " )
-        finally: 
-            print("skipped the interrupt")
-            # signal.signal(signal.SIGINT, original_handler)
+            self.list_finished_update.set()
+        else:
+            self.list_finished_update.wait()
+
 
             
 
@@ -621,7 +603,6 @@ class Drone:
         #     with self.lock_neighbor_list:
         #         return self.neighbor_list
         if not self.list_finished_update.is_set():
-            print("wait for finishing exchange")
             self.list_finished_update.wait()
         with self.lock_neighbor_list:
             return self.neighbor_list
@@ -906,13 +887,13 @@ class Drone:
     def return_home(self, vehicle):
         
         if self.id==1: # Sink
-            #time.sleep(10) 
-            #vehicle.mode = VehicleMode ("LAND")
-            pass
+            time.sleep(10) 
+            vehicle.mode = VehicleMode ("LAND")
+
         else:
-            #time.sleep(5 * (self.id)) # Wait time proportional to the id so not all back to home at the same time 
-            #vehicle.mode = VehicleMode ("RTL")
-            pass
+            time.sleep(5 * (self.id)) # Wait time proportional to the id so not all back to home at the same time 
+            vehicle.mode = VehicleMode ("RTL")
+
         
 
     def interrupt(self, vehicle):
@@ -928,74 +909,14 @@ class Drone:
             self.return_home(vehicle)
             time.sleep(exchange_data_latency)
             vehicle.close()
-            threads = threading.enumerate()
-            print(f" interrupt Number of active threads: {len(threads)}")
-            for thread in threads:
-                print(f"Thread name: {thread.name}, Thread ID: {thread.ident}")
-            
-            threads = threading.enumerate()
-            print("Waiting for threads to finish...")
-            for thread in threads:
-                if thread is threading.current_thread() or thread.daemon :
-                    continue  # Skip the main thread
-                print(f"Joining thread: {thread.name or 'Unnamed'}, ID: {thread.ident}")
-                print(not self.Forming_Border_Broadcast_REC.is_set() , (not self.expansion_stop.is_set()) , (not self.Emergency_stop.is_set()))                    
-                print(self.exchange_data_lock )
-                print(self.lock_neighbor_list)
-                #safe_release(self.exchange_data_lock)
-                #safe_release(self.lock_neighbor_list)
-                thread.join()
-                print("joined")
-            print("All threads have been joined.")
             close_xbee_port()
-            print("Serial connection closed.")
-            threads = threading.enumerate()
-            print(f" interrupt ater close_xbee_port Number of active threads: {len(threads)}")
-            for thread in threads:
-                print(f"Thread name: {thread.name or 'Unnamed'}, "
-                    f"Thread ID: {thread.ident}, "
-                    f"Daemon: {thread.daemon}, "
-                    f"Alive: {thread.is_alive()}")
             os._exit(0)  # Exit the program with a non-zero status
  
     def emergency_stop(self):
         if not self.Emergency_stop.is_set():
-            print("Emergency stop detected. Exiting function.")
             # brodcast it again
             emergency_msg= self.build_emergency_message()
             send_msg(emergency_msg)
             print("Retuen home")
-            threads = threading.enumerate()
-            print(f"emergency_stop Number of active threads: {len(threads)}")
-            for thread in threads:
-                print(f"Thread name: {thread.name or 'Unnamed'}, "
-                    f"Thread ID: {thread.ident}, "
-                    f"Daemon: {thread.daemon}, "
-                    f"Alive: {thread.is_alive()}")
             os.kill(os.getpid(), signal.SIGINT) # That will call interrupt which use vehicle object to return home
             #self.interrupt(vehicle)
-
-
-
-
-def get_current_time():
-    now = datetime.now()
-    hours = now.strftime("%H")
-    minutes = now.strftime("%M")
-    seconds = now.strftime("%S")
-    milliseconds = now.strftime("%f")[:3]  # First 3 digits of microseconds as milliseconds
-    microseconds = now.strftime("%f")  # Full microseconds
-    formatted_time = f"{hours}:{minutes}:{seconds}:{milliseconds}:{microseconds}"
-    return formatted_time
-
-
-
-def safe_release(lock):
-    while lock.locked():
-        try:
-            lock.release()
-            print("Lock released successfully.")
-            break
-        except RuntimeError:
-            print("Failed to release lock. Retrying...")
-            time.sleep(0.1)  # Wait a short period before trying again

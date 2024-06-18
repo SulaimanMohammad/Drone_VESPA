@@ -139,21 +139,18 @@ def form_border_one_direction(self,header,msg):
 
 def send_msg_border_until_confirmation(self,header):
     while (not self.Forming_Border_Broadcast_REC.is_set()) and (not self.expansion_stop.is_set()) and (not self.Emergency_stop.is_set()):
-        # try: 
+        try: 
             # Copy messages_to_be_sent and iterate in it trying to send all the msg 
             # self.sending_messgae_list will change when a message is received the candidate will be pulled out 
             candidates_to_process = []
             with self.candidate_to_send_lock:
-                print( get_current_time(), ": In self.candidate_to_send_lock" )
                 if  self.candidate_to_send :
                     candidates_to_process = list(self.candidate_to_send)
             
             if not self.Forming_Border_Broadcast_REC.is_set(): # dont reset at the end of phase since it listeners will be bloked
-                # print(" deman info")
-                #self.demand_neighbors_info()
-                print( get_current_time(), ": Call from send_msg candidate_eligibility" )
+                self.demand_neighbors_info()
                 check_border_candidate_eligibility(self)
-                #self.current_target_ids= choose_spot_right_handed(self)
+                self.current_target_ids= choose_spot_right_handed(self)
         
             if self.border_candidate == True:
                 for candidate in candidates_to_process: 
@@ -167,11 +164,9 @@ def send_msg_border_until_confirmation(self,header):
                         time.sleep(exchange_data_latency)# time untile the message arrives 
             
             time.sleep(exchange_data_latency)
-            print( get_current_time(), ": Finish send_msg border iter")
-        # except:
-        #     print("Thread send_msg_border_until_confirmation Interrupt received, stopping...")
-        #     self.emergency_stop()  
-    print(" Exist send_msg borrder ", get_current_time() )
+        except:
+            print("Thread send_msg_border_until_confirmation Interrupt received, stopping...")
+            self.emergency_stop()  
 
 def verify_border(self,header, msg):
     if not self.border_verified.is_set():
@@ -298,7 +293,6 @@ def Forme_border(self):
         time.sleep(sync_time)        
         self.demand_neighbors_info() # return after gathering all info
     
-    print( get_current_time(), ": Start Forme_border" )
     self.Forming_Border_Broadcast_REC.clear()
     wait_message_rec = threading.Thread(target=send_msg_border_until_confirmation, args=(self,Forming_border_header)) #pass the function reference and arguments separately to the Thread constructor.
     wait_message_rec.start()
@@ -307,10 +301,8 @@ def Forme_border(self):
     start_forming_bordertime=time.time()
     #Continue checking in case of not forming border the process will start again 
     while (not self.Forming_Border_Broadcast_REC.is_set()) and (number_of_try<=3) and (not self.expansion_stop.is_set()) and (not self.Emergency_stop.is_set()):
-        print( get_current_time(), ": demand_neighbors_info" )
 
         self.demand_neighbors_info()
-        print( get_current_time(), ": Form border check_border_candidate_eligibility" )
         check_border_candidate_eligibility(self)
         if self.border_candidate :
             self.current_target_ids= choose_spot_right_handed(self) # chose spot only when it is candidate 
@@ -324,21 +316,17 @@ def Forme_border(self):
         # Note in case the border is not formed with absance of new messages, when the timer is up the while loop will re-executed 
         reset_timer_forme_border(self,Forming_border_header)
         
-        while (not self.Emergency_stop.is_set()) :
+        while (not self.Emergency_stop.is_set()) and ( time.time()-start_forming_bordertime < 200 ) :
             with self.lock_boder_timer:
                 self.remaining_time_forme_border -= 0.1
                 if self.remaining_time_forme_border <= 0:
                         break
             time.sleep(0.1)
         
-        print( get_current_time(), ": Finish timer of forming border") 
-
-        if self.border_formed == False: 
+        if self.border_formed == False or (time.time()-start_forming_bordertime < 200) : 
             number_of_try=number_of_try+1
-
-        # if (time.time()-start_forming_bordertime < 20):
-        #     print("finish gebera timer ")
-        #     break
+        else:
+            number_of_try=4
 
     if self.border_formed == True:
         self.Forming_Border_Broadcast_REC.wait()
@@ -350,8 +338,6 @@ def Forme_border(self):
     else:
         self.Forming_Border_Broadcast_REC.set()
         wait_message_rec.join() # wait wait_message_rec thread to finish and detect the Forming_Border_Broadcast_REC flag
-
-    print( get_current_time(), ": End of Forming border ") 
 
     reset_border_variables(self)
 

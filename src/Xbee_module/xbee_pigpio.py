@@ -72,7 +72,7 @@ def send_msg(msg):
 
             pi.wave_send_once(wave_id)  # Send the waveform
             while pi.wave_tx_busy():  # Wait until the waveform is sent
-                time.sleep(0.1)
+                time.sleep(0.05)
         except:
             raise Exception("Thread send_msg Interrupt received, stopping...")
 
@@ -116,7 +116,7 @@ def retrieve_msg_from_buffer(stop_flag):
                 return complete_message
 
             # Short sleep to prevent high CPU usage
-            time.sleep(0.5)
+            time.sleep(0.1)
         
         except:
             raise Exception("Thread retrieve_msg_from_buffer Interrupt received, stopping...")
@@ -126,7 +126,6 @@ def retrieve_msg_from_buffer(stop_flag):
 def close_xbee_port():
     pi.bb_serial_read_close(rx_pin)  # Close the RX pin
     pi.wave_clear()  # Clear any waveforms
-    #pi.stop()  # Stop the pigpio daemon
     cleanup()
 
 
