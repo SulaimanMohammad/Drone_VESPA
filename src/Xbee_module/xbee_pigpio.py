@@ -127,10 +127,21 @@ def close_xbee_port():
     #pi.stop()  # Stop the pigpio daemon
     cleanup()
 
+
+buffer_lock = threading.Lock()
 def clear_buffer():
     global message_buffer
-    # Clear the global message buffer
-    message_buffer.clear()
+    with buffer_lock:
+        message_buffer.clear()
+        
+        # Clear the pigpio serial read buffer
+        try:
+            while True:
+                (count, data) = pi.bb_serial_read(rx_pin)
+                if count == 0:
+                    break  # Exit the loop if there's no more data to read
+        except pigpio.error as e:
+            print(f"Error while clearing pigpio buffer: {e}")
 
 def cleanup():
     global pi
