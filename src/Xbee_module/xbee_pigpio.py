@@ -25,7 +25,9 @@ def connect_xbee(TX, RX, baud_rate_set):
         pi.bb_serial_read_open(rx_pin, baud_rate, 8)  # Try to open RX pin with a baud rate
     except pigpio.error as e:
         print(f"Error opening RX pin initially: {e}")
-        try:
+        try: 
+            print("clear the buffer first")
+            clear_buffer() # clear the buffer befor 
             pi.bb_serial_read_close(rx_pin)  # Close any existing serial read on the pin
             pi.bb_serial_read_open(rx_pin, baud_rate, 8)  # Try opening again
         except pigpio.error as e:
