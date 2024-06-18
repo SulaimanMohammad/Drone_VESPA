@@ -281,7 +281,7 @@ def reset_border_variables(self):
 
 def Forme_border(self):
 
-    while (self.get_current_spot()['drones_in']>1) or (not(all(neighbor['drones_in'] in [0, 1] for neighbor in self.get_neighbor_list()))) or not self.all_neighbor_spots_owned() and (not self.Emergency_stop.is_set()):
+    while (self.get_current_spot()['drones_in']>1) or (not(all(neighbor['drones_in'] in [0, 1] for neighbor in self.get_neighbor_list()))) or (not self.all_neighbor_spots_owned()) and (not self.Emergency_stop.is_set()):
         ''' 
         Before initiating the border procedure, it's important to wait for some time to ensures that the drone is alone in its spot.
         Also wait until all neighbor contains one drone (owner) or empty, in case many are in neighbor spot that would cause change in distrbution becaue 
@@ -305,7 +305,7 @@ def Forme_border(self):
     number_of_try=0
     start_forming_bordertime=time.time()
     #Continue checking in case of not forming border the process will start again 
-    while (not self.Forming_Border_Broadcast_REC.is_set()) and number_of_try<=3 and (not self.expansion_stop.is_set()) and (not self.Emergency_stop.is_set()):
+    while (not self.Forming_Border_Broadcast_REC.is_set()) and (number_of_try<=3) and (not self.expansion_stop.is_set()) and (not self.Emergency_stop.is_set()):
         print("         Demand info from maiN")
         self.demand_neighbors_info()
         check_border_candidate_eligibility(self)
@@ -323,10 +323,10 @@ def Forme_border(self):
 
         while (not self.Emergency_stop.is_set()) :
             with self.lock_boder_timer:
-                self.remaining_time_forme_border -= 0.5
+                self.remaining_time_forme_border -= 0.1
                 if self.remaining_time_forme_border <= 0:
                         break
-            time.sleep(0.5)
+            time.sleep(0.1)
         
         if self.border_formed == False: 
             number_of_try=number_of_try+1
