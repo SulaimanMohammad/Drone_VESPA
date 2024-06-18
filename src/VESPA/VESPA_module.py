@@ -271,28 +271,28 @@ class Drone:
         # This function will be called by many threads and since it contains reset of data, and need to finish receiving data so list updated
         # So the function should not be called until it is completly finished or the list will be wrong if 2 threads called it at the same time  
         print(" demand_neighbors_info" ,self.exchange_data_lock)
-        time.sleep(0.5)# time to chekc if the flag is set or not 
+        time.sleep(0.1)# time to chekc if the flag is set or not 
         if self.list_finished_update.is_set(): # another thread doing the update 
             with self.exchange_data_lock:
-                print("  get inside demand_neighbors_info")
+                # print("  get inside demand_neighbors_info")
                 self.list_finished_update.clear()
                 copy_neighbor_list= copy.deepcopy(self.neighbor_list) # use deepcopy or it will be reference not copy 
-                print(" finished deep copy")
+                # print(" finished deep copy")
                 recollect_data=0
                 self.rest_neighbor_list()
                 reseted_neighbor_list= copy.deepcopy(self.neighbor_list) 
-                print(" finished reset list ")
+                # print(" finished reset list ")
                 
                 while (self.compare_with_neighbor_list(reseted_neighbor_list,'drones_in')) and (recollect_data<2) and (not self.Emergency_stop.is_set()): 
                     demand_msg= self.build_data_demand_message()
                     send_msg(demand_msg)
-                    print("not self.Emergency_stop.is_set()", not self.Emergency_stop.is_set() )
+                    # print("not self.Emergency_stop.is_set()", not self.Emergency_stop.is_set() )
                     self.initialize_timer_resposnse()
                     recollect_data= recollect_data +1
                     time.sleep(exchange_data_latency)
-                    print(" still readig in demand")
+                    # print(" still readig in demand")
 
-                print(" finished collecting data ")
+                # print(" finished collecting data ")
                 if self.resposnse_rec_counter==0: # No response recieved so it is blocked thread restor the old list 
                     with self.lock_neighbor_list:
                         self.neighbor_list=  copy.deepcopy(copy_neighbor_list) 
