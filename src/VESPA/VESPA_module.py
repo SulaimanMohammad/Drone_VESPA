@@ -273,6 +273,10 @@ class Drone:
     def demand_neighbors_info(self):
         # This function will be called by many threads and since it contains reset of data, and need to finish receiving data so list updated
         # So the function should not be called until it is completly finished or the list will be wrong if 2 threads called it at the same time  
+            # Save the original SIGINT handler
+        original_handler = signal.getsignal(signal.SIGINT)
+        # Temporarily ignore SIGINT
+        signal.signal(signal.SIGINT, signal.SIG_IGN)
         try:
             time.sleep(0.1)# time to chekc if the flag is set or not 
             if self.list_finished_update.is_set(): # another thread doing the update 
@@ -311,7 +315,7 @@ class Drone:
             print(get_current_time(), " Leave demand " )
         finally: 
             print("skipped the interrupt")
-
+            signal.signal(signal.SIGINT, original_handler)
 
             
 
