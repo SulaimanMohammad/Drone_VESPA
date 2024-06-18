@@ -13,6 +13,7 @@ sys.path.append(parent_directory)
 from drone.drone_ardupilot import *
 from .headers_variables import * 
 import signal
+from datetime import datetime
 
 
 '''
@@ -957,6 +958,16 @@ class Drone:
                     f"Alive: {thread.is_alive()}")
             os.kill(os.getpid(), signal.SIGINT) # That will call interrupt which use vehicle object to return home
             #self.interrupt(vehicle)
+
+
+
+
+def get_current_time():
+    now = datetime.now()
+    formatted_time = now.strftime("%H:%M:%S:%f")[:-3]  # Exclude the last 3 digits of microseconds to get milliseconds
+    return formatted_time
+
+
 
 def safe_release(lock):
     while lock.locked():

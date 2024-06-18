@@ -369,7 +369,7 @@ def expand_and_form_border(self,vehicle):
     self.demand_neighbors_info()       
     
     print(self.get_neighbor_list())
-
+    print( get_current_time(), ": Start forming border ") 
     Forme_border(self)
     clear_buffer()
     self.demand_neighbors_info() # needed to update what neigbor become border 
