@@ -298,7 +298,7 @@ def Forme_border(self):
         '''
         time.sleep(sync_time)
         self.demand_neighbors_info() # return after gathering all info
-    
+    self.Forming_Border_Broadcast_REC.clear()
     wait_message_rec = threading.Thread(target=send_msg_border_until_confirmation, args=(self,Forming_border_header)) #pass the function reference and arguments separately to the Thread constructor.
     wait_message_rec.start()
     
@@ -342,7 +342,11 @@ def Forme_border(self):
 
         self.demand_neighbors_info() # Update neighbor_list to see the changes in the drones states ( like owner became border)
         self.neighbor_list_upon_border_formation=copy.deepcopy( self.get_neighbor_list()) # Save the Topology arround so it can be used to verfiy the border
-        
+    else:
+        self.Forming_Border_Broadcast_REC.set()
+        wait_message_rec.join() # wait wait_message_rec thread to finish and detect the Forming_Border_Broadcast_REC flag
+
+
     reset_border_variables(self)
 
 
