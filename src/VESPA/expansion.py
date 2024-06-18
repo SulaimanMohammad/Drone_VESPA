@@ -202,14 +202,17 @@ def initial_movement(self,vehicle,id, spot, lon, lat):
         
         if lon!=0 and lat!=0:
             if check_gps_fix(vehicle) and use_GPS:
+                print( get_current_time(), ": move_using_coord ") 
                 self.move_using_coord(vehicle, lon, lat)
             elif (not check_gps_fix(vehicle))  and (not use_GPS):
               search_for_sink_tag(vehicle)
+              print( get_current_time(), ": search_for_sink_tag ") 
               self.move_to_spot(vehicle, spot)              
             else: # GPS fixed not fixed with use gps set true 
                 self.emergency_stop()
         else:
             if not use_GPS:
+                print( get_current_time(), ": search_for_sink_tag  not use_GPS ") 
                 #use image to fly on the top of sink
                 search_for_sink_tag(vehicle)
                 self.move_to_spot(vehicle, spot)
@@ -331,7 +334,7 @@ def reset_allowed_spots(self):
 '''
 
 def expand_and_form_border(self,vehicle):
-    
+    print( get_current_time(), ": expand_and_form_border") 
     self.elected_droen_arrived= threading.Event()
     if self.id==1:
         self.update_location(0)
@@ -410,6 +413,7 @@ def first_exapnsion (self, vehicle):
         # Each drone that is not sink send its id at the beginning and wait the message of movement and then wait for all first movements to finish.
         msg=build_identification_message(self)
         send_msg(msg)
+        print( get_current_time(), ": start_expanding.wait()") 
         self.start_expanding.wait()
         self.start_expanding.clear()
     expand_and_form_border(self, vehicle)

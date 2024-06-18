@@ -350,6 +350,7 @@ def Forme_border(self):
         self.Forming_Border_Broadcast_REC.set()
         wait_message_rec.join() # wait wait_message_rec thread to finish and detect the Forming_Border_Broadcast_REC flag
 
+    print( get_current_time(), ": End of Forming border ") 
 
     reset_border_variables(self)
 
