@@ -344,7 +344,8 @@ def expand_and_form_border(self,vehicle):
         self.elected_id= neighbors_election(self)
         
         if self.elected_id== self.id: # current drone is elected one to move
-            if self.destination_spot != 0: # Movement to another spot not staying 
+            if self.destination_spot != 0: # Movement to another spot not staying
+                print(self.get_neighbor_list()) 
                 print ("go to S", self.destination_spot)
                 self.move_to_spot(vehicle, self.destination_spot)
                 # After move_to_spot retuen it means arrivale 
