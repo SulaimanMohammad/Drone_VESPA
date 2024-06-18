@@ -35,7 +35,7 @@ def connect_xbee(TX,RX,baud_rate_set):
 
     pi.set_mode(tx_pin, pigpio.OUTPUT)
     pi.wave_clear() # Clear any existing waveforms before sending the first message
-    time.sleep(0.5)
+    time.sleep(0.5) # wait until all set 
     send_msg('test'.encode() ) # Warm up message 
 
 def send_msg(msg):
@@ -61,7 +61,7 @@ def send_msg(msg):
                         break  # Waveform created successfully, exit the loop
                 except pigpio.error as e:
                     print(f"Attempt {attempt + 1} failed with error: {e}", " message was",msg )
-                    time.sleep(0.1)  # Wait for 0.05 seconds before the next attempt
+                    time.sleep(0.05)  # Wait for 0.05 seconds before the next attempt
 
             # Check if the waveform was created successfully after all attempts
             if wave_id is None or wave_id < 0:
@@ -70,13 +70,18 @@ def send_msg(msg):
 
             pi.wave_send_once(wave_id)  # Send the waveform
             while pi.wave_tx_busy():  # Wait until the waveform is sent
-                time.sleep(0.1)
+                time.sleep(0.05)
         except:
             raise Exception("Thread send_msg Interrupt received, stopping...")
 
 message_buffer = bytearray()
 def retrieve_msg_from_buffer(stop_flag):
-    global message_buffer 
+    '''
+    This function will continue reading and will break only when data is available in the way the listener will process the message upon arrival 
+    For that, the outer loop will continue until the listener stops which is controlled by the flag and 
+    break when data is available and the next iteration of 
+    the listener will recall this loop again to trigger the listener only when data is available 
+    '''
     while not stop_flag.is_set(): # Keep checking for a complete message or condition related to the phase is not set
         try: 
             # Read available data

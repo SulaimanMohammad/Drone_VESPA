@@ -98,7 +98,13 @@ def expansion_listener (self,vehicle):
 
     while check_continuity_of_listening(self):
         try:
-
+            '''
+            Data-Driven retrieve_msg_from_buffer will continue reading and will break only wwhen data is available 
+            in this way the listener will process the message upon arrival 
+            For that, the outer loop will continue until the listener stops which is controlled by the flag and 
+            break when data is available and the next iteration of 
+            the listener will recall this loop again to trigger the listener only when data is available 
+            '''
             msg= retrieve_msg_from_buffer(self.expansion_stop)
 
             if msg.startswith(Emergecy_header.encode()) and msg.endswith(b'\n'):
