@@ -24,6 +24,6 @@ cp /home/$PI_DRONE_DIR/Drone_VESPA/configuration/update_repo.sh /home/$PI_DRONE_
 cd  /home/$PI_DRONE_DIR/
 
 # Navigate to the directory
-cd "$CLONE_PATH" || exit # prevent the script from continuing if it can't enter the desired directory
+cd "$CLONE_PATH"/configuration || exit # prevent the script from continuing if it can't enter the desired directory
 
-./configuration/setup_drone_info.sh 
+./setup_drone_info.sh 

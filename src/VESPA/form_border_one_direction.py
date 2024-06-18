@@ -217,7 +217,6 @@ def check_border_candidate_eligibility(self):
     
     self.border_candidate=False
     unoccupied_spots_counter = 0
-    print(get_current_time(),": check_border_candidate_eligibility" ,  self.lock_neighbor_list)
     for neighbor in self.get_neighbor_list():
         # This is in the further expansion is needed , where the candidate is decides based on the allowed_spots
         if self.get_previous_state()==Border or self.get_previous_state()==Irremovable_boarder:
