@@ -95,10 +95,10 @@ def check_continuity_of_listening(self):
         return False
 
 def expansion_listener (self,vehicle):
+    print( get_current_time(), ": Start expansion_listener" )
 
     while check_continuity_of_listening(self):
         #try:
-
             msg= retrieve_msg_from_buffer(self.expansion_stop)
 
             self.exchange_neighbors_info_communication(msg)
@@ -133,6 +133,8 @@ def expansion_listener (self,vehicle):
         # except:
         #     print("Thread expansion_listener Interrupt received, stopping...")
         #     self.emergency_stop()   
+    print( get_current_time(), ": End expansion_listener" )
+
                      
 '''
 -------------------------------------------------------------------------------------
@@ -196,8 +198,8 @@ def sink_movement_command(self,vehicle,drones_id):
                 msg= build_movement_command_message(id,spot, 0, 0)
 
 def initial_movement(self,vehicle,id, spot, lon, lat):
-    if id !=0 and id==self.id: # drone is not sink and it is targeted
-        self.update_location(spot) # update the destination even before arriving ( all drones in sky will know the next drone heading in advance)
+    if id !=1 and id==self.id: # drone is not sink and it is targeted ( !=1 because now the sink is 1)
+        self.update_location(spot) # update the destination even before arriving ( all1 drones in sky will know the next drone heading in advance)
         self.take_off_drone(vehicle)
         
         if lon!=0 and lat!=0:
@@ -405,6 +407,7 @@ def first_exapnsion (self, vehicle):
     if self.id==1: # Sink:
         initialize_collect_drones_info_timer(self) # Sink waiting for the drones to make themselves known befor start
         self.take_off_drone(vehicle)
+        print(self.collected_ids )
         sink_movement_command(self,vehicle,self.collected_ids)
         # The end send message referes that all in position
         msg= build_movement_command_message(-1,-1, 0, 0)
