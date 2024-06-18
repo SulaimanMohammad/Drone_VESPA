@@ -19,7 +19,20 @@ def connect_xbee(TX,RX,baud_rate_set):
         raise Exception("Could not connect to pigpio daemon")
     # Set up the TX and RX pins for bit bang reading
     pi.set_mode(rx_pin, pigpio.INPUT)
-    pi.bb_serial_read_open(rx_pin, baud_rate, 8)  # Open RX pin with a baud rate
+    try:
+        pi.bb_serial_read_open(rx_pin, baud_rate, 8)  # Try to open RX pin with a baud rate
+    except pigpio.error as e:
+        print(f"Error opening RX pin initially: {e}")
+        try: 
+            print("clear the buffer first")
+            clear_buffer() # clear the buffer befor 
+            pi.bb_serial_read_close(rx_pin)  # Close any existing serial read on the pin
+            pi.bb_serial_read_open(rx_pin, baud_rate, 8)  # Open RX pin with a baud rate, 8: the number of data bits per character
+        except pigpio.error as e:
+            print(f"Error reopening RX pin: {e}")
+            cleanup()
+            sys.exit(1)  # Exit the program with a non-zero status
+
     pi.set_mode(tx_pin, pigpio.OUTPUT)
     pi.wave_clear() # Clear any existing waveforms before sending the first message
     time.sleep(0.5)
