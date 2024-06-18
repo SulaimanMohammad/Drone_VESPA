@@ -602,9 +602,13 @@ class Drone:
  
     def get_neighbor_list(self):
         #self.list_finished_update.wait()
-        with self.exchange_data_lock: # dont allow excahnge msg and rest the list 
-            with self.lock_neighbor_list:
-                return self.neighbor_list
+        # with self.exchange_data_lock: # dont allow excahnge msg and rest the list 
+        #     with self.lock_neighbor_list:
+        #         return self.neighbor_list
+        if not self.list_finished_update.is_set():
+            self.list_finished_update.wait()
+        with self.lock_neighbor_list:
+            return self.neighbor_list
     
     # To read state, thread-safe
     def get_state(self):
