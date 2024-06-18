@@ -151,7 +151,7 @@ def send_msg_border_until_confirmation(self,header):
                 # print(" deman info")
                 #self.demand_neighbors_info()
                 print(" befor eligibility")
-                #check_border_candidate_eligibility(self)
+                check_border_candidate_eligibility(self)
                 print(" after eligibility")
                 #self.current_target_ids= choose_spot_right_handed(self)
         

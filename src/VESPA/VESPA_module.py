@@ -177,6 +177,8 @@ class Drone:
             connect_xbee(xbee_serial_port, baud_rate)
         else:
             connect_xbee(Tx,Rx, baud_rate)
+        
+        clear_buffer() # to avoid any data in the buffer 
 
     '''
     -------------------------------------------------------------------------------------
