@@ -294,11 +294,12 @@ class Drone:
                 recollect_data= recollect_data +1
                 time.sleep(exchange_data_latency)
                 # print(" still readig in demand")
-                if(not self.Emergency_stop.is_set()):
+                if(self.Emergency_stop.is_set()):
                     print(get_current_time(), " Emergency detected then stop" )
 
             # print(" finished collecting data ")
             if self.resposnse_rec_counter==0: # No response recieved so it is blocked thread restor the old list 
+                print(get_current_time(), " Trying to acquire the lock" )
                 with self.lock_neighbor_list:
                     self.neighbor_list=  copy.deepcopy(copy_neighbor_list) 
 
