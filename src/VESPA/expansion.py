@@ -132,7 +132,6 @@ def expansion_listener (self,vehicle):
         # except:
         #     print("Thread expansion_listener Interrupt received, stopping...")
         #     self.emergency_stop()   
-    print( get_current_time(), ": End expansion_listener" )
 
                      
 '''
