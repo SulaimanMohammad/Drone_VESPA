@@ -125,11 +125,6 @@ def retrieve_msg_from_buffer(stop_flag):
 
     return bytearray(b'') # Return empty object so it can be recognized as not part of the headers array 
 
-def close_xbee_port():
-    pi.bb_serial_read_close(rx_pin)  # Close the RX pin
-    pi.wave_clear()  # Clear any waveforms
-    pi.stop()  # Stop the pigpio daemon
-
 buffer_lock = threading.Lock()
 def clear_buffer():
     global message_buffer
@@ -144,3 +139,17 @@ def clear_buffer():
                     break  # Exit the loop if there's no more data to read
         except pigpio.error as e:
             print(f"Error while clearing pigpio buffer: {e}")
+
+def close_xbee_port():
+    pi.bb_serial_read_close(rx_pin)  # Close the RX pin
+    pi.wave_clear()  # Clear any waveforms
+    cleanup()
+
+def cleanup():
+    global pi
+    global rx_pin
+    (count, data) = pi.bb_serial_read(rx_pin)
+    if count > 0 or data != b'': # Check if bit bang serial read is open
+        pi.bb_serial_read_close(rx_pin)
+    pi.stop()
+    time.sleep(3) # Time to close the port 
