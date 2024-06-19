@@ -192,7 +192,7 @@ class Drone:
 
     def initialize_timer_demand(self):
         self.reset_timer_demand()
-        while True:
+        while (not self.Emergency_stop.is_set()): # It should be while true but the Emergency should be taken into account 
             with self.lock_demanders_timer:
                 self.remaining_time_demand -= 0.1
                 if self.remaining_time_demand <= 0:
@@ -206,7 +206,7 @@ class Drone:
     def initialize_timer_resposnse(self):
         self.reset_timer_resposnse()
         self.resposnse_rec_counter=0
-        while True:
+        while (not self.Emergency_stop.is_set()):
             self.remaining_time_resposnse -= 0.1
             if self.remaining_time_resposnse <= 0:
                     break
