@@ -371,11 +371,10 @@ def expand_and_form_border(self,vehicle):
     send_msg(self.build_spot_info_message(Response_header))
     self.demand_neighbors_info()       
     
-    Forme_border(self)
+    Form_border(self)
     clear_buffer()
     self.demand_neighbors_info() # needed to update what neigbor become border 
-    time.sleep(5) # Stabilizing 
-    
+
     print("Verify the border formation")
     if self.border_formed != False:
         confirm_border_connectivity(self)
@@ -386,9 +385,9 @@ def expand_and_form_border(self,vehicle):
             except:
                 print("An error occurred while go_to_ref_altitude")
                 self.emergency_stop()    
+        # If the border is not formed you can add reformation border again 
+        # re_form_border(self)
     else:
-        emergency_msg= self.build_emergency_message()
-        send_msg(emergency_msg)
         print("Return home border is not formed")
         self.emergency_stop()
            

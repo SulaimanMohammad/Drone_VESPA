@@ -274,7 +274,7 @@ def reset_border_variables(self):
 
 
 
-def Forme_border(self):
+def Form_border(self):
 
     while (self.get_current_spot()['drones_in']>1) or (not(all(neighbor['drones_in'] in [0, 1] for neighbor in self.get_neighbor_list()))) or (not self.all_neighbor_spots_owned()) and (not self.Emergency_stop.is_set()):
         ''' 
@@ -320,10 +320,10 @@ def Forme_border(self):
         # Timer ill be reseted upon each message recived marking that the process still on 
         while (not self.Emergency_stop.is_set()) and (time.time()-start_forming_bordertime < 200 ): # continue loop if it is still in period of 200 second of border formation 
             with self.lock_boder_timer:
-                self.remaining_time_forme_border -= 0.5
+                self.remaining_time_forme_border -= 0.1
                 if self.remaining_time_forme_border <= 0:
                         break
-            time.sleep(0.5)
+            time.sleep(0.1)
         
         if (self.border_formed == False) and (time.time()-start_forming_bordertime < 200) : 
             number_of_try=number_of_try+1
@@ -338,7 +338,7 @@ def Forme_border(self):
 
         self.demand_neighbors_info() # Update neighbor_list to see the changes in the drones states ( like owner became border)
         self.neighbor_list_upon_border_formation=copy.deepcopy( self.get_neighbor_list()) # Save the Topology arround so it can be used to verfiy the border
-        
+
     reset_border_variables(self)
 
 
@@ -353,10 +353,10 @@ def confirm_border_connectivity(self):
         reset_timer_forme_border(self, Verify_border_header)
         while (not self.Emergency_stop.is_set()) and (time.time()-start_forming_bordertime < 100 ):
             with self.lock_boder_timer:
-                self.remaining_time_forme_border -= 0.5
+                self.remaining_time_forme_border -= 0.1
                 if self.remaining_time_forme_border <= 0:
                         break
-            time.sleep(0.5)
+            time.sleep(0.1)
 
     if self.border_verified.is_set():
         print("Border confirmed")
@@ -372,4 +372,7 @@ def re_form_border(self):
             self.change_state_to(Owner)
         if self.get_state() == Irremovable_boarder:
             self.change_state_to(Irremovable)
-        Forme_border(self)
+        Form_border(self)
+        if self.border_formed == False:
+            print("Return home border is not re-formed")
+            self.emergency_stop()
