@@ -875,24 +875,25 @@ class Drone:
         
 
     def interrupt(self, vehicle):
-            if vehicle is not None:
-                emergency_msg= self.build_emergency_message()
-                send_msg(emergency_msg)
-                print("retuen home")
-                self.Emergency_stop.set()
-                self.expansion_stop.set()
-                vehicle.remove_attribute_listener('velocity', on_velocity)
-                self.return_home(vehicle)
-                time.sleep(10)
-                vehicle.close()
-                raise SystemExit()
+        if (not self.Emergency_stop.is_set()):
+            self.Emergency_stop.set()
+            self.expansion_stop.set()
+            emergency_msg= self.build_emergency_message()
+            send_msg(emergency_msg)
+            print("retuen home")
+            vehicle.remove_attribute_listener('velocity', on_velocity)
+            self.return_home(vehicle)
+            time.sleep(exchange_data_latency)
+            vehicle.close()
+            close_xbee_port()
+            os._exit(0)  # Exit the program with a non-zero status
+ 
             
     def emergency_stop(self):
         print("Emergency stop detected. Exiting function.")
-        # brodcast it again
-        emergency_msg= self.build_emergency_message()
-        send_msg(emergency_msg)
-        print("Retuen home")
-        self.Emergency_stop.set()
-        self.expansion_stop.set()
-        os.kill(os.getpid(), signal.SIGINT) # That will call interrupt which use vehicle object to return home
+        if (not self.Emergency_stop.is_set()):
+            # brodcast it again
+            emergency_msg= self.build_emergency_message()
+            send_msg(emergency_msg)
+            print("Retuen home")
+            os.kill(os.getpid(), signal.SIGINT) # That will call interrupt which use vehicle object to return home
