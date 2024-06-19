@@ -138,7 +138,7 @@ def form_border_one_direction(self,header,msg):
 
 
 def send_msg_border_until_confirmation(self,header):
-    while (not self.Forming_Border_Broadcast_REC.is_set()) and (not self.expansion_stop.is_set()) and (not self.Emergency_stop.is_set()):
+    while (not self.Forming_Border_Broadcast_REC.is_set()) and ( not self.Forming_border_failed.is_set()) and(not self.expansion_stop.is_set()) and (not self.Emergency_stop.is_set()):
         try: 
             # Copy messages_to_be_sent and iterate in it trying to send all the msg 
             # self.sending_messgae_list will change when a message is received the candidate will be pulled out 
@@ -338,7 +338,12 @@ def Form_border(self):
 
         self.demand_neighbors_info() # Update neighbor_list to see the changes in the drones states ( like owner became border)
         self.neighbor_list_upon_border_formation=copy.deepcopy( self.get_neighbor_list()) # Save the Topology arround so it can be used to verfiy the border
-
+    else:
+        # In case of 3 tries and the border is not formed then stop the process especially the thread of send_msg_border_until_confirmation
+        self.Forming_border_failed.set()
+        wait_message_rec.join()
+        self.Forming_border_failed.clear()
+        
     reset_border_variables(self)
 
 
