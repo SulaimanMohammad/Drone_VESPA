@@ -788,18 +788,25 @@ class Drone:
             #TODO in drone_ardupilot.py in drone repo # arm_and_takeoff_no_GPS(vehicle,self.drone_alt)
             pass
 
-    def move_using_coord(self, vehicle, lon, lat):
+    def simple_goto_thread(self, vehicle, lon, lat):
+            set_to_move(vehicle)
             try: 
                 point1 = LocationGlobalRelative(lat,lon ,self.drone_alt)
-                vehicle.simple_goto( point1, groundspeed=defined_groundspeed)
+                vehicle.simple_goto( point1, groundspeed=defined_groundspeed) # Non-blocking movement need sleep to wait it to be done 
+                time.sleep((a/defined_groundspeed)+10) # Wait the movement to be done
             except:
                 print("An error occurred while move with simple_goto")
-                self.emergency_stop()
-            # simple_goto will retuen after the command is sent, thus you need to sleep to give the drone time to move
-            # Can't use sleep to wate arriving because this function in listenerand will block the listener and the new drone will not respond and also that is safe since no other movement will be done until all drone are in spot  
-            vehicle.mode    = VehicleMode("LOITER") #loiter mode and hover in your place
-            time.sleep(1)
-            vehicle.mode     = VehicleMode("GUIDED")
+                self.emergency_stop() 
+            hover(vehicle) # Ensure that the drone stay in place 
+
+    def move_using_coord(self, vehicle, lon, lat):
+            '''
+            simple_goto is non blocking movement so it will retuen after the command is sent, thus you need to sleep to give the drone time to move
+            and Can't use sleep to wait arriving because this function called in listener which block the listener.
+            Lunching a thread to move will help to move and wait the arrivale without blocking the listener
+            '''
+            move_thread = threading.Thread(target= self.simple_goto_thread, args=(vehicle, lon, lat))
+            move_thread.start()
 
     def convert_spot_angle_distance(self, dir):
         return DIR_VECTORS[dir][0], DIR_VECTORS[dir][1]
