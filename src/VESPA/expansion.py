@@ -25,8 +25,8 @@ def decode_identification_message(encoded_message):
     id_start_index = header_size + 1
     id_end_index = id_start_index + max_byte_count
     id_bytes = encoded_message[id_start_index:id_end_index]
-    id = int.from_bytes(id_bytes, 'big')
-    return id
+    ids = int.from_bytes(id_bytes, 'big')
+    return ids
 
 def build_movement_command_message(id, spot, float1, float2):
     # Movement messages are encoded using string beause they are done only once, efficiency accepted
@@ -44,11 +44,11 @@ def decode_movement_command_message(message):
     content = message[1:-1]
     # Split by the comma to get floats
     parts = content.split(b',')
-    id = int(parts[0])
+    ids = int(parts[0])
     s = int(parts[1])
     float1 = float(parts[2])
     float2 = float(parts[3])
-    return id, s, float1, float2
+    return ids, s, float1, float2
 
 def build_calibration_message(indicator, xbee_range):
     # Encode numbers
@@ -119,8 +119,8 @@ def expansion_listener (self,vehicle):
                     update_initial_drones_around(self,msg)
 
             elif msg.startswith(Movement_command.encode()) and msg.endswith(b'\n'):
-                id, spot, lon, lat= decode_movement_command_message(msg)
-                if id==-1 and spot==-1 and lon==0 and lat==0: # mean all drone are in sky
+                ids, spot, lon, lat= decode_movement_command_message(msg)
+                if ids==-1 and spot==-1 and lon==0 and lat==0: # mean all drone are in sky
                     self.start_expanding.set()
                 else:
                     initial_movement(self, vehicle,id, spot, lon, lat)
@@ -202,8 +202,8 @@ def sink_movement_command(self,vehicle,drones_id):
                 # It is command to drone to start,( 0,0) is null island where it is imposible to start from
                 msg= build_movement_command_message(id,spot, 0, 0)
 
-def initial_movement(self,vehicle,id, spot, lon, lat):
-    if id !=0 and id==self.id: # drone is not sink and it is targeted
+def initial_movement(self,vehicle,ID, spot, lon, lat):
+    if ID!=1 and ID==self.id: # drone is not sink it is targeted (skink=1 )
         self.update_location(spot) # update the destination even before arriving ( all drones in sky will know the next drone heading in advance)
         self.take_off_drone(vehicle)
         
@@ -420,6 +420,7 @@ def first_exapnsion (self, vehicle):
         send_msg(msg)
         self.start_expanding.wait()
         self.start_expanding.clear()
+    
     expand_and_form_border(self, vehicle)
     
     self.expansion_stop.set()

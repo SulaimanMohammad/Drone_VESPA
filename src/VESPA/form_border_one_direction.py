@@ -11,12 +11,11 @@ This module is used to send messages by sending message only to one drone by sea
 ---------------------------------- Communication ------------------------------------
 -------------------------------------------------------------------------------------
 '''
-def build_border_message(self,header,target_ids, candidate):
+def build_border_message(self,header,target_ids, candidate_id):
     # Determine max byte count for numbers
     max_byte_count = max(
                         [determine_max_byte_size(num) for num in target_ids ]+
-                        [determine_max_byte_size(candidate)]+
-                        [determine_max_byte_size(id)]
+                        [determine_max_byte_size(candidate_id)]
                         )
     # Start message with 'F', followed by max byte count and then the length of the propagation_indicator
     message = header.encode() + struct.pack('>BB', max_byte_count, len(target_ids))
@@ -27,7 +26,7 @@ def build_border_message(self,header,target_ids, candidate):
     # Append the sender using the determined byte count
     message += self.id.to_bytes(max_byte_count, 'big')
     # Append the candidate using the determined byte count
-    message += candidate.to_bytes(max_byte_count, 'big')
+    message += candidate_id.to_bytes(max_byte_count, 'big')
     message += b'\n'
     return message
 
