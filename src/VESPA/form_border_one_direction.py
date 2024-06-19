@@ -138,7 +138,7 @@ def form_border_one_direction(self,header,msg):
 
 
 def send_msg_border_until_confirmation(self,header):
-    while not self.Forming_Border_Broadcast_REC.is_set() and (not self.expansion_stop.is_set()) and (not self.Emergency_stop.is_set()):
+    while (not self.Forming_Border_Broadcast_REC.is_set()) and (not self.expansion_stop.is_set()) and (not self.Emergency_stop.is_set()):
         try: 
             # Copy messages_to_be_sent and iterate in it trying to send all the msg 
             # self.sending_messgae_list will change when a message is received the candidate will be pulled out 
@@ -201,9 +201,9 @@ def verify_border(self,header, msg):
 def reset_timer_forme_border(self, header):
     with self.lock_boder_timer:
         if header== Forming_border_header:
-            self.remaining_time_forme_border=60 # Contains waiting and confim the msg arrival 
+            self.remaining_time_forme_border=exchange_data_latency*50 # Contains waiting and confirm the msg arrival 
         else:
-            self.remaining_time_forme_border=30   # This used in case of verfiy the border the messages flow fast
+            self.remaining_time_forme_border=exchange_data_latency*20   # This used in case of verfiy the border the messages flow fast
 
 # called by other threads 
 def finish_timer_forme_border(self):
@@ -294,10 +294,13 @@ def Forme_border(self):
         time.sleep(sync_time)
         self.demand_neighbors_info() # return after gathering all info
     
+    self.Forming_Border_Broadcast_REC.clear()
     wait_message_rec = threading.Thread(target=send_msg_border_until_confirmation, args=(self,Forming_border_header)) #pass the function reference and arguments separately to the Thread constructor.
     wait_message_rec.start()
     
     number_of_try=0
+    #start_forming_bordertime used to stop border formation in case of endless messages (infinit formation) and which will lead to call emergency due to not forming border 
+    start_forming_bordertime=time.time() 
     #Continue checking in case of not forming border the process will start again 
     while (not self.Forming_Border_Broadcast_REC.is_set()) and (number_of_try<=3) and (not self.expansion_stop.is_set()) and (not self.Emergency_stop.is_set()):
         self.demand_neighbors_info()
@@ -314,15 +317,18 @@ def Forme_border(self):
         # Note in case the border is not formed with absance of new messages, when the timer is up the while loop will re-executed 
         reset_timer_forme_border(self,Forming_border_header)
 
-        while (not self.Emergency_stop.is_set()):
+        # Timer ill be reseted upon each message recived marking that the process still on 
+        while (not self.Emergency_stop.is_set()) and (time.time()-start_forming_bordertime < 200 ): # continue loop if it is still in period of 200 second of border formation 
             with self.lock_boder_timer:
                 self.remaining_time_forme_border -= 0.5
                 if self.remaining_time_forme_border <= 0:
                         break
             time.sleep(0.5)
         
-        if self.border_formed== False: 
+        if (self.border_formed == False) and (time.time()-start_forming_bordertime < 200) : 
             number_of_try=number_of_try+1
+        else:
+            break # Border is formed stop 
 
 
     if self.border_formed == True:
@@ -337,6 +343,7 @@ def Forme_border(self):
 
 
 def confirm_border_connectivity(self):
+    start_forming_bordertime=time.time() 
     if self.get_state()== Border or self.get_state()==Irremovable_boarder: 
         self.current_target_ids= choose_spot_right_handed(self,self.neighbor_list_upon_border_formation) 
         if self.current_target_ids is not None:
@@ -344,7 +351,7 @@ def confirm_border_connectivity(self):
             send_msg(msg)
     
         reset_timer_forme_border(self, Verify_border_header)
-        while (not self.Emergency_stop.is_set()):
+        while (not self.Emergency_stop.is_set()) and (time.time()-start_forming_bordertime < 100 ):
             with self.lock_boder_timer:
                 self.remaining_time_forme_border -= 0.5
                 if self.remaining_time_forme_border <= 0:
