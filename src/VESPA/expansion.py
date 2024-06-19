@@ -223,9 +223,6 @@ def initial_movement(self,vehicle,ID, spot, lon, lat):
             else:
                 self.emergency_stop()
         
-        angle, distance = self.convert_spot_angle_distance(spot)
-        set_yaw_to_dir_PID( vehicle, angle) # set the angle in the same direction taken since simple goto can include rotation
-        
         if self.id==2 and Xbee_change_range: # only first drone does the range calibration if this option is activated in operational_Data
             msg= build_calibration_message(1,0)
             send_msg(msg)
@@ -374,11 +371,6 @@ def expand_and_form_border(self,vehicle):
     send_msg(self.build_spot_info_message(Response_header))
     self.demand_neighbors_info()       
     
-    # Drone is owner and alone goes to reference altitude 
-    if self.get_current_spot()["drones_in"]==1 and self.get_state()==Owner:
-        print (" Drone is Alone Go to ref ")
-        go_to_ref_altitude(vehicle,self.ref_alt)
-
     Forme_border(self)
     clear_buffer()
     self.demand_neighbors_info() # needed to update what neigbor become border 
