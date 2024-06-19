@@ -106,14 +106,14 @@ def expansion_listener (self,vehicle):
             the listener will recall this loop again to trigger the listener only when data is available 
             '''
             msg= retrieve_msg_from_buffer(self.expansion_stop)
-
+            
+            self.exchange_neighbors_info_communication(msg)
+            
             if msg.startswith(Emergecy_header.encode()) and msg.endswith(b'\n'):
                 self.emergency_stop()
                 break
 
-            self.exchange_neighbors_info_communication(msg)
-
-            if msg.startswith(Identification_header.encode()) and msg.endswith(b'\n'):
+            elif msg.startswith(Identification_header.encode()) and msg.endswith(b'\n'):
                 if self.id==1: # It is sink drone 
                     reset_collect_drones_info_timer(self)
                     update_initial_drones_around(self,msg)
@@ -125,7 +125,7 @@ def expansion_listener (self,vehicle):
                 else:
                     initial_movement(self, vehicle,id, spot, lon, lat)
 
-            elif msg.startswith(Calibration) and msg.endswith("\n"):
+            elif msg.startswith(Calibration.encode()) and msg.endswith("\n"):
                 calibration_ping_pong(self, vehicle, msg )
 
             elif msg.startswith(Expan_header.encode()) and msg.endswith(b'\n'):
