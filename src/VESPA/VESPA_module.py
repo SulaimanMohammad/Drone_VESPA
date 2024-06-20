@@ -159,7 +159,6 @@ class Drone:
         self.list_finished_update= threading.Event()
         self.list_finished_update.set()
         self.demander_lock=threading.Lock()
-        self.exchange_data_lock= threading.Lock() # demanding and reciving data should not be done by multiple threads
         self.lock_boder_timer =threading.Lock() 
 
         self.candidate_to_send=[] # list saves the candidate to send thier msg and confirm arriving 
@@ -266,17 +265,17 @@ class Drone:
                 return False
         return True    
     
-    def demand_neighbors_info(self):
+    def demand_neighbors_info(self): 
         # This function will be called by many threads and since it contains reset of data, and need to finish receiving data so list updated
         # So the function should not be called until it is completly finished or the list will be wrong if 2 threads called it at the same time  
-        with self.exchange_data_lock: 
+        if self.list_finished_update.is_set(): # No other thread asking for the update 
             self.list_finished_update.clear()
             copy_neighbor_list= copy.deepcopy(self.neighbor_list) # use deepcopy or it will be reference not copy 
             recollect_data=0
             self.rest_neighbor_list()
             reseted_neighbor_list= copy.deepcopy(self.neighbor_list) 
             
-            while self.compare_with_neighbor_list(reseted_neighbor_list,'drones_in') and recollect_data<2: 
+            while (self.compare_with_neighbor_list(reseted_neighbor_list,'drones_in')) and (recollect_data<2) and (not self.Emergency_stop.is_set()): 
                 demand_msg= self.build_data_demand_message()
                 send_msg(demand_msg)
                 self.initialize_timer_resposnse()
@@ -285,9 +284,11 @@ class Drone:
 
             if self.resposnse_rec_counter==0: # No response recieved so it is blocked thread restor the old list 
                 with self.lock_neighbor_list:
-                  self.neighbor_list=  copy.deepcopy(copy_neighbor_list) 
+                    self.neighbor_list=  copy.deepcopy(copy_neighbor_list) 
 
             self.list_finished_update.set()
+        else:
+            self.list_finished_update.wait() # If 2 thread called thi function, one will execute it and the seconf will wait for the result 
 
     def build_ACK_data_message(self, target_id):
         message= ACK_header.encode()
@@ -586,10 +587,11 @@ class Drone:
             file.writelines(new_content)
  
     def get_neighbor_list(self):
-        #self.list_finished_update.wait()
-        with self.exchange_data_lock: # dont allow excahnge msg and rest the list 
-            with self.lock_neighbor_list:
-                return self.neighbor_list
+        # To get the list,if it is in the process of updating should wait the process or we get wrong list 
+        if not self.list_finished_update.is_set():
+            self.list_finished_update.wait()
+        with self.lock_neighbor_list: # only one thread can access 
+            return self.neighbor_list
     
     # To read state, thread-safe
     def get_state(self):
@@ -748,8 +750,8 @@ class Drone:
 
         self.neighbors_ids=[] 
         '''
-        Don't use self.get_neighbor_list() because it contains exchange_data_lock, 
-        and update_neighbors_list is called within the exchange_data procedure which will cause a wrong answer due to waiting for exchange_data_lock 
+        Don't use self.get_neighbor_list() because it contains locks, 
+        and update_neighbors_list is called within the exchange_data procedure which will cause a wrong answer due to waiting for lock 
         which is released after the timer is up calling it here will block the list until the lock is released  which results in wrong communication 
         '''
         with self.lock_neighbor_list:
