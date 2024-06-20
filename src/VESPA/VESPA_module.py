@@ -280,7 +280,7 @@ class Drone:
         try:
             time.sleep(0.1)# time to chekc if the flag is set or not 
             if self.list_finished_update.is_set() and (time.time()-self.last_demand_time>80) : # not another thread doing the update 
-                self.last_demand_time=time.time() 
+                self.last_demand_time=time.time() # should be done by only one thread 
                 # with self.exchange_data_lock:
                 print(get_current_time(), " demand_neighbors_info Get inside demand_neighbors_info" )
                 self.list_finished_update.clear()
