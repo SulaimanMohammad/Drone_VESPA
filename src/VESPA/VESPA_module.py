@@ -161,7 +161,7 @@ class Drone:
         self.demander_lock=threading.Lock()
         self.exchange_data_lock= threading.Lock() # demanding and reciving data should not be done by multiple threads
         self.lock_boder_timer =threading.Lock() 
-
+        self.last_demand_time=0
         self.candidate_to_send=[] # list saves the candidate to send thier msg and confirm arriving 
         self.candidate_to_send_lock= threading.Lock()
         self.border_formed= True #  Used to loop many times trying to forme the border when the border successfully formed adn no need to try more 
@@ -279,7 +279,8 @@ class Drone:
         # signal.signal(signal.SIGINT, signal.SIG_IGN)
         try:
             time.sleep(0.1)# time to chekc if the flag is set or not 
-            if self.list_finished_update.is_set(): # another thread doing the update 
+            if self.list_finished_update.is_set() and (time.time()-self.last_demand_time>80) : # not another thread doing the update 
+                self.last_demand_time=time.time() 
                 # with self.exchange_data_lock:
                 print(get_current_time(), " demand_neighbors_info Get inside demand_neighbors_info" )
                 self.list_finished_update.clear()
@@ -315,6 +316,7 @@ class Drone:
             print(get_current_time(), " Leave demand " )
         finally: 
             print("skipped the interrupt")
+            print("time since the last: ", time.time()-self.last_demand_time)
             # signal.signal(signal.SIGINT, original_handler)
 
             
