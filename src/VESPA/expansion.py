@@ -8,11 +8,11 @@ set_env(globals())
 ---------------------------------- Communication ------------------------------------
 -------------------------------------------------------------------------------------
 '''
-def build_identification_message(self):
-    message = Identification_header.encode()
-    max_byte_count = determine_max_byte_size(self.id)
+def build_identification_message(header, id_sent):
+    message = header.encode()
+    max_byte_count = determine_max_byte_size(id_sent)
     message += struct.pack('>B', max_byte_count)
-    message += self.id.to_bytes(max_byte_count, 'big')
+    message += id_sent.to_bytes(max_byte_count, 'big')
     message += b'\n'
     return message
 
@@ -25,8 +25,8 @@ def decode_identification_message(encoded_message):
     id_start_index = header_size + 1
     id_end_index = id_start_index + max_byte_count
     id_bytes = encoded_message[id_start_index:id_end_index]
-    id = int.from_bytes(id_bytes, 'big')
-    return id
+    ids = int.from_bytes(id_bytes, 'big')
+    return ids
 
 def build_movement_command_message(id, spot, float1, float2):
     # Movement messages are encoded using string beause they are done only once, efficiency accepted
@@ -108,8 +108,13 @@ def expansion_listener (self,vehicle):
 
             elif msg.startswith(Identification_header.encode()) and msg.endswith(b'\n'):
                 if self.id==1: # It is sink drone 
-                    reset_collect_drones_info_timer(self)
                     update_initial_drones_around(self,msg)
+            
+            elif msg.startswith(Identification_Caught_header.encode()) and msg.endswith(b'\n'):
+                ids=decode_identification_message(msg)
+                if self.id==ids: # message from the sink recognize that the identification is arrived 
+                    self.sink_recived_it.set() 
+                    print("drone recived confirmation")
 
             elif msg.startswith(Movement_command.encode()) and msg.endswith(b'\n'):
                 id, spot, lon, lat= decode_movement_command_message(msg)
@@ -289,8 +294,14 @@ def update_initial_drones_around(self,msg):
     # This function will be called by the listener thread 
     # No need for lock to update collected_ids becauset this list will be used by main thread only after the timer is up  
     found_id= decode_identification_message(msg)
+    print("sink recived", found_id )
     if (found_id not in self.collected_ids) and (self.remaining_collect_time>=0):
+        print("     sink consider", found_id )
         self.collected_ids.append(found_id)
+        msg=build_identification_message(Identification_Caught_header, found_id)
+        send_msg(msg)
+        reset_collect_drones_info_timer(self)
+
 
 def assign_spots(drones_id):
     # Use round robin to assign a spot to each drone to maintain good equal distribution as possible
@@ -405,8 +416,10 @@ def first_exapnsion (self, vehicle):
         send_msg(msg)
     else:
         # Each drone that is not sink send its id at the beginning and wait the message of movement and then wait for all first movements to finish.
-        msg=build_identification_message(self)
-        send_msg(msg)
+        while(not self.sink_recived_it.is_set()):
+            msg=build_identification_message(Identification_header, self.id)
+            send_msg(msg)
+            time.sleep(2)
         self.start_expanding.wait()
         self.start_expanding.clear()
     expand_and_form_border(self, vehicle)
