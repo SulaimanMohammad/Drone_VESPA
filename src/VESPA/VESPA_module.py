@@ -157,7 +157,7 @@ class Drone:
         self.resposnse_rec_counter=0
         # Event refer if exchanging messages done or not, clear measn in progress, set = done 
         self.list_finished_update= threading.Event()
-        self.list_finished_update.set()
+        self.list_finished_update.set() # Should be set so the first access is guaranteed and there after access will be cleared ( reading in progress)
         self.demander_lock=threading.Lock()
         self.lock_boder_timer =threading.Lock() 
 
@@ -875,11 +875,16 @@ class Drone:
             time.sleep(5 * (self.id)) # Wait time proportional to the id so not all back to home at the same time 
             vehicle.mode = VehicleMode ("RTL")
         
+    def set_thread_flags(self):
+        self.expansion_stop.set()
+        self.list_finished_update.set() # All thread that aiting end of gathering data should stop or we have deadlock 
+        self.demanders_received_data.set() # Mark that all demander got answer to avoid blocking on resending data where other drones stopped listening upon emergency 
+        self.VESPA_termination.set()
 
     def interrupt(self, vehicle):
         if (not self.Emergency_stop.is_set()):
             self.Emergency_stop.set()
-            self.expansion_stop.set()
+            self.set_thread_flags()
             emergency_msg= self.build_emergency_message()
             send_msg(emergency_msg)
             print("retuen home")
