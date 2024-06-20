@@ -13,6 +13,7 @@ Response_header= 'R'
 ACK_header= 'K'
 # Expansion Headers
 Identification_header= 'I'
+Identification_Caught_header="U"
 Expan_header= 'E'
 Arrival_header= 'A'
 Forming_border_header= 'F'
@@ -31,7 +32,8 @@ Emergecy_header= 'Y'
 # Create an array of headers
 headers = [
     Movement_command, Calibration, Demand_header, Response_header,ACK_header,
-    Expan_header, Arrival_header, Identification_header, Forming_border_header,Verify_border_header,
+    Expan_header, Arrival_header, Identification_header, Identification_Caught_header, 
+    Forming_border_header,Verify_border_header,
     Spanning_header, Target_coordinates_header, Local_balance_header,
     Guidance_header, Balance_header, Algorithm_termination_header, Emergecy_header
 ]

@@ -8,11 +8,11 @@ set_env(globals())
 ---------------------------------- Communication ------------------------------------
 -------------------------------------------------------------------------------------
 '''
-def build_identification_message(self):
-    message = Identification_header.encode()
-    max_byte_count = determine_max_byte_size(self.id)
+def build_identification_message(header, id_sent):
+    message = header.encode()
+    max_byte_count = determine_max_byte_size(id_sent)
     message += struct.pack('>B', max_byte_count)
-    message += self.id.to_bytes(max_byte_count, 'big')
+    message += id_sent.to_bytes(max_byte_count, 'big')
     message += b'\n'
     return message
 
@@ -114,9 +114,13 @@ def expansion_listener (self,vehicle):
                 break
 
             elif msg.startswith(Identification_header.encode()) and msg.endswith(b'\n'):
-                if self.id==1: # It is sink drone 
-                    reset_collect_drones_info_timer(self)
+                if self.id==1: # It is sink drone, check if the id of the drone is not saved if not save and send confirmation 
                     update_initial_drones_around(self,msg)
+
+            elif msg.startswith(Identification_Caught_header.encode()) and msg.endswith(b'\n'):
+                ids=decode_identification_message(msg)
+                if self.id==ids: # Message from the sink recognizes that the identification is arrived 
+                    self.sink_handshake.set() 
 
             elif msg.startswith(Movement_command.encode()) and msg.endswith(b'\n'):
                 ids, spot, lon, lat= decode_movement_command_message(msg)
@@ -296,6 +300,17 @@ def update_initial_drones_around(self,msg):
     if (found_id not in self.collected_ids) and (self.remaining_collect_time>=0):
         self.collected_ids.append(found_id)
 
+def sync_Identification(self):
+    '''
+    Each drone that is not the sink will keep sending its ID until receiving a 
+    confirmation from the sink that the identification is received
+    '''
+    self.sink_handshake= threading.Event() 
+    while(not self.sink_handshake.is_set()):
+        msg=build_identification_message(Identification_header, self.id)
+        send_msg(msg)
+        time.sleep(2)
+
 def assign_spots(drones_id):
     # Use round robin to assign a spot to each drone to maintain good equal distribution as possible
     spots = [1,2, 3, 4, 5, 6]
@@ -406,9 +421,7 @@ def first_exapnsion (self, vehicle):
         msg= build_movement_command_message(-1,-1, 0, 0)
         send_msg(msg)
     else:
-        # Each drone that is not sink send its id at the beginning and wait the message of movement and then wait for all first movements to finish.
-        msg=build_identification_message(self)
-        send_msg(msg)
+        sync_Identification(self)
         self.start_expanding.wait()
         self.start_expanding.clear()
     
