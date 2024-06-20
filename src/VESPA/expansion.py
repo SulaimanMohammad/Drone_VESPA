@@ -302,6 +302,13 @@ def update_initial_drones_around(self,msg):
         send_msg(msg)
         reset_collect_drones_info_timer(self)
 
+def sync_Identification(self):
+    self.sink_recived_it= threading.Event() 
+    # Each drone that is not sink send its id at the beginning and wait the message of movement and then wait for all first movements to finish.
+    while(not self.sink_recived_it.is_set()):
+        msg=build_identification_message(Identification_header, self.id)
+        send_msg(msg)
+        time.sleep(2)
 
 def assign_spots(drones_id):
     # Use round robin to assign a spot to each drone to maintain good equal distribution as possible
@@ -415,11 +422,7 @@ def first_exapnsion (self, vehicle):
         msg= build_movement_command_message(-1,-1, 0, 0)
         send_msg(msg)
     else:
-        # Each drone that is not sink send its id at the beginning and wait the message of movement and then wait for all first movements to finish.
-        while(not self.sink_recived_it.is_set()):
-            msg=build_identification_message(Identification_header, self.id)
-            send_msg(msg)
-            time.sleep(2)
+        sync_Identification(self)
         self.start_expanding.wait()
         self.start_expanding.clear()
     expand_and_form_border(self, vehicle)
