@@ -40,8 +40,6 @@ def modify_file(file_path):
         return None
 
 def revert_file(file_path, changes):
-    print(changes)
-
     if changes is None:
         print("No changes to revert.")
         return
