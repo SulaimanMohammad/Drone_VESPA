@@ -299,6 +299,9 @@ def update_initial_drones_around(self,msg):
     found_id= decode_identification_message(msg)
     if (found_id not in self.collected_ids) and (self.remaining_collect_time>=0):
         self.collected_ids.append(found_id)
+        msg=build_identification_message(Identification_Caught_header, found_id)
+        send_msg(msg)
+        reset_collect_drones_info_timer(self)
 
 def sync_Identification(self):
     '''
