@@ -396,13 +396,13 @@ def expand_and_form_border(self,vehicle):
     if self.border_formed != False:
         print("Border formed")
         confirm_border_connectivity(self)
-        if self.get_current_spot()["drones_in"]==1:
-            print (" Drone is Alone Go to ref ")
-            try: 
-                go_to_ref_altitude(vehicle,self.ref_alt)
-            except:
-                print("An error occurred while go_to_ref_altitude")
-                self.emergency_stop()    
+        # if self.get_current_spot()["drones_in"]==1:
+        #     print (" Drone is Alone Go to ref ")
+        #     try: 
+        #         go_to_ref_altitude(vehicle,self.ref_alt)
+        #     except:
+        #         print("An error occurred while go_to_ref_altitude")
+        #         self.emergency_stop()    
         # If the border is not formed you can add reformation border again 
         # re_form_border(self)
     else:
