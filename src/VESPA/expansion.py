@@ -385,8 +385,11 @@ def expand_and_form_border(self,vehicle):
     
     send_msg(self.build_spot_info_message(Response_header))
     self.demand_neighbors_info()       
-    
+    print(self.get_neighbor_list() )
+    print( "start forming the border")
     Form_border(self)
+    print( "Finished ")
+    print(self.get_neighbor_list() )
     clear_buffer()
     self.demand_neighbors_info() # needed to update what neigbor become border 
 
