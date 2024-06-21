@@ -279,7 +279,6 @@ def calibration_ping_pong(self, vehicle, msg ):
 -------------------------------------------------------------------------------------
 '''
 def initialize_collect_drones_info_timer(self):
-    self.collected_ids=[] # The list that contains all the drones that participate in VESPA
     reset_collect_drones_info_timer(self)
     while True:
         with self.collect_drones_info_timer_lock:
