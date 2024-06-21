@@ -97,53 +97,53 @@ def check_continuity_of_listening(self):
 def expansion_listener (self,vehicle):
 
     while check_continuity_of_listening(self):
-        try:
-            '''
-            Data-Driven retrieve_msg_from_buffer will continue reading and will break only wwhen data is available 
-            in this way the listener will process the message upon arrival 
-            For that, the outer loop will continue until the listener stops which is controlled by the flag and 
-            break when data is available and the next iteration of 
-            the listener will recall this loop again to trigger the listener only when data is available 
-            '''
-            msg= retrieve_msg_from_buffer(self.expansion_stop)
+        # try:
+        '''
+        Data-Driven retrieve_msg_from_buffer will continue reading and will break only wwhen data is available 
+        in this way the listener will process the message upon arrival 
+        For that, the outer loop will continue until the listener stops which is controlled by the flag and 
+        break when data is available and the next iteration of 
+        the listener will recall this loop again to trigger the listener only when data is available 
+        '''
+        msg= retrieve_msg_from_buffer(self.expansion_stop)
 
-            self.exchange_neighbors_info_communication(msg)
-            
-            if msg.startswith(Emergecy_header.encode()) and msg.endswith(b'\n'):
-                self.emergency_stop()
-                break
-
-            elif msg.startswith(Identification_header.encode()) and msg.endswith(b'\n'):
-                if self.id==1: # It is sink drone, check if the id of the drone is not saved if not save and send confirmation 
-                    update_initial_drones_around(self,msg)
-
-            elif msg.startswith(Identification_Caught_header.encode()) and msg.endswith(b'\n'):
-                ids=decode_identification_message(msg)
-                if self.id==ids: # Message from the sink recognizes that the identification is arrived 
-                    self.sink_handshake.set() 
-
-            elif msg.startswith(Movement_command.encode()) and msg.endswith(b'\n'):
-                ids, spot, lon, lat= decode_movement_command_message(msg)
-                if ids==-1 and spot==-1 and lon==0 and lat==0: # mean all drone are in sky
-                    self.start_expanding.set()
-                else:
-                    initial_movement(self, vehicle,ids, spot, lon, lat)
-
-            elif msg.startswith(Calibration.encode()) and msg.endswith("\n"):
-                calibration_ping_pong(self, vehicle, msg )
-
-            elif msg.startswith(Expan_header.encode()) and msg.endswith(b'\n'):
-                handel_elected_drone_arrivale(self, msg)
-                
-            elif msg.startswith(Forming_border_header.encode()) and msg.endswith(b'\n'): # message starts with F end with \n
-                form_border_one_direction(self,Forming_border_header,msg)
-                #form_border_two_direction(self,Forming_border_header,msg)
-            elif msg.startswith(Verify_border_header.encode()) and msg.endswith(b'\n'):
-                verify_border(self,Verify_border_header,msg)
+        self.exchange_neighbors_info_communication(msg)
         
-        except:
-            print("Thread expansion_listener Interrupt received, stopping...")
-            self.emergency_stop()   
+        if msg.startswith(Emergecy_header.encode()) and msg.endswith(b'\n'):
+            self.emergency_stop()
+            break
+
+        elif msg.startswith(Identification_header.encode()) and msg.endswith(b'\n'):
+            if self.id==1: # It is sink drone, check if the id of the drone is not saved if not save and send confirmation 
+                update_initial_drones_around(self,msg)
+
+        elif msg.startswith(Identification_Caught_header.encode()) and msg.endswith(b'\n'):
+            ids=decode_identification_message(msg)
+            if self.id==ids: # Message from the sink recognizes that the identification is arrived 
+                self.sink_handshake.set() 
+
+        elif msg.startswith(Movement_command.encode()) and msg.endswith(b'\n'):
+            ids, spot, lon, lat= decode_movement_command_message(msg)
+            if ids==-1 and spot==-1 and lon==0 and lat==0: # mean all drone are in sky
+                self.start_expanding.set()
+            else:
+                initial_movement(self, vehicle,ids, spot, lon, lat)
+
+        elif msg.startswith(Calibration.encode()) and msg.endswith("\n"):
+            calibration_ping_pong(self, vehicle, msg )
+
+        elif msg.startswith(Expan_header.encode()) and msg.endswith(b'\n'):
+            handel_elected_drone_arrivale(self, msg)
+            
+        elif msg.startswith(Forming_border_header.encode()) and msg.endswith(b'\n'): # message starts with F end with \n
+            form_border_one_direction(self,Forming_border_header,msg)
+            #form_border_two_direction(self,Forming_border_header,msg)
+        elif msg.startswith(Verify_border_header.encode()) and msg.endswith(b'\n'):
+            verify_border(self,Verify_border_header,msg)
+        
+        # except:
+        #     print("Thread expansion_listener Interrupt received, stopping...")
+        #     self.emergency_stop()   
                      
 '''
 -------------------------------------------------------------------------------------
