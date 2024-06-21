@@ -141,6 +141,12 @@ class Drone:
             s = {"name": "s" + str(i), "distance": 0, "priority": 0,"drones_in": 0,"drones_in_id":[] , "states": [], "previous_state": []}
             self.neighbor_list.append(s)
         
+        # Identificaation 
+        self.sink_handshake= threading.Event() # 
+        self.collect_drones_info_timer_lock = threading.Lock()
+        self.remaining_collect_time
+        self.collected_ids=[] # Sink list of the ids of drones around 
+
         self.current_target_ids=[]
         self.lock_state = threading.Lock()
         self.lock_neighbor_list = threading.Lock()
