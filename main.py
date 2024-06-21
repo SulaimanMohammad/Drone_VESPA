@@ -23,7 +23,7 @@ def main():
     vehicle = connect (parse_connect(), wait_ready=False) # for simulation 
     #vehicle = connect("/dev/serial0", baud= 921600,  wait_ready=False) # for raspberry pi
     #vehicle = connect("/dev/ttyUSB0", baud= 57600,  wait_ready=False, rate=10) #for telemetry 
-    #vehicle.wait_ready(True, raise_exception=False) 
+    vehicle.wait_ready(True, raise_exception=False) 
     set_data_rate(vehicle, 20)
     # Create drone object of VESPA 
     drone = Drone(0,0.0,0.0)
