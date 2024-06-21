@@ -82,6 +82,7 @@ def retrieve_msg_from_buffer(stop_flag):
     break when data is available and the next iteration of 
     the listener will recall this loop again to trigger the listener only when data is available 
     '''
+    global message_buffer
     while not stop_flag.is_set(): # Keep checking for a complete message or condition related to the phase is not set
         try: 
             # Read available data
