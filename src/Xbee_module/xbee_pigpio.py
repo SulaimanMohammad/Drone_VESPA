@@ -30,7 +30,7 @@ def connect_xbee(TX,RX,baud_rate_set):
             pi.bb_serial_read_open(rx_pin, baud_rate, 8)  # Open RX pin with a baud rate, 8: the number of data bits per character
         except pigpio.error as e:
             print(f"Error reopening RX pin: {e}")
-            cleanup()
+            close_xbee_port()
             sys.exit(1)  # Exit the program with a non-zero status
 
     pi.set_mode(tx_pin, pigpio.OUTPUT)
@@ -142,15 +142,11 @@ def clear_buffer():
             print(f"Error while clearing pigpio buffer: {e}")
 
 def close_xbee_port():
-    pi.bb_serial_read_close(rx_pin)  # Close the RX pin
-    pi.wave_clear()  # Clear any waveforms
-    cleanup()
-
-def cleanup():
     global pi
     global rx_pin
     (count, data) = pi.bb_serial_read(rx_pin)
     if count > 0 or data != b'': # Check if bit bang serial read is open
         pi.bb_serial_read_close(rx_pin)
+        pi.wave_clear()  # Clear any waveforms
     pi.stop()
     time.sleep(3) # Time to close the port 

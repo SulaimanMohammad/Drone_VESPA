@@ -106,7 +106,7 @@ def expansion_listener (self,vehicle):
             the listener will recall this loop again to trigger the listener only when data is available 
             '''
             msg= retrieve_msg_from_buffer(self.expansion_stop)
-            print("msg", msg)
+
             self.exchange_neighbors_info_communication(msg)
             
             if msg.startswith(Emergecy_header.encode()) and msg.endswith(b'\n'):
@@ -395,6 +395,7 @@ def expand_and_form_border(self,vehicle):
 
     print("Verify the border formation")
     if self.border_formed != False:
+        print("Border formed")
         confirm_border_connectivity(self)
         if self.get_current_spot()["drones_in"]==1:
             print (" Drone is Alone Go to ref ")
