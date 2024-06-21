@@ -125,7 +125,7 @@ class Drone:
         set_a(a)
         self.id=drone_id
         # Alt for each drone related to ID to avoid collision while movement
-        self.ref_alt= round(sqrt(pow(a*ref_alt_ratio,2)- pow(((a*ref_alt_ratio)/sq3),2)),2) # Reference alt (drone hight when it is alone )
+        self.ref_alt= round(sqrt(pow((a-3)*ref_alt_ratio,2)- pow((((a-3)*ref_alt_ratio)/sq3),2)),2) # Reference alt (drone hight when it is alone )
         self.drone_alt= ((self.id-1)*spacing)+ self.ref_alt
         self.defined_groundspeed= defined_groundspeed
         # init s0 and it will be part of the spots list
