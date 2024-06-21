@@ -106,7 +106,7 @@ def expansion_listener (self,vehicle):
             the listener will recall this loop again to trigger the listener only when data is available 
             '''
             msg= retrieve_msg_from_buffer(self.expansion_stop)
-            
+            print("msg", msg)
             self.exchange_neighbors_info_communication(msg)
             
             if msg.startswith(Emergecy_header.encode()) and msg.endswith(b'\n'):
