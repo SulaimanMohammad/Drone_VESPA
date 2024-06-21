@@ -13,22 +13,23 @@ This module is used to send messages by sending message only to one drone by sea
 '''
 def build_border_message(self,header,target_ids, candidate_id):
     # Determine max byte count for numbers
-    max_byte_count = max(
-                        [determine_max_byte_size(num) for num in target_ids ]+
-                        [determine_max_byte_size(candidate_id)]
-                        )
-    # Start message with 'F', followed by max byte count and then the length of the propagation_indicator
-    message = header.encode() + struct.pack('>BB', max_byte_count, len(target_ids))
+    if target_ids and (target_ids is not None) : # target_ids is not empty 
+        max_byte_count = max(
+                            [determine_max_byte_size(num) for num in target_ids ]+
+                            [determine_max_byte_size(candidate_id)]
+                            )
+        # Start message with 'F', followed by max byte count and then the length of the propagation_indicator
+        message = header.encode() + struct.pack('>BB', max_byte_count, len(target_ids))
 
-    message += struct.pack('>B',len(target_ids))
-    for num in target_ids:
-            message += num.to_bytes(max_byte_count, byteorder='big',signed=True)
-    # Append the sender using the determined byte count
-    message += self.id.to_bytes(max_byte_count, 'big')
-    # Append the candidate using the determined byte count
-    message += candidate_id.to_bytes(max_byte_count, 'big')
-    message += b'\n'
-    return message
+        message += struct.pack('>B',len(target_ids))
+        for num in target_ids:
+                message += num.to_bytes(max_byte_count, byteorder='big',signed=True)
+        # Append the sender using the determined byte count
+        message += self.id.to_bytes(max_byte_count, 'big')
+        # Append the candidate using the determined byte count
+        message += candidate_id.to_bytes(max_byte_count, 'big')
+        message += b'\n'
+        return message
 
 def decode_border_message(message):
     # Read the header (assuming it's a fixed length -- you'll need to define this)
@@ -180,8 +181,10 @@ def verify_border(self,header, msg):
                 self.border_verified.set()
 
             if self.id in  target_ids and target_ids :# targets exist not empty s
+                print("rec from sender_id, target_ids, candidate",sender_id, target_ids, candidate )
                 if self.id == candidate and (self.get_state()== Border or self.get_state()== Irremovable_boarder) :
                     Broadcast_Msg= build_border_message(self,header,[-1], self.id)
+                    print("circle done")
                     #send_msg_border_upon_confirmation(self, Broadcast_Msg)
                     send_msg(Broadcast_Msg) # bordacst doent need to be waiting conformation 
                     finish_timer_forme_border(self)
@@ -191,6 +194,7 @@ def verify_border(self,header, msg):
                         self.current_target_ids= choose_spot_right_handed(self,self.neighbor_list_upon_border_formation )
                         msg= build_border_message(self,header,self.current_target_ids, candidate)
                         send_msg(msg) 
+                        print("forwards done")
 
 ''''
 -------------------------------------------------------------------------------------
@@ -351,12 +355,13 @@ def confirm_border_connectivity(self):
     start_forming_bordertime=time.time() 
     if self.get_state()== Border or self.get_state()==Irremovable_boarder: 
         self.current_target_ids= choose_spot_right_handed(self,self.neighbor_list_upon_border_formation) 
+        print("current_target_id", self.current_target_ids )
         if self.current_target_ids is not None:
             msg= build_border_message(self,Verify_border_header,self.current_target_ids, self.id)
             send_msg(msg)
     
         reset_timer_forme_border(self, Verify_border_header)
-        while (not self.Emergency_stop.is_set()) and (time.time()-start_forming_bordertime < 100 ):
+        while (not self.Emergency_stop.is_set()) and (time.time()-start_forming_bordertime < 200 ):
             with self.lock_boder_timer:
                 self.remaining_time_forme_border -= 0.1
                 if self.remaining_time_forme_border <= 0:
