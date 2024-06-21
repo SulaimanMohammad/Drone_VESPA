@@ -127,7 +127,7 @@ def expansion_listener (self,vehicle):
                 if ids==-1 and spot==-1 and lon==0 and lat==0: # mean all drone are in sky
                     self.start_expanding.set()
                 else:
-                    initial_movement(self, vehicle,id, spot, lon, lat)
+                    initial_movement(self, vehicle,ids, spot, lon, lat)
 
             elif msg.startswith(Calibration.encode()) and msg.endswith("\n"):
                 calibration_ping_pong(self, vehicle, msg )
@@ -291,7 +291,7 @@ def initialize_collect_drones_info_timer(self):
 
 def reset_collect_drones_info_timer(self):
     with self.collect_drones_info_timer_lock:
-        self.remaining_collect_time=60 # wait one minute 
+        self.remaining_collect_time=10 # wait one minute 
 
 def update_initial_drones_around(self,msg):
     # This function will be called by the listener thread 
