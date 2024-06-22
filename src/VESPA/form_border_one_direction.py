@@ -322,7 +322,7 @@ def Form_border(self):
         reset_timer_forme_border(self,Forming_border_header)
 
         # Timer ill be reseted upon each message recived marking that the process still on 
-        while (not self.Emergency_stop.is_set()) and (time.time()-start_forming_bordertime < 200 ) and( not self.Forming_Border_Broadcast_REC.is_set()): # continue loop if it is still in period of 200 second of border formation 
+        while (not self.Emergency_stop.is_set()) and (time.time()-start_forming_bordertime < 200 ): # continue loop if it is still in period of 200 second of border formation 
             with self.lock_boder_timer:
                 self.remaining_time_forme_border -= 0.1
                 if self.remaining_time_forme_border <= 0:

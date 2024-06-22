@@ -387,8 +387,9 @@ def expand_and_form_border(self,vehicle):
     self.demand_neighbors_info()       
     print(self.get_neighbor_list() )
     print( "start forming the border")
+    start_time=time.time()
     Form_border(self)
-    print( "Finished ")
+    print( "Finished with time ", time.time() -start_time)
     print(self.get_neighbor_list() )
     clear_buffer()
 
