@@ -30,6 +30,7 @@ def build_border_message(self,header,target_ids, candidate_id):
         message += candidate_id.to_bytes(max_byte_count, 'big')
         message += b'\n'
         return message
+    
 
 def decode_border_message(message):
     # Read the header (assuming it's a fixed length -- you'll need to define this)
@@ -181,6 +182,7 @@ def verify_border(self,header, msg):
             if len(target_ids)==1 and target_ids[0]==-1:
                 # Here any drone in any state needs to forward the boradcast message and rise ending flag
                 forward_broadcast_message(self, header,candidate)
+                print("broadcast")
                 finish_timer_forme_border(self)
                 self.border_verified.set()
 
@@ -198,7 +200,8 @@ def verify_border(self,header, msg):
                         self.current_target_ids= choose_spot_right_handed(self,self.neighbor_list_upon_border_formation )
                         msg= build_border_message(self,header,self.current_target_ids, candidate)
                         send_msg(msg) 
-                        print("forwards done")
+                        print("forwards target, candidate",  self.current_target_ids, candidate)
+
 
 ''''
 -------------------------------------------------------------------------------------
