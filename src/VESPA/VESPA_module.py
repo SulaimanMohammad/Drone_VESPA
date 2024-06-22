@@ -220,7 +220,7 @@ class Drone:
             time.sleep(0.1)
 
     def reset_timer_resposnse(self):
-        self.remaining_time_resposnse=2*exchange_data_latency
+        self.remaining_time_resposnse=3*exchange_data_latency
 
     def resend_data(self):
         if not self.demanders_received_data.is_set():
