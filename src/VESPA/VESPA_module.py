@@ -208,7 +208,7 @@ class Drone:
 
     def reset_timer_demand(self):
         with self.lock_demanders_timer:
-            self.remaining_time_demand=exchange_data_latency
+            self.remaining_time_demand=2*exchange_data_latency
 
     def initialize_timer_resposnse(self):
         self.reset_timer_resposnse()
@@ -284,13 +284,14 @@ class Drone:
             self.rest_neighbor_list()
             reseted_neighbor_list= copy.deepcopy(self.neighbor_list) 
             
+            # Check that list is not any more empty 
             while (self.compare_with_neighbor_list(reseted_neighbor_list,'drones_in')) and (recollect_data<2) and (not self.Emergency_stop.is_set()): 
                 demand_msg= self.build_data_demand_message()
                 send_msg(demand_msg)
                 self.initialize_timer_resposnse()
                 recollect_data= recollect_data +1
                 time.sleep(exchange_data_latency)
-
+            
             if self.resposnse_rec_counter==0: # No response recieved so it is blocked thread restor the old list 
                 with self.lock_neighbor_list:
                     self.neighbor_list=  copy.deepcopy(copy_neighbor_list) 
