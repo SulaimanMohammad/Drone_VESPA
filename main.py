@@ -30,16 +30,16 @@ def main():
     # Configure parameter of drone based on VESPA
     config_parameters(vehicle, drone)
     signal.signal(signal.SIGINT, lambda sig, frame: drone.interrupt(vehicle))
-    try:
-        first_exapnsion(drone, vehicle)
-    except:
-        print("Error in performing VESPA")
-        drone.emergency_stop()
-    finally:
-        drone.return_home(vehicle) 
-        close_xbee_port()
-        vehicle.close()
-        print("Serial connection closed.")
+    # try:
+    first_exapnsion(drone, vehicle)
+    # except:
+    #     print("Error in performing VESPA")
+    #     drone.emergency_stop()
+    #finally:
+    drone.return_home(vehicle) 
+    close_xbee_port()
+    vehicle.close()
+    print("Serial connection closed.")
 
 
 if __name__ == "__main__":
