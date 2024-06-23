@@ -110,12 +110,13 @@ def form_border_one_direction(self,header,msg):
         sender_id, target_ids, candidate= decode_border_message(msg)
         reset_timer_forme_border(self,header) # Reset for any message even from out the region because that means the border is not yet formed 
         if sender_id in self.neighbors_ids: # Signal comes from the neighbor drone, dont consider messages out of the region 
+            print("message from", sender_id , "candidate", candidate)
             if sender_id in self.current_target_ids and candidate in self.rec_candidate:
-                print("message from", sender_id , "candidate", candidate)
                 # MESSAGR REC, confirmed"
                 with self.candidate_to_send_lock:
                     if candidate in self.candidate_to_send:
                         self.candidate_to_send.remove(candidate)
+                        print(  "MESSAGR REC, confirmed",self.candidate_to_send)
 
             if len(target_ids)==1 and target_ids[0]==-1:
                 print("brodcast the end")
@@ -141,6 +142,8 @@ def form_border_one_direction(self,header,msg):
                     with self.candidate_to_send_lock:
                         if candidate not in self.candidate_to_send:
                             self.candidate_to_send.append(candidate)
+                            print(" form_border_one_direction ")
+                            print("candidate_to_send",self.candidate_to_send)
 
 
 def send_msg_border_until_confirmation(self,header):
@@ -152,6 +155,8 @@ def send_msg_border_until_confirmation(self,header):
         with self.candidate_to_send_lock:
             if  self.candidate_to_send :
                 candidates_to_process = list(self.candidate_to_send)
+                print(" send_msg_border_until_confirmation ")
+                print("candidate_to_send",self.candidate_to_send)
         
         if not self.Forming_Border_Broadcast_REC.is_set(): # dont reset at the end of phase since it listeners will be bloked
             self.demand_neighbors_info()
@@ -165,6 +170,7 @@ def send_msg_border_until_confirmation(self,header):
             for candidate in candidates_to_process: 
                 if candidate not in self.rec_candidate:
                     self.rec_candidate.append(candidate)
+                    print(" send_msg_border_until_confirmation rec_candidate",  self.rec_candidate )
                 if self.Forming_Border_Broadcast_REC.is_set():
                     break
                 if self.current_target_ids is not None:
@@ -255,7 +261,7 @@ def choose_spot_right_handed(self, neighbor_list_upon_border=None):
     
     if neighbor_list_upon_border==None:
         neighbor_list_x = self.get_neighbor_list()[1:]
-        print("neighbor_list_x", neighbor_list_x)
+        #print("neighbor_list_x", neighbor_list_x)
     else:
         neighbor_list_x= neighbor_list_upon_border[1:] # Use the saved list to verfiy the border still same 
 
@@ -277,10 +283,13 @@ def choose_spot_right_handed(self, neighbor_list_upon_border=None):
     return None
 
 def start_msg_one_direction(self):
+    print("start_msg_one_direction ")
     with self.candidate_to_send_lock:
         if self.id not in self.candidate_to_send:
             self.candidate_to_send.append(self.id)
             self.rec_candidate.append(self.id)
+            print("candidate_to_send",self.candidate_to_send)
+            print(" rec_candidate", self.rec_candidate)
 
 def reset_border_variables(self): 
     self.current_target_ids=[]
@@ -319,6 +328,7 @@ def Form_border(self):
     start_forming_bordertime=time.time() 
     #Continue checking in case of not forming border the process will start again 
     while (not self.Forming_Border_Broadcast_REC.is_set()) and (number_of_try<=3) and (not self.expansion_stop.is_set()) and (not self.Emergency_stop.is_set()):
+        print(" Start the process")
         self.demand_neighbors_info()
         check_border_candidate_eligibility(self)
         print("Form_border self.border_candidate", self.border_candidate)
