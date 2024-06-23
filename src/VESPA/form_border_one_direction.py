@@ -83,6 +83,7 @@ def circle_completed(self):
 def border_broadcast_respond(self, candidate):
     if candidate in self.rec_candidate: # the sender of broadcast already sent msg to the current drone so it is part of the circle
         # re-check the the droen around still have same situation and still can be border
+        print("self.rec_candidate",self.rec_candidate )
         if self.border_candidate:
             if self.get_state() == Irremovable:
                 self.change_state_to(Irremovable_boarder)
@@ -254,6 +255,7 @@ def choose_spot_right_handed(self, neighbor_list_upon_border=None):
     
     if neighbor_list_upon_border==None:
         neighbor_list_x = self.get_neighbor_list()[1:]
+        print("neighbor_list_x", neighbor_list_x)
     else:
         neighbor_list_x= neighbor_list_upon_border[1:] # Use the saved list to verfiy the border still same 
 
