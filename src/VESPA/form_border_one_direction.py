@@ -142,8 +142,10 @@ def form_border_one_direction(self,header,msg):
                     with self.candidate_to_send_lock:
                         if candidate not in self.candidate_to_send:
                             self.candidate_to_send.append(candidate)
-                            print(" form_border_one_direction ")
-                            print("candidate_to_send",self.candidate_to_send)
+                    if candidate not in self.rec_candidate:
+                         self.rec_candidate.append(candidate)
+                    print(" form_border_one_direction ")
+                    print("candidate_to_send",self.candidate_to_send, "rec_candidate", self.rec_candidate)
 
 
 def send_msg_border_until_confirmation(self,header):
@@ -168,9 +170,6 @@ def send_msg_border_until_confirmation(self,header):
 
         if self.border_candidate == True:
             for candidate in candidates_to_process: 
-                if candidate not in self.rec_candidate:
-                    self.rec_candidate.append(candidate)
-                    print(" send_msg_border_until_confirmation rec_candidate",  self.rec_candidate )
                 if self.Forming_Border_Broadcast_REC.is_set():
                     break
                 if self.current_target_ids is not None:
