@@ -712,6 +712,7 @@ class Drone:
                         neighbor['states'] = []
                     if 'previous_state' in neighbor:
                         neighbor['previous_state'] = []
+            print( "reseted list", self.neighbor_list)
 
     def update_neighbors_list(self, positionX, positionY, state, previous_state, id_rec):
         s_index= self.find_relative_spot(positionX, positionY)
@@ -740,7 +741,7 @@ class Drone:
                 # If the ID of drone doesnt exist at all or it was deleted after was in another neighborhood spot
                 # Retrieve the corresponding spot
                 s = self.neighbor_list[s_index]
-                # Append drone_id to drones_in_id and state_rec to states
+                # Append drone_id to drones_in_id and state_rec to statesget
                 s['drones_in_id'].append(id_rec)
                 s['states'].append(state)
                 s['previous_state'].append(previous_state)
