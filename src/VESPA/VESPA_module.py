@@ -277,8 +277,6 @@ class Drone:
         # So the function should not be called until it is completly finished or the list will be wrong if 2 threads called it at the same time  
         # Only one thread should ask the demand and the rest wait, also this demand should done been only in interval of 15 second ( reduce number of demands)
         if self.list_finished_update.is_set() and ( (time.time()-self.last_seen_demand_neighbors_info>20) or (force) ) : # There is no other thread doing the update 
-            if force:
-                print( " fORCED ")
             self.last_demand_time=time.time() # Should be done by only one thread  
             self.list_finished_update.clear()
             copy_neighbor_list= copy.deepcopy(self.neighbor_list) # use deepcopy or it will be reference not copy 
@@ -714,7 +712,6 @@ class Drone:
                         neighbor['states'] = []
                     if 'previous_state' in neighbor:
                         neighbor['previous_state'] = []
-            print( "reseted list", self.neighbor_list)
 
     def update_neighbors_list(self, positionX, positionY, state, previous_state, id_rec):
         s_index= self.find_relative_spot(positionX, positionY)
