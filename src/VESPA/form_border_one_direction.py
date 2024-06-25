@@ -81,9 +81,9 @@ def circle_completed(self):
                 self.change_state_to(Free)
 
 def border_broadcast_respond(self, candidate):
+    print("self.rec_candidate",self.rec_candidate )
     if candidate in self.rec_candidate: # the sender of broadcast already sent msg to the current drone so it is part of the circle
         # re-check the the droen around still have same situation and still can be border
-        print("self.rec_candidate",self.rec_candidate )
         if self.border_candidate:
             if self.get_state() == Irremovable:
                 self.change_state_to(Irremovable_boarder)
@@ -110,13 +110,13 @@ def form_border_one_direction(self,header,msg):
         sender_id, target_ids, candidate= decode_border_message(msg)
         reset_timer_forme_border(self,header) # Reset for any message even from out the region because that means the border is not yet formed 
         if sender_id in self.neighbors_ids: # Signal comes from the neighbor drone, dont consider messages out of the region 
-            print("message from", sender_id , "candidate", candidate)
+            print("message from", sender_id , "candidate", candidate,"rec_candidate",  self.rec_candidate )
             if sender_id in self.current_target_ids and candidate in self.rec_candidate:
                 # MESSAGR REC, confirmed"
                 with self.candidate_to_send_lock:
                     if candidate in self.candidate_to_send:
                         self.candidate_to_send.remove(candidate)
-                        print(  "MESSAGR REC, confirmed",self.candidate_to_send)
+                        print(  "MESSAGR REC, confirmed", self.candidate_to_send)
 
             if len(target_ids)==1 and target_ids[0]==-1:
                 print("brodcast the end")
@@ -286,9 +286,9 @@ def start_msg_one_direction(self):
     with self.candidate_to_send_lock:
         if self.id not in self.candidate_to_send:
             self.candidate_to_send.append(self.id)
-            self.rec_candidate.append(self.id)
+            # self.rec_candidate.append(self.id)
             print("candidate_to_send",self.candidate_to_send)
-            print(" rec_candidate", self.rec_candidate)
+            # print(" rec_candidate", self.rec_candidate)
 
 def reset_border_variables(self): 
     self.current_target_ids=[]

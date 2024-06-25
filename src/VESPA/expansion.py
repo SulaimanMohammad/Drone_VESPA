@@ -152,7 +152,7 @@ def expansion_listener (self,vehicle):
 '''
 def spatial_observation(self):
     self.calculate_neighbors_distance_sink()
-    self.demand_neighbors_info() # return after gathering all info
+    self.demand_neighbors_info(True) # return after gathering all info
     self.check_Ownership()
 
 # This called inside the lock so should not contain any lock or it will be dead
