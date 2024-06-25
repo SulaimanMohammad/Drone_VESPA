@@ -286,9 +286,9 @@ def start_msg_one_direction(self):
     with self.candidate_to_send_lock:
         if self.id not in self.candidate_to_send:
             self.candidate_to_send.append(self.id)
-            # self.rec_candidate.append(self.id)
+            self.rec_candidate.append(self.id) # needed for the onfirmation of reciving 
             print("candidate_to_send",self.candidate_to_send)
-            # print(" rec_candidate", self.rec_candidate)
+            print(" rec_candidate", self.rec_candidate)
 
 def reset_border_variables(self): 
     self.current_target_ids=[]
