@@ -53,9 +53,8 @@ sudo apt-get install -y git
 echo -e "\033[32m ------ Set the serial comm for the drone ------ \033[0m"
 # Run raspi-config in interactive mode to configure Serial UART
 # Enable Serial Port hardware
-# sudo raspi-config nonint do_serial 1
 # Disable login shell over serial port
-#sudo raspi-config nonint do_serial_login 1
+# sudo raspi-config nonint do_serial_login 1
 
 # Disable login shell over serial port in cmdline over the shell 
 sudo sed -i 's/console=serial0,[0-9]* //g' /boot/cmdline.txt
@@ -70,17 +69,29 @@ elif ! grep -q "enable_uart=1" /boot/config.txt; then
     echo "enable_uart=1" | sudo tee -a /boot/config.txt
 fi
 
-# Check if the specific line exists in the file
-if ! grep -q "^dtoverlay=disable-bt$" /boot/config.txt; then
-    # If not, append it to the end
-    echo "dtoverlay=disable-bt" | sudo tee -a /boot/config.txt
-    echo "dtoverlay=disable-bt added."
-else
-    echo "dtoverlay=disable-bt is already present in /boot/config.txt."
-fi
-
 # Add the user to the dialout group
 sudo usermod -a -G dialout $USER
+
+# If the commands to disable and stop the serial-getty@ttyS0.service are not used, the serial port may still be used by the system to provide a login shell. 
+# This can interfere with other uses of the serial port
+# Check if serial-getty@ttyS0.service is enabled
+if systemctl is-enabled --quiet serial-getty@ttyS0.service; then
+    echo "serial-getty@ttyS0.service is enabled. Disabling it now..."
+    sudo systemctl disable serial-getty@ttyS0.service
+else
+    echo "serial-getty@ttyS0.service is already disabled."
+fi
+
+# Check if serial-getty@ttyS0.service is active (running)
+if systemctl is-active --quiet serial-getty@ttyS0.service; then
+    echo "serial-getty@ttyS0.service is active. Stopping it now..."
+    sudo systemctl stop serial-getty@ttyS0.service
+else
+    echo "serial-getty@ttyS0.service is already inactive."
+fi
+
+# Mask the service to prevent it from being started by any means
+sudo systemctl mask serial-getty@ttyS0.service
 
 echo -e "\033[32m ------ Disabled HDMI ------ \033[0m"
 # Check if HDMI is currently enabled
