@@ -94,29 +94,30 @@ fi
 
 # Check if the /boot/config.txt file exists
 if [ -e /boot/config.txt ]; then
-    # Define the lines to check and modify/add
+    # Define the lines to modify/add
     declare -A lines
-    lines=(["dtparam=act_led_trigger="]="none"
-           ["dtparam=pwr_led_trigger="]="none"
+    lines=(
+        ["dtparam=act_led_trigger"]="none"
+        ["dtparam=pwr_led_trigger"]="none"
     )
 
-    # Loop through the lines to modify or add them if they don't exist
     for key in "${!lines[@]}"; do
-        if grep -q "${key}.*" /boot/config.txt; then
-            # If the line exists, modify it
-            sudo sed -i "s/${key}.*/${key}${lines[$key]}/" /boot/config.txt
+        if grep -q "^${key}" /boot/config.txt; then
+            sudo sed -i "s/^${key}.*/${key}=${lines[$key]}/" /boot/config.txt
         else
-            # If the line doesn't exist, append it to the file
-            echo "${key}${lines[$key]}" | sudo tee -a /boot/config.txt
+            echo "${key}=${lines[$key]}" | sudo tee -a /boot/config.txt
         fi
     done
-    
-    # Lines to just ensure exist
-    ensure_lines=("dtparam=act_led_trigger=off"
-                  "dtparam=pwr_led_trigger=off"
-                  "dtoverlay=disable-bt"
+
+    # Ensure specific lines exist ( turn the leds off ) and 
+    # Disable Bluetooth is useful if you want to use the UART without interference from the Bluetooth module, 
+    # both serial and Bluetooth share the same UART resources on some Raspberry Pi models.( that ensure better serial performance)
+    ensure_lines=(
+        "dtparam=act_led_trigger=off"
+        "dtparam=pwr_led_trigger=off"
+        "dtoverlay=pi3-disable-bt"
     )
-    
+
     for line in "${ensure_lines[@]}"; do
         if ! grep -q "^${line}$" /boot/config.txt; then
             echo "$line" | sudo tee -a /boot/config.txt
