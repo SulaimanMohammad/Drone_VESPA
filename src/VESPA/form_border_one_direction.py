@@ -141,7 +141,7 @@ def form_border_one_direction(self,header,msg):
                 else: 
                     with self.candidate_to_send_lock:
                         if candidate not in self.candidate_to_send:
-                            self.candidate_to_send.append(candidate)
+                            self.candidate_to_send.insert(0, candidate) # insert at the beging so it will be processed immiditly 
                             print("form_border_one_direction appened candidate_to_send",self.candidate_to_send)
                     if candidate not in self.rec_candidate:
                         self.rec_candidate.append(candidate)
@@ -168,14 +168,15 @@ def send_msg_border_until_confirmation(self,header):
 
         if self.border_candidate == True:
             print("candidates_to_process", candidates_to_process, "self.candidate_to_send", self.candidate_to_send)
-            for candidate in candidates_to_process: 
-                if self.Forming_Border_Broadcast_REC.is_set():
-                    break
-                if self.current_target_ids is not None:
-                    msg= build_border_message(self,header,self.current_target_ids, candidate) 
-                    send_msg(msg)
-                    print("forwarard the candiate ",candidate , "to",  self.current_target_ids)
-                    time.sleep(exchange_data_latency)# time untile the message arrives 
+            with self.candidate_to_send_lock:
+                for candidate in self.candidate_to_send: 
+                    if self.Forming_Border_Broadcast_REC.is_set():
+                        break
+                    if self.current_target_ids is not None:
+                        msg= build_border_message(self,header,self.current_target_ids, candidate) 
+                        send_msg(msg)
+                        print("forwarard the candiate ",candidate , "to",  self.current_target_ids)
+                        #time.sleep(exchange_data_latency)# time untile the message arrives 
         time.sleep(exchange_data_latency)
         # except:
         #     print("Thread send_msg_border_until_confirmation Interrupt received, stopping...")
