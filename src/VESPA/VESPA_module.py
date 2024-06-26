@@ -142,6 +142,7 @@ class Drone:
             self.neighbor_list.append(s)
         
         self.current_target_id=None
+        self.current_target_id_lock=threading.Lock() 
         self.lock_state = threading.Lock()
         self.lock_neighbor_list = threading.Lock()
         self.lock_demanders_timer =threading.Lock()

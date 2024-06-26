@@ -251,8 +251,9 @@ def choose_spot_right_handed(self, neighbor_list_upon_border=None):
         next_index = (first_empty_index + j) % n
         if neighbor_list_x[next_index]["drones_in"] > 0:
             chosen_id=neighbor_list_x[next_index]["drones_in_id"][0]
-    
-    self.current_target_id=chosen_id
+
+    with self.current_target_id_lock: 
+        self.current_target_ids=chosen_id
 
 def start_msg_one_direction(self):
     with self.candidate_to_send_lock:
