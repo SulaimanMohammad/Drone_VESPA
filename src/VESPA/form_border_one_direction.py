@@ -143,21 +143,17 @@ def send_msg_border_until_confirmation(self,header):
                     candidates_to_process = list(self.candidate_to_send)
             
             if not self.Forming_Border_Broadcast_REC.is_set(): # dont reset at the end of phase since it listeners will be bloked
-                self.demand_neighbors_info()
-                check_border_candidate_eligibility(self)
-                self.current_target_id= choose_spot_right_handed(self)
-        
-            if self.border_candidate == True:
-                for candidate in candidates_to_process: 
-                    if candidate not in self.rec_candidate:
-                        self.rec_candidate.append(candidate)
-                    if self.Forming_Border_Broadcast_REC.is_set():
-                        break
-                    if self.current_target_id is not None:
-                        msg= build_border_message(self,header,self.current_target_id, candidate) 
-                        send_msg(msg)
-                        time.sleep(exchange_data_latency)# time untile the message arrives 
-            time.sleep(exchange_data_latency)
+                if self.border_candidate == True:
+                    for candidate in candidates_to_process: 
+                        if candidate not in self.rec_candidate:
+                            self.rec_candidate.append(candidate)
+                        if self.Forming_Border_Broadcast_REC.is_set():
+                            break
+                        if self.current_target_id is not None:
+                            msg= build_border_message(self,header,self.current_target_id, candidate) 
+                            send_msg(msg)
+                            time.sleep(exchange_data_latency)# time untile the message arrives 
+                time.sleep(exchange_data_latency)
         except:
             print("Thread send_msg_border_until_confirmation Interrupt received, stopping...")
             self.emergency_stop()  
@@ -301,7 +297,6 @@ def Form_border(self):
     start_forming_bordertime=time.time() 
     #Continue checking in case of not forming border the process will start again 
     while (not self.Forming_Border_Broadcast_REC.is_set()) and (number_of_try<=3) and (not self.expansion_stop.is_set()) and (not self.Emergency_stop.is_set()):
-        self.demand_neighbors_info()
         check_border_candidate_eligibility(self)
         if self.border_candidate :
             self.current_target_id= choose_spot_right_handed(self) # chose spot only when it is candidate 

@@ -269,9 +269,8 @@ class Drone:
     def demand_neighbors_info(self): 
         # This function will be called by many threads and since it contains reset of data, and need to finish receiving data so list updated
         # So the function should not be called until it is completly finished or the list will be wrong if 2 threads called it at the same time  
-        # Only one thread should ask the demand and the rest wait, also this demand should done been only in interval of 15 second ( reduce number of demands)
-        if self.list_finished_update.is_set() and (time.time()-self.last_seen_demand_neighbors_info>15) : # There is no other thread doing the update 
-            self.last_demand_time=time.time() # Should be done by only one thread  
+        # Only one thread should ask the demand and the rest wait
+        if self.list_finished_update.is_set() : # There is no other thread doing the update   
             self.list_finished_update.clear()
             copy_neighbor_list= copy.deepcopy(self.neighbor_list) # use deepcopy or it will be reference not copy 
             recollect_data=0
