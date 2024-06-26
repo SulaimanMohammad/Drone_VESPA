@@ -11,22 +11,23 @@ This module is used to send messages by sending message only to one drone by sea
 ---------------------------------- Communication ------------------------------------
 -------------------------------------------------------------------------------------
 '''
-def build_border_message(self,header,target_ids, candidate_id):
+def build_border_message(self, header, target_id, candidate_id):
     # Determine max byte count for numbers
     max_byte_count = max(
-                        [determine_max_byte_size(num) for num in target_ids ]+
-                        [determine_max_byte_size(candidate_id)]
-                        )
-    # Start message with 'F', followed by max byte count and then the length of the propagation_indicator
-    message = header.encode() + struct.pack('>BB', max_byte_count, len(target_ids))
-
-    message += struct.pack('>B',len(target_ids))
-    for num in target_ids:
-            message += num.to_bytes(max_byte_count, byteorder='big',signed=True)
+        [determine_max_byte_size(target_id)] +
+        [determine_max_byte_size(candidate_id)] +
+        [determine_max_byte_size(self.id)]
+    )
+    # Start message with header, followed by max byte count
+    message = header.encode()
+    message += max_byte_count.to_bytes(1, byteorder='big')  # max_byte_count as a single byte
+    
+    # Append the target_id using the determined byte count
+    message += target_id.to_bytes(max_byte_count, byteorder='big', signed=True)
     # Append the sender using the determined byte count
-    message += self.id.to_bytes(max_byte_count, 'big')
+    message += self.id.to_bytes(max_byte_count, byteorder='big')
     # Append the candidate using the determined byte count
-    message += candidate_id.to_bytes(max_byte_count, 'big')
+    message += candidate_id.to_bytes(max_byte_count, byteorder='big')
     message += b'\n'
     return message
 
@@ -35,32 +36,26 @@ def decode_border_message(message):
     header_length = 1  # Replace with the actual length of the header
     message = message[header_length:]
 
-    # Read the max byte count and length of target_ids
-    max_byte_count, num_target_ids = struct.unpack('>BB', message[:2])
-    message = message[2:]
-
-    # Remove the redundant target_ids length byte
+    # Read the max byte count
+    max_byte_count = message[0]
     message = message[1:]
 
-    # Read target ids based on the max_byte_count
-    target_ids = []
-    for _ in range(num_target_ids):
-        num_bytes = message[:max_byte_count]
-        target_id = int.from_bytes(num_bytes, 'big',signed=True)
-        target_ids.append(target_id)
-        message = message[max_byte_count:]
+    # Read the target id based on the max_byte_count
+    target_id_bytes = message[:max_byte_count]
+    target_id = int.from_bytes(target_id_bytes, byteorder='big', signed=True)
+    message = message[max_byte_count:]
 
     # Read sender id
-    num_bytes = message[:max_byte_count]
-    sender_id = int.from_bytes(num_bytes, 'big')
+    sender_id_bytes = message[:max_byte_count]
+    sender_id = int.from_bytes(sender_id_bytes, byteorder='big')
     message = message[max_byte_count:]
 
-    # Read candidate
-    num_bytes = message[:max_byte_count]
-    candidate = int.from_bytes(num_bytes, 'big')
+    # Read candidate id
+    candidate_id_bytes = message[:max_byte_count]
+    candidate_id = int.from_bytes(candidate_id_bytes, byteorder='big')
     message = message[max_byte_count:]
 
-    return sender_id, target_ids, candidate
+    return sender_id, target_id, candidate_id
 
 def circle_completed(self):
         if self.border_candidate:    
@@ -69,7 +64,7 @@ def circle_completed(self):
             else: 
                 self.change_state_to(Border) 
             
-            Broadcast_Msg= build_border_message(self,Forming_border_header,[-1], self.id)
+            Broadcast_Msg= build_border_message(self,Forming_border_header,-1, self.id)
             #send_msg_border_upon_confirmation(self, Broadcast_Msg)
             send_msg(Broadcast_Msg)
             self.Forming_Border_Broadcast_REC.set() # to end the the loop
@@ -99,21 +94,21 @@ def forward_broadcast_message(self,header,candidate):
     Note: since the message will be sent to all the drone around , but rememeber the ones that already received
     it will not recieved it again and th reason is the flag that end the listener is raised and no reading of buffer will be performed
     '''
-    msg= build_border_message(self, header,[-1],candidate) # as you see the candidate is resent as it was recived
+    msg= build_border_message(self, header,-1,candidate) # as you see the candidate is resent as it was recived
     send_msg(msg)
 
 def form_border_one_direction(self,header,msg):
     if not self.Forming_Border_Broadcast_REC.is_set(): # React only if border is not formed yet 
-        sender_id, target_ids, candidate= decode_border_message(msg)
+        sender_id, target_id, candidate= decode_border_message(msg)
         reset_timer_forme_border(self,header) # Reset for any message even from out the region because that means the border is not yet formed 
         if sender_id in self.neighbors_ids: # Signal comes from the neighbor drone, dont consider messages out of the region 
-            if sender_id in self.current_target_ids and candidate in self.rec_candidate:
+            if sender_id == self.current_target_id and (candidate in self.rec_candidate):
                 # MESSAGR REC, confirmed"
                 with self.candidate_to_send_lock:
                     if candidate in self.candidate_to_send:
                         self.candidate_to_send.remove(candidate)
 
-            if len(target_ids)==1 and target_ids[0]==-1:
+            if target_id==-1:
                 if self.border_candidate==True:
                     border_broadcast_respond(self, candidate)
                 # Here any drone in any state needs to forward the boradcast message and rise ending flag
@@ -121,7 +116,7 @@ def form_border_one_direction(self,header,msg):
                 finish_timer_forme_border(self)
                 self.Forming_Border_Broadcast_REC.set()
 
-            if self.id in  target_ids  and target_ids :# targets exist not empty s
+            if self.id == target_id:
                 if self.id == candidate:
                     if sender_id in self.message_sent_for_border: # The mesage came backward not in circle
                         self.border_formed=False
@@ -150,7 +145,7 @@ def send_msg_border_until_confirmation(self,header):
             if not self.Forming_Border_Broadcast_REC.is_set(): # dont reset at the end of phase since it listeners will be bloked
                 self.demand_neighbors_info()
                 check_border_candidate_eligibility(self)
-                self.current_target_ids= choose_spot_right_handed(self)
+                self.current_target_id= choose_spot_right_handed(self)
         
             if self.border_candidate == True:
                 for candidate in candidates_to_process: 
@@ -158,8 +153,8 @@ def send_msg_border_until_confirmation(self,header):
                         self.rec_candidate.append(candidate)
                     if self.Forming_Border_Broadcast_REC.is_set():
                         break
-                    if self.current_target_ids is not None:
-                        msg= build_border_message(self,header,self.current_target_ids, candidate) 
+                    if self.current_target_id is not None:
+                        msg= build_border_message(self,header,self.current_target_id, candidate) 
                         send_msg(msg)
                         time.sleep(exchange_data_latency)# time untile the message arrives 
             time.sleep(exchange_data_latency)
@@ -170,26 +165,26 @@ def send_msg_border_until_confirmation(self,header):
 
 def verify_border(self,header, msg):
     if not self.border_verified.is_set():
-        sender_id, target_ids, candidate= decode_border_message(msg)
+        sender_id, target_id, candidate= decode_border_message(msg)
         reset_timer_forme_border(self, header)
         if sender_id in self.neighbors_ids: # Signal comes from the neighbor drone, dont consider messages out of the region 
-            if len(target_ids)==1 and target_ids[0]==-1:
+            if target_id==-1:
                 # Here any drone in any state needs to forward the boradcast message and rise ending flag
                 forward_broadcast_message(self, header,candidate)
                 finish_timer_forme_border(self)
                 self.border_verified.set()
 
-            if self.id in  target_ids and target_ids :# targets exist not empty s
+            if self.id == target_id :
                 if self.id == candidate and (self.get_state()== Border or self.get_state()== Irremovable_boarder) :
-                    Broadcast_Msg= build_border_message(self,header,[-1], self.id)
+                    Broadcast_Msg= build_border_message(self,header,-1, self.id)
                     #send_msg_border_upon_confirmation(self, Broadcast_Msg)
                     send_msg(Broadcast_Msg) # bordacst doent need to be waiting conformation 
                     finish_timer_forme_border(self)
                     self.border_verified.set() # to end the the loop
                 else:
                     if self.get_state()== Border or self.get_state()== Irremovable_boarder:
-                        self.current_target_ids= choose_spot_right_handed(self,self.neighbor_list_upon_border_formation )
-                        msg= build_border_message(self,header,self.current_target_ids, candidate)
+                        self.current_target_id= choose_spot_right_handed(self,self.neighbor_list_upon_border_formation )
+                        msg= build_border_message(self,header,self.current_target_id, candidate)
                         send_msg(msg) 
 
 ''''
@@ -240,6 +235,7 @@ def choose_spot_right_handed(self, neighbor_list_upon_border=None):
     
     if neighbor_list_upon_border==None:
         neighbor_list_x = self.get_neighbor_list()[1:]
+        #print("neighbor_list_x", neighbor_list_x)
     else:
         neighbor_list_x= neighbor_list_upon_border[1:] # Use the saved list to verfiy the border still same 
 
@@ -252,13 +248,14 @@ def choose_spot_right_handed(self, neighbor_list_upon_border=None):
             break
     # If no empty zone is found, return None
     if first_empty_index is None:
-        return None
+        chosen_id=None
     # Search for the next drone in a circular fashion
     for j in range(1, n+1):
         next_index = (first_empty_index + j) % n
         if neighbor_list_x[next_index]["drones_in"] > 0:
-            return [neighbor_list_x[next_index]["drones_in_id"][0]]
-    return None
+            chosen_id=neighbor_list_x[next_index]["drones_in_id"][0]
+    
+    self.current_target_id=chosen_id
 
 def start_msg_one_direction(self):
     with self.candidate_to_send_lock:
@@ -267,7 +264,7 @@ def start_msg_one_direction(self):
             self.rec_candidate.append(self.id)
 
 def reset_border_variables(self): 
-    self.current_target_ids=[]
+    self.current_target_id=None
     self.candidate_to_send=[]
     self.rec_candidate=[]
     self.border_candidate=False
@@ -306,9 +303,9 @@ def Form_border(self):
         self.demand_neighbors_info()
         check_border_candidate_eligibility(self)
         if self.border_candidate :
-            self.current_target_ids= choose_spot_right_handed(self) # chose spot only when it is candidate 
+            self.current_target_id= choose_spot_right_handed(self) # chose spot only when it is candidate 
             self.update_candidate_spot_info_to_neighbors() # Useful if the drone arrived and filled a spot made others sourounded
-            self.message_sent_for_border= self.current_target_ids
+            self.message_sent_for_border= self.current_target_id
             '''launch a message circulation for current candidat'''
             start_msg_one_direction(self)
                     
@@ -350,9 +347,9 @@ def Form_border(self):
 def confirm_border_connectivity(self):
     start_forming_bordertime=time.time() 
     if self.get_state()== Border or self.get_state()==Irremovable_boarder: 
-        self.current_target_ids= choose_spot_right_handed(self,self.neighbor_list_upon_border_formation) 
-        if self.current_target_ids is not None:
-            msg= build_border_message(self,Verify_border_header,self.current_target_ids, self.id)
+        self.current_target_id= choose_spot_right_handed(self,self.neighbor_list_upon_border_formation) 
+        if self.current_target_id is not None:
+            msg= build_border_message(self,Verify_border_header,self.current_target_id, self.id)
             send_msg(msg)
     
         reset_timer_forme_border(self, Verify_border_header)

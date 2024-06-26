@@ -141,7 +141,7 @@ class Drone:
             s = {"name": "s" + str(i), "distance": 0, "priority": 0,"drones_in": 0,"drones_in_id":[] , "states": [], "previous_state": []}
             self.neighbor_list.append(s)
         
-        self.current_target_ids=[]
+        self.current_target_id=None
         self.lock_state = threading.Lock()
         self.lock_neighbor_list = threading.Lock()
         self.lock_demanders_timer =threading.Lock()
