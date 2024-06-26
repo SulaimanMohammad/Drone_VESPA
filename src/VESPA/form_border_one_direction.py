@@ -184,8 +184,9 @@ def verify_border(self,header, msg):
                 else:
                     if self.get_state()== Border or self.get_state()== Irremovable_boarder:
                         self.current_target_id= choose_spot_right_handed(self,self.neighbor_list_upon_border_formation )
-                        msg= build_border_message(self,header,self.current_target_id, candidate)
-                        send_msg(msg) 
+                        if self.current_target_id is not None:
+                            msg= build_border_message(self,header,self.current_target_id, candidate)
+                            send_msg(msg) 
 
 ''''
 -------------------------------------------------------------------------------------
