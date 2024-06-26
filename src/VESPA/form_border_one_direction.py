@@ -126,7 +126,7 @@ def form_border_one_direction(self,header,msg):
         reset_timer_forme_border(self,header) # Reset for any message even from out the region because that means the border is not yet formed 
         if sender_id in self.neighbors_ids: # Signal comes from the neighbor drone, dont consider messages out of the region 
             print("message from", sender_id , "target_ids", target_ids,"candidate", candidate,"rec_candidate",  self.rec_candidate )
-            if sender_id in self.current_target_ids and candidate in self.rec_candidate:
+            if sender_id == self.current_target_ids and candidate in self.rec_candidate:
                 # MESSAGR REC, confirmed"
                 with self.candidate_to_send_lock:
                     if candidate in self.candidate_to_send:
@@ -144,7 +144,7 @@ def form_border_one_direction(self,header,msg):
 
             if self.id == target_ids :# targets exist not empty s
                 if self.id == candidate:
-                    if sender_id in self.current_target_ids: # The mesage came backward not in circle
+                    if sender_id == self.current_target_ids: # The mesage came backward not in circle
                         self.border_formed=False
                         finish_timer_forme_border(self)
 
