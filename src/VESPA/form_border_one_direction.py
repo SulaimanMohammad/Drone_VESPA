@@ -154,13 +154,13 @@ def send_msg_border_until_confirmation(self,header):
         # Copy messages_to_be_sent and iterate in it trying to send all the msg 
         # self.sending_messgae_list will change when a message is received the candidate will be pulled out 
         
-        if not self.Forming_Border_Broadcast_REC.is_set(): # dont reset at the end of phase since it listeners will be bloked
-            self.demand_neighbors_info()
-            check_border_candidate_eligibility(self)
-            print("send_msg_border_until_confirmation self.border_candidate", self.border_candidate)
+        # if not self.Forming_Border_Broadcast_REC.is_set(): # dont reset at the end of phase since it listeners will be bloked
+        #     self.demand_neighbors_info()
+        #     check_border_candidate_eligibility(self)
+        #     print("send_msg_border_until_confirmation self.border_candidate", self.border_candidate)
             
-            choose_spot_right_handed(self)
-            print("send_msg_border_until_confirmation self.current_target_ids", self.current_target_ids)
+        #     choose_spot_right_handed(self)
+        #     print("send_msg_border_until_confirmation self.current_target_ids", self.current_target_ids)
 
         if self.border_candidate == True:
             with self.candidate_to_send_lock:
@@ -328,7 +328,7 @@ def Form_border(self):
     #Continue checking in case of not forming border the process will start again 
     while (not self.Forming_Border_Broadcast_REC.is_set()) and (number_of_try<=3) and (not self.expansion_stop.is_set()) and (not self.Emergency_stop.is_set()):
         print(" Start the process")
-        self.demand_neighbors_info()
+        # self.demand_neighbors_info()
         check_border_candidate_eligibility(self)
         print("Form_border self.border_candidate", self.border_candidate)
         if self.border_candidate :
