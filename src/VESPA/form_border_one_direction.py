@@ -129,7 +129,7 @@ def form_border_one_direction(self,header,msg):
 
             if self.id in  target_ids  and target_ids :# targets exist not empty s
                 if self.id == candidate:
-                    if sender_id in self.message_sent_for_border: # The mesage came backward not in circle
+                    if sender_id ==  self.current_target_ids: # The mesage came backward not in circle
                         self.border_formed=False
                         finish_timer_forme_border(self)
 
@@ -335,7 +335,6 @@ def Form_border(self):
             choose_spot_right_handed(self) # chose spot only when it is candidate
             print("Form border self.current_target_ids", self.current_target_ids) 
             self.update_candidate_spot_info_to_neighbors() # Useful if the drone arrived and filled a spot made others sourounded
-            self.message_sent_for_border= self.current_target_ids
             '''launch a message circulation for current candidat'''
             start_msg_one_direction(self)
                     
