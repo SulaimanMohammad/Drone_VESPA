@@ -15,7 +15,7 @@ def build_border_message(self,header,target_ids, candidate_id):
     # Determine max byte count for numbers
     if target_ids and (target_ids is not None) : # target_ids is not empty 
         max_byte_count = max(
-                            [determine_max_byte_size(num) for num in target_ids ]+
+                            [determine_max_byte_size(target_ids) ]+
                             [determine_max_byte_size(candidate_id)]
                             )
         # Start message with 'F', followed by max byte count and then the length of the propagation_indicator
@@ -71,7 +71,7 @@ def circle_completed(self):
             else: 
                 self.change_state_to(Border) 
             
-            Broadcast_Msg= build_border_message(self,Forming_border_header,[-1], self.id)
+            Broadcast_Msg= build_border_message(self,Forming_border_header,-1, self.id)
             #send_msg_border_upon_confirmation(self, Broadcast_Msg)
             send_msg(Broadcast_Msg)
             self.Forming_Border_Broadcast_REC.set() # to end the the loop
@@ -102,7 +102,7 @@ def forward_broadcast_message(self,header,candidate):
     Note: since the message will be sent to all the drone around , but rememeber the ones that already received
     it will not recieved it again and th reason is the flag that end the listener is raised and no reading of buffer will be performed
     '''
-    msg= build_border_message(self, header,[-1],candidate) # as you see the candidate is resent as it was recived
+    msg= build_border_message(self, header,-1,candidate) # as you see the candidate is resent as it was recived
     send_msg(msg)
 
 def form_border_one_direction(self,header,msg):
@@ -194,7 +194,7 @@ def verify_border(self,header, msg):
             if self.id in  target_ids and target_ids :# targets exist not empty s
                 print("rec from sender_id, target_ids, candidate",sender_id, target_ids, candidate )
                 if self.id == candidate and (self.get_state()== Border or self.get_state()== Irremovable_boarder) :
-                    Broadcast_Msg= build_border_message(self,header,[-1], self.id)
+                    Broadcast_Msg= build_border_message(self,header,-1, self.id)
                     print("circle done")
                     #send_msg_border_upon_confirmation(self, Broadcast_Msg)
                     send_msg(Broadcast_Msg) # bordacst doent need to be waiting conformation 
