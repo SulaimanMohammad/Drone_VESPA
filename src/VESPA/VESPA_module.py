@@ -147,7 +147,7 @@ class Drone:
         self.remaining_collect_time=0
         self.collected_ids=[] # Sink list of the ids of drones around     # The list that contains all the drones that participate in VESPA
 
-        self.current_target_ids=None
+        self.current_target_ids=[]
         self.current_target_ids_lock=threading.Lock() 
         self.lock_state = threading.Lock()
         self.lock_neighbor_list = threading.Lock()
