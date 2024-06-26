@@ -333,6 +333,7 @@ def Form_border(self):
         print("Form_border self.border_candidate", self.border_candidate)
         if self.border_candidate :
             choose_spot_right_handed(self) # chose spot only when it is candidate
+            print(type(self.current_target_ids))
             print("Form border self.current_target_ids", self.current_target_ids) 
             self.update_candidate_spot_info_to_neighbors() # Useful if the drone arrived and filled a spot made others sourounded
             '''launch a message circulation for current candidat'''
