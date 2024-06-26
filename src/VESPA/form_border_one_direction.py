@@ -11,58 +11,73 @@ This module is used to send messages by sending message only to one drone by sea
 ---------------------------------- Communication ------------------------------------
 -------------------------------------------------------------------------------------
 '''
-def build_border_message(self,header,target_ids, candidate_id):
-    # Determine max byte count for numbers
-    if target_ids and (target_ids is not None) : # target_ids is not empty 
-        max_byte_count = max(
-                            [determine_max_byte_size(num) for num in target_ids ]+
-                            [determine_max_byte_size(candidate_id)]
-                            )
-        # Start message with 'F', followed by max byte count and then the length of the propagation_indicator
-        message = header.encode() + struct.pack('>BB', max_byte_count, len(target_ids))
+# def build_border_message(self,header,target_ids, candidate_id):
+#     # Determine max byte count for numbers
+#     if target_ids and (target_ids is not None) : # target_ids is not empty 
+#         max_byte_count = max(
+#                             [determine_max_byte_size(num) for num in target_ids ]+
+#                             [determine_max_byte_size(candidate_id)]
+#                             )
+#         # Start message with 'F', followed by max byte count and then the length of the propagation_indicator
+#         message = header.encode() + struct.pack('>BB', max_byte_count, len(target_ids))
 
-        message += struct.pack('>B',len(target_ids))
-        for num in target_ids:
-                message += num.to_bytes(max_byte_count, byteorder='big',signed=True)
+#         message += struct.pack('>B',len(target_ids))
+#         for num in target_ids:
+#                 message += num.to_bytes(max_byte_count, byteorder='big',signed=True)
+#         # Append the sender using the determined byte count
+#         message += self.id.to_bytes(max_byte_count, 'big')
+#         # Append the candidate using the determined byte count
+#         message += candidate_id.to_bytes(max_byte_count, 'big')
+#         message += b'\n'
+#         return message
+    
+def build_border_message(self, header, target_ids, candidate_id):
+    # Determine max byte count for numbers
+    if target_ids and (target_ids is not None):  # target_ids is not empty
+        max_byte_count = max(
+            [determine_max_byte_size(target_ids)] +
+            [determine_max_byte_size(candidate_id)] +
+            [determine_max_byte_size(self.id)]
+        )
+        # Start message with header, followed by max byte count
+        message = header.encode()
+        message += max_byte_count.to_bytes(1, byteorder='big')  # max_byte_count as a single byte
+        
+        # Append the target_id using the determined byte count
+        message += target_ids.to_bytes(max_byte_count, byteorder='big', signed=True)
         # Append the sender using the determined byte count
-        message += self.id.to_bytes(max_byte_count, 'big')
+        message += self.id.to_bytes(max_byte_count, byteorder='big')
         # Append the candidate using the determined byte count
-        message += candidate_id.to_bytes(max_byte_count, 'big')
+        message += candidate_id.to_bytes(max_byte_count, byteorder='big')
         message += b'\n'
         return message
-    
 
 def decode_border_message(message):
     # Read the header (assuming it's a fixed length -- you'll need to define this)
     header_length = 1  # Replace with the actual length of the header
     message = message[header_length:]
 
-    # Read the max byte count and length of target_ids
-    max_byte_count, num_target_ids = struct.unpack('>BB', message[:2])
-    message = message[2:]
-
-    # Remove the redundant target_ids length byte
+    # Read the max byte count
+    max_byte_count = message[0]
     message = message[1:]
 
-    # Read target ids based on the max_byte_count
-    target_ids = []
-    for _ in range(num_target_ids):
-        num_bytes = message[:max_byte_count]
-        target_id = int.from_bytes(num_bytes, 'big',signed=True)
-        target_ids.append(target_id)
-        message = message[max_byte_count:]
+    # Read the target id based on the max_byte_count
+    target_id_bytes = message[:max_byte_count]
+    target_id = int.from_bytes(target_id_bytes, byteorder='big', signed=True)
+    message = message[max_byte_count:]
 
     # Read sender id
-    num_bytes = message[:max_byte_count]
-    sender_id = int.from_bytes(num_bytes, 'big')
+    sender_id_bytes = message[:max_byte_count]
+    sender_id = int.from_bytes(sender_id_bytes, byteorder='big')
     message = message[max_byte_count:]
 
-    # Read candidate
-    num_bytes = message[:max_byte_count]
-    candidate = int.from_bytes(num_bytes, 'big')
+    # Read candidate id
+    candidate_id_bytes = message[:max_byte_count]
+    candidate_id = int.from_bytes(candidate_id_bytes, byteorder='big')
     message = message[max_byte_count:]
 
-    return sender_id, target_ids, candidate
+    return sender_id, target_id, candidate_id
+
 
 def circle_completed(self):
         if self.border_candidate:    
@@ -71,7 +86,7 @@ def circle_completed(self):
             else: 
                 self.change_state_to(Border) 
             
-            Broadcast_Msg= build_border_message(self,Forming_border_header,[-1], self.id)
+            Broadcast_Msg= build_border_message(self,Forming_border_header,-1, self.id)
             #send_msg_border_upon_confirmation(self, Broadcast_Msg)
             send_msg(Broadcast_Msg)
             self.Forming_Border_Broadcast_REC.set() # to end the the loop
@@ -102,7 +117,7 @@ def forward_broadcast_message(self,header,candidate):
     Note: since the message will be sent to all the drone around , but rememeber the ones that already received
     it will not recieved it again and th reason is the flag that end the listener is raised and no reading of buffer will be performed
     '''
-    msg= build_border_message(self, header,[-1],candidate) # as you see the candidate is resent as it was recived
+    msg= build_border_message(self, header,-1,candidate) # as you see the candidate is resent as it was recived
     send_msg(msg)
 
 def form_border_one_direction(self,header,msg):
@@ -118,7 +133,7 @@ def form_border_one_direction(self,header,msg):
                         self.candidate_to_send.remove(candidate)
                         print(  "MESSAGR REC, confirmed", self.candidate_to_send)
 
-            if len(target_ids)==1 and target_ids[0]==-1:
+            if target_ids==-1:
                 print("brodcast the end")
                 if self.border_candidate==True:
                     border_broadcast_respond(self, candidate)
@@ -127,7 +142,7 @@ def form_border_one_direction(self,header,msg):
                 finish_timer_forme_border(self)
                 self.Forming_Border_Broadcast_REC.set()
 
-            if self.id in  target_ids  and target_ids :# targets exist not empty s
+            if self.id == target_ids :# targets exist not empty s
                 if self.id == candidate:
                     if sender_id in self.current_target_ids: # The mesage came backward not in circle
                         self.border_formed=False
@@ -184,17 +199,17 @@ def verify_border(self,header, msg):
         sender_id, target_ids, candidate= decode_border_message(msg)
         reset_timer_forme_border(self, header)
         if sender_id in self.neighbors_ids: # Signal comes from the neighbor drone, dont consider messages out of the region 
-            if len(target_ids)==1 and target_ids[0]==-1:
+            if target_ids==-1:
                 # Here any drone in any state needs to forward the boradcast message and rise ending flag
                 forward_broadcast_message(self, header,candidate)
                 print("broadcast")
                 finish_timer_forme_border(self)
                 self.border_verified.set()
 
-            if self.id in  target_ids and target_ids :# targets exist not empty s
+            if self.id == target_ids  :# targets exist not empty s
                 print("rec from sender_id, target_ids, candidate",sender_id, target_ids, candidate )
                 if self.id == candidate and (self.get_state()== Border or self.get_state()== Irremovable_boarder) :
-                    Broadcast_Msg= build_border_message(self,header,[-1], self.id)
+                    Broadcast_Msg= build_border_message(self,header,-1, self.id)
                     print("circle done")
                     #send_msg_border_upon_confirmation(self, Broadcast_Msg)
                     send_msg(Broadcast_Msg) # bordacst doent need to be waiting conformation 
@@ -275,7 +290,7 @@ def choose_spot_right_handed(self, neighbor_list_upon_border=None):
     for j in range(1, n+1):
         next_index = (first_empty_index + j) % n
         if neighbor_list_x[next_index]["drones_in"] > 0:
-            chosen_id=[neighbor_list_x[next_index]["drones_in_id"][0]]
+            chosen_id=neighbor_list_x[next_index]["drones_in_id"][0]
     with self.current_target_ids_lock: 
         self.current_target_ids=chosen_id
   
@@ -291,7 +306,7 @@ def start_msg_one_direction(self):
             print(" rec_candidate", self.rec_candidate)
 
 def reset_border_variables(self): 
-    self.current_target_ids=[]
+    self.current_target_ids=None
     self.candidate_to_send=[]
     self.rec_candidate=[]
     self.border_candidate=False
@@ -344,16 +359,18 @@ def Form_border(self):
         # Note in case the border is not formed with absance of new messages, when the timer is up the while loop will re-executed 
         reset_timer_forme_border(self,Forming_border_header)
 
-        # Timer ill be reseted upon each message recived marking that the process still on 
-        while (not self.Emergency_stop.is_set()) and (time.time()-start_forming_bordertime < 200 ): # continue loop if it is still in period of 200 second of border formation 
+        # Timer will be reseted upon each message recived marking that the process still on 
+        while (not self.Emergency_stop.is_set()) and (time.time()-start_forming_bordertime < 600 ): # continue loop if it is still in period of 200 second of border formation 
             with self.lock_boder_timer:
                 self.remaining_time_forme_border -= 0.1
                 if self.remaining_time_forme_border <= 0:
                         break
             time.sleep(0.1)
         
-        if (self.border_formed == False) and (time.time()-start_forming_bordertime < 200) : 
+        if (self.border_formed == False) and (time.time()-start_forming_bordertime < 600) : 
             number_of_try=number_of_try+1
+            time.sleep(120) # wait again to try utnil the toplogy change
+            reset_border_variables(self)
         else:
             break # Border is formed stop 
 
