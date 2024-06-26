@@ -173,7 +173,7 @@ def send_msg_border_until_confirmation(self,header):
                             send_msg(msg)
                             print("forwarard the candiate ",candidate , "to",  self.current_target_ids)
                             #time.sleep(exchange_data_latency)# time untile the message arrives 
-        time.sleep(len(self.candidate_to_send)*exchange_data_latency)
+        time.sleep(exchange_data_latency)
         # except:
         #     print("Thread send_msg_border_until_confirmation Interrupt received, stopping...")
         #     self.emergency_stop()  
