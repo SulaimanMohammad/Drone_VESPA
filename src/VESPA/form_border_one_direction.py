@@ -167,6 +167,7 @@ def send_msg_border_until_confirmation(self,header):
             print("send_msg_border_until_confirmation self.current_target_ids", self.current_target_ids)
 
         if self.border_candidate == True:
+            print("candidates_to_process", candidates_to_process, "self.candidate_to_send", self.candidate_to_send)
             for candidate in candidates_to_process: 
                 if self.Forming_Border_Broadcast_REC.is_set():
                     break
