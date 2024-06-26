@@ -139,6 +139,7 @@ def expansion_listener (self,vehicle):
             form_border_one_direction(self,Forming_border_header,msg)
             #form_border_two_direction(self,Forming_border_header,msg)
         elif msg.startswith(Verify_border_header.encode()) and msg.endswith(b'\n'):
+
             verify_border(self,Verify_border_header,msg)
         
         # except:
@@ -391,6 +392,7 @@ def expand_and_form_border(self,vehicle):
     Form_border(self)
     print( "Finished with time ", time.time() -start_time)
     print(self.get_neighbor_list() )
+    time.sleep(exchange_data_latency)
     clear_buffer()
 
     print("Verify the border formation")
