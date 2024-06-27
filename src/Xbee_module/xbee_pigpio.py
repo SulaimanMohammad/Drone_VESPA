@@ -52,7 +52,7 @@ def send_msg(msg):
 
             pi.wave_add_serial(tx_pin, baud_rate, msg)  # Add a new waveform
             # wave_id = pi.wave_create()  # Create the waveform
-            max_attempts = 10  # Maximum number of attempts to create the waveform
+            max_attempts = 20  # Maximum number of attempts to create the waveform
             wave_id = None
             for attempt in range(max_attempts):
                 try:
@@ -119,7 +119,8 @@ def retrieve_msg_from_buffer(stop_flag):
                 return complete_message
 
             # Short sleep to prevent high CPU usage
-            time.sleep(0.1)
+            if count == 0:
+                time.sleep(0.02)
         
         except:
             raise Exception("Thread retrieve_msg_from_buffer Interrupt received, stopping...")
