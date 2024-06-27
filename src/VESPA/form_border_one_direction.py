@@ -330,11 +330,13 @@ def Form_border(self):
 
     if self.border_formed == True:
         self.Forming_Border_Broadcast_REC.wait()
+        
+        self.demand_neighbors_info() # Update neighbor_list to see the changes in the drones states ( like owner became border)
+        self.neighbor_list_upon_border_formation=copy.deepcopy( self.get_neighbor_list()) # Save the Topology arround so it can be used to verfiy the border
+
         wait_message_rec.join() # wait wait_message_rec thread to finish and detect the Forming_Border_Broadcast_REC flag
         self.Forming_Border_Broadcast_REC.clear()
 
-        self.demand_neighbors_info() # Update neighbor_list to see the changes in the drones states ( like owner became border)
-        self.neighbor_list_upon_border_formation=copy.deepcopy( self.get_neighbor_list()) # Save the Topology arround so it can be used to verfiy the border
     else:
         # In case of 3 tries and the border is not formed then stop the process especially the thread of send_msg_border_until_confirmation
         self.Forming_border_failed.set()
