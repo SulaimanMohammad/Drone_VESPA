@@ -411,6 +411,8 @@ def expand_and_form_border(self,vehicle):
     else:
         print("Return home border is not formed")
         self.emergency_stop()
+
+    print(" All Done")
            
 def first_exapnsion (self, vehicle):
     # Lance a thread to read messages continuously
