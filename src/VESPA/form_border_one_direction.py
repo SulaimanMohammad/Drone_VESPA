@@ -308,16 +308,22 @@ def Form_border(self):
         # Note in case the border is not formed with absance of new messages, when the timer is up the while loop will re-executed 
         reset_timer_forme_border(self,Forming_border_header)
 
-        # Timer ill be reseted upon each message recived marking that the process still on 
-        while (not self.Emergency_stop.is_set()) and (time.time()-start_forming_bordertime < 200 ): # continue loop if it is still in period of 200 second of border formation 
+        # Timer will be reseted upon each message recived marking that the process still on 
+        while (not self.Emergency_stop.is_set()) and (time.time()-start_forming_bordertime < 500 ): # continue loop if it is still in period of 200 second of border formation 
             with self.lock_boder_timer:
                 self.remaining_time_forme_border -= 0.1
                 if self.remaining_time_forme_border <= 0:
                         break
             time.sleep(0.1)
         
-        if (self.border_formed == False) and (time.time()-start_forming_bordertime < 200) : 
+        if (self.border_formed == False) and (time.time()-start_forming_bordertime < 500) : 
             number_of_try=number_of_try+1
+            '''
+            Wait after each try if it did not succeed and wait for the topology to change 
+            that can happen if not all the drones finished moving, then reset all and try again
+            '''
+            time.sleep(150) 
+            reset_border_variables(self)
         else:
             break # Border is formed stop 
 
