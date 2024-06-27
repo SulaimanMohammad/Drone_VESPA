@@ -88,11 +88,7 @@ def border_broadcast_respond(self, candidate):
 
 def forward_broadcast_message(self,header,candidate):
     '''
-    Build and send messgaes to all the niegbors and since only it is a broadcast
-    then propagation_indicator, targets_ids both are [-1].
-    The most important is the candidate that fired the broadcast, which is already recieved from neigbors
-    Note: since the message will be sent to all the drone around , but rememeber the ones that already received
-    it will not recieved it again and th reason is the flag that end the listener is raised and no reading of buffer will be performed
+    Build and send messgaes to all the niegbors and since only it is a broadcast targets_id is [-1].
     '''
     msg= build_border_message(self, header,-1,candidate) # as you see the candidate is resent as it was recived
     send_msg(msg)
@@ -136,6 +132,12 @@ def form_border_one_direction(self,header,msg):
                         if candidate not in self.candidate_to_send:
                              self.candidate_to_send.insert(0, candidate) # insert at the beging so it will be processed immiditly 
                     
+                    '''
+                    Append the candidate immediately upon receiving, avoid waiting in the lock in send_msg_border_until_confirmation, 
+                    if a complete message arrives but the candidate is not added to rec_candidate  the drone will not become a border drone in border_broadcast_respond 
+                    '''
+                    if candidate not in self.rec_candidate:
+                        self.rec_candidate.append(candidate)
 
 def send_msg_border_until_confirmation(self,header):
     while (not self.Forming_Border_Broadcast_REC.is_set()) and ( not self.Forming_border_failed.is_set()) and(not self.expansion_stop.is_set()) and (not self.Emergency_stop.is_set()):
