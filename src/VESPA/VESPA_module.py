@@ -415,20 +415,20 @@ class Drone:
             self.update_neighbors_list(positionX, positionY, state, previous_state,id_value)
         
     def collect_demands(self):
-        # try: 
-        # wait for request , wait all requests and send only once 
-        self.initialize_timer_demand()
-        if self.demanders_list: # there are drone demaneded 
-            data_msg= self.build_spot_info_message(Response_header) # Build message that contains all data
-            send_msg(data_msg)
-            # wait Ack from the demander and in case not all recived re-send
-            with self.demander_lock:
-                self.demanders_list=[]
+        try: 
+            # wait for request , wait all requests and send only once 
             self.initialize_timer_demand()
-            self.resend_data()
-        # except:
-        #     print("Thread collect_demands Interrupt received, stopping...")
-        #     self.emergency_stop()   
+            if self.demanders_list: # there are drone demaneded 
+                data_msg= self.build_spot_info_message(Response_header) # Build message that contains all data
+                send_msg(data_msg)
+                # wait Ack from the demander and in case not all recived re-send
+                with self.demander_lock:
+                    self.demanders_list=[]
+                self.initialize_timer_demand()
+                self.resend_data()
+        except:
+            print("Thread collect_demands Interrupt received, stopping...")
+            self.emergency_stop()   
         
     def exchange_neighbors_info_communication(self,msg):
         # Receiving message asking for data 
@@ -803,13 +803,13 @@ class Drone:
 
     def simple_goto_thread(self, vehicle, lon, lat):
             set_to_move(vehicle)
-            # try: 
-            point1 = LocationGlobalRelative(lat,lon ,self.drone_alt)
-            vehicle.simple_goto( point1, groundspeed=defined_groundspeed) # Non-blocking movement need sleep to wait it to be done 
-            time.sleep((a/defined_groundspeed)+10) # Wait the movement to be done
-            # except:
-            #     print("An error occurred while move with simple_goto")
-            #     self.emergency_stop() 
+            try: 
+                point1 = LocationGlobalRelative(lat,lon ,self.drone_alt)
+                vehicle.simple_goto( point1, groundspeed=defined_groundspeed) # Non-blocking movement need sleep to wait it to be done 
+                time.sleep((a/defined_groundspeed)+10) # Wait the movement to be done
+            except:
+                print("An error occurred while move with simple_goto")
+                self.emergency_stop() 
             #hover(vehicle) # Ensure that the drone stay in place 
 
     def move_using_coord(self, vehicle, lon, lat):
@@ -861,11 +861,11 @@ class Drone:
         self.update_location(destination_spot)
         set_to_move(vehicle)
         angle, distance = self.convert_spot_angle_distance(destination_spot)
-        # try:
-        move_body_PID(vehicle,angle, distance, self.Emergency_stop,self.ref_alt,max_velocity=movement_velocity )
-        # except:
-        #     print("An error occurred while move_body_PID")
-        #     self.emergency_stop()
+        try:
+            move_body_PID(vehicle,angle, distance, self.Emergency_stop,self.ref_alt,max_velocity=movement_velocity )
+        except:
+            print("An error occurred while move_body_PID")
+            self.emergency_stop()
         # Arrive to steady state and hover then start observing the location
         #hover(vehicle)
 

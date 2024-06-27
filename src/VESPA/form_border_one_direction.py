@@ -165,7 +165,7 @@ def form_border_one_direction(self,header,msg):
 
 def send_msg_border_until_confirmation(self,header):
     while (not self.Forming_Border_Broadcast_REC.is_set()) and ( not self.Forming_border_failed.is_set()) and(not self.expansion_stop.is_set()) and (not self.Emergency_stop.is_set()):
-        # try: 
+        try: 
         # Copy messages_to_be_sent and iterate in it trying to send all the msg 
         # self.sending_messgae_list will change when a message is received the candidate will be pulled out 
         
@@ -176,22 +176,21 @@ def send_msg_border_until_confirmation(self,header):
             
         #     choose_spot_right_handed(self)
         #     print("send_msg_border_until_confirmation self.current_target_ids", self.current_target_ids)
-
-        if self.border_candidate == True:
-            with self.candidate_to_send_lock:
-                if self.candidate_to_send: 
-                    for candidate in self.candidate_to_send: 
-                        if self.Forming_Border_Broadcast_REC.is_set():
-                            break
-                        if self.current_target_ids is not None:
-                            msg= build_border_message(self,header,self.current_target_ids, candidate) 
-                            send_msg(msg)
-                            print("forwarard the candiate ",candidate , "to",  self.current_target_ids)
-                            #time.sleep(exchange_data_latency)# time untile the message arrives 
-        time.sleep(exchange_data_latency)
-        # except:
-        #     print("Thread send_msg_border_until_confirmation Interrupt received, stopping...")
-        #     self.emergency_stop()  
+            if self.border_candidate == True:
+                with self.candidate_to_send_lock:
+                    if self.candidate_to_send: 
+                        for candidate in self.candidate_to_send: 
+                            if self.Forming_Border_Broadcast_REC.is_set():
+                                break
+                            if self.current_target_ids is not None:
+                                msg= build_border_message(self,header,self.current_target_ids, candidate) 
+                                send_msg(msg)
+                                print("forwarard the candiate ",candidate , "to",  self.current_target_ids)
+                                #time.sleep(exchange_data_latency)# time untile the message arrives 
+            time.sleep(exchange_data_latency)
+        except:
+            print("Thread send_msg_border_until_confirmation Interrupt received, stopping...")
+            self.emergency_stop()  
             
 
 def verify_border(self,header, msg):
