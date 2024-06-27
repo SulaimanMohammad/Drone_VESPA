@@ -128,9 +128,14 @@ def form_border_one_direction(self,header,msg):
                         finish_timer_forme_border(self)
                 else: 
                     with self.candidate_to_send_lock:
+                        '''
+                        self.candidate_to_send used to forward candidate message to the next target of the current drone in send_msg_border_until_confirmation
+                        The recent candidate is first served to avoid sending 
+                        multiple forwarding messages while waiting to receive a message from the target drone 
+                        '''
                         if candidate not in self.candidate_to_send:
-                            self.candidate_to_send.append(candidate)
-
+                             self.candidate_to_send.insert(0, candidate) # insert at the beging so it will be processed immiditly 
+                    
 
 def send_msg_border_until_confirmation(self,header):
     while (not self.Forming_Border_Broadcast_REC.is_set()) and ( not self.Forming_border_failed.is_set()) and(not self.expansion_stop.is_set()) and (not self.Emergency_stop.is_set()):
