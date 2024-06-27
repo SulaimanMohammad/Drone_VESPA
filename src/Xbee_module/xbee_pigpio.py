@@ -119,7 +119,8 @@ def retrieve_msg_from_buffer(stop_flag):
                 return complete_message
 
             # Short sleep to prevent high CPU usage
-            time.sleep(0.05)
+            if count==0:
+                time.sleep(0.02)
         
         except:
             raise Exception("Thread retrieve_msg_from_buffer Interrupt received, stopping...")

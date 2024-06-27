@@ -217,7 +217,6 @@ def verify_border(self,header, msg):
                     self.border_verified.set() # to end the the loop
                 else:
                     if self.get_state()== Border or self.get_state()== Irremovable_boarder:
-                        choose_spot_right_handed(self,self.neighbor_list_upon_border_formation )
                         print("verify_border self.current_target_ids", self.current_target_ids)
                         msg= build_border_message(self,header,self.current_target_ids, candidate)
                         send_msg(msg) 
@@ -331,7 +330,7 @@ def Form_border(self):
             so there is need until the drone arrive and collect the ownership of the spot. 
         '''
         time.sleep(sync_time)
-        self.demand_neighbors_info(True) # return after gathering all info
+        self.demand_neighbors_info() # return after gathering all info
     
     self.Forming_Border_Broadcast_REC.clear()
     wait_message_rec = threading.Thread(target=send_msg_border_until_confirmation, args=(self,Forming_border_header)) #pass the function reference and arguments separately to the Thread constructor.
@@ -377,7 +376,7 @@ def Form_border(self):
 
     if self.border_formed == True:
         self.Forming_Border_Broadcast_REC.wait()
-        self.demand_neighbors_info(True) # Update neighbor_list to see the changes in the drones states ( like owner became border)
+        self.demand_neighbors_info() # Update neighbor_list to see the changes in the drones states ( like owner became border)
         self.neighbor_list_upon_border_formation=copy.deepcopy( self.get_neighbor_list()) # Save the Topology arround so it can be used to verfiy the border
         wait_message_rec.join() # wait wait_message_rec thread to finish and detect the Forming_Border_Broadcast_REC flag
         self.Forming_Border_Broadcast_REC.clear()
@@ -410,10 +409,14 @@ def confirm_border_connectivity(self):
 
     if self.border_verified.is_set():
         print("Border confirmed")
+        border_is_confirmed= True 
     else:
         print("Border Non confirmed")
         reset_border_variables(self)   
         self.border_verified.clear()
+        border_is_confirmed= False
+    
+    return border_is_confirmed
 
 
 def re_form_border(self):

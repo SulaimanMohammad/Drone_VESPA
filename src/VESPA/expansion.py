@@ -153,7 +153,7 @@ def expansion_listener (self,vehicle):
 '''
 def spatial_observation(self):
     self.calculate_neighbors_distance_sink()
-    self.demand_neighbors_info(True) # return after gathering all info
+    self.demand_neighbors_info() # return after gathering all info
     self.check_Ownership()
 
 # This called inside the lock so should not contain any lock or it will be dead
@@ -387,7 +387,7 @@ def expand_and_form_border(self,vehicle):
     send_msg(self.build_spot_info_message(Response_header))
     self.demand_neighbors_info()       
     print(self.get_neighbor_list() )
-    print( "start forming the border")
+    print( "Start forming the border")
     start_time=time.time()
     Form_border(self)
     print( "Finished with time ", time.time() -start_time)
@@ -398,14 +398,14 @@ def expand_and_form_border(self,vehicle):
     print("Verify the border formation")
     if self.border_formed != False:
         print("Border formed")
-        confirm_border_connectivity(self)
-        # if self.get_current_spot()["drones_in"]==1:
-        #     print (" Drone is Alone Go to ref ")
-        #     try: 
-        #         go_to_ref_altitude(vehicle,self.ref_alt)
-        #     except:
-        #         print("An error occurred while go_to_ref_altitude")
-        #         self.emergency_stop()    
+        border_well_confirmed= confirm_border_connectivity(self)
+        if self.get_current_spot()["drones_in"]==1 and border_well_confirmed:
+            print (" Drone is Alone Go to ref ")
+            try: 
+                go_to_ref_altitude(vehicle,self.ref_alt)
+            except:
+                print("An error occurred while go_to_ref_altitude")
+                self.emergency_stop()    
         # If the border is not formed you can add reformation border again 
         # re_form_border(self)
     else:
