@@ -391,7 +391,6 @@ def expand_and_form_border(self,vehicle):
     
     Form_border(self)
     clear_buffer()
-    self.demand_neighbors_info() # needed to update what neigbor become border 
 
     print("Verify the border formation")
     if self.border_formed != False:

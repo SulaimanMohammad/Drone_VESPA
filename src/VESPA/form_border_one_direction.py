@@ -118,7 +118,7 @@ def form_border_one_direction(self,header,msg):
 
             if self.id == target_id:
                 if self.id == candidate:
-                    if sender_id in self.message_sent_for_border: # The mesage came backward not in circle
+                    if sender_id == self.current_target_id: # The mesage came backward not in circle
                         self.border_formed=False
                         finish_timer_forme_border(self)
 
@@ -179,7 +179,7 @@ def verify_border(self,header, msg):
                     self.border_verified.set() # to end the the loop
                 else:
                     if self.get_state()== Border or self.get_state()== Irremovable_boarder:
-                        self.current_target_id= choose_spot_right_handed(self,self.neighbor_list_upon_border_formation )
+                        choose_spot_right_handed(self,self.neighbor_list_upon_border_formation )
                         if self.current_target_id is not None:
                             msg= build_border_message(self,header,self.current_target_id, candidate)
                             send_msg(msg) 
@@ -300,9 +300,8 @@ def Form_border(self):
     while (not self.Forming_Border_Broadcast_REC.is_set()) and (number_of_try<=3) and (not self.expansion_stop.is_set()) and (not self.Emergency_stop.is_set()):
         check_border_candidate_eligibility(self)
         if self.border_candidate :
-            self.current_target_id= choose_spot_right_handed(self) # chose spot only when it is candidate 
+            choose_spot_right_handed(self) # chose spot only when it is candidate 
             self.update_candidate_spot_info_to_neighbors() # Useful if the drone arrived and filled a spot made others sourounded
-            self.message_sent_for_border= self.current_target_id
             '''launch a message circulation for current candidat'''
             start_msg_one_direction(self)
                     
@@ -344,7 +343,7 @@ def Form_border(self):
 def confirm_border_connectivity(self):
     start_forming_bordertime=time.time() 
     if self.get_state()== Border or self.get_state()==Irremovable_boarder: 
-        self.current_target_id= choose_spot_right_handed(self,self.neighbor_list_upon_border_formation) 
+        choose_spot_right_handed(self,self.neighbor_list_upon_border_formation) 
         if self.current_target_id is not None:
             msg= build_border_message(self,Verify_border_header,self.current_target_id, self.id)
             send_msg(msg)
