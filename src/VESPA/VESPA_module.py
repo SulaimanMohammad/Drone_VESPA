@@ -810,7 +810,7 @@ class Drone:
             except:
                 print("An error occurred while move with simple_goto")
                 self.emergency_stop() 
-            #hover(vehicle) # Ensure that the drone stay in place 
+            hover(vehicle) # Ensure that the drone stay in place 
 
     def move_using_coord(self, vehicle, lon, lat):
             '''
@@ -867,7 +867,7 @@ class Drone:
             print("An error occurred while move_body_PID")
             self.emergency_stop()
         # Arrive to steady state and hover then start observing the location
-        #hover(vehicle)
+        hover(vehicle)
 
     def search_for_target(self): # find if there is target in the area or not
         # move in the place and couver it to check if there is target or not
