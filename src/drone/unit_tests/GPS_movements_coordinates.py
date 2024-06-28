@@ -39,7 +39,7 @@ arm_and_takeoff(vehicle,drone_hight)
 print( "Takeoff and wait 2 sec")
 time.sleep(2)
 
-defined_groundspeed=1
+defined_groundspeed=2
 distance=13
 angl_dir= 0
 
@@ -57,6 +57,6 @@ time.sleep(2)
 vehicle.mode     = VehicleMode("GUIDED")
 write_log_message(f" Coming Home")
 print( "Coming Home")
-vehicle.mode = VehicleMode ("RTL")
+vehicle.mode = VehicleMode ("LAND")
 # Close connection
 vehicle.close()
