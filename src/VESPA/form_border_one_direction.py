@@ -364,10 +364,15 @@ def confirm_border_connectivity(self):
 
     if self.border_verified.is_set():
         print("Border confirmed")
+        border_is_confirmed= True 
+
     else:
         print("Border Non confirmed")
         reset_border_variables(self)   
         self.border_verified.clear()
+        border_is_confirmed= False
+    
+    return border_is_confirmed
 
 
 def re_form_border(self):

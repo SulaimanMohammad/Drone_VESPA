@@ -394,8 +394,8 @@ def expand_and_form_border(self,vehicle):
 
     print("Verify the border formation")
     if self.border_formed != False:
-        confirm_border_connectivity(self)
-        if self.get_current_spot()["drones_in"]==1:
+        border_well_confirmed= confirm_border_connectivity(self)
+        if self.get_current_spot()["drones_in"]==1 and border_well_confirmed:
             print (" Drone is Alone Go to ref ")
             try: 
                 go_to_ref_altitude(vehicle,self.ref_alt)
