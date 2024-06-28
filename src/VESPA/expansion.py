@@ -388,8 +388,9 @@ def expand_and_form_border(self,vehicle):
     
     send_msg(self.build_spot_info_message(Response_header))
     self.demand_neighbors_info()       
-    
     Form_border(self)
+    # Wait until all border messages are processed and the current topology is saved upon forming border to be used for border verification 
+    time.sleep(exchange_data_latency)  
     clear_buffer()
 
     print("Verify the border formation")
