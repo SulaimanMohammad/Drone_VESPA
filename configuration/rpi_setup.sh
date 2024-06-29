@@ -2,6 +2,15 @@
 echo -e "\033[32m ------Configure Drone_VESPA parameters ------ \033[0m"
 ./setup_drone_info.sh
 
+echo -e "\033[32m ------Create non-sink servie to start automatically ------ \033[0m"
+chmod +x create_VESPA_service.sh
+./create_VESPA_service.sh
+
+echo -e "\033[32m ------Create VESPA shell commands ------ \033[0m"
+sudo cp vespa_commands /usr/local/bin
+sudo chmod +x /usr/local/bin/vespa_commands
+
+
 # Set the text color to green
 echo -e "\033[32m ------ Upgrade system  ------ \033[0m"
 # Update and upgrade system packages
@@ -53,9 +62,8 @@ sudo apt-get install -y git
 echo -e "\033[32m ------ Set the serial comm for the drone ------ \033[0m"
 # Run raspi-config in interactive mode to configure Serial UART
 # Enable Serial Port hardware
-# sudo raspi-config nonint do_serial 1
 # Disable login shell over serial port
-#sudo raspi-config nonint do_serial_login 1
+# sudo raspi-config nonint do_serial_login 1
 
 # Disable login shell over serial port in cmdline over the shell 
 sudo sed -i 's/console=serial0,[0-9]* //g' /boot/cmdline.txt
@@ -70,17 +78,29 @@ elif ! grep -q "enable_uart=1" /boot/config.txt; then
     echo "enable_uart=1" | sudo tee -a /boot/config.txt
 fi
 
-# Check if the specific line exists in the file
-if ! grep -q "^dtoverlay=disable-bt$" /boot/config.txt; then
-    # If not, append it to the end
-    echo "dtoverlay=disable-bt" | sudo tee -a /boot/config.txt
-    echo "dtoverlay=disable-bt added."
-else
-    echo "dtoverlay=disable-bt is already present in /boot/config.txt."
-fi
-
 # Add the user to the dialout group
 sudo usermod -a -G dialout $USER
+
+# If the commands to disable and stop the serial-getty@ttyS0.service are not used, the serial port may still be used by the system to provide a login shell. 
+# This can interfere with other uses of the serial port
+# Check if serial-getty@ttyS0.service is enabled
+if systemctl is-enabled --quiet serial-getty@ttyS0.service; then
+    echo "serial-getty@ttyS0.service is enabled. Disabling it now..."
+    sudo systemctl disable serial-getty@ttyS0.service
+else
+    echo "serial-getty@ttyS0.service is already disabled."
+fi
+
+# Check if serial-getty@ttyS0.service is active (running)
+if systemctl is-active --quiet serial-getty@ttyS0.service; then
+    echo "serial-getty@ttyS0.service is active. Stopping it now..."
+    sudo systemctl stop serial-getty@ttyS0.service
+else
+    echo "serial-getty@ttyS0.service is already inactive."
+fi
+
+# Mask the service to prevent it from being started by any means
+sudo systemctl mask serial-getty@ttyS0.service
 
 echo -e "\033[32m ------ Disabled HDMI ------ \033[0m"
 # Check if HDMI is currently enabled
@@ -94,29 +114,30 @@ fi
 
 # Check if the /boot/config.txt file exists
 if [ -e /boot/config.txt ]; then
-    # Define the lines to check and modify/add
+    # Define the lines to modify/add
     declare -A lines
-    lines=(["dtparam=act_led_trigger="]="none"
-           ["dtparam=pwr_led_trigger="]="none"
+    lines=(
+        ["dtparam=act_led_trigger"]="none"
+        ["dtparam=pwr_led_trigger"]="none"
     )
 
-    # Loop through the lines to modify or add them if they don't exist
     for key in "${!lines[@]}"; do
-        if grep -q "${key}.*" /boot/config.txt; then
-            # If the line exists, modify it
-            sudo sed -i "s/${key}.*/${key}${lines[$key]}/" /boot/config.txt
+        if grep -q "^${key}" /boot/config.txt; then
+            sudo sed -i "s/^${key}.*/${key}=${lines[$key]}/" /boot/config.txt
         else
-            # If the line doesn't exist, append it to the file
-            echo "${key}${lines[$key]}" | sudo tee -a /boot/config.txt
+            echo "${key}=${lines[$key]}" | sudo tee -a /boot/config.txt
         fi
     done
-    
-    # Lines to just ensure exist
-    ensure_lines=("dtparam=act_led_trigger=off"
-                  "dtparam=pwr_led_trigger=off"
-                  "dtoverlay=disable-bt"
+
+    # Ensure specific lines exist ( turn the leds off ) and 
+    # Disable Bluetooth is useful if you want to use the UART without interference from the Bluetooth module, 
+    # both serial and Bluetooth share the same UART resources on some Raspberry Pi models.( that ensure better serial performance)
+    ensure_lines=(
+        "dtparam=act_led_trigger=off"
+        "dtparam=pwr_led_trigger=off"
+        "dtoverlay=pi3-disable-bt"
     )
-    
+
     for line in "${ensure_lines[@]}"; do
         if ! grep -q "^${line}$" /boot/config.txt; then
             echo "$line" | sudo tee -a /boot/config.txt

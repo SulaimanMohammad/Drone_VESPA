@@ -1,0 +1,75 @@
+#!/bin/bash
+
+# Find the username of the Raspberry Pi
+USERNAME=$(whoami)
+
+# Define the home directory and the script path
+HOME_DIR="/home/$USERNAME"
+SERVICE_FILE="/etc/systemd/system/VESPA.service"
+SCRIPT_PATH="$HOME_DIR/Drone_VESPA/main.py"
+
+# Function to show journalctl logs for VESPA.service
+show_logs() {
+    sudo journalctl -u VESPA.service -f
+}
+
+# Function to show status of VESPA.service
+show_status() {
+    sudo systemctl status VESPA.service
+}
+
+# Function to stop VESPA.service
+stop_service() {
+    sudo systemctl stop VESPA.service
+}
+
+# Function to remove VESPA.service and clean up
+remove_service() {
+    sudo systemctl stop VESPA.service
+    sudo systemctl disable VESPA.service
+    sudo rm $SERVICE_FILE
+    sudo systemctl daemon-reload
+}
+
+# Function to clean all logs related to VESPA.service
+clean_logs() {
+    sudo journalctl --vacuum-time=0
+}
+
+# Function to start VESPA.service specifically for dron0
+start_sink() {
+    if [ "$USERNAME" = "dron1" ]; then
+        python /home/drone1/Drone_VESPA/main.py 
+    else
+        echo "Error: Only dron0 can start this service."
+        exit 1
+    fi
+}
+
+# Main script logic
+case "$1" in
+    show)
+        show_logs
+        ;;
+    state)
+        show_status
+        ;;
+    stop)
+        stop_service
+        ;;
+    remove)
+        remove_service
+        ;;
+    clean)
+        clean_logs
+        ;;
+    start_sink)
+        start_sink
+        ;;
+    *)
+        echo "Usage: vespa {show|state|stop|remove|clean|start_sink}"
+        exit 1
+        ;;
+esac
+
+exit 0
