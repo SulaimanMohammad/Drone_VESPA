@@ -56,9 +56,12 @@ show_help() {
     echo "  remove   : Remove the service from running after each boot."
     echo "  clean    : Clean all old logs."
     echo "  start_sink: Start the VESPA algorithm on dron0 (sink) and trigger on all other drones."
-    echo "  --help   : Show this help message."
 }
 
+if [[ "$1" == "--help" || "$1" == "-h" || "$1" == "--h" || "$1" == "help" ]]; then
+    show_help
+    exit 0
+fi
 # Main script logic
 case "$1" in
     show)
@@ -78,10 +81,6 @@ case "$1" in
         ;;
     start_sink)
         start_sink
-        ;;
-    
-    --help)
-        show_help
         ;;
     *)
         echo "Usage: vespa {show|state|stop|remove|clean|start_sink}"
