@@ -21,7 +21,7 @@ from drone.set_drone_parameters import *
 def wait_start():
     # Dummy flag class with an is_set method
     class waitlag:
-        def is_set(self):
+        def is_set():
             return False
     
     start_recived=True  
