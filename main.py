@@ -17,6 +17,25 @@ parent_directory = os.path.abspath(os.path.join(os.path.dirname(__file__), './sr
 sys.path.append(parent_directory)
 from drone.set_drone_parameters import * 
 
+
+def wait_start():
+    # Dummy flag class with an is_set method
+    class waitlag:
+        def is_set(self):
+            return True
+    
+    start_recived=False  
+    while start_recived: 
+        msg= retrieve_msg_from_buffer(waitlag)
+        if msg.startswith(Inauguration_header.encode()) and msg.endswith(b'\n'):
+            print("start recived ")
+            send_msg(Inauguration_header.encode()+ b'\n') 
+            start_recived=True
+    time.sleep(1)
+
+    
+
+
 def main():
     # Create vehicle object 
     logs= create_log_file() 
@@ -30,6 +49,7 @@ def main():
     # Configure parameter of drone based on VESPA
     config_parameters(vehicle, drone)
     signal.signal(signal.SIGINT, lambda sig, frame: drone.interrupt(vehicle))
+    wait_start()
     try:
         first_exapnsion(drone, vehicle)
     except:

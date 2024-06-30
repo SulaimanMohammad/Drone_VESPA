@@ -78,11 +78,18 @@ def interrupt(drone):
     print("Serial connection closed.")
     exit(0)
 
+def wait_for_start():
+    message = "When you are ready to start VESPA press enter"
+    input(message)  # This will display the message and wait for the user to press Enter
+    send_msg(Inauguration_header.encode()+ b'\n')
+    print("Proceeding...")
+
 
 def main():    
     # Create drone object of VESPA 
     drone = Drone(0,0.0,0.0)
     signal.signal(signal.SIGINT, lambda sig, frame: interrupt(drone))
+    wait_for_start()
     try:
         while True:
             time.sleep(0.5)
