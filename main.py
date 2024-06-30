@@ -28,10 +28,10 @@ def wait_start():
     while start_recived: 
         msg= retrieve_msg_from_buffer(waitlag)
         if msg.startswith(Inauguration_header.encode()) and msg.endswith(b'\n'):
-            print("start recived ")
+            print("Start VESPA receivd ")
             send_msg(Inauguration_header.encode()+ b'\n') 
             start_recived=False
-    time.sleep(1)
+    time.sleep(2)
 
     
 
@@ -51,6 +51,7 @@ def main():
     signal.signal(signal.SIGINT, lambda sig, frame: drone.interrupt(vehicle))
     wait_start()
     try:
+        print("Start VESPA")
         first_exapnsion(drone, vehicle)
     except:
         print("Error in performing VESPA")
