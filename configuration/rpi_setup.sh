@@ -2,11 +2,9 @@
 echo -e "\033[32m ------Configure Drone_VESPA parameters ------ \033[0m"
 ./setup_drone_info.sh
 
-if [ "$USERNAME" != "dron1" ]; then
-    echo -e "\033[32m ------Create non-sink servie to start automatically ------ \033[0m"
-    chmod +x create_VESPA_service.sh
-    ./create_VESPA_service.sh
-fi
+echo -e "\033[32m ------Create non-sink servie to start automatically ------ \033[0m"
+chmod +x create_VESPA_service.sh
+./create_VESPA_service.sh
 
 echo -e "\033[32m ------Create VESPA shell commands ------ \033[0m"
 sudo cp vespa /usr/local/bin
