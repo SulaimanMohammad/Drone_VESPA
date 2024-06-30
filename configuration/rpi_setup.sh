@@ -6,6 +6,10 @@ echo -e "\033[32m ------Create service to start VESPA automatically upon booting
 chmod +x create_VESPA_service.sh
 ./create_VESPA_service.sh
 
+echo -e "\033[32m ------Create VESPA shell commands ------ \033[0m"
+sudo cp vespa /usr/local/bin
+sudo chmod +x /usr/local/bin/vespa
+
 # Set the text color to green
 echo -e "\033[32m ------ Upgrade system  ------ \033[0m"
 # Update and upgrade system packages

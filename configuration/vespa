@@ -1,0 +1,96 @@
+#!/bin/bash
+
+# Find the username of the Raspberry Pi
+USERNAME=$(whoami)
+
+# Define the home directory and the script path
+HOME_DIR="/home/$USERNAME"
+SERVICE_FILE="/etc/systemd/system/VESPA.service"
+SCRIPT_PATH="$HOME_DIR/Drone_VESPA/main.py"
+
+# Function to show journalctl logs for VESPA.service
+show_logs() {
+    sudo journalctl -u VESPA.service -f
+}
+
+# Function to show status of VESPA.service
+show_status() {
+    sudo systemctl status VESPA.service
+}
+
+# Function to stop VESPA.service
+stop_service() {
+    sudo systemctl stop VESPA.service
+}
+
+# Function to restart VESPA.service
+restart_service() {
+    sudo systemctl restart VESPA.service
+}
+
+# Function to remove VESPA.service and clean up
+remove_service() {
+    sudo systemctl stop VESPA.service
+    sudo systemctl disable VESPA.service
+    sudo rm $SERVICE_FILE
+    sudo systemctl daemon-reload
+}
+
+# Function to clean all logs related to VESPA.service
+clean_logs() {
+    sudo journalctl --vacuum-time=0
+}
+
+# Function to start VESPA.service specifically for dron0
+start_sink() {
+    if [ "$USERNAME" = "dron1" ]; then
+        python /home/drone1/Drone_VESPA/main.py 
+    else
+        echo "Error: Only dron0 can start this service."
+        exit 1
+    fi
+}
+
+# Function to display help
+show_help() {
+    echo "Usage: vespa [options]"
+    echo "Options:"
+    echo "  show     : Show real-time printing of the execution of the code."
+    echo "  state    : See the state of the VESPA algorithm (running or not)."
+    echo "  restart  : restart running the VESPA algorithm."
+    echo "  stop     : Stop running the VESPA algorithm."
+    echo "  remove   : Remove the service from running after each boot."
+    echo "  clean    : Clean all old logs."
+}
+
+if [[ "$1" == "--help" || "$1" == "-h" || "$1" == "--h" || "$1" == "help" ]]; then
+    show_help
+    exit 0
+fi
+# Main script logic
+case "$1" in
+    show)
+        show_logs
+        ;;
+    state)
+        show_status
+        ;;
+    stop)
+        stop_service
+        ;;
+    remove)
+        remove_service
+        ;;
+    clean)
+        clean_logs
+        ;;
+    restart)
+        restart_service
+        ;;
+    *)
+        echo "Usage: vespa {show|state|stop|restart|remove|clean}"
+        exit 1
+        ;;
+esac
+
+exit 0
