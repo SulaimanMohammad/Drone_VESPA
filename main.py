@@ -24,13 +24,13 @@ def wait_start():
         def is_set(self):
             return False
     
-    start_recived=False  
+    start_recived=True  
     while start_recived: 
         msg= retrieve_msg_from_buffer(waitlag)
         if msg.startswith(Inauguration_header.encode()) and msg.endswith(b'\n'):
             print("start recived ")
             send_msg(Inauguration_header.encode()+ b'\n') 
-            start_recived=True
+            start_recived=False
     time.sleep(1)
 
     
