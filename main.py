@@ -52,6 +52,7 @@ def main():
     wait_start()
     try:
         print("Start VESPA")
+        sys.stdout.flush()
         first_exapnsion(drone, vehicle)
     except:
         print("Error in performing VESPA")

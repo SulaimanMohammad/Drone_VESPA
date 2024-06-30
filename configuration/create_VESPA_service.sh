@@ -17,7 +17,7 @@ After=network.target
 
 [Service]
 Type=simple
-ExecStart=/usr/bin/python3 $SCRIPT_PATH
+ExecStart=/usr/bin/python3 -u $SCRIPT_PATH # -u flag, which forces the stdout and stderr streams to be unbuffered 
 WorkingDirectory=$HOME_DIR
 StandardOutput=journal
 StandardError=journal

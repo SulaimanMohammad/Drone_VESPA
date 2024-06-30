@@ -23,6 +23,11 @@ stop_service() {
     sudo systemctl stop VESPA.service
 }
 
+# Function to restart VESPA.service
+restart_service() {
+    sudo systemctl restart VESPA.service
+}
+
 # Function to remove VESPA.service and clean up
 remove_service() {
     sudo systemctl stop VESPA.service
@@ -52,6 +57,7 @@ show_help() {
     echo "Options:"
     echo "  show     : Show real-time printing of the execution of the code."
     echo "  state    : See the state of the VESPA algorithm (running or not)."
+    echo "  restart  : restart running the VESPA algorithm."
     echo "  stop     : Stop running the VESPA algorithm."
     echo "  remove   : Remove the service from running after each boot."
     echo "  clean    : Clean all old logs."
@@ -78,8 +84,11 @@ case "$1" in
     clean)
         clean_logs
         ;;
+    restart)
+        restart_service
+        ;;
     *)
-        echo "Usage: vespa {show|state|stop|remove|clean}"
+        echo "Usage: vespa {show|state|stop|restart|remove|clean}"
         exit 1
         ;;
 esac
