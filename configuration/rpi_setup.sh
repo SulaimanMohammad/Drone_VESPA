@@ -2,6 +2,10 @@
 echo -e "\033[32m ------Configure Drone_VESPA parameters ------ \033[0m"
 ./setup_drone_info.sh
 
+echo -e "\033[32m ------Create service to start VESPA automatically upon booting ------ \033[0m"
+chmod +x create_VESPA_service.sh
+./create_VESPA_service.sh
+
 # Set the text color to green
 echo -e "\033[32m ------ Upgrade system  ------ \033[0m"
 # Update and upgrade system packages
