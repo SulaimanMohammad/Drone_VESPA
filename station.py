@@ -81,7 +81,9 @@ def interrupt(drone):
 def wait_for_start():
     message = "When you are ready to start VESPA press enter"
     input(message)  # This will display the message and wait for the user to press Enter
-    send_msg(Inauguration_header.encode()+ b'\n')
+    msg= Inauguration_header.encode()+ b'\n'
+    print(msg)
+    send_msg(msg)
     print("Proceeding...")
 
 

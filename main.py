@@ -22,7 +22,7 @@ def wait_start():
     # Dummy flag class with an is_set method
     class waitlag:
         def is_set(self):
-            return True
+            return False
     
     start_recived=False  
     while start_recived: 
