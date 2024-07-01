@@ -159,7 +159,9 @@ def write_log_message(message):
     with open_log_file() as log_file:
         timestamp = datetime.datetime.now().strftime("%H:%M:%S")
         log_file.write(f"{timestamp}: {message}\n") 
-        print(message)
+        global print_show
+        if print_show =="True": 
+            print(message)
 
 def get_current_function_name():
     # Get the frame of the calling function
@@ -218,7 +220,11 @@ def get_connection_paramter():
                 telemetry1_baudrate = int(line.split('=')[1].strip())
             # Check if line contains max_deceleration
             elif "telemetry2_baudrate" in line:
-                telemetry2_baudrate = int(line.split('=')[1].strip())               
+                telemetry2_baudrate = int(line.split('=')[1].strip())
+            elif "print_show" in line:
+                global print_show
+                print_show = str(line.split('=')[1].strip())
+
     return telemetry1_baudrate,telemetry2_baudrate 
 
 
