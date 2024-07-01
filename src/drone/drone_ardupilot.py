@@ -86,7 +86,7 @@ def full_scan_avoidence(self, lidar_queue,data_ready ):
                     velocity_z=+0.5 # go down  
                 goal_altitude= get_altitude(self) + Z_to_go_distance
         except:
-            print("No data received from observer")
+            write_log_message("No data received from observer")
             velocity_z=0      
     return [velocity_z, Z_to_go_distance, min_x_close_object ,check_objects_time, goal_altitude]        
 
@@ -146,7 +146,7 @@ def create_log_file(log_dir_name="mission_log", script_name="mission"):
     filename= "travel.log"
     log_file_path = os.path.join(log_directory, filename)
 
-def get_log_filr_directory():
+def get_log_file_directory():
     return log_directory
 
 def open_log_file():
@@ -158,7 +158,8 @@ def open_log_file():
 def write_log_message(message):
     with open_log_file() as log_file:
         timestamp = datetime.datetime.now().strftime("%H:%M:%S")
-        log_file.write(f"{timestamp}: {message}\n")
+        log_file.write(f"{timestamp}: {message}\n") 
+        print(message)
 
 def get_current_function_name():
     # Get the frame of the calling function
@@ -176,12 +177,57 @@ def parse_connect():
     # Connect to the Vehicle (in this case a simulator running the same computer)
     return connection_string
 
+
+def drone_connect():
+    telemetry1_baudrate,telemetry2_baudrate=get_connection_paramter()
+
+    parser = argparse.ArgumentParser(description="Process some arguments.")
+    parser.add_argument('--connect', type=str, help="Connection address in the format IP:PORT")
+    parser.add_argument('command', nargs='?', default="", help="Command to process (telemetry or empty)")
+
+    # Parse the arguments
+    args = parser.parse_args()
+    # Check the argument
+    if args.connect:
+        print("Simulation")
+        vehicle = connect (parse_connect(), wait_ready=False) # for simulation     
+    elif args.command == "telemetry":
+        print("Telemetry connection")
+        vehicle = connect("/dev/ttyUSB0", baud= telemetry1_baudrate,  wait_ready=False, rate=10) #for telemetry 1
+    elif args.command == "":
+        print("Actual drone connection")
+        vehicle = connect("/dev/serial0", baud= telemetry2_baudrate,  wait_ready=False) # for raspberry pi
+    else:
+        print(f"Unknown argument: {args.command}")
+        sys.exit(0)
+    vehicle.wait_ready(True, raise_exception=False) 
+    return vehicle
+
+def get_connection_paramter():
+    # Current script directory
+    current_dir = Path(__file__).resolve().parent
+    # Path to the parent directory
+    parent_dir = current_dir.parent
+    global Operational_Data_path
+    Operational_Data_path = parent_dir/'Operational_Data.txt'
+    
+    with open(Operational_Data_path, 'r') as file:
+        for line in file:
+            # Check if line contains max_acceleration
+            if "telemetry1_baudrate" in line:
+                telemetry1_baudrate = int(line.split('=')[1].strip())
+            # Check if line contains max_deceleration
+            elif "telemetry2_baudrate" in line:
+                telemetry2_baudrate = int(line.split('=')[1].strip())               
+    return telemetry1_baudrate,telemetry2_baudrate 
+
+
 def check_gps_fix(self):
     while not self.is_armable:
-        print("Waiting for the vehicle to become armable...")
+        write_log_message("Waiting for the vehicle to become armable...")
         time.sleep(1)
 
-    print("Checking GPS status...")
+    write_log_message("Checking GPS status...")
 
     # Get the GPS fix type
     fix_type = self.gps_0.fix_type
@@ -190,7 +236,7 @@ def check_gps_fix(self):
     num_satellites = self.gps_0.satellites_visible
 
     if fix_type >= 3 and num_satellites >= 8:
-        print("GPS is working and providing valid values.")
+        write_log_message("GPS is working and providing valid values.")
     
     return True
             
@@ -202,34 +248,29 @@ def arm_and_takeoff(self, aTargetAltitude):
     Arms vehicle and fly to aTargetAltitude.
     """
     if self.mode.name == "INITIALISING":
-        print ("initialise the self") 
         write_log_message ("initialise the self") 
 
-    print("Basic pre-arm checks") 
+    write_log_message("Basic pre-arm checks") 
     # TODO do not try to take off if the alituduid is not zero 
     # Don't try to arm until autopilot is ready
     #TODO check that gps lock before the fly by listening to the raw data of the channel
     #GPs usually it is done by the system  of pixhawc 
     # TODO check that the battery is enough to fly
     while not self.is_armable:
-        print ("Waiting for self to initialise and Armability...")
-        write_log_message ("Waiting for self to initialise...") 
+        write_log_message ("Waiting for self to initialise and Armability...")
         time.sleep(1)
 
-    print ("Arming motors")
     write_log_message ("Arming motors")
     # Copter should arm in GUIDED mode
     self.mode    = VehicleMode("GUIDED")
     self.armed   = True
-    print(" Battery: %s" % self.battery)
+    write_log_message("Battery: {self.battery}")
 
     # Confirm vehicle armed before attempting to take off
     while not self.armed:
-        print (" Waiting for arming...")
         write_log_message (" Waiting for arming...")
         time.sleep(1)
 
-    print ("Taking off starts") 
     write_log_message ("Taking off starts")
     self.simple_takeoff(aTargetAltitude) # Take off to target altitude
     # Wait until the vehicle reaches a safe height before processing the goto (otherwise the command
@@ -237,11 +278,9 @@ def arm_and_takeoff(self, aTargetAltitude):
     #takeoff is asynchronous and can be interrupted if another command arrives before it reaches the target altitude so
     # check that arrived by reading the alitude relative from the ground 
     while True:
-        print (" Altitude: ", get_altitude(self))
         write_log_message (f" Altitude: {get_altitude(self)}")
         #Break and return from function just below target altitude.
         if get_altitude(self)>=aTargetAltitude*0.95:  # arrived to 95% of the altitude s
-            print ("Reached target altitude")
             write_log_message ("Reached target altitude")
             break
         time.sleep(1)
@@ -479,8 +518,8 @@ def get_acceleration():
             elif "max_deceleration" in line:
                 max_deceleration = float(line.split('=')[1].strip())
     # Output the extracted values
-    print(f"Max Acceleration: {max_acceleration}")
-    print(f"Max Deceleration: {max_deceleration}")
+    write_log_message(f" Read Max Acceleration: {max_acceleration}")
+    write_log_message(f"Read Max Deceleration: {max_deceleration}")
     
     return max_acceleration,max_deceleration 
 
@@ -496,14 +535,13 @@ def get_lidar_setting():
         for line in file:
             # Check if line contains max_acceleration
             if "lidar_scan" in line:
-                print(line )
                 lidar_scan_val =(line.split('=')[1].strip())
                 if lidar_scan_val == "True":
                     lidar_scan = True
                 else:
                     lidar_scan = False         
     # Output the extracted values
-    print(f"lidar_scan: {lidar_scan}")
+    write_log_message(f"lidar_scan: {lidar_scan}")
     return lidar_scan 
 
 def save_acceleration(max_acceleration, max_deceleration): 
@@ -651,7 +689,6 @@ def set_yaw_to_dir_PID(self, target_yaw, relative=True, max_yaw_speed=10):
     kp= (abs(yaw_rad - normalize_angle(target_yaw) )/180.0)/2  #1.1
     ki=0.02
     kd=0.02
-    print(kp)
 
     # Target values
     target_altitude = get_altitude(self)
@@ -691,10 +728,8 @@ def set_yaw_to_dir_PID(self, target_yaw, relative=True, max_yaw_speed=10):
         new_yaw_data.clear()
 
     self.remove_message_listener('ATTITUDE', yaw_listener)
-    print("Yaw set to:", target_yaw)
-    self.mode    = VehicleMode("LOITER") #loiter mode and hover in your place 
-    time.sleep(1.5)
-    self.mode     = VehicleMode("GUIDED")
+    write_log_message(f"Yaw set to:{target_yaw}")
+    wait_and_hover(self, 1.5)
 
 def ned_to_body(self,velocity_vec):
     # Retrieve the vehicle's roll, pitch, and yaw angles
@@ -789,7 +824,7 @@ def hold_yaw_PID(self, desired_yaw):
 
     # Send the yaw command
     set_yaw_PID(self, abs(error), abs(yaw_speed), direction_yaw)
-    print("yaw error=",error )
+    write_log_message(f"yaw error= {error}" )
 
 def velocity_PID(desired_vel_x,desired_vel_z, velocity_body_vector):
     # PID gains for yaw, X, and Y control
@@ -902,7 +937,7 @@ def move_body_PID(self, angl_dir, distance, emergency_message_flag ,ref_alt=9.7,
         try:
             velocity_z_lidar,Z_to_go_distance, min_x_close_object, check_objects_time, goal_altitude= scan_befor_movement(self,lidar_queue,data_ready,emergecy_stop,ref_alt)
         except:
-            print("First scan is failed")
+            write_log_message("First scan is failed")
             velocity_z_lidar=0 
         desired_vel_z= velocity_z_lidar
     #-------------------------------------------------------------
@@ -984,9 +1019,9 @@ def move_body_PID(self, angl_dir, distance, emergency_message_flag ,ref_alt=9.7,
         # save the current for next iteration to calculate the traveld distance 
         previous_velocity_x= velocity_current_x 
         
-        print( "\nvx ",velocity_current_x , "vy",velocity_current_y, "vz",velocity_current_z, "current alt= ", get_altitude(self)  )
-        print( "time", time.time() - start_time , "distance left : ",remaining_distance, "desired_vel_x speed", desired_vel_x,"\n" )
-        print( "---------------------------------------------------------------------")
+        write_log_message( f"\nvx= {velocity_current_x} , vy= {velocity_current_y} ,vz= {velocity_current_z}, current alt= {get_altitude(self)}" )
+        write_log_message( f"time= {time.time() - start_time}, distance left= {remaining_distance}, desired_vel_x speed= {desired_vel_x} \n" )
+        write_log_message( "---------------------------------------------------------------------")
 
         # Clear the event so we can wait for the next update
         new_velocity_data.clear()
@@ -1012,7 +1047,7 @@ def go_to_ref_altitude(self,ref_alt=9.7):
         start_control_timer=0 
         while ( abs(get_altitude(self) - ref_alt)>=0.2 and  (get_altitude(self) > ref_alt-1 or get_altitude(self) < ref_alt+1 )  ):
             if (time.time() - start_control_timer > 0.2):
-                print("alt= " , get_altitude(self),"velocity_z",desired_vel_Z )
+                write_log_message(f"alt= {get_altitude(self)}, velocity_z= {desired_vel_Z}" )
                 send_control_body(self, 0, 0, desired_vel_Z)
                 start_control_timer= time.time()
 
@@ -1058,5 +1093,3 @@ def get_altitude(self):
 
 def search_for_sink_tag(slef):
     pass 
-
-

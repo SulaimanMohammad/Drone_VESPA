@@ -7,6 +7,9 @@ defined_groundspeed=1 # m/s speed used while moving using GPS coordinates
 drone_length=60
 drone_width=60
 drone_hight=40
+telemetry1_baudrate= 57000 # Telemetry device connected to port telemetry1, Serial1(Pixhawk)
+telemetry2_baudrate= 115700 # Raspberry pi UART connected to telemetry2, Serial2(Pixhawk)
+# If there is a need to change baud rates they should be changed in Pixhawk parameter using MAVlink then here respectively  
 
 #----------------VESPA variables---------------
 drone_id=0

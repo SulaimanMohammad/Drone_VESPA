@@ -20,10 +20,7 @@ def interrupt(signal_num, frame):
         sys.exit()
         
 global vehicle
-# vehicle = connect (parse_connect(), wait_ready=False) # for simulation 
-vehicle = connect("/dev/serial0", baud= 921600,  wait_ready=False,rate=10) # for raspberry p
-#vehicle = connect("/dev/ttyUSB0", baud= 57600,  wait_ready=False, rate=10) #for telemetry
-vehicle.wait_ready(True, raise_exception=False) # for raspberry pi & telemetry only e)
+vehicle=drone_connect()
 signal.signal(signal.SIGINT, interrupt)
 
 print(" Rebooting ......")

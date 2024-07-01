@@ -1,17 +1,15 @@
 import dronekit_sitl
 from dronekit import connect, VehicleMode, LocationGlobalRelative
 import time
-# Connect to the vehicle
-import argparse
-parser=argparse.ArgumentParser (description='commands')
-parser.add_argument('--connect')
-args = parser.parse_args()
-connection_string = args.connect
 
-# vehicle = connect (parse_connect(), wait_ready=False) # for simulation 
-vehicle = connect("/dev/serial0", baud= 921600,  wait_ready=False,rate=10) # for raspberry p
-#vehicle = connect("/dev/ttyUSB0", baud= 57600,  wait_ready=False, rate=10) #for telemetry
-vehicle.wait_ready(True, raise_exception=False) # for raspberry pi & telemetry only 
+
+# Get the parent directory path
+parent_directory = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+# Add the parent directory to sys.path
+sys.path.append(parent_directory)
+from drone_ardupilot import *
+
+vehicle=drone_connect()
 
 @vehicle.on_attribute('mode')
 def decorated_mode_callback(self, attr_name, value):
