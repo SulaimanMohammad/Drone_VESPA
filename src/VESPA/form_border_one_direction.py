@@ -96,7 +96,7 @@ def circle_completed(self):
                 self.change_state_to(Free)
 
 def border_broadcast_respond(self, candidate):
-    print("self.rec_candidate",self.rec_candidate )
+    write_log_message("self.rec_candidate",self.rec_candidate )
     if candidate in self.rec_candidate: # the sender of broadcast already sent msg to the current drone so it is part of the circle
         # re-check the the droen around still have same situation and still can be border
         if self.border_candidate:
@@ -125,16 +125,16 @@ def form_border_one_direction(self,header,msg):
         sender_id, target_ids, candidate= decode_border_message(msg)
         reset_timer_forme_border(self,header) # Reset for any message even from out the region because that means the border is not yet formed 
         if sender_id in self.neighbors_ids: # Signal comes from the neighbor drone, dont consider messages out of the region 
-            print("message from", sender_id , "target_ids", target_ids,"candidate", candidate,"rec_candidate",  self.rec_candidate )
+            write_log_message("message from", sender_id , "target_ids", target_ids,"candidate", candidate,"rec_candidate",  self.rec_candidate )
             if sender_id == self.current_target_ids and candidate in self.rec_candidate:
                 # MESSAGR REC, confirmed"
                 with self.candidate_to_send_lock:
                     if candidate in self.candidate_to_send:
                         self.candidate_to_send.remove(candidate)
-                        print(  "MESSAGR REC, confirmed", self.candidate_to_send)
+                        write_log_message(  "MESSAGR REC, confirmed", self.candidate_to_send)
 
             if target_ids==-1:
-                print("brodcast the end")
+                write_log_message("brodcast the end")
                 if self.border_candidate==True:
                     border_broadcast_respond(self, candidate)
                 # Here any drone in any state needs to forward the boradcast message and rise ending flag
@@ -149,7 +149,7 @@ def form_border_one_direction(self,header,msg):
                         finish_timer_forme_border(self)
 
                     else: 
-                        print("completed circle")
+                        write_log_message("completed circle")
                         circle_completed(self)
                         self.border_formed= True
                         finish_timer_forme_border(self)
@@ -157,7 +157,7 @@ def form_border_one_direction(self,header,msg):
                     with self.candidate_to_send_lock:
                         if candidate not in self.candidate_to_send:
                             self.candidate_to_send.insert(0, candidate) # insert at the beging so it will be processed immiditly 
-                            print("form_border_one_direction appened candidate_to_send",self.candidate_to_send)
+                            write_log_message("form_border_one_direction appened candidate_to_send",self.candidate_to_send)
                     if candidate not in self.rec_candidate:
                         self.rec_candidate.append(candidate)
                     
@@ -172,10 +172,10 @@ def send_msg_border_until_confirmation(self,header):
         # if not self.Forming_Border_Broadcast_REC.is_set(): # dont reset at the end of phase since it listeners will be bloked
         #     self.demand_neighbors_info()
         #     check_border_candidate_eligibility(self)
-        #     print("send_msg_border_until_confirmation self.border_candidate", self.border_candidate)
+        #     write_log_message("send_msg_border_until_confirmation self.border_candidate", self.border_candidate)
             
         #     choose_spot_right_handed(self)
-        #     print("send_msg_border_until_confirmation self.current_target_ids", self.current_target_ids)
+        #     write_log_message("send_msg_border_until_confirmation self.current_target_ids", self.current_target_ids)
             if self.border_candidate == True:
                 with self.candidate_to_send_lock:
                     if self.candidate_to_send: 
@@ -185,11 +185,11 @@ def send_msg_border_until_confirmation(self,header):
                             if self.current_target_ids is not None:
                                 msg= build_border_message(self,header,self.current_target_ids, candidate) 
                                 send_msg(msg)
-                                print("forwarard the candiate ",candidate , "to",  self.current_target_ids)
+                                write_log_message("forwarard the candiate ",candidate , "to",  self.current_target_ids)
                                 #time.sleep(exchange_data_latency)# time untile the message arrives 
             time.sleep(exchange_data_latency)
         except:
-            print("Thread send_msg_border_until_confirmation Interrupt received, stopping...")
+            write_log_message("Thread send_msg_border_until_confirmation Interrupt received, stopping...")
             self.emergency_stop()  
             
 
@@ -201,25 +201,25 @@ def verify_border(self,header, msg):
             if target_ids==-1:
                 # Here any drone in any state needs to forward the boradcast message and rise ending flag
                 forward_broadcast_message(self, header,candidate)
-                print("broadcast")
+                write_log_message("broadcast")
                 finish_timer_forme_border(self)
                 self.border_verified.set()
 
             if self.id == target_ids  :# targets exist not empty s
-                print("rec from sender_id, target_ids, candidate",sender_id, target_ids, candidate )
+                write_log_message("rec from sender_id, target_ids, candidate",sender_id, target_ids, candidate )
                 if self.id == candidate and (self.get_state()== Border or self.get_state()== Irremovable_boarder) :
                     Broadcast_Msg= build_border_message(self,header,-1, self.id)
-                    print("circle done")
+                    write_log_message("circle done")
                     #send_msg_border_upon_confirmation(self, Broadcast_Msg)
                     send_msg(Broadcast_Msg) # bordacst doent need to be waiting conformation 
                     finish_timer_forme_border(self)
                     self.border_verified.set() # to end the the loop
                 else:
                     if self.get_state()== Border or self.get_state()== Irremovable_boarder:
-                        print("verify_border self.current_target_ids", self.current_target_ids)
+                        write_log_message("verify_border self.current_target_ids", self.current_target_ids)
                         msg= build_border_message(self,header,self.current_target_ids, candidate)
                         send_msg(msg) 
-                        print("forwards target, candidate",  self.current_target_ids, candidate)
+                        write_log_message("forwards target, candidate",  self.current_target_ids, candidate)
 
 
 ''''
@@ -270,7 +270,7 @@ def choose_spot_right_handed(self, neighbor_list_upon_border=None):
     
     if neighbor_list_upon_border==None:
         neighbor_list_x = self.get_neighbor_list()[1:]
-        #print("neighbor_list_x", neighbor_list_x)
+        #write_log_message("neighbor_list_x", neighbor_list_x)
     else:
         neighbor_list_x= neighbor_list_upon_border[1:] # Use the saved list to verfiy the border still same 
 
@@ -295,13 +295,13 @@ def choose_spot_right_handed(self, neighbor_list_upon_border=None):
   
 
 def start_msg_one_direction(self):
-    print("start_msg_one_direction ")
+    write_log_message("start_msg_one_direction ")
     with self.candidate_to_send_lock:
         if self.id not in self.candidate_to_send:
             self.candidate_to_send.append(self.id)
             self.rec_candidate.append(self.id) # needed for the onfirmation of reciving 
-            print("candidate_to_send",self.candidate_to_send)
-            print(" rec_candidate", self.rec_candidate)
+            write_log_message("candidate_to_send",self.candidate_to_send)
+            write_log_message(" rec_candidate", self.rec_candidate)
 
 def reset_border_variables(self): 
     self.current_target_ids=None
@@ -340,14 +340,14 @@ def Form_border(self):
     start_forming_bordertime=time.time() 
     #Continue checking in case of not forming border the process will start again 
     while (not self.Forming_Border_Broadcast_REC.is_set()) and (number_of_try<=3) and (not self.expansion_stop.is_set()) and (not self.Emergency_stop.is_set()):
-        print(" Start the process")
+        write_log_message(" Start the process")
         # self.demand_neighbors_info()
         check_border_candidate_eligibility(self)
-        print("Form_border self.border_candidate", self.border_candidate)
+        write_log_message("Form_border self.border_candidate", self.border_candidate)
         if self.border_candidate :
             choose_spot_right_handed(self) # chose spot only when it is candidate
-            print(type(self.current_target_ids))
-            print("Form border self.current_target_ids", self.current_target_ids) 
+            write_log_message(type(self.current_target_ids))
+            write_log_message("Form border self.current_target_ids", self.current_target_ids) 
             self.update_candidate_spot_info_to_neighbors() # Useful if the drone arrived and filled a spot made others sourounded
             '''launch a message circulation for current candidat'''
             start_msg_one_direction(self)
@@ -379,7 +379,7 @@ def Form_border(self):
         self.neighbor_list_upon_border_formation=copy.deepcopy( self.get_neighbor_list()) # Save the Topology arround so it can be used to verfiy the border
         wait_message_rec.join() # wait wait_message_rec thread to finish and detect the Forming_Border_Broadcast_REC flag
         self.Forming_Border_Broadcast_REC.clear()
-        print(" check changes upon the border formation")
+        write_log_message(" check changes upon the border formation")
     else:
         # In case of 3 tries and the border is not formed then stop the process especially the thread of send_msg_border_until_confirmation
         self.Forming_border_failed.set()
@@ -393,7 +393,7 @@ def confirm_border_connectivity(self):
     start_forming_bordertime=time.time() 
     if self.get_state()== Border or self.get_state()==Irremovable_boarder: 
         choose_spot_right_handed(self,self.neighbor_list_upon_border_formation) 
-        print("confirm_border_connectivity current_target_id", self.current_target_ids )
+        write_log_message("confirm_border_connectivity current_target_id", self.current_target_ids )
         if self.current_target_ids is not None:
             msg= build_border_message(self,Verify_border_header,self.current_target_ids, self.id)
             send_msg(msg)
@@ -407,10 +407,10 @@ def confirm_border_connectivity(self):
             time.sleep(0.1)
 
     if self.border_verified.is_set():
-        print("Border confirmed")
+        write_log_message("Border confirmed")
         border_is_confirmed= True 
     else:
-        print("Border Non confirmed")
+        write_log_message("Border Non confirmed")
         reset_border_variables(self)   
         self.border_verified.clear()
         border_is_confirmed= False
@@ -426,5 +426,5 @@ def re_form_border(self):
             self.change_state_to(Irremovable)
         Form_border(self)
         if self.border_formed == False:
-            print("Return home border is not re-formed")
+            write_log_message("Return home border is not re-formed")
             self.emergency_stop()

@@ -143,7 +143,7 @@ def expansion_listener (self,vehicle):
                 verify_border(self,Verify_border_header,msg)
         
         except:
-            print("Thread expansion_listener Interrupt received, stopping...")
+            write_log_message("Thread expansion_listener Interrupt received, stopping...")
             self.emergency_stop()   
                      
 '''
@@ -365,7 +365,7 @@ def expand_and_form_border(self,vehicle):
         
         if self.elected_id== self.id: # current drone is elected one to move
             if self.destination_spot != 0: # Movement to another spot not staying 
-                print ("go to S", self.destination_spot)
+                write_log_message("go to S", self.destination_spot)
                 self.move_to_spot(vehicle, self.destination_spot)
                 # After move_to_spot retuen it means arrivale 
                 movement_done_msg= build_expan_elected(self.id)
@@ -381,38 +381,38 @@ def expand_and_form_border(self,vehicle):
            self.rearrange_neighbor_statically_upon_elected_arrival (self.elected_id, self.destination_spot)  
 
 
-        print("checking for update the state")
+        write_log_message("checking for update the state")
         spatial_observation(self)
     
     send_msg(self.build_spot_info_message(Response_header))
     self.demand_neighbors_info()       
-    print(self.get_neighbor_list() )
-    print( "Start forming the border")
+    write_log_message(self.get_neighbor_list() )
+    write_log_message( "Start forming the border")
     start_time=time.time()
     Form_border(self)
-    print( "Finished with time ", time.time() -start_time)
-    print(self.get_neighbor_list() )
+    write_log_message( "Finished with time ", time.time() -start_time)
+    write_log_message(self.get_neighbor_list() )
     time.sleep(exchange_data_latency)
     clear_buffer()
 
-    print("Verify the border formation")
+    write_log_message("Verify the border formation")
     if self.border_formed != False:
-        print("Border formed")
+        write_log_message("Border formed")
         border_well_confirmed= confirm_border_connectivity(self)
         if self.get_current_spot()["drones_in"]==1 and border_well_confirmed:
-            print (" Drone is Alone Go to ref ")
+            write_log_message (" Drone is Alone Go to ref ")
             try: 
                 go_to_ref_altitude(vehicle,self.ref_alt)
             except:
-                print("An error occurred while go_to_ref_altitude")
+                write_log_message("An error occurred while go_to_ref_altitude")
                 self.emergency_stop()    
         # If the border is not formed you can add reformation border again 
         # re_form_border(self)
     else:
-        print("Return home border is not formed")
+        write_log_message("Return home border is not formed")
         self.emergency_stop()
 
-    print(" All Done")
+    write_log_message(" All Done")
            
 def first_exapnsion (self, vehicle):
     # Lance a thread to read messages continuously

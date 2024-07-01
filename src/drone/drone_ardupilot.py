@@ -159,6 +159,7 @@ def write_log_message(message):
     with open_log_file() as log_file:
         timestamp = datetime.datetime.now().strftime("%H:%M:%S")
         log_file.write(f"{timestamp}: {message}\n")
+        print(message)
 
 def get_current_function_name():
     # Get the frame of the calling function
