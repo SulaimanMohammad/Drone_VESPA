@@ -364,7 +364,7 @@ class Drone:
         calculated_checksum = self.position_sensitive_checksum(message_without_newline[:-1])
 
         if received_checksum != calculated_checksum:
-            #print(" Bad message recived")
+            write_log_message(" Bad message recived")
             return [-1]
         index = 1  # Header is 1 byte
         # Decode length and positionX
@@ -420,7 +420,7 @@ class Drone:
                 self.initialize_timer_demand()
                 self.resend_data()
         except:
-            print("Thread collect_demands Interrupt received, stopping...")
+            write_log_message("Thread collect_demands Interrupt received, stopping...")
             self.emergency_stop()   
         
     def exchange_neighbors_info_communication(self,msg):
@@ -635,8 +635,8 @@ class Drone:
                     all_free = all(state == Free for state in self.get_current_spot()["states"])
                     if all_free:
                         min_id = min(self.get_current_spot()["drones_in_id"])
-                        print ( "\n chosed from many in same point:")
-                        print( min_id)
+                        write_log_message ( "\n chosed from many in same point:")
+                        write_log_message(f"min_id= {min_id}" )
                         # current drone is chosen
                         if  min_id == self.id:
                             self.change_state_to (Owner)
@@ -801,7 +801,7 @@ class Drone:
                 vehicle.simple_goto( point1, groundspeed=defined_groundspeed) # Non-blocking movement need sleep to wait it to be done 
                 time.sleep((a/defined_groundspeed)+10) # Wait the movement to be done
             except:
-                print("An error occurred while move with simple_goto")
+                write_log_message("An error occurred while move with simple_goto")
                 self.emergency_stop() 
             hover(vehicle) # Ensure that the drone stay in place 
 
@@ -838,7 +838,7 @@ class Drone:
             for drone_id in destination_spot_info['drones_in_id']:
                 drone_in_spot_alitude= (drone_id*spacing)+ self.ref_alt
                 alitudes_diff.append( abs(drone_in_spot_alitude- get_altitude(vehicle))) # estimated alt of drones - acutal hight of current drone 
-            print("alitudes_diff", alitudes_diff )
+            write_log_message(f"alitudes_diff {alitudes_diff}" )
             if all(alts > 1.8*spacing for alts in alitudes_diff):
                 movement_velocity=speed_of_drone # can go in speed , there is enough place to move in 
             else: #risky gap should move slowly 
@@ -857,7 +857,7 @@ class Drone:
         try:
             move_body_PID(vehicle,angle, distance, self.Emergency_stop,self.ref_alt,max_velocity=movement_velocity )
         except:
-            print("An error occurred while move_body_PID")
+            write_log_message("An error occurred while move_body_PID")
             self.emergency_stop()
         # Arrive to steady state and hover then start observing the location
         hover(vehicle)
@@ -892,7 +892,7 @@ class Drone:
             self.set_thread_flags()
             emergency_msg= self.build_emergency_message()
             send_msg(emergency_msg)
-            print("retuen home")
+            write_log_message("Retuen home")
             vehicle.remove_attribute_listener('velocity', on_velocity)
             self.return_home(vehicle)
             time.sleep(exchange_data_latency)
@@ -902,10 +902,10 @@ class Drone:
  
             
     def emergency_stop(self):
-        print("Emergency stop detected. Exiting function.")
+        write_log_message("Emergency stop detected. Exiting function.")
         if (not self.Emergency_stop.is_set()):
             # brodcast it again
             emergency_msg= self.build_emergency_message()
             send_msg(emergency_msg)
-            print("Retuen home")
+            write_log_message("Call interrupt")
             os.kill(os.getpid(), signal.SIGINT) # That will call interrupt which use vehicle object to return home

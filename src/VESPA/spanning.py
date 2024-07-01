@@ -132,7 +132,7 @@ class Sink_Timer:
         while True:
             with sink_t.lock_sink:  # Acquire the lock
                 sink_t.remaining_time -= 0.5
-                print(f"Remaining time: {sink_t.remaining_time:.2f} seconds")
+                write_log_message(f"Remaining time: {sink_t.remaining_time:.2f} seconds")
                 if sink_t.remaining_time <= 0:
                     sink_t.time_up(self)
                     break
@@ -140,7 +140,7 @@ class Sink_Timer:
 
     def time_up(sink_t,self):
         # Called when the timer reaches its timeout without being reset.
-        print("Time's up! ")
+        write_log_message("Time's up! ")
         self.change_state_to(Irremovable) # The sink will always be irremovable
         # No message received, thus the sink must build path to the border 
         if sink_t.message_counter==0 or (not path_around_exist(self)): 
@@ -208,7 +208,7 @@ def sink_listener(sink_t, self):
             else: 
                 continue
         except:
-            print("Thread sink_listener spanning Interrupt received, stopping...")
+            write_log_message("Thread sink_listener spanning Interrupt received, stopping...")
             self.emergency_stop()   
                 
 
@@ -318,7 +318,7 @@ def spanning_listener(self):
                 continue
 
         except:
-            print("Thread spanning_listener Interrupt received, stopping...")
+            write_log_message("Thread spanning_listener Interrupt received, stopping...")
             self.emergency_stop()   
 
 
@@ -482,4 +482,3 @@ def spanning(self, vehicle):
             xbee_thread.join() 
             
         
-

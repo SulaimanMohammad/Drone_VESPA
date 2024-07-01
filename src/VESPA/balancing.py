@@ -122,7 +122,7 @@ class Boarder_Timer:
         while True: 
             with border_t.lock_sink:  # Acquire the lock
                 border_t.remaining_time -= 0.5
-                print(f"Remaining time: {border_t.remaining_time:.2f} seconds")
+                write_log_message(f"Remaining time: {border_t.remaining_time:.2f} seconds")
                 if border_t.remaining_time <= 0:
                     border_t.time_up(border_t,self)
                     break
@@ -130,7 +130,7 @@ class Boarder_Timer:
         
     def time_up(border_t,self):
         #Called when the timer reaches its timeout without being reset.
-        print("Time's up! ")
+        write_log_message("Time's up! ")
         # Ensure that balanced achived 
         self.demand_neighbors_info()
         all_moves= lead_local_balancing(self)
@@ -210,7 +210,7 @@ def border_listener(self,border_t):
                             # Do anything but wait for end of the expansion broadcast
                             continue
         except:
-            print("Thread border_listener Interrupt received, stopping...")
+            write_log_message("Thread border_listener Interrupt received, stopping...")
             self.emergency_stop() 
                 
 '''
@@ -258,7 +258,7 @@ def communication_balancing_free_drones(self,vehicle):
                 else: # nothing to do if it is not broadcast 
                     continue
         except:
-            print("Thread communication_balancing_free_drones Interrupt received, stopping...")
+            write_log_message("Thread communication_balancing_free_drones Interrupt received, stopping...")
             self.emergency_stop() 
 
 def search_to_border(self):
@@ -317,10 +317,3 @@ def balancing(self, vehicle):
     # self.rec_candidate=[]   
     clear_buffer()
     xbee_receive_message_thread.join()
-    
-
-    
-    
-
-
-

@@ -153,7 +153,7 @@ def send_msg_border_until_confirmation(self,header):
                                 send_msg(msg)
             time.sleep(exchange_data_latency)
         except:
-            print("Thread send_msg_border_until_confirmation Interrupt received, stopping...")
+            write_log_message("Thread send_msg_border_until_confirmation Interrupt received, stopping...")
             self.emergency_stop()  
             
 
@@ -230,7 +230,6 @@ def choose_spot_right_handed(self, neighbor_list_upon_border=None):
     
     if neighbor_list_upon_border==None:
         neighbor_list_x = self.get_neighbor_list()[1:]
-        #print("neighbor_list_x", neighbor_list_x)
     else:
         neighbor_list_x= neighbor_list_upon_border[1:] # Use the saved list to verfiy the border still same 
 
@@ -287,6 +286,9 @@ def Form_border(self):
         time.sleep(sync_time)
         self.demand_neighbors_info() # return after gathering all info
     
+    write_log_message("All neighborhood spots are owned or empty")
+    write_log_message(f"Current neighbor list:\n" + "\n".join([str(neighbor) for neighbor in self.get_neighbor_list()]))
+
     self.Forming_Border_Broadcast_REC.clear()
     wait_message_rec = threading.Thread(target=send_msg_border_until_confirmation, args=(self,Forming_border_header)) #pass the function reference and arguments separately to the Thread constructor.
     wait_message_rec.start()
@@ -298,6 +300,7 @@ def Form_border(self):
     while (not self.Forming_Border_Broadcast_REC.is_set()) and (number_of_try<=3) and (not self.expansion_stop.is_set()) and (not self.Emergency_stop.is_set()):
         check_border_candidate_eligibility(self)
         if self.border_candidate :
+            write_log_message("Drone is border candidate")
             choose_spot_right_handed(self) # chose spot only when it is candidate 
             self.update_candidate_spot_info_to_neighbors() # Useful if the drone arrived and filled a spot made others sourounded
             '''launch a message circulation for current candidat'''
@@ -324,6 +327,7 @@ def Form_border(self):
             '''
             time.sleep(150) 
             reset_border_variables(self)
+            write_log_message(f"Attempt {number_of_try} to form border")
         else:
             break # Border is formed stop 
 
@@ -363,11 +367,11 @@ def confirm_border_connectivity(self):
             time.sleep(0.1)
 
     if self.border_verified.is_set():
-        print("Border confirmed")
+        write_log_message("Border confirmed")
         border_is_confirmed= True 
 
     else:
-        print("Border Non confirmed")
+        write_log_message("Border Non confirmed")
         reset_border_variables(self)   
         self.border_verified.clear()
         border_is_confirmed= False
@@ -383,5 +387,5 @@ def re_form_border(self):
             self.change_state_to(Irremovable)
         Form_border(self)
         if self.border_formed == False:
-            print("Return home border is not re-formed")
+            write_log_message("Return home border is not re-formed")
             self.emergency_stop()

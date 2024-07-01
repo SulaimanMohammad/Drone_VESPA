@@ -31,7 +31,7 @@ def wait_start_signal():
     while start_recived: 
         msg= retrieve_msg_from_buffer(waitlag)
         if msg.startswith(Inauguration_header.encode()) and msg.endswith(b'\n'):
-            print("Start VESPA receivd ")
+            write_log_message("Start VESPA receivd ")
             send_msg(Inauguration_header.encode()+ b'\n') 
             start_recived=False
     time.sleep(2)
@@ -67,13 +67,13 @@ def main():
             balancing(drone, vehicle )
 
     except:
-        print("Error in performing VESPA")
+        write_log_message("Error in performing VESPA")
         drone.emergency_stop()
     finally:
         drone.return_home(vehicle) 
         close_xbee_port()
         vehicle.close()
-        print("Serial connection closed.")
+        write_log_message("Serial connection closed.")
 
 if __name__ == "__main__":
     main()
