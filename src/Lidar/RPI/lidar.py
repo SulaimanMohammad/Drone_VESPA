@@ -77,7 +77,7 @@ def process_centroids(centroids_z, current_alt, ref_alt):
             min_altitude_accepted= min(altitude_accepted,key=abs)
             best_position= find_key_by_value(alt_ground, min_altitude_accepted) # return the movement that is required to achive the best altitude to avoid objects
         
-        print("best_position", best_position)
+        write_log_message(f"Best_position= {best_position}")
         if best_position: 
             return best_position
         else:
@@ -87,7 +87,6 @@ def process_centroids(centroids_z, current_alt, ref_alt):
 def extract_centroid_coordinates(data):
     match = re.search(r'Cluster Centroid: \(([\d\.-]+), [\d\.-]+, ([\d\.-]+)\)', data)
     if match:
-        print("x",match.group(1),"z", match.group(2))
         x = float(match.group(1))  # Convert the matched X component to float
         z = float(match.group(2))  # Convert the matched Z component to float
         return x, z
@@ -101,7 +100,7 @@ def extract_emergency_value(data):
             # Attempt to convert the second part of the data into a float.
             return float(parts[1])
     except ValueError:
-        print("Error: Unable to extract numeric value from data")
+        write_log_message("Error: Unable to extract numeric value from data")
     return None
 
 
@@ -118,7 +117,7 @@ def observe_env(hostVehicle, output_queue, read_lidar,emergecy_stop,data_ready, 
     try: 
         ser = serial.Serial('/dev/ttyUSB0', 115200, timeout=1)
     except: 
-        print("No sensor")
+        write_log_message("No sensor")
         read_lidar.clear() # This flag used to exit the loop and not process reading data
         time.sleep (1)
 
@@ -148,7 +147,7 @@ def observe_env(hostVehicle, output_queue, read_lidar,emergecy_stop,data_ready, 
                 else:
                     time.sleep(0.1)
         except:
-            print( "Problem of reading data")
+            write_log_message( "Problem of reading data")
 
         if(data_rec==1):
             Z_to_go_distance = process_centroids(centroids_z, hostVehicle.location.global_relative_frame.alt*1000 ,ref_alt)
