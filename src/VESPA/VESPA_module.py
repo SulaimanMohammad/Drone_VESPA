@@ -878,6 +878,7 @@ class Drone:
             self.change_state_to(Irremovable)
 
     def return_home(self, vehicle):
+        print("alt", vehicle.location.global_relative_frame.alt)
         if vehicle.armed and (vehicle.location.global_relative_frame.alt > 1): # Drone in the sky 
             if self.id==1: # Sink
                 time.sleep(10) 
