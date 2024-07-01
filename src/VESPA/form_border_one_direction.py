@@ -343,10 +343,9 @@ def Form_border(self):
         write_log_message(" Start the process")
         # self.demand_neighbors_info()
         check_border_candidate_eligibility(self)
-        write_log_message("Form_border self.border_candidate", self.border_candidate)
+        write_log_message(f"Form_border self.border_candidate {get_altitude(self)}")
         if self.border_candidate :
             choose_spot_right_handed(self) # chose spot only when it is candidate
-            write_log_message(type(self.current_target_ids))
             write_log_message("Form border self.current_target_ids", self.current_target_ids) 
             self.update_candidate_spot_info_to_neighbors() # Useful if the drone arrived and filled a spot made others sourounded
             '''launch a message circulation for current candidat'''
