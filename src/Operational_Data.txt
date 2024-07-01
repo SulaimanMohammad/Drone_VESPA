@@ -24,7 +24,7 @@ ref_alt_ratio= 0.8 # Ensure that alitude of the drone doesn't arrive to the limi
 
 #----------------Xbee variables---------------
 xbee_serial_port='/dev/ttyUSB0'
-Tx=None
-Rx=None
+Tx=23
+Rx=24
 baud_rate=9600
 xbee_range=13
