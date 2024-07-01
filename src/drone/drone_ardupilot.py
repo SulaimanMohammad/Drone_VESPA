@@ -158,7 +158,7 @@ def open_log_file():
 def write_log_message(message):
     with open_log_file() as log_file:
         timestamp = datetime.datetime.now().strftime("%H:%M:%S")
-        log_file.write(f"{timestamp}: {message}\n") 
+        log_file.write(f"{timestamp}: {message}\n")
         global print_show
         if print_show =="True": 
             print(message)
@@ -182,7 +182,9 @@ def parse_connect():
 
 def drone_connect():
     telemetry1_baudrate,telemetry2_baudrate=get_connection_paramter()
-
+    global simulation_dont_hover
+    simulation_dont_hover= False
+    
     parser = argparse.ArgumentParser(description="Process some arguments.")
     parser.add_argument('--connect', type=str, help="Connection address in the format IP:PORT")
     parser.add_argument('command', nargs='?', default="", help="Command to process (telemetry or empty)")
@@ -192,7 +194,9 @@ def drone_connect():
     # Check the argument
     if args.connect:
         print("Simulation")
-        vehicle = connect (parse_connect(), wait_ready=False) # for simulation     
+        vehicle = connect (parse_connect(), wait_ready=False) # for simulation 
+        simulation_dont_hover= True
+    
     elif args.command == "telemetry":
         print("Telemetry connection")
         vehicle = connect("/dev/ttyUSB0", baud= telemetry1_baudrate,  wait_ready=False, rate=10) #for telemetry 1
@@ -202,7 +206,7 @@ def drone_connect():
     else:
         print(f"Unknown argument: {args.command}")
         sys.exit(0)
-    vehicle.wait_ready(True, raise_exception=False) 
+    vehicle.wait_ready(True, raise_exception=False)
     return vehicle
 
 def get_connection_paramter():
@@ -223,8 +227,7 @@ def get_connection_paramter():
                 telemetry2_baudrate = int(line.split('=')[1].strip())
             elif "print_show" in line:
                 global print_show
-                print_show = str(line.split('=')[1].strip())
-
+                print_show = str(line.split('=')[1].strip())                
     return telemetry1_baudrate,telemetry2_baudrate 
 
 
@@ -1083,12 +1086,16 @@ def convert_angle_to_set_dir(self, angle):
          return [normalize_angle(angle), +1]
     
 def wait_and_hover(self, time_req):
-    self.mode    = VehicleMode("LOITER") #loiter mode and hover in your place 
+    global simulation_dont_hover
+    if not simulation_dont_hover:
+        self.mode    = VehicleMode("LOITER") #loiter mode and hover in your place 
     time.sleep(time_req)
     self.mode     = VehicleMode("GUIDED")
 
 def hover(self):
-    self.mode    = VehicleMode("LOITER") #loiter mode and hover in your place 
+    global simulation_dont_hover
+    if not simulation_dont_hover:
+        self.mode    = VehicleMode("LOITER") #loiter mode and hover in your place 
 
 def set_to_move(self):
     self.mode     = VehicleMode("GUIDED")
