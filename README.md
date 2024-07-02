@@ -1,30 +1,75 @@
-# Drone_VESPA
+# Vehicle (Drone) Spreading using Self-organized Parallel Algorithm
 
-## Setup Raspberry pi
+This repository represents the VESPA Algorithm, designed for the collective operation of multiple drones. Each drone in the fleet is equipped with a Raspberry Pi and flight controllers. In this implementation, each drone is provided with a Pixhawk flight controller. The code for controlling the drone is written in Python using [DroneKit library](https://dronekit-python.readthedocs.io/en/latest/) .
+
+## Overview
+
+The VESPA Algorithm is versatile and can be adapted to work , any other drone controller by modifying the implementation of the movementsuch as (take_off_drone,simple_goto_thread,move_using_coord,move_to_spot,return_home). These functions can be modified to suit different drone controllers as needed.
+
+
+
+## Setup
+
+### Fleet Setup
+
+To set up a fleet of N drones, follow these steps:
+
+1. **Naming Convention**: Each drone's Raspberry Pi should be named `droneX`, where `X` ranges from 1 to N. where drone1 is designated as the sink drone, which stays on top of the ground station and maintains connections with all other drones in the fleet.
+
+2. **Raspberry Pi Setup**: Each drone's Raspberry Pi must be configured to connect with its respective flight controller.
+
+### Setup Raspberry pi
 - Connect raspberry pi to pixhawk using Telemetry 2 port
 - Configure raspberry pi to be able to communicate with pixhawk 
-```bash
+    ```bash
         sudo apt install git
         git clone https://github.com/SulaimanMohammad/Drone_VESPA.git
         cd Drone_VESPA/configuration
-``` 
+    ```
 - Configure RPI to be used with pixhawk and VESAP
-```bash
+    ```bash
         ./rpi_setup.sh
-```
-- Set variables needed for the drone, dimensions of drone are needed to be provided 
-```bash
-        ./setup_drone_info.sh
-``` 
+    ```
+    This script call the followig scripts also:
+    - **setup_drone_info**: Set variables needed for the drone, dimensions of drone are needed to be provided
+    - **create_VESPA_service**, **vespa**: Set VESPA to run as a service with shell commands
+    - **update_repo**: Create logs directory, set permissions, and used to re-clone the repository
 
-- Create logs directory, set permissions 
-```bash
-        ./update_repo.sh
-``` 
-- Monitoring the data from all the drones and also set variables
-```bash
+
+## Running the Code on Raspberry Pi
+**Each drone will automatically start VESPA after booting, but the process will not begin until it receives a signal from the Ground Control Station.**
+
+The `rpi_setup` script will create a VESPA service that runs in the background upon each boot of the algorithm.
+
+Also shell commands are set up as follows:
+With these options, you can easily manage the VESPA algorithm on your Raspberry Pi, ensuring efficient operation and maintenance.
+
+    ```bash
+        vespa option
+        show:    Show real-time printing of the execution of the code.
+        state:   See the state of the VESPA algorithm, running or not.
+        stop:    Stop running the VESPA algorithm.
+        clean:   Clean all old logs.
+        restart: Restart running the VESPA algorithm.
+        remove:  Remove the service from running after each boot.
+    ```
+Those command used in case a Raspberry Pi accessed by ssh protocol.
+
+## Running Ground Controle Station (GCS)
+The GCS is a local machine with an Xbee module connected to it using a USB port.
+
+1. **Clone the Repository**:
+   Clone the repository to a local machine
+
+2. **Run the GCS Script**:
+   Use the following command to run the GCS script:
+   ```bash
+        python GCS.py
+   ```
+3. Monitoring the data from all the drones that comes from the drones run the following.
+    ```bash
         ./monitoring.sh
-```
+    ```
 
 ## Scripts Map
 - ** **
