@@ -170,16 +170,6 @@ def get_current_function_name():
     function_name = frame.f_code.co_name
     return function_name
 
-def parse_connect():
-    write_log_message (f"{get_current_function_name()} called:") 
-    parser=argparse.ArgumentParser (description='commands')
-    parser.add_argument('--connect')
-    args = parser.parse_args()
-    connection_string = args.connect
-    # Connect to the Vehicle (in this case a simulator running the same computer)
-    return connection_string
-
-
 def parse_connect(): 
     parser=argparse.ArgumentParser (description='commands')
     parser.add_argument('--connect', type=str, help="Connection address in the format IP:PORT")
