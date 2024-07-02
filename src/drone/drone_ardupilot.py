@@ -180,34 +180,41 @@ def parse_connect():
     return connection_string
 
 
+def parse_connect(): 
+    parser=argparse.ArgumentParser (description='commands')
+    parser.add_argument('--connect', type=str, help="Connection address in the format IP:PORT")
+    parser.add_argument('command', nargs='?', default="", help="Command to process (telemetry or empty)")
+    args, _ = parser.parse_known_args()
+    # Connect to the Vehicle (in this case a simulator running the same computer)
+    return args
+
+
 def drone_connect():
     telemetry1_baudrate,telemetry2_baudrate=get_connection_paramter()
     global simulation_dont_hover
     simulation_dont_hover= False
     
-    parser = argparse.ArgumentParser(description="Process some arguments.")
-    parser.add_argument('--connect', type=str, help="Connection address in the format IP:PORT")
-    parser.add_argument('command', nargs='?', default="", help="Command to process (telemetry or empty)")
-
     # Parse the arguments
-    args = parser.parse_args()
+    retuned_parse = parse_connect()
     # Check the argument
-    if args.connect:
+    if retuned_parse.connect:
         print("Simulation")
-        vehicle = connect (parse_connect(), wait_ready=False) # for simulation 
+        vehicle = connect (retuned_parse.connect, wait_ready=False) # for simulation 
         simulation_dont_hover= True
     
-    elif args.command == "telemetry":
+    elif retuned_parse.command == "telemetry":
         print("Telemetry connection")
         vehicle = connect("/dev/ttyUSB0", baud= telemetry1_baudrate,  wait_ready=False, rate=10) #for telemetry 1
-    elif args.command == "":
+    elif retuned_parse.command == "":
         print("Actual drone connection")
         vehicle = connect("/dev/serial0", baud= telemetry2_baudrate,  wait_ready=False) # for raspberry pi
     else:
-        print(f"Unknown argument: {args.command}")
+        print(f"Unknown argument: {retuned_parse.command}")
         sys.exit(0)
+    
     vehicle.wait_ready(True, raise_exception=False)
     return vehicle
+
 
 def get_connection_paramter():
     # Current script directory

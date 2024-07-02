@@ -97,7 +97,7 @@ Irremovable_boarder=4
 -------------------------------------------------------------------------------------
 '''
 class Drone:
-    def __init__(self,x,y,z):
+    def __init__(self,x,y,z, passed_id=None):
         self.positionX=x
         self.positionY=y
         self.distance_from_sink=0 # the distance of the drone from  the sink
@@ -123,7 +123,10 @@ class Drone:
         self.elected_id=None
         self.destination_spot=0
         set_a(a)
-        self.id=drone_id
+        if passed_id==None: # if it is not passed as argument use id in Opertional_ data that will has id of each RPI
+            self.id=drone_id
+        else:
+            self.id= passed_id
         # Alt for each drone related to ID to avoid collision while movement
         self.ref_alt= round(sqrt(pow(a*ref_alt_ratio,2)- pow(((a*ref_alt_ratio)/sq3),2)),2) # Reference alt (drone hight when it is alone )
         self.drone_alt= ((self.id-1)*spacing)+ self.ref_alt
