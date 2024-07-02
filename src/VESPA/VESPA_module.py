@@ -879,7 +879,7 @@ class Drone:
 
 
     def return_home(self, vehicle):
-        if vehicle.armed and (vehicle.location.global_relative_frame.alt >= 1): # Drone in the sky 
+        if vehicle.armed and (get_altitude(vehicle) >= 1): # Drone in the sky 
             if self.id==1: # Sink
                 time.sleep(10) 
                 vehicle.mode = VehicleMode ("LAND")
