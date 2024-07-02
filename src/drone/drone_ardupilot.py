@@ -255,8 +255,8 @@ def check_gps_fix(self):
             
 
 def arm_and_takeoff(self, aTargetAltitude):
-    
     write_log_message (f"{get_current_function_name()} called:") 
+    time.time(30) # Wait until GPS provides trustable data 
     """
     Arms vehicle and fly to aTargetAltitude.
     """
