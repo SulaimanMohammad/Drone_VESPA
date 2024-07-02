@@ -790,12 +790,16 @@ class Drone:
     '''
     def take_off_drone(self, vehicle):
         # FLy with GPS
-        if check_gps_fix(vehicle) and use_GPS:
-            arm_and_takeoff(vehicle,self.drone_alt)
-            time.sleep(2)
-        else:
-            #TODO in drone_ardupilot.py in drone repo # arm_and_takeoff_no_GPS(vehicle,self.drone_alt)
-            pass
+        try:
+            if check_gps_fix(vehicle) and use_GPS:
+                arm_and_takeoff(vehicle,self.drone_alt)
+                time.sleep(2)
+            else:
+                #TODO in drone_ardupilot.py in drone repo # arm_and_takeoff_no_GPS(vehicle,self.drone_alt)
+                pass
+        except:
+            write_log_message("Could not take off ")
+            self.emergency_stop() 
 
     def simple_goto_thread(self, vehicle, lon, lat):
             set_to_move(vehicle)

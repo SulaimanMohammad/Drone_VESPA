@@ -129,6 +129,9 @@ def regular_scan(self,lidar_queue,data_ready,emergecy_stop,ref_alt,velocity_z, m
 #-------------------------------------------------------------
 #-------------------------------------------------------------
 
+#-------------------------------------------------------------
+#-------------- Connection and logs Functions ----------------
+#-------------------------------------------------------------
 # Declare global variables for logs 
 filename = " "
 
@@ -228,6 +231,10 @@ def get_connection_paramter():
     return telemetry1_baudrate,telemetry2_baudrate 
 
 
+#-------------------------------------------------------------
+#-------------------------------------------------------------
+
+
 def check_gps_fix(self):
     while not self.is_armable:
         write_log_message("Waiting for the vehicle to become armable...")
@@ -248,8 +255,8 @@ def check_gps_fix(self):
             
 
 def arm_and_takeoff(self, aTargetAltitude):
+    
     write_log_message (f"{get_current_function_name()} called:") 
-
     """
     Arms vehicle and fly to aTargetAltitude.
     """
@@ -259,12 +266,16 @@ def arm_and_takeoff(self, aTargetAltitude):
     write_log_message("Basic pre-arm checks") 
     # TODO do not try to take off if the alituduid is not zero 
     # Don't try to arm until autopilot is ready
-    #TODO check that gps lock before the fly by listening to the raw data of the channel
+    # TODO check that gps lock before the fly by listening to the raw data of the channel
     #GPs usually it is done by the system  of pixhawc 
     # TODO check that the battery is enough to fly
-    while not self.is_armable:
+    start_wait_ToArm=time.time() 
+    while not self.is_armable and (time.time()- start_wait_ToArm < 200):
         write_log_message ("Waiting for self to initialise and Armability...")
         time.sleep(1)
+    if not self.is_armable:
+        write_log_message ("Could not arm the drone")
+        raise Exception("Vehicle not armable")
 
     write_log_message ("Arming motors")
     # Copter should arm in GUIDED mode
