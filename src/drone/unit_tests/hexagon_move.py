@@ -1,10 +1,7 @@
 from dronekit import connect, VehicleMode
 from pymavlink import mavutil
 import time
-
-
 import os
-import datetime
 import sys
 import signal
 

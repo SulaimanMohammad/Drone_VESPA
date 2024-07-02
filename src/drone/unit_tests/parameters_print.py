@@ -1,7 +1,6 @@
-import dronekit_sitl
-from dronekit import connect, VehicleMode, LocationGlobalRelative
 import time
-
+import os
+import sys
 
 # Get the parent directory path
 parent_directory = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))

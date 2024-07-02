@@ -1,6 +1,4 @@
-
 import os
-import datetime
 import sys
 import signal
 
@@ -9,7 +7,6 @@ parent_directory = os.path.abspath(os.path.join(os.path.dirname(__file__), '..')
 # Add the parent directory to sys.path
 sys.path.append(parent_directory)
 from drone_ardupilot import *
-import math 
 
 #set_a(20)
 

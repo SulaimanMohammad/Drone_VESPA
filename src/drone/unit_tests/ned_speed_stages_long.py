@@ -1,6 +1,5 @@
 
 import os
-import datetime
 import sys
 import signal
 # Get the parent directory path
