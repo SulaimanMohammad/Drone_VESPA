@@ -223,20 +223,20 @@ def spanning_sink(self):
 ---------------------------------- Communication not-sink------------------------------------
 -------------------------------------------------------------------------------------
 '''
-def build_GPS_coordinates_message(id_target, id, longitude, latitude):
+def build_GPS_coordinates_message(id_target, ids, longitude, latitude):
     # This messages are encoded using string beause they are done only once, efficiency accepted
     # Convert numbers to string and encode
     id_target_str= str(id_target).encode()
-    id_str=str(id).encode()
+    id_str=str(ids).encode()
     longitude_str = str(longitude).encode()
     latitude_str = str(latitude).encode()
     # Construct message
-    message = Target_coordinates_header.encode() + id_target_str +b','+id_str+ b','+ longitude_str + b',' + latitude_str + b'\n'
+    message = Target_coordinates_header.encode() +  b',' + id_target_str +b','+id_str+ b','+ longitude_str + b',' + latitude_str + b'\n'
     return message
 
 def decode_GPS_coordinates_message(message):
     # Remove header and terminal
-    content = message[1:-1]
+    content = message[len(Target_coordinates_header)+1:-1]
     # Split by the comma to get floats
     parts = content.split(b',')
     id_target = int(parts[0])
