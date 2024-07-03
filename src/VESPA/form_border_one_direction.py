@@ -148,8 +148,8 @@ def send_msg_border_until_confirmation(self,header):
                         for candidate in self.candidate_to_send: 
                             if self.Forming_Border_Broadcast_REC.is_set():
                                 break
-                            if self.current_target_ids is not None:
-                                msg= build_border_message(self,header,self.current_target_ids, candidate) 
+                            if self.current_target_id is not None:
+                                msg= build_border_message(self,header,self.current_target_id, candidate) 
                                 send_msg(msg)
             time.sleep(exchange_data_latency)
         except:
@@ -240,17 +240,17 @@ def choose_spot_right_handed(self, neighbor_list_upon_border=None):
         if neighbor["drones_in"] == 0:
             first_empty_index = i
             break
+    chosen_id=None
     # If no empty zone is found, return None
-    if first_empty_index is None:
-        chosen_id=None
-    # Search for the next drone in a circular fashion
-    for j in range(1, n+1):
-        next_index = (first_empty_index + j) % n
-        if neighbor_list_x[next_index]["drones_in"] > 0:
-            chosen_id=neighbor_list_x[next_index]["drones_in_id"][0]
-
+    if first_empty_index is not None:
+        # Search for the next drone in a circular fashion
+        for j in range(1, n+1):
+            next_index = (first_empty_index + j) % n
+            if neighbor_list_x[next_index]["drones_in"] > 0:
+                chosen_id=neighbor_list_x[next_index]["drones_in_id"][0]
+    
     with self.current_target_id_lock: 
-        self.current_target_ids=chosen_id
+        self.current_target_id=chosen_id
 
 def start_msg_one_direction(self):
     with self.candidate_to_send_lock:
