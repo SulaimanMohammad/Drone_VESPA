@@ -2,12 +2,6 @@
 
 This repository represents the VESPA Algorithm, designed for the collective operation of multiple drones. Each drone in the fleet is equipped with a Raspberry Pi and flight controllers. In this implementation, each drone is provided with a Pixhawk flight controller. The code for controlling the drone is written in Python using [DroneKit library](https://dronekit-python.readthedocs.io/en/latest/) .
 
-## Overview
-
-The VESPA Algorithm is versatile and can be adapted to work , any other drone controller by modifying the implementation of the movementsuch as (take_off_drone,simple_goto_thread,move_using_coord,move_to_spot,return_home). These functions can be modified to suit different drone controllers as needed.
-
-
-
 ## Setup
 
 ### Fleet Setup
@@ -20,7 +14,7 @@ To set up a fleet of N drones, follow these steps:
 
 ### Setup Raspberry pi
 - Connect raspberry pi to pixhawk using Telemetry 2 port
-- Configure raspberry pi to be able to communicate with pixhawk 
+- Configure raspberry pi to be able to communicate with pixhawk
     ```bash
         sudo apt install git
         git clone https://github.com/SulaimanMohammad/Drone_VESPA.git
@@ -44,15 +38,15 @@ The `rpi_setup` script will create a VESPA service that runs in the background u
 Also shell commands are set up as follows:
 With these options, you can easily manage the VESPA algorithm on your Raspberry Pi, ensuring efficient operation and maintenance.
 
-    ```bash
-        vespa option
+```bash
+        vespa [option]
         show:    Show real-time printing of the execution of the code.
         state:   See the state of the VESPA algorithm, running or not.
         stop:    Stop running the VESPA algorithm.
         clean:   Clean all old logs.
         restart: Restart running the VESPA algorithm.
         remove:  Remove the service from running after each boot.
-    ```
+```
 Those command used in case a Raspberry Pi accessed by ssh protocol.
 
 ## Running Ground Controle Station (GCS)
@@ -112,27 +106,31 @@ The GCS is a local machine with an Xbee module connected to it using a USB port.
 - **Operational_data.txt**: Contains the acceleration and ID of the drone and all data needed through the algorithm.
 
 
-## Run tests 
-- All tests in unit_tests can be used to commuinicate with raspberry pi, telemetry and simulation 
-- The test used in the algorithm of VESPA is body_frame_move.py 
-    - It uses the movement using Yaw , distance and PID 
-    - To run it on physical drone after connecting with ssh to RP 
+## Run tests
+- All tests in unit_tests can be used to commuinicate with raspberry pi, telemetry and simulation
+- The test used in the algorithm of VESPA is body_frame_move.py
+    - It uses the movement using Yaw , distance and PID
+    - To run it on physical drone after connecting with ssh to RP
     ```bash
         python body_frame_move.py
-    ``` 
-    - In case of using STL simulation 
+    ```
+    - In case of using STL simulation
         - launch the simulation, check the ip by writing output in mavlink terminal
         - Edit connection methode in your tests [ vehicle = connect (parse_connect(), wait_ready=False) ]
 
      ```bash
         python body_frame_move.py --connect [your ip]
-    ```  
+    ```
+
+## Compatibility and Versatility
+The VESPA Algorithm is versatile and can be adapted to work , any other drone controller by modifying the implementation of the movementsuch as (take_off,simple_goto_thread,move_using_coord,move_to_spot,return_home).
+These functions can be modified to suit different drone controllers as needed.
 
 
 ## Expansion phase
 ![Alt text](https://raw.githubusercontent.com/SulaimanMohammad/Drone_VESPA/main/UML/expansion_process.drawio.svg)
 
-### Forming border communication 
+### Forming border communication
 **Propagation Indicator:** This represents the list that previous node used to construct the target. Essentially, it's the list of all neighbors of the previous node.
 
 Given that at least two neighbors are shared between two consecutive centers of a hexagon, this helps to prevent sending messages to nodes that have already received the message from behind. It also prevents forming a closed loop due to backward communication.
@@ -148,7 +146,7 @@ Note: The same process will occur for node 8, and it will forward the message in
 
 This method guarantees the full circulation of the message. In case of any communication error, we still have a chance to complete the cycle due to messaging in both directions. Moreover, it's faster since the construction starts in both directions, making it more reliable.
 
-Note: since any message will be received by all the nodes in the range, thus there is need to ignore messages 
+Note: since any message will be received by all the nodes in the range, thus there is need to ignore messages
 
 - if the id of the node is not in the targets_id in the message then the message will be ignored
 - if the id of the sender is in the Propagation Indicator then the message will be ignored that due to the fact that the message came from the same center of hexagon
@@ -181,7 +179,7 @@ If a drone is no longer a candidate, two situations may arise:
 
 The impact of this procedure is twofold: if a broadcast message arrives from a specific border candidate, drone 15 will already have this information, enabling it to become a border drone. The Propagation Indicator is used to handle scenarios where messages are still circulating, thus facilitating more efficient communication and border formation.
 
-## Spanning UML 
+## Spanning UML
 UML for the communication in the spanning phase of VESPA
 
 ![Alt text](https://raw.githubusercontent.com/SulaimanMohammad/Drone_VESPA/main/UML/spanning_process.drawio.svg)
