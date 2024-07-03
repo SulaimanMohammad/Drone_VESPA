@@ -5,14 +5,27 @@ This repository represents the VESPA Algorithm, designed for the collective oper
 ## Setup
 
 ### Fleet Setup
+To ensure proper operation of the VESPA Algorithm, each flight controller (such as Pixhawk) must be connected to a framework that uses MAVLink, such as Mission Planner, for configuration.
 
+1. **Connect to Mission Planner**: 
+   Connect each flight controller to Mission Planner or a similar MAVLink-compatible framework.
+
+2. **Calibrate the Flight Controller**:
+   - **Compass**: Calibrate the compass to ensure accurate heading information.
+   - **IMU (Accelerometer)**: Calibrate the IMU to ensure accurate motion detection.
+   - **ESC (Electronic Speed Controllers)**: Calibrate the ESCs for proper motor control.
+
+3. **Upload Parameter List**:
+   Upload the parameter list that defines the parameters needed for the algorithm. This includes settings such as baud rates and other values necessary for the algorithm to function correctly.
+
+
+### Raspberry pi Setup 
 To set up a fleet of N drones, follow these steps:
 
 1. **Naming Convention**: Each drone's Raspberry Pi should be named `droneX`, where `X` ranges from 1 to N. where drone1 is designated as the sink drone, which stays on top of the ground station and maintains connections with all other drones in the fleet.
 
 2. **Raspberry Pi Setup**: Each drone's Raspberry Pi must be configured to connect with its respective flight controller.
 
-### Setup Raspberry pi
 - Connect raspberry pi to pixhawk using Telemetry 2 port
 - Configure raspberry pi to be able to communicate with pixhawk
     ```bash
