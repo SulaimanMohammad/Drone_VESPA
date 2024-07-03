@@ -279,8 +279,6 @@ def calibration_ping_pong(self, vehicle, msg ):
 -------------------------------------------------------------------------------------
 '''
 def initialize_collect_drones_info_timer(self):
-    self.collect_drones_info_timer_lock = threading.Lock()
-    self.collected_ids=[] # The list that contains all the drones that participate in VESPA
     reset_collect_drones_info_timer(self)
     while True:
         with self.collect_drones_info_timer_lock:
@@ -308,7 +306,6 @@ def sync_Identification(self):
     Each drone that is not the sink will keep sending its ID until receiving a 
     confirmation from the sink that the identification is received
     '''
-    self.sink_handshake= threading.Event() 
     while(not self.sink_handshake.is_set()):
         msg=build_identification_message(Identification_header, self.id)
         send_msg(msg)

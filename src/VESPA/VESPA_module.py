@@ -144,6 +144,11 @@ class Drone:
             s = {"name": "s" + str(i), "distance": 0, "priority": 0,"drones_in": 0,"drones_in_id":[] , "states": [], "previous_state": []}
             self.neighbor_list.append(s)
         
+        # Identification 
+        self.collect_drones_info_timer_lock = threading.Lock()
+        self.collected_ids=[] # The list that contains all the drones that participate in VESPA
+        self.sink_handshake= threading.Event() 
+
         self.current_target_id=None
         self.current_target_id_lock=threading.Lock() 
         self.lock_state = threading.Lock()
