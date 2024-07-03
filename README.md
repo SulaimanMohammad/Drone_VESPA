@@ -16,10 +16,18 @@ To ensure proper operation of the VESPA Algorithm, each flight controller (such 
    - **ESC (Electronic Speed Controllers)**: Calibrate the ESCs for proper motor control.
 
 3. **Upload Parameter List**:
-   Upload the parameter list that defines the parameters needed for the algorithm. This includes settings such as baud rates and other values necessary for the algorithm to function correctly.
 
+    Upload the parameter list that defines the parameters needed for the algorithm. This includes settings such as baud rates and other values necessary for the algorithm to function correctly.
 
-### Raspberry pi Setup 
+4. **Peripheral devices**
+    - Connect Raspberry pi with Telemetry2 of Pixhawk using UART pins (Pin3 to RPI-Tx, Pin2 to RPI-Rx). [Telemetry2 pins map](https://docs.holybro.com/autopilot/pixhawk-6c/pixhawk-6c-ports#telem-2-port)
+    - Connect Xbee module to Raspberry pi, methode of connection should be mentioned in Operational_data file
+        - Using USB: set (Tx,Rx) in  Operational_data to None.
+        - Using GPIO pins: The [Pigpio](https://github.com/joan2937/pigpio) library will be used to manage the serial connection.
+            1. The used GPIOs Tx and Rx should be specified in the `Operational_data`, or you can use pins (Tx 23) and (RX 24) of Raspberry pi, which are already mentioned in the `Operational_data`.
+            2. Connect (Xbee-Din to RPI-Tx , Xbee-Dout to RPI-Rx).
+
+### Raspberry pi Setup
 To set up a fleet of N drones, follow these steps:
 
 1. **Naming Convention**: Each drone's Raspberry Pi should be named `droneX`, where `X` ranges from 1 to N. where drone1 is designated as the sink drone, which stays on top of the ground station and maintains connections with all other drones in the fleet.
@@ -48,8 +56,7 @@ To set up a fleet of N drones, follow these steps:
 
 The `rpi_setup` script will create a VESPA service that runs in the background upon each boot of the algorithm.
 
-Also shell commands are set up as follows:
-With these options, you can easily manage the VESPA algorithm on your Raspberry Pi, ensuring efficient operation and maintenance.
+Also shell commands are set up, with these options, you can easily manage the VESPA algorithm on your Raspberry Pi, ensuring efficient operation and maintenance.
 
 ```bash
         vespa [option]
@@ -59,6 +66,7 @@ With these options, you can easily manage the VESPA algorithm on your Raspberry 
         clean:   Clean all old logs.
         restart: Restart running the VESPA algorithm.
         remove:  Remove the service from running after each boot.
+        --help
 ```
 Those command used in case a Raspberry Pi accessed by ssh protocol.
 
