@@ -289,7 +289,7 @@ def initialize_collect_drones_info_timer(self):
 
 def reset_collect_drones_info_timer(self):
     with self.collect_drones_info_timer_lock:
-        self.remaining_collect_time=60 # wait one minute 
+        self.remaining_collect_time=30 # wait one minute 
 
 def update_initial_drones_around(self,msg):
     # This function will be called by the listener thread 
