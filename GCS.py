@@ -3,6 +3,7 @@
 import sys
 import os
 import re
+import csv
 
 parent_directory = os.path.abspath(os.path.join(os.path.dirname(__file__), './src'))
 # Add the parent directory to sys.path
@@ -61,6 +62,26 @@ from VESPA.VESPA_module import *
 from VESPA.expansion import first_exapnsion,further_expansion
 from drone.set_drone_parameters import * 
 
+def write_to_csv(id, longitude, latitude,data):
+    file_path = os.path.join(get_log_file_directory(), 'target.csv')
+    # Check if the file already exists and read its contents
+    data_exists = False
+    if os.path.isfile(file_path):
+        with open(file_path, mode='r', newline='', encoding='utf-8') as file:
+            reader = csv.reader(file)
+            for row in reader:
+                if row[0] == str(id):
+                    data_exists = True
+                    break
+    # Write data if the id is not found
+    if not data_exists:
+        with open(file_path, mode='a', newline='', encoding='utf-8') as file:
+            writer = csv.writer(file)
+            # If the file was newly created, write the header
+            if file.tell() == 0:
+                writer.writerow(['id', 'longitude', 'latitude', 'data'])
+            writer.writerow([id, longitude, latitude, data])
+
 def GCS_listener(self,Stop_flag):
     while not Stop_flag.is_set():    
         msg= retrieve_msg_from_buffer(Stop_flag)
@@ -77,6 +98,7 @@ def GCS_listener(self,Stop_flag):
             id_target, sender_id, longitude,  latitude, data = self.decode_data_message(msg)
             if id_target==self.id:
                 print("Drone_id ", sender_id," Longitude: ",longitude," Latitude: ", latitude, " Data: ", data)
+                write_to_csv(sender_id, longitude, latitude, data)
         
 
 def initialize_collect_drones_ready_timer(self):
@@ -110,7 +132,8 @@ def wait_for_start():
     print("Proceeding...")
 
 def main():
-    Stop_flag= threading.Event()    
+    Stop_flag= threading.Event()  
+    logs= create_log_file() 
     # Create drone object of VESPA 
     drone = Drone(0,0.0,0.0)
     signal.signal(signal.SIGINT, lambda sig, frame: interrupt(drone,Stop_flag))
