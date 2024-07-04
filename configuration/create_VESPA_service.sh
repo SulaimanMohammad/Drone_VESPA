@@ -17,7 +17,7 @@ After=network.target
 
 [Service]
 Type=simple
-ExecStart=/usr/bin/python3 -u $SCRIPT_PATH # -u flag, which forces the stdout and stderr streams to be unbuffered 
+ExecStart=/usr/bin/python3 -u $SCRIPT_PATH 
 WorkingDirectory=$HOME_DIR
 StandardOutput=journal
 StandardError=journal
@@ -27,7 +27,7 @@ User=$USERNAME
 [Install]
 WantedBy=multi-user.target
 "
-
+# -u flag, which forces the stdout and stderr streams to be unbuffered 
 # Write the service content to the service file
 echo "$SERVICE_CONTENT" | sudo tee $SERVICE_FILE > /dev/null
 
