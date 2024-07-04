@@ -87,7 +87,6 @@ def GCS_listener(self,Stop_flag):
         msg= retrieve_msg_from_buffer(Stop_flag)
 
         if msg.startswith(Emergecy_header.encode()) and msg.endswith(b'\n'):
-            time.sleep(10)
             os.kill(os.getpid(), signal.SIGINT) # That will call interrupt which use vehicle object to return home
         
         elif msg.startswith(Prepared_header.encode()) and msg.endswith(b'\n'):
@@ -115,13 +114,14 @@ def reset_collect_drones_ready_timer(self):
         self.timer_count=60 
     
 def interrupt(drone,Stop_flag):
-    Stop_flag.set()
     emergency_msg= drone.build_emergency_message()
-    send_msg(emergency_msg)    
+    send_msg(emergency_msg)
+    Stop_flag.set()
+    time.sleep(10)
     revert_file(file_path, changes)
     close_xbee_port()
     print("Serial connection closed.")
-    exit(0)
+    sys.exit(0)
 
 def wait_for_start():
     message = "All drones' systems are ready, When you are ready start VESPA by pressing enter"
@@ -136,18 +136,17 @@ def main():
     logs= create_log_file() 
     # Create drone object of VESPA 
     drone = Drone(0,0.0,0.0)
-    drone.Drone_ready_lock= threading.Lock() # Timer lock (timer is shared between 2 threads)
     signal.signal(signal.SIGINT, lambda sig, frame: interrupt(drone,Stop_flag))
     # Create GCS_listener to receive messages
     GCS_receive_message_thread = threading.Thread(target=GCS_listener, args=(drone,Stop_flag))
     GCS_receive_message_thread.start()
+    drone.Drone_ready_lock= threading.Lock() # Timer lock (timer is shared between 2 threads ( main ,GCS_listener ))
     initialize_collect_drones_ready_timer(drone)
     # After all the drone systems are ready, ask for start 
     wait_for_start()
-    try:
-        while True:
-            time.sleep(0.5)
-    except SystemExit:
-        pass
+
+    while not Stop_flag.is_set():
+        time.sleep(0.5)
+
 if __name__ == "__main__":
     main()
