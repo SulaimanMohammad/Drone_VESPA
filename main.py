@@ -1,15 +1,10 @@
 
 import sys
 import os
-
-parent_directory = os.path.abspath(os.path.join(os.path.dirname(__file__), './src'))
-# Add the parent directory to sys.path
-sys.path.append(parent_directory)
-parent_directory = os.path.abspath(os.path.join(os.path.dirname(__file__), './src'))
-# Add the parent directory to sys.path
-sys.path.append(parent_directory)
 import argparse
-
+parent_directory = os.path.abspath(os.path.join(os.path.dirname(__file__), './src'))
+# Add the parent directory to sys.path
+sys.path.append(parent_directory)
 from VESPA.VESPA_module import *
 from VESPA.expansion import first_exapnsion,further_expansion
 from VESPA.spanning import spanning
@@ -34,13 +29,13 @@ def parse_arguments():
 
 def wait_start_signal():
     # Dummy flag class with an is_set method needed for retrieve_msg_from_buffer
-    class waitlag:
+    class waitflag:
         def is_set():
             return False
     
     start_recived=True  
     while start_recived: 
-        msg= retrieve_msg_from_buffer(waitlag)
+        msg= retrieve_msg_from_buffer(waitflag)
         if msg.startswith(Inauguration_header.encode()) and msg.endswith(b'\n'):
             write_log_message("Start VESPA receivd ")
             send_msg(Inauguration_header.encode()+ b'\n') 

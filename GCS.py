@@ -1,16 +1,12 @@
 
 # GCS ground control station
-
 import sys
 import os
+import re
 
 parent_directory = os.path.abspath(os.path.join(os.path.dirname(__file__), './src'))
 # Add the parent directory to sys.path
 sys.path.append(parent_directory)
-parent_directory = os.path.abspath(os.path.join(os.path.dirname(__file__), './src'))
-# Add the parent directory to sys.path
-sys.path.append(parent_directory)
-import re
 
 # Make the sation Xbee worrk with USB serial 
 def modify_file(file_path):
@@ -65,12 +61,9 @@ file_path = 'src/Operational_Data.txt'
 
 # Call the function to modify the file
 changes = modify_file(file_path)
+
 from VESPA.VESPA_module import *
 from VESPA.expansion import first_exapnsion,further_expansion
-
-parent_directory = os.path.abspath(os.path.join(os.path.dirname(__file__), './src'))
-# Add the parent directory to sys.path
-sys.path.append(parent_directory)
 from drone.set_drone_parameters import * 
 
 def interrupt(drone):
