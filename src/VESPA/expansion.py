@@ -239,7 +239,7 @@ def initial_movement(self,vehicle, rec_msg, ID, spot, lon, lat):
     else: # Drone is not the target then re_boradcast the message, thus it arrives to further distance 
         # Broadcast the message only if it is not brodcasted before and it is not message for the current drone ( since another message for self.id can arrive from other broadcasting)
         if (ID not in self.first_movement_command_broadcasted) and (ID !=self.id):
-            self.first_movement_command_broadcasted(ID)
+            self.first_movement_command_broadcasted.append(ID)
             send_msg(rec_msg)
 
 def calibration_ping_pong(self, vehicle, msg ):
