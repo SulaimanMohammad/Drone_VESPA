@@ -111,7 +111,7 @@ def initialize_collect_drones_ready_timer(self):
 
 def reset_collect_drones_ready_timer(self):
     with self.Drone_ready_lock:
-        self.timer_count=60 
+        self.timer_count=20 
     
 def interrupt(drone,Stop_flag):
     emergency_msg= drone.build_emergency_message()
