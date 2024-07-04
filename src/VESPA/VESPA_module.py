@@ -538,19 +538,20 @@ class Drone:
             result = min(all_ids)
         return result[0]
     
-    def forward_data_message(self,msg):
+    def forward_data_message(self,msg, id_to_send_to=None):
         id_target, sender_id, longitude,  latitude, data= self.decode_data_message(msg) 
         # Only the targeted drone will respond           
         if self.id == id_target:
-            if self.id==1:# It is sink send it to station 
-                id_to_send_to= 0 #send to station
-            else: 
-                id_to_send_to= self.find_close_to_sink() 
+            if id_to_send_to== None: 
+                if self.id==1:# It is sink send it to station 
+                    id_to_send_to= 0 #send to station
+                else: 
+                    id_to_send_to= self.find_close_to_sink() 
             # only reforward the data recived change only to what drone to send to 
             msg= self.build_data_message(id_to_send_to, sender_id , longitude, latitude, data)
             send_msg(msg)
 
-    def send_data_message_station(self, vehicle, data=None):
+    def send_data_message_station(self, vehicle, id_to_send_to=None,  data=None):
         #Get current GPS data 
         if check_gps_fix(vehicle): 
             current_lon = vehicle.location.global_relative_frame.lon
@@ -559,13 +560,14 @@ class Drone:
             current_lon=0
             current_lat=0
 
-        # Chose to what drone to send the message      
-        if self.id==1:
-            # Sink will send to GCS 
-            id_to_send_to=0
-        else:   
-            # Other drone will find the drone closest to the sink 
-            id_to_send_to= self.find_close_to_sink()
+        # Chose to what drone to send the message 
+        if id_to_send_to== None:      
+            if self.id==1:
+                # Sink will send to GCS 
+                id_to_send_to=0
+            else:   
+                # Other drone will find the drone closest to the sink 
+                id_to_send_to= self.find_close_to_sink()
         
         if data== None:
             data_to_send=0

@@ -1,5 +1,4 @@
 from .VESPA_module import *
-import csv
 
 set_env(globals())
 '''
@@ -10,25 +9,6 @@ set_env(globals())
 Border_sink_confirm= -1
 spanning_terminator=-127
 
-def write_to_csv(id, longitude, latitude):
-    file_path = os.path.join(get_log_filr_directory(), 'target.csv')
-    # Check if the file already exists and read its contents
-    data_exists = False
-    if os.path.isfile(file_path):
-        with open(file_path, mode='r', newline='', encoding='utf-8') as file:
-            reader = csv.reader(file)
-            for row in reader:
-                if row[0] == str(id):
-                    data_exists = True
-                    break
-    # Write data if the id is not found
-    if not data_exists:
-        with open(file_path, mode='a', newline='', encoding='utf-8') as file:
-            writer = csv.writer(file)
-            # If the file was newly created, write the header
-            if file.tell() == 0:
-                writer.writerow(['id', 'longitude', 'latitude'])
-            writer.writerow([id, longitude, latitude])
 
 def build_target_message(target_id, header=Spanning_header, data=0):
     max_byte_count = determine_max_byte_size (target_id)
@@ -194,10 +174,8 @@ def sink_listener(sink_t, self):
                     # All drones arounf the sink are to the border 
                     append_id_to_path( self.drone_id_to_border, id_rec)
 
-            elif  msg.startswith(Target_coordinates_header.encode()) and msg.endswith(b'\n'):
-                id_target, sender_id, longitude,  latitude= decode_GPS_coordinates_message(msg)
-                # Write the data in csv file
-                write_to_csv(sender_id,longitude,latitude)
+            elif  msg.startswith(Info_header.encode()) and msg.endswith(b'\n'):
+                self.forward_data_message(msg, self.drone_id_to_sink[0])
             
             elif msg.startswith(Algorithm_termination_header.encode()) and msg.endswith(b'\n'):
                 for id in self.drone_id_to_border:
@@ -223,32 +201,6 @@ def spanning_sink(self):
 ---------------------------------- Communication not-sink------------------------------------
 -------------------------------------------------------------------------------------
 '''
-def build_GPS_coordinates_message(id_target, ids, longitude, latitude):
-    # This messages are encoded using string beause they are done only once, efficiency accepted
-    # Convert numbers to string and encode
-    id_target_str= str(id_target).encode()
-    id_str=str(ids).encode()
-    longitude_str = str(longitude).encode()
-    latitude_str = str(latitude).encode()
-    # Construct message
-    message = Target_coordinates_header.encode() +  b',' + id_target_str +b','+id_str+ b','+ longitude_str + b',' + latitude_str + b'\n'
-    return message
-
-def decode_GPS_coordinates_message(message):
-    # Remove header and terminal
-    content = message[len(Target_coordinates_header)+1:-1]
-    # Split by the comma to get floats
-    parts = content.split(b',')
-    id_target = int(parts[0])
-    sender_id = int(parts[1])
-    longitude = float(parts[2])
-    latitude = float(parts[3])
-    return id_target, sender_id, longitude,  latitude
-
-def forward_coordiantes_sink(self, sender_id, longitude, latitude):
-    coordinates_msg= build_GPS_coordinates_message( self.drone_id_to_sink[0], sender_id, longitude,latitude )
-    send_msg(coordinates_msg)
-
 # Event flag to signal that spanning_listener wants to write
 listener_current_updated_irremovable = threading.Event()
 listener_end_of_spanning = threading.Event()
@@ -305,10 +257,8 @@ def spanning_listener(self):
                 else: # Recieved msg refer to changes in state to irrremovable in one of the nighbors
                     self.update_state_in_neighbors_list(id_rec, Irremovable) 
             
-            elif  msg.startswith(Target_coordinates_header.encode()) and msg.endswith(b'\n'):
-                id_target, sender_id, longitude,  latitude= decode_GPS_coordinates_message(msg)
-                if self.id== id_target:
-                    forward_coordiantes_sink(self,sender_id, longitude, latitude)
+            elif  msg.startswith(Info_header.encode()) and msg.endswith(b'\n'):
+                    self.forward_data_message(msg, self.drone_id_to_sink[0])
 
             elif msg.startswith(Algorithm_termination_header.encode()) and msg.endswith(b'\n'):
                 forward_confirm_msg(self,0, Algorithm_termination_header)
@@ -454,11 +404,7 @@ def spanning(self, vehicle):
             # Send message to the sink about the corrdinates 
             # Not all Irremovable found targets, irremovable can be only part of the path
             if self.target_detected:
-                if check_gps_fix(vehicle): # GPS data are correct
-                    current_lon = vehicle.location.global_relative_frame.lon
-                    current_lat = vehicle.location.global_relative_frame.lat
-                    coordinates_msg= build_GPS_coordinates_message(self.drone_id_to_sink[0], self.id, current_lon,current_lat )
-                    send_msg(coordinates_msg)
+                self.send_data_message_station(vehicle, id_to_send_to= self.drone_id_to_sink[0]) 
 
         # Send a message that will travel from border to sink and that will annouce end of the pahse 
         if self.get_state()== Irremovable_boarder:
