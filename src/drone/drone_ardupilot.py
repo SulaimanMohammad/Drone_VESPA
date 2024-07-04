@@ -261,7 +261,7 @@ def arm_and_takeoff(self, aTargetAltitude):
     Arms vehicle and fly to aTargetAltitude.
     """
     if self.mode.name == "INITIALISING":
-        write_log_message ("initialise the self") 
+        write_log_message ("Initialising the drone") 
 
     write_log_message("Basic pre-arm checks") 
     # TODO do not try to take off if the alituduid is not zero 
@@ -281,7 +281,7 @@ def arm_and_takeoff(self, aTargetAltitude):
     # Copter should arm in GUIDED mode
     self.mode    = VehicleMode("GUIDED")
     self.armed   = True
-    write_log_message("Battery: {self.battery}")
+    write_log_message(f"Battery: {self.battery}")
 
     # Confirm vehicle armed before attempting to take off
     while not self.armed:
