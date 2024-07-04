@@ -5,15 +5,19 @@ import importlib
 '''
 These will be used in the building and decoding message
 '''
-Prepared_header = 'P'  # Header to indicate that the drone system is ready
-Inauguration_header= 'U' # Header to initiate the VESPA algorithm 
-Info_header= 'N' # Send data to GCS
+# GCS Headers
+GCS_Started_header= 'T' # Header identify that GCS is launched 
+Prepared_header = 'P'  # Header to GCS indicate that the drone system is ready
+Inauguration_header= 'U' # Header to initiate the VESPA algorithm by GCS 
+
 #Exchanging data Headers
 Movement_command= 'M'
 Calibration= 'C'
 Demand_header= 'D'
 Response_header= 'R'
 ACK_header= 'K'
+Info_header= 'N' # Send data to GCS
+
 # Expansion Headers
 Identification_header= 'I'
 Identification_Caught_header="U"
@@ -23,7 +27,7 @@ Forming_border_header= 'F'
 Verify_border_header='V'
 #Spanning Headers
 Spanning_header= 'S'
-Target_coordinates_header= 'T'
+
 # Blancing Headers
 Local_balance_header='L'
 Guidance_header= 'G'
@@ -34,10 +38,10 @@ Emergecy_header= 'Y'
 
 # Create an array of headers
 headers = [
-    Prepared_header, Inauguration_header,Info_header, Movement_command, Calibration, Demand_header, Response_header,ACK_header,
+    GCS_Started_header, Prepared_header, Inauguration_header,Info_header, Movement_command, Calibration, Demand_header, Response_header,ACK_header,
     Expan_header, Arrival_header, Identification_header, Identification_Caught_header, 
     Forming_border_header,Verify_border_header,
-    Spanning_header, Target_coordinates_header, Local_balance_header,
+    Spanning_header, Local_balance_header,
     Guidance_header, Balance_header, Algorithm_termination_header, Emergecy_header
 ]
 

@@ -131,12 +131,17 @@ def wait_for_start():
     send_msg(msg)
     print("Proceeding...")
 
+def GCS_launched():
+    send_msg(GCS_Started_header.encode()+ b'\n') # GCS has started notify the fleet to start preparation
+    time.sleep(0.5)
+
 def main():
     Stop_flag= threading.Event()  
     logs= create_log_file() 
     # Create drone object of VESPA 
     drone = Drone(0,0.0,0.0)
     signal.signal(signal.SIGINT, lambda sig, frame: interrupt(drone,Stop_flag))
+    GCS_launched()
     # Create GCS_listener to receive messages
     GCS_receive_message_thread = threading.Thread(target=GCS_listener, args=(drone,Stop_flag))
     GCS_receive_message_thread.start()

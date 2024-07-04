@@ -38,9 +38,22 @@ def wait_start_signal():
         msg= retrieve_msg_from_buffer(waitflag)
         if msg.startswith(Inauguration_header.encode()) and msg.endswith(b'\n'):
             write_log_message("Start VESPA receivd ")
-            send_msg(Inauguration_header.encode()+ b'\n') 
             start_recived=False
     time.sleep(2)
+
+def wait_start_GCS():
+    # Dummy flag class with an is_set method needed for retrieve_msg_from_buffer
+    class waitflag:
+        def is_set():
+            return False 
+    GCS_started_recived=True  
+    while GCS_started_recived: 
+        msg= retrieve_msg_from_buffer(waitflag)
+        if msg.startswith(GCS_Started_header.encode()) and msg.endswith(b'\n'):
+            write_log_message("GCD Started VESPA receivd ")
+            # Re-brodcast the message so it arrives to the drones far from the GCS local machine 
+            send_msg(GCS_Started_header.encode()+ b'\n') # GCS has started notify the fleet to start preparation
+            GCS_started_recived=False
 
 def main():
     
@@ -51,10 +64,13 @@ def main():
     vehicle=drone_connect()
     set_data_rate(vehicle, 20)
     signal.signal(signal.SIGINT, lambda sig, frame: drone.interrupt(vehicle))
+    # Wait until GCS is launched 
+    wait_start_GCS()
     # Configure parameter of drone based on VESPA
     config_parameters(vehicle, drone)
     drone.system_is_ready() # Send message to GCS that system is ready 
     wait_start_signal() # Wait the start flag to initiate VESPA
+
     try:
         first_exapnsion(drone, vehicle)
         spanning(drone)
