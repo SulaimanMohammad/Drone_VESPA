@@ -127,7 +127,7 @@ def expansion_listener (self,vehicle):
                 if ids==-1 and spot==-1 and lon==0 and lat==0: # mean all drone are in sky
                     self.start_expanding.set()
                 else:
-                    initial_movement(self, vehicle,ids, spot, lon, lat)
+                    initial_movement(self, vehicle, msg, ids, spot, lon, lat)
 
             elif msg.startswith(Calibration.encode()) and msg.endswith("\n"):
                 calibration_ping_pong(self, vehicle, msg )
@@ -202,6 +202,7 @@ def sink_movement_command(self,vehicle,drones_id):
                 current_lon = vehicle.location.global_relative_frame.lon
                 long, lat= new_coordinates(current_lon, current_lat, distance , angle)
                 msg= build_movement_command_message(ids,spot, long, lat)
+                self.first_movement_command_broadcasted.append(ids)
                 send_msg(msg)
                 # Wait until arrival, id*spacing + self.ref_alt time for take off where the hight depend on the drone ID
                 time.sleep(((a/defined_groundspeed)+1)+ (ids*spacing + self.ref_alt)+2) # +2 more time to enusre that the drone arrived 
@@ -209,8 +210,9 @@ def sink_movement_command(self,vehicle,drones_id):
                 # It is command to drone to start,( 0,0) is null island where it is imposible to start from
                 msg= build_movement_command_message(id,spot, 0, 0)
 
-def initial_movement(self,vehicle,ID, spot, lon, lat):
-    if ID!=1 and ID==self.id: # drone is not sink it is targeted (skink=1 )
+def initial_movement(self,vehicle, rec_msg, ID, spot, lon, lat):
+    if ID!=1 and (ID==self.id) and (not self.first_movement_command_received): # drone is not sink it is targeted (skink=1 ) and still not moved 
+        self.first_movement_command_received= True
         self.update_location(spot) # update the destination even before arriving ( all drones in sky will know the next drone heading in advance)
         self.take_off_drone(vehicle)
         
@@ -233,6 +235,12 @@ def initial_movement(self,vehicle,ID, spot, lon, lat):
         if self.id==2 and Xbee_change_range: # only first drone does the range calibration if this option is activated in operational_Data
             msg= build_calibration_message(1,0)
             send_msg(msg)
+
+    else: # Drone is not the target then re_boradcast the message, thus it arrives to further distance 
+        # Broadcast the message only if it is not brodcasted before and it is not message for the current drone ( since another message for self.id can arrive from other broadcasting)
+        if (ID not in self.first_movement_command_broadcasted) and (ID !=self.id):
+            self.first_movement_command_broadcasted(ID)
+            send_msg(rec_msg)
 
 def calibration_ping_pong(self, vehicle, msg ):
     indicator, xbee_range= decode_calibration_message(msg)
