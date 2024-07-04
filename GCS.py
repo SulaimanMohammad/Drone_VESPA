@@ -32,15 +32,12 @@ def modify_file(file_path):
         with open(file_path, 'w') as file:
             file.write(content)
         
-        print("File modified successfully.")
         return changes
     else:
-        print("Tx or Rx values not found in the file.")
         return None
 
 def revert_file(file_path, changes):
     if changes is None:
-        print("No changes to revert.")
         return
     # Read the file contents
     with open(file_path, 'r') as file:
@@ -48,13 +45,11 @@ def revert_file(file_path, changes):
     
     # Revert the changes
     for new, old in changes.items():
-        print(new, old)
         content = content.replace(old, new)
     
     # Write the reverted content back to the file
     with open(file_path, 'w') as file:
         file.write(content)
-    print("File reverted successfully.")
 
 # Define the file path
 file_path = 'src/Operational_Data.txt'
@@ -66,7 +61,15 @@ from VESPA.VESPA_module import *
 from VESPA.expansion import first_exapnsion,further_expansion
 from drone.set_drone_parameters import * 
 
-def interrupt(drone):
+def GCS_listener(self,Stop_flag):
+    while not Stop_flag.is_set():    
+        msg= retrieve_msg_from_buffer(Stop_flag)
+        if msg.startswith(Emergecy_header.encode()) and msg.endswith(b'\n'):
+            time.sleep(10)
+            os.kill(os.getpid(), signal.SIGINT) # That will call interrupt which use vehicle object to return home
+
+def interrupt(drone,Stop_flag):
+    Stop_flag.set()
     emergency_msg= drone.build_emergency_message()
     send_msg(emergency_msg)    
     revert_file(file_path, changes)
@@ -82,10 +85,15 @@ def wait_for_start():
     send_msg(msg)
     print("Proceeding...")
 
-def main():    
+def main():
+    Stop_flag= threading.Event()    
     # Create drone object of VESPA 
     drone = Drone(0,0.0,0.0)
-    signal.signal(signal.SIGINT, lambda sig, frame: interrupt(drone))
+    signal.signal(signal.SIGINT, lambda sig, frame: interrupt(drone,Stop_flag))
+    # Create GCS_listener to receive messages
+    GCS_receive_message_thread = threading.Thread(target=GCS_listener, args=(drone,Stop_flag))
+    GCS_receive_message_thread.start()
+
     wait_for_start()
     try:
         while True:
