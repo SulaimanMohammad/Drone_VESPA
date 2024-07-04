@@ -134,6 +134,9 @@ def expansion_listener (self,vehicle):
 
             elif msg.startswith(Expan_header.encode()) and msg.endswith(b'\n'):
                 handel_elected_drone_arrivale(self, msg)
+
+            elif msg.startswith(Info_header.encode()) and msg.endswith(b'\n'):
+                self.forward_data_message(msg)
                 
             elif msg.startswith(Forming_border_header.encode()) and msg.endswith(b'\n'): # message starts with F end with \n
                 form_border_one_direction(self,Forming_border_header,msg)
@@ -405,6 +408,7 @@ def expand_and_form_border(self,vehicle):
                 self.emergency_stop()    
         # If the border is not formed you can add reformation border again 
         # re_form_border(self)
+        self.send_data_message_station(vehicle, data=self.id)  
     else:
         write_log_message("Return home border is not formed")
         self.emergency_stop()

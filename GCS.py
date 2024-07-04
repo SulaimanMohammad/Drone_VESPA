@@ -73,6 +73,12 @@ def GCS_listener(self,Stop_flag):
             # New system is ready, restart the timer to wait another system to be done 
             reset_collect_drones_ready_timer(self)
 
+        elif msg.startswith(Info_header.encode()) and msg.endswith(b'\n'):
+            id_target, sender_id, longitude,  latitude, data = self.decode_data_message(msg)
+            if id_target==self.id:
+                print("Drone_id ", sender_id," Longitude: ",longitude," Latitude: ", latitude, " Data: ", data)
+        
+
 def initialize_collect_drones_ready_timer(self):
     reset_collect_drones_ready_timer(self)
     while True:

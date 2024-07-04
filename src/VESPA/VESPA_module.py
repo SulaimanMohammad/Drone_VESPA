@@ -468,7 +468,114 @@ class Drone:
         #Send message to GCS that system is ready 
         msg=self.build_drone_is_ready_message()
         send_msg(msg)
+
+      
+    '''
+    -------------------------------------------------------------------------------------
+    -----------Send data message to the GCS (ground controle station )-------------------
+    -------------------------------------------------------------------------------------
+    '''
+
+    def build_data_message(self,id_target, ids, longitude, latitude, data):
+        # Convert numbers to string
+        id_target_str = str(id_target).encode()
+        id_str = str(ids).encode()
+        longitude_str = str(longitude).encode()
+        latitude_str = str(latitude).encode()
+        data_send = str(data).encode()
+        message = Info_header.encode() + b',' + id_target_str + b',' + id_str + b',' + longitude_str + b',' + latitude_str + b',' + data_send + b'\n'
+        return message
+
+    def decode_data_message(self, message):
+        # Remove header and terminal
+        content = message[len(Info_header)+1:-1]
+        # Split by the comma to get floats
+        parts = content.split(b',')
+        id_target = int(parts[0])
+        sender_id = int(parts[1])
+        longitude = float(parts[2])
+        latitude = float(parts[3])
+        data = float(parts[4])
+        return id_target, sender_id, longitude, latitude, data 
     
+
+    def find_close_to_sink(self):
+        '''
+        1.Remove the First Element and Filter the List
+        Start by removing the first element from the list.
+        Then, filter the remaining elements to include only those where drones_in is greater than 0.
+        
+        2.Find the Minimum Distance:
+        Determine the Result Based on Minimum Distance:
+
+        If there is only one element with the minimum distance and drones_in equals 1, return the number in drones_in_id.
+        If there is only one element with the minimum distance and drones_in is greater than 1, select the smallest number from drones_in_id.
+        If multiple elements have the same minimum distance, return the smallest number from all the drones_in_id values across those elements.
+                
+        '''
+        neighbor_list=self.get_neighbor_list()
+        # Step 1: Remove the first element and filter by drones_in > 0
+        filtered_list = [item for item in neighbor_list[1:] if item.get("drones_in", 0) > 0]
+
+        # Step 2: Find the minimum distance
+        min_distance = min(item["distance"] for item in filtered_list)
+
+        # Step 3: Determine the result based on the scenarios
+        min_distance_items = [item for item in filtered_list if item["distance"] == min_distance]
+
+        if len(min_distance_items) == 1:
+            # Case: Exactly one minimum distance found
+            min_item = min_distance_items[0]
+            if min_item["drones_in"] == 1:
+                # Case: drones_in == 1, return drones_in_id directly
+                result = min_item["drones_in_id"]
+            else:
+                # Case: drones_in > 1, choose smallest drones_in_id
+                result = min(min_item["drones_in_id"])
+        else:
+            # Case: Multiple items with the minimum distance, choose smallest drones_in_id
+            all_ids = [id for item in min_distance_items for id in item["drones_in_id"]]
+            result = min(all_ids)
+        return result[0]
+    
+    def forward_data_message(self,msg):
+        id_target, sender_id, longitude,  latitude, data= self.decode_data_message(msg) 
+        # Only the targeted drone will respond           
+        if self.id == id_target:
+            if self.id==1:# It is sink send it to station 
+                id_to_send_to= 0 #send to station
+            else: 
+                id_to_send_to= self.find_close_to_sink() 
+            # only reforward the data recived change only to what drone to send to 
+            msg= self.build_data_message(id_to_send_to, sender_id , longitude, latitude, data)
+            send_msg(msg)
+
+    def send_data_message_station(self, vehicle, data=None):
+        #Get current GPS data 
+        if check_gps_fix(vehicle): 
+            current_lon = vehicle.location.global_relative_frame.lon
+            current_lat = vehicle.location.global_relative_frame.lat
+        else: 
+            current_lon=0
+            current_lat=0
+
+        # Chose to what drone to send the message      
+        if self.id==1:
+            # Sink will send to GCS 
+            id_to_send_to=0
+        else:   
+            # Other drone will find the drone closest to the sink 
+            id_to_send_to= self.find_close_to_sink()
+        
+        if data== None:
+            data_to_send=0
+        else:
+            data_to_send=data
+            
+        msg= self.build_data_message(id_to_send_to, self.id , current_lon, current_lat, data_to_send)
+        send_msg(msg)
+    
+
     '''
     -------------------------------------------------------------------------------------
     -------------------------------- Update upon movement--------------------------------

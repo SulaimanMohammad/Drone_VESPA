@@ -7,6 +7,7 @@ These will be used in the building and decoding message
 '''
 Prepared_header = 'P'  # Header to indicate that the drone system is ready
 Inauguration_header= 'U' # Header to initiate the VESPA algorithm 
+Info_header= 'N' # Send data to GCS
 #Exchanging data Headers
 Movement_command= 'M'
 Calibration= 'C'
@@ -33,7 +34,7 @@ Emergecy_header= 'Y'
 
 # Create an array of headers
 headers = [
-    Prepared_header, Inauguration_header, Movement_command, Calibration, Demand_header, Response_header,ACK_header,
+    Prepared_header, Inauguration_header,Info_header, Movement_command, Calibration, Demand_header, Response_header,ACK_header,
     Expan_header, Arrival_header, Identification_header, Identification_Caught_header, 
     Forming_border_header,Verify_border_header,
     Spanning_header, Target_coordinates_header, Local_balance_header,
