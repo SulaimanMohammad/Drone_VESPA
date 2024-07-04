@@ -2,6 +2,14 @@ import pigpio
 import time 
 from VESPA.headers_variables import *
 import threading
+import sys 
+import os 
+# Get the parent directory path
+parent_directory = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+# Add the parent directory to sys.path
+sys.path.append(parent_directory)
+from drone.drone_ardupilot import write_log_message
+
 send_lock = threading.Lock()
 
 def connect_xbee(TX,RX,baud_rate_set):
@@ -24,7 +32,6 @@ def connect_xbee(TX,RX,baud_rate_set):
     except pigpio.error as e:
         write_log_message(f"Error opening RX pin initially, close it and re-open: {e}")
         try: 
-            write_log_message("clear the buffer first")
             clear_buffer() # clear the buffer befor 
             pi.bb_serial_read_close(rx_pin)  # Close any existing serial read on the pin
             pi.bb_serial_read_open(rx_pin, baud_rate, 8)  # Open RX pin with a baud rate, 8: the number of data bits per character
@@ -32,7 +39,8 @@ def connect_xbee(TX,RX,baud_rate_set):
             write_log_message(f"Error reopening RX pin: {e}")
             close_xbee_port()
             sys.exit(1)  # Exit the program with a non-zero status
-
+    
+    clear_buffer() # clear the buffer befor 
     pi.set_mode(tx_pin, pigpio.OUTPUT)
     pi.wave_clear() # Clear any existing waveforms before sending the first message
     time.sleep(0.5) # wait until all set 
