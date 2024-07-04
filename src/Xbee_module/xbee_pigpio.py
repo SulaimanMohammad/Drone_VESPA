@@ -3,12 +3,6 @@ import time
 from VESPA.headers_variables import *
 import threading
 import sys 
-import os 
-# Get the parent directory path
-parent_directory = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-# Add the parent directory to sys.path
-sys.path.append(parent_directory)
-from drone.drone_ardupilot import write_log_message
 
 send_lock = threading.Lock()
 
@@ -30,13 +24,11 @@ def connect_xbee(TX,RX,baud_rate_set):
     try:
         pi.bb_serial_read_open(rx_pin, baud_rate, 8)  # Try to open RX pin with a baud rate
     except pigpio.error as e:
-        write_log_message(f"Error opening RX pin initially, close it and re-open: {e}")
         try: 
             clear_buffer() # clear the buffer befor 
             pi.bb_serial_read_close(rx_pin)  # Close any existing serial read on the pin
             pi.bb_serial_read_open(rx_pin, baud_rate, 8)  # Open RX pin with a baud rate, 8: the number of data bits per character
         except pigpio.error as e:
-            write_log_message(f"Error reopening RX pin: {e}")
             close_xbee_port()
             sys.exit(1)  # Exit the program with a non-zero status
     
@@ -51,7 +43,6 @@ def send_msg(msg):
         try: 
             # Check if the message is empty or not in a byte-like format
             if not msg or not isinstance(msg, (bytes, bytearray)):
-                write_log_message("Error: Message is empty or not in byte format.")
                 return
 
             pi.wave_clear()  # Clear any existing waveforms
@@ -68,12 +59,10 @@ def send_msg(msg):
                     if wave_id >= 0:
                         break  # Waveform created successfully, exit the loop
                 except pigpio.error as e:
-                    write_log_message(f"Attempt {attempt + 1} failed with error: {e}", " message was",msg )
                     time.sleep(0.05)  # Wait for 0.05 seconds before the next attempt
 
             # Check if the waveform was created successfully after all attempts
             if wave_id is None or wave_id < 0:
-                write_log_message("Error: Failed to create waveform after multiple attempts.")
                 return
 
             pi.wave_send_once(wave_id)  # Send the waveform
@@ -148,7 +137,7 @@ def clear_buffer():
                 if count == 0:
                     break  # Exit the loop if there's no more data to read
         except pigpio.error as e:
-            write_log_message(f"Error while clearing pigpio buffer: {e}")
+            time.sleep(0.01)
 
 def close_xbee_port():
     global pi
