@@ -45,11 +45,11 @@ def wait_start_signal():
 def main():
     
     # Create vehicle object 
-    logs= create_log_file() 
+    logs= create_log_file()
+    # Create drone object and also connect to Xbee (so any data arrives will be captured in the buffer )
+    drone = Drone(0.0,0.0,0.0, parse_arguments())
     vehicle=drone_connect()
     set_data_rate(vehicle, 20)
-    # Create drone object of VESPA 
-    drone = Drone(0.0,0.0,0.0, parse_arguments())
     signal.signal(signal.SIGINT, lambda sig, frame: drone.interrupt(vehicle))
     # Configure parameter of drone based on VESPA
     config_parameters(vehicle, drone)
