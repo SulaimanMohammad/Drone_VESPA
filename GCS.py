@@ -64,10 +64,28 @@ from drone.set_drone_parameters import *
 def GCS_listener(self,Stop_flag):
     while not Stop_flag.is_set():    
         msg= retrieve_msg_from_buffer(Stop_flag)
+
         if msg.startswith(Emergecy_header.encode()) and msg.endswith(b'\n'):
             time.sleep(10)
             os.kill(os.getpid(), signal.SIGINT) # That will call interrupt which use vehicle object to return home
+        
+        elif msg.startswith(Prepared_header.encode()) and msg.endswith(b'\n'):
+            # New system is ready, restart the timer to wait another system to be done 
+            reset_collect_drones_ready_timer(self)
 
+def initialize_collect_drones_ready_timer(self):
+    reset_collect_drones_ready_timer(self)
+    while True:
+        with self.Drone_ready_lock:
+            self.timer_count -= 0.1
+            if self.timer_count <= 0:
+                    break
+        time.sleep(0.1)
+
+def reset_collect_drones_ready_timer(self):
+    with self.Drone_ready_lock:
+        self.timer_count=60 
+    
 def interrupt(drone,Stop_flag):
     Stop_flag.set()
     emergency_msg= drone.build_emergency_message()
@@ -78,7 +96,7 @@ def interrupt(drone,Stop_flag):
     exit(0)
 
 def wait_for_start():
-    message = "When you are ready to start VESPA press enter:"
+    message = "All drones' systems are ready, When you are ready start VESPA by pressing enter"
     input(message)  # This will display the message and wait for the user to press Enter
     msg= Inauguration_header.encode()+ b'\n'
     print(msg)
@@ -93,7 +111,8 @@ def main():
     # Create GCS_listener to receive messages
     GCS_receive_message_thread = threading.Thread(target=GCS_listener, args=(drone,Stop_flag))
     GCS_receive_message_thread.start()
-
+    initialize_collect_drones_ready_timer(drone)
+    # After all the drone systems are ready, ask for start 
     wait_for_start()
     try:
         while True:

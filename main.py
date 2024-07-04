@@ -50,12 +50,11 @@ def main():
     set_data_rate(vehicle, 20)
     # Create drone object of VESPA 
     drone = Drone(0.0,0.0,0.0, parse_arguments())
+    signal.signal(signal.SIGINT, lambda sig, frame: drone.interrupt(vehicle))
     # Configure parameter of drone based on VESPA
     config_parameters(vehicle, drone)
-    signal.signal(signal.SIGINT, lambda sig, frame: drone.interrupt(vehicle))
-
+    drone.system_is_ready() # Send message to GCS that system is ready 
     wait_start_signal() # Wait the start flag to initiate VESPA
-
     try:
         first_exapnsion(drone, vehicle)
         spanning(drone)

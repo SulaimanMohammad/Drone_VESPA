@@ -236,6 +236,11 @@ class Drone:
     ---------------------------------- Communication ------------------------------------
     -------------------------------------------------------------------------------------
     '''
+    def build_drone_is_ready_message(self):
+        message= Prepared_header.encode()
+        message += b'\n'
+        return message
+
     def build_emergency_message(self):
         message= Emergecy_header.encode()
         message += b'\n'
@@ -458,6 +463,11 @@ class Drone:
         # Receiving message containing data     
         if msg.startswith(Response_header.encode()) and msg.endswith(b'\n'):
             self.get_neighbors_info(msg)
+
+    def system_is_ready(self):
+        #Send message to GCS that system is ready 
+        msg=self.build_drone_is_ready_message()
+        send_msg(msg)
     
     '''
     -------------------------------------------------------------------------------------
