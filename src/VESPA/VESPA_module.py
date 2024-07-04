@@ -576,6 +576,7 @@ class Drone:
             
         msg= self.build_data_message(id_to_send_to, self.id , current_lon, current_lat, data_to_send)
         send_msg(msg)
+        time.sleep(10)
     
 
     '''
