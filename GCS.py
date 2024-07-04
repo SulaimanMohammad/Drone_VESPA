@@ -136,6 +136,7 @@ def main():
     logs= create_log_file() 
     # Create drone object of VESPA 
     drone = Drone(0,0.0,0.0)
+    drone.Drone_ready_lock= threading.Lock() # Timer lock (timer is shared between 2 threads)
     signal.signal(signal.SIGINT, lambda sig, frame: interrupt(drone,Stop_flag))
     # Create GCS_listener to receive messages
     GCS_receive_message_thread = threading.Thread(target=GCS_listener, args=(drone,Stop_flag))
