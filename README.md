@@ -1,6 +1,14 @@
 # Vehicle (Drone) Spreading using Self-organized Parallel Algorithm
 
-This repository represents the VESPA Algorithm, designed for the collective operation of multiple drones. Each drone in the fleet is equipped with a Raspberry Pi and flight controllers. In this implementation, each drone is provided with a Pixhawk flight controller. The code for controlling the drone is written in Python using [DroneKit library](https://dronekit-python.readthedocs.io/en/latest/) .
+## Overview
+
+This repository represents the VESPA Algorithm, designed for the collective operation of multiple drones. Each drone in the fleet is equipped with a Raspberry Pi and flight controllers. In this implementation, each drone is provided with a Pixhawk flight controller. The code for controlling the drone is written in Python using [DroneKit library](https://dronekit-python.readthedocs.io/en/latest/).
+
+## Implementation of Non-GPS Navigation for Drones
+The drones usally are contoled by Radio Transmitter Controllers or simple navigation using DroneKit which use GPS.
+Many application including VESPA required different way of navigation based on a specific distance which is not supported in DroneKit.
+The drone movement in VESPA no longer relies on GPS coordinates. Instead, it is programmed to navigate based on (Distance, Angle), ensuring precise movement crucial for autonomous vehicles. Unlike [ArduPilot](https://ardupilot.org/), which does not offer native support for such navigation, these instructions are implemented in the[drone_ardupilot.py](https://github.com/SulaimanMohammad/Drone_VESPA/blob/main/src/drone/drone_ardupilot.py) script. This script converts velocities from the NED frame to the body frame using Euler angles and employs a PID controller to maintain speed, calculate the traveled distance, and reduce velocity upon reaching the destination. This approach ensures smooth movement and prevents overshooting.
+
 
 ## Setup
 
@@ -26,12 +34,13 @@ To ensure proper operation of the VESPA Algorithm, each flight controller (such 
         - Using GPIO pins: The [Pigpio](https://github.com/joan2937/pigpio) library will be used to manage the serial connection.
             1. The used GPIOs Tx and Rx should be specified in the [Operational_data](https://github.com/SulaimanMohammad/Drone_VESPA/blob/main/src/Operational_Data.txt), or you can use pins (Tx 23) and (RX 24) of Raspberry pi, which are already mentioned in the `Operational_data`.
             2. Connect `(Xbee-Din to RPI-Tx , Xbee-Dout to RPI-Rx)`.
-    For more details about changing the values [Change Characteristic](#change_characteristic)
+    For more details about changing the values [Change Characteristic](#change-characteristic)
 
 ### Raspberry pi Setup
 To set up a fleet of N drones, follow these steps:
 
-1. **Naming Convention**: Each drone's Raspberry Pi should be named `droneX`, where `X` ranges from 1 to N. where drone1 is designated as the sink drone, which stays on top of the ground station and maintains connections with all other drones in the fleet.
+1. **Naming Convention**: Each drone's Raspberry Pi during burning the Raspberry Pi OS​ should be named `droneX`, where `X` ranges from 1 to N.
+    - `drone1` is designated as the sink drone, which stays on top of the ground station and maintains connections with all other drones in the fleet.
 
 2. **Raspberry Pi Setup**: Each drone's Raspberry Pi must be configured to connect with its respective flight controller.
 
@@ -42,17 +51,27 @@ To set up a fleet of N drones, follow these steps:
             git clone https://github.com/SulaimanMohammad/Drone_VESPA.git
             cd Drone_VESPA/configuration
         ```
-    - Configure RPI to be used with pixhawk and VESAP
+    - Configure RPi to be used with pixhawk and VESAP
         ```bash
             ./rpi_setup.sh
         ```
         This script call the followig scripts also:
-        - **setup_drone_info**: Set variables needed for the drone, dimensions of drone are needed to be provided
+        - **setup_drone_info**: Set variables needed for the drone, dimensions of drone are needed to be provided.
         - **create_VESPA_service**, **vespa**: Set VESPA to run as a service with shell commands
         - **update_repo**: Create logs directory, set permissions, and used to re-clone the repository
 
 
-## Running the Code on Raspberry Pi
+## Execute VESPA
+
+### Hardware Requirements for VESPA Execution
+To effectively execute the VESPA algorithm, the following hardware setup is required:
+
+- Ground Control Station (GCS): One Xbee module needs to be connected to the local machine acting as the GCS.
+- Fleet : A minimum of three vehicle units are needed, each connected to a Raspberry Pi to execute the VESPA algorithm.
+    - One should be configured with `drone1` as sink
+    - The rest two are required to form border in the algorithm
+
+### Raspberry Pi
 **Each drone will automatically start VESPA after booting, but the process will not begin until it receives a signal from the Ground Control Station.**
 
 The `rpi_setup` script will create a VESPA service that runs in the background upon each boot of the algorithm.
@@ -71,7 +90,7 @@ Also shell commands are set up, with these options, you can easily manage the VE
 ```
 Those command used in case a Raspberry Pi accessed by ssh protocol.
 
-## Running Ground Controle Station (GCS)
+### Ground Controle Station (GCS)
 The GCS is a local machine with an Xbee module connected to it using a USB port.
 
 1. **Clone the Repository**:
@@ -87,33 +106,149 @@ The GCS is a local machine with an Xbee module connected to it using a USB port.
         ./monitoring.sh
     ```
 
-## Running process
+## VESPA Operation Procedures
 
-1. After powering on all the drones in the field, each drone will run the VESPA script and wait for the GCS (Ground Control Station) to be launched on the local machine.
-2. Once the GCS is launched, it will send a message to all the drones, prompting each drone to initialize the flight control and set all the necessary parameters.
-3. The GCS will wait for a signal from the drones indicating that the system is ready.
-4. When all systems are ready, the GCS will ask the user to authorize the start of VESPA movement.
+1. **Power On**: After powering on all the drones in the field, each drone will run the VESPA script as a service and wait for the GCS (Ground Control Station) to be launched on the local machine.
+2. **GCS Initialization**: Once the GCS is launched, it will send a message to all the drones, prompting each drone to initialize the flight control and set all the necessary parameters.
+3. **System Readiness Check**: The GCS will wait for signals from the drones indicating that the system is ready.
+4. **Authorization for Movement**: When all systems are ready, the GCS will ask the user to authorize the start of VESPA movement.
+
+
+## Running Scripts
+
+There are three ways to execute the script:
+
+1. **On Raspberry Pi**:
+   - Ensure the Raspberry Pi is connected to the vehicle and configured.
+   - Access the Raspberry Pi using SSH and run the script:
+     ```bash
+        python script.py
+     ```
+
+2. **On Local Machine**:
+   - Before running the script, install the required libraries for MAVLink (do not use a virtual environment for Python):
+     ```bash
+        pip install mavproxy
+        pip install dronekit
+        pip install dronekit-sitl
+     ```
+    - **Using Telemetry Device**: The device is used to establish communication between the local machine and the vehicle directly (no need for a Raspberry Pi connection):
+        ```bash
+            python script.py telemetry
+        ```
+    - **Running in Simulation**: For more details on simulation see [Run simulation](#run-simulation)
+        ```bash
+            python script.py --connect ip:port
+        ```
+
+
+## Simulation
+
+### Install simulation IDE
+- Required libraries
+   ```bash
+        pip install mavproxy
+        pip install dronekit
+        pip install dronekit-sitl
+        pip install pexpect
+        pip install pysim
+        python -m pip install empy
+        pip install mavproxy
+        pip install opencv-python  #for the map
+    ```
+- Follow the steps listed [here](https://ardupilot.org/dev/docs/building-setup-linux.html#building-setup-linux) then [here ](https://ardupilot.org/dev/docs/setting-up-sitl-on-linux.html)
+
+- Launch the Simulation, use the following command:
+     ```bash
+        python sim_vehicle.py -v ArduCopter -f quad --custom-location=Latitude,Longitude,Altitude,Heading  --console --map
+    ```
+    Latitude, Longitude, Altitude: Represents the position where the vehicle starts.
+
+    Heading: The direction the vehicle is facing.
+
+### Run simulation
+#### With Raspberry Pi (preferred )
+
+If you have multiple Raspberry Pis, each one can be considered a vehicle (it's a simulation, so no need for the RPi to be connected to Pixhawk) but as mentioned before minimum three Raspberry Pis.
+
+In this setup, each RPi is configured and has its ID, which is needed in VESPA.
+
+The following steps shoudl be done for each  Raspberry Pi:
+
+1. **Connect RPi to Wi-Fi**: Ensure that RPi and local machine are connected to the same Wi-Fi network.
+
+2. **Connect to each Raspberry Pi using SSH**.
+
+3. **Stop Background Services**: Stop the service that needs a real vehicle to avoid conflicts, as only the simulation is needed.
+     ```bash
+        vespa stop
+     ```
+
+4. **Retrieve the IP Address of the Raspberry Pi**.
+
+5. **Launch SITL on Your Local Machine**:
+    - Open a new terminal and launch SITL (Software In The Loop) as follows:
+    ```bash
+        python sim_vehicle.py -v ArduCopter -f quad -I x --custom-location=Latitude,Longitude,Altitude,Heading --out=RPI_IP:Port --console --map
+    ```
+    - `RPI_IP`: IP address of Raspberry Pi, port: can be chosed as you want
+    - `x`: Identifier of the simulation instance.
+
+6. **Run Script on the Raspberry Pi**:
+    - On the Raspberry Pi, run any script as follows:
+     ```bash
+        python script.py --connect RPI_IP:Port
+     ```
+    - Same port used to start STL should be used in running the script.
+
+##### Notes:
+- If the entire VESPA system is needed to be simulated whic needs XBee module that must be connected to each Raspberry Pi (for unit tests, Xbee is not required since those tests do not include commuinication )
+- Each Raspberry Pi (simulated vehicle) needs its own SITL instance. For `N` Raspberry Pis, you need `N` instances of SITL (`-I [1:N]`).
+
+
+#### Running Simulation Without Raspberry Pi (All on Local Machine)
+
+Since the simulation is entirely done on the local machine, here are some important points to consider:
+
+1. **Vehicle IDs**: VESPA requires an ID for each vehicle. Because there are no Raspberry Pis with unique IDs, you need to add an ID with each script execution.
+
+2. **Xbee Modules**: Ensure Xbee modules are connected via USB.
+
+3. **MAVLink Communication**: Communication with MAVLink in SITL will be done using localhost with different Port for each vehicle.
+For each Vehicle you want to simulate should has it is proper port and STL instance
+    ```bash
+        python script.py --connect  127.0.0.1:Port_x
+        python sim_vehicle.py -v ArduCopter -f quad -I x --custom-location=Latitude,Longitude,Altitude,Heading --out=  127.0.0.1:Port_x --console --map
+    ```
+1. **Run the Script**: Execute the script with the proper connection details:
+     ```bash
+        python script.py --connect 127.0.0.1:Port_x --id=x
+     ```
+
+2. **Launch SITL Instance**: Launch SITL for the vehicle.
+     ```bash
+        python sim_vehicle.py -v ArduCopter -f quad -I x --custom-location=Latitude,Longitude,Altitude,Heading --out=127.0.0.1:Port_x --console --map
+     ```
+    - `127.0.0.1:Port_x`: Specifies the local host and port for communication.
+    - `-I x`: Identifier for the simulation instance.
 
 
 ## Run tests
-- All tests in unit_tests can be used to commuinicate with raspberry pi, telemetry and simulation
-- The test used in the algorithm of VESPA is body_frame_move.py
-    - It uses the movement using Yaw , distance and PID
-    - To run it on physical drone after connecting with ssh to RP
-    ```bash
-        python body_frame_move.py
-    ```
-    - In case of using STL simulation
-        - launch the simulation, check the ip by writing output in mavlink terminal
-        - Edit connection methode in your tests [ vehicle = connect (parse_connect(), wait_ready=False) ]
+- All tests in [unit_tests](https://github.com/SulaimanMohammad/Drone_VESPA/tree/main/src/drone/unit_tests) can be used  with raspberry pi, telemetry and simulation.
 
-     ```bash
-        python body_frame_move.py --connect [your ip]
-    ```
+The tests are used to check that the drone is configured well and also for the reason of development and test modification, ( no need to have Xbee module to run these tests)
+Each test can be run in one of the revious methods ( RPi , telemtry or simulation)
+- [Calibration](https://github.com/SulaimanMohammad/Drone_VESPA/blob/main/src/drone/unit_tests/Calibration/measure_acc.py): contains 2 scripts
+    - [measure_acc](https://github.com/SulaimanMohammad/Drone_VESPA/blob/main/src/drone/unit_tests/Calibration/measure_acc.py) used to move the drone and measures the acceleration and deacceleration
+    - [extract](https://github.com/SulaimanMohammad/Drone_VESPA/blob/main/src/drone/unit_tests/Calibration/extract.py): use the data generated by measure_acc, filter them and return (acceleration and deacceleration) values that are necessary to move the drone using distance, angle instead of GPS coordination
+
+
+
 
 ## Compatibility and Versatility
-The VESPA Algorithm is versatile and can be adapted to work , any other drone controller by modifying the implementation of the movementsuch as (take_off,simple_goto_thread,move_using_coord,move_to_spot,return_home).
-These functions can be modified to suit different drone controllers as needed.
+The VESPA Algorithm is versatile and can be adapted to work with various vehicles, including different drone controllers. By modifying the implementation of movement functions (such as take_off, simple_goto_thread, move_using_coord, move_to_spot, and return_home), you can tailor the algorithm to suit different drone controllers. This flexibility allows for the integration of multiple drone types within the same fleet.
+
+Additionally, VESPA is a general algorithm that can operate in heterogeneous systems. It can be used with completely different types of vehicles, such as rovers, cars, and planes.
 
 
 
@@ -123,7 +258,7 @@ The [Operational_data](https://github.com/SulaimanMohammad/Drone_VESPA/blob/main
 
 1. Drone variables: related with actual drone:
 
-    - **max_acceleration, max_deceleration**: Initial values can be changed using [Calibration](https://github.com/SulaimanMohammad/Drone_VESPA/blob/main/src/drone/unit_tests/Calibration/measure_acc.py)or kept the same. The drone will also adjust these dynamically while moving so no need to change anything after the first flight.
+    - **max_acceleration, max_deceleration**: Initial values can be changed using [Calibration](https://github.com/SulaimanMohammad/Drone_VESPA/blob/main/src/drone/unit_tests/Calibration/measure_acc.py) or kept the same. The drone will also adjust these dynamically while moving so no need to change anything after the first flight.
     - **defined_groundspeed**: Speed of the drone at the first movement commanded by the sink.
     - **lidar_scan**: Indicates whether to use lidar for object avoidance. Set to `True` if using lidar, otherwise `False`.
     - **speed_of_drone**: Speed of the drone in m/s after the first movement. It's recommended to keep this speed between 2 to 4 m/s, and 2 m/s if using lidar to ensure fast reactivity.
@@ -132,6 +267,7 @@ The [Operational_data](https://github.com/SulaimanMohammad/Drone_VESPA/blob/main
     - **telemetry2_baudrate**: Baud rate for Pixhawk where the Raspberry Pi is connected via UART. To change the value, use MAVLink and a framework like Mission Planner, update `SERIAL2_BAUD` in the parameter list, write the new value, and then update this file with the same value.
 
 2. VESPA variables: related with VESPA algorithm:
+    - **drone_id**: unique identifier of each vehicle, it is set up automatically by `setup_drone_info`, ( 0: GCS , 1: sink)
     - **eps, C**: Preferably kept unchanged.
     - **multiplier**: Set to 100. A higher value increases the precision of floating-point numbers in messages.
     - **exchange_data_latency**: Approximation of the time until the message is sent and processed in each XBee.
@@ -178,7 +314,7 @@ The [Operational_data](https://github.com/SulaimanMohammad/Drone_VESPA/blob/main
 
 - **Drone**: "drone_ardupilot.py" API takes off and moves at a specific angle and distance. The "unit_test" directory contains many tests to check the movement of the drone, including a calibration directory that moves the drone, measures the acceleration, and sets it in Operational_data as a starting point (optional).
 
-- **Xbee_module**: Module to send/read data using XBee.
+- **Xbee_module**: Module to send/read data using XBee (USB and GPIO)
 
 - **Lidar**: Object Detection Using LiDAR and DBSCAN Algorithm. An ESP32 and Lidar need to be connected. [Repo here](https://github.com/SulaimanMohammad/Object_detection_Lidar).
 
@@ -189,3 +325,4 @@ The [Operational_data](https://github.com/SulaimanMohammad/Drone_VESPA/blob/main
 - **Operational_data.txt**: Contains the acceleration and ID of the drone and all data needed through the algorithm.
 
 
+## Experiment
