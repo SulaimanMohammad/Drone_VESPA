@@ -416,7 +416,8 @@ def expand_and_form_border(self,vehicle):
                 self.emergency_stop()    
         # If the border is not formed you can add reformation border again 
         # re_form_border(self)
-        self.send_data_message_station(vehicle, data=self.id)  
+        num_people_around= self.count_num_people()
+        self.send_data_message_station(vehicle, data=num_people_around)  
     else:
         write_log_message("Return home border is not formed")
         self.emergency_stop()

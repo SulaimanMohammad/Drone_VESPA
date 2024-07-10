@@ -13,6 +13,7 @@ sys.path.append(parent_directory)
 from drone.drone_ardupilot import *
 from .headers_variables import * 
 import signal
+import subprocess
 
 
 '''
@@ -1043,4 +1044,32 @@ class Drone:
             emergency_msg= self.build_emergency_message()
             send_msg(emergency_msg)
             write_log_message("Call interrupt")
-            os.kill(os.getpid(), signal.SIGINT) # That will call interrupt which use vehicle object to return home
+            os.kill(os.getpid(), signal.SIGINT) # That will call interrupt which use vehicle object to return home  
+
+    
+
+    '''
+    -------------------------------------------------------------------------------------
+    -------------------------------- Operations at Spot ---------------------------------
+    -------------------------------------------------------------------------------------
+    '''
+
+    def count_num_people(self,scan_time=30,rssi_threshold=-70):
+        try:
+            # Define the path to the Bash script
+            parent_directory = os.path.abspath(os.path.join(os.path.dirname(__file__), '../'))
+            script_path = os.path.join(parent_directory, 'Estimate_num_people', 'detect_wifi.sh')
+
+            # Ensure the script is executable
+            subprocess.run(['chmod', '+x', script_path], check=True)
+
+            # Call the Bash script 
+            result = subprocess.run([script_path, str(scan_time), str(rssi_threshold)], 
+                                    capture_output=True, text=True, check=True)
+            
+            return result
+        
+        except:
+            write_log_message("Could count people ")
+            self.emergency_stop() 
+
