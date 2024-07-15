@@ -97,7 +97,7 @@ def check_continuity_of_listening(self):
 def expansion_listener (self,vehicle):
 
     while check_continuity_of_listening(self):
-        try:
+        #try:
             '''
             Data-Driven retrieve_msg_from_buffer will continue reading and will break only wwhen data is available 
             in this way the listener will process the message upon arrival 
@@ -144,9 +144,9 @@ def expansion_listener (self,vehicle):
             elif msg.startswith(Verify_border_header.encode()) and msg.endswith(b'\n'):
                 verify_border(self,Verify_border_header,msg)
         
-        except:
-            write_log_message("Thread expansion_listener Interrupt received, stopping...")
-            self.emergency_stop()   
+        # except:
+        #     write_log_message("Thread expansion_listener Interrupt received, stopping...")
+        #     self.emergency_stop()   
                      
 '''
 -------------------------------------------------------------------------------------
@@ -416,7 +416,7 @@ def expand_and_form_border(self,vehicle):
                 self.emergency_stop()    
         # If the border is not formed you can add reformation border again 
         # re_form_border(self)
-        num_people_around= self.count_num_people()
+        num_people_around= self.count_num_people(4,-100)
         self.send_data_message_station(vehicle, data=num_people_around)  
     else:
         write_log_message("Return home border is not formed")
@@ -428,18 +428,18 @@ def first_exapnsion (self, vehicle):
     xbee_receive_message_thread.start()
     self.start_expanding= threading.Event()
     self.elected_droen_arrived= threading.Event()
-    # First movement started by commands of the sink
+     # First movement started by commands of the sink
     if self.id==1: # Sink:
         write_log_message("Sink collect data")
         initialize_collect_drones_info_timer(self) # Sink waiting for the drones to make themselves known befor start
-        if (len(self.collected_ids) +1)<3:  # 3 drones needed including the sink, collected_ids contains id of other drones , sink not included 
+        if (len(self.collected_ids) +1)>=3:  # 3 drones needed including the sink, collected_ids contains id of other drones , sink not included 
             self.take_off_drone(vehicle)
             sink_movement_command(self,vehicle,self.collected_ids)
             # The end send message referes that all in position
             msg= build_movement_command_message(-1,-1, 0, 0)
             send_msg(msg)
         else: 
-            write_log_message("Note enough drones to perform VESPA, minimum 3 drones needed")
+            write_log_message("Not enough drones to perform VESPA, minimum 3 drones needed")
             self.emergency_stop()
     else:
         write_log_message("Send ID and wait for command")
@@ -449,7 +449,7 @@ def first_exapnsion (self, vehicle):
     
     write_log_message("The first movement is done by all drones, start expansion")
     expand_and_form_border(self, vehicle)
-    
+    time.sleep(30) #sleep to ensure all messages where processed by the listner 
     self.expansion_stop.set()
     xbee_receive_message_thread.join() # stop listening to message
     self.expansion_stop.clear()
