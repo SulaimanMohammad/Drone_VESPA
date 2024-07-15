@@ -1067,7 +1067,9 @@ class Drone:
             result = subprocess.run([script_path, str(scan_time), str(rssi_threshold)], 
                                     capture_output=True, text=True, check=True)
             
-            return result
+            # Extract and return the number of phones
+            number_of_phones = result.stdout.strip()
+            return float(number_of_phones)
         
         except:
             write_log_message("Could count people ")
