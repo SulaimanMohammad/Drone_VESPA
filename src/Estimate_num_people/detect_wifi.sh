@@ -94,3 +94,5 @@ awk '{if (!seen[$1] || $2 > seen[$1]) seen[$1] = $2} END {for (mac in seen) prin
 
 # Call the Python script and capture its output
 number_of_phones=$(python analyse_data.py)
+# Print what the python code return 
+echo $number_of_phones
