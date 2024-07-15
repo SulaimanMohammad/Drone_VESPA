@@ -97,7 +97,7 @@ def check_continuity_of_listening(self):
 def expansion_listener (self,vehicle):
 
     while check_continuity_of_listening(self):
-        #try:
+        try:
             '''
             Data-Driven retrieve_msg_from_buffer will continue reading and will break only wwhen data is available 
             in this way the listener will process the message upon arrival 
@@ -106,7 +106,6 @@ def expansion_listener (self,vehicle):
             the listener will recall this loop again to trigger the listener only when data is available 
             '''
             msg= retrieve_msg_from_buffer(self.expansion_stop)
-            print ("msg", msg)
             
             self.exchange_neighbors_info_communication(msg)
             
@@ -145,9 +144,9 @@ def expansion_listener (self,vehicle):
             elif msg.startswith(Verify_border_header.encode()) and msg.endswith(b'\n'):
                 verify_border(self,Verify_border_header,msg)
         
-        # except:
-        #     write_log_message("Thread expansion_listener Interrupt received, stopping...")
-        #     self.emergency_stop()   
+        except:
+            write_log_message("Thread expansion_listener Interrupt received, stopping...")
+            self.emergency_stop()   
                      
 '''
 -------------------------------------------------------------------------------------
@@ -241,7 +240,6 @@ def initial_movement(self,vehicle, rec_msg, ID, spot, lon, lat):
         # Broadcast the message only if it is not brodcasted before and it is not message for the current drone ( since another message for self.id can arrive from other broadcasting)
         if (ID not in self.first_movement_command_broadcasted) and (ID !=self.id):
             self.first_movement_command_broadcasted.append(ID)
-            print("msg brodcasted", rec_msg)
             send_msg(rec_msg)
 
 def calibration_ping_pong(self, vehicle, msg ):
