@@ -99,7 +99,7 @@ def retrieve_msg_from_buffer(stop_flag):
                 # If a valid header is not found, clear the buffer and return
                 if header_index == -1:
                     message_buffer.clear()
-                    return bytearray(b'')
+                    break  # Exit the inner loop to read more data
 
                 # Find the end of the message (newline character)
                 newline_index = message_buffer.find(b'\n', header_index)
