@@ -143,11 +143,11 @@ def main():
     signal.signal(signal.SIGINT, lambda sig, frame: interrupt(drone,Stop_flag))
     GCS_launched()
     print("GCS launched signal is sent")
+    drone.Drone_ready_lock= threading.Lock() # Timer lock (timer is shared between 2 threads ( main ,GCS_listener ))
     # Create GCS_listener to receive messages
     GCS_receive_message_thread = threading.Thread(target=GCS_listener, args=(drone,Stop_flag))
     GCS_receive_message_thread.start()
     print("Waiting for signal that drones' systems are ready")
-    drone.Drone_ready_lock= threading.Lock() # Timer lock (timer is shared between 2 threads ( main ,GCS_listener ))
     initialize_collect_drones_ready_timer(drone)
     # After all the drone systems are ready, ask for start 
     wait_for_start()
