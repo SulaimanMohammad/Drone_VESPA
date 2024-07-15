@@ -64,7 +64,7 @@ SECONDARY_CHANNELS=(2 3 4 5 7 8 9 10)
 for channel in "${PRIMARY_CHANNELS[@]}"; do
     # Capture packets on the current channel and append to data.txt
     sudo iw dev wlan1 set channel $channel
-    tshark -i wlan1  -a duration:$PRIMARY_SCAN_TIME -T fields -e wlan.sa -e wlan.seq -e radiotap.dbm_antsignal >/dev/null 2>&1 | \
+    tshark -i wlan1  -a duration:$PRIMARY_SCAN_TIME -T fields -e wlan.sa -e wlan.seq -e radiotap.dbm_antsignal 2>/dev/null | \
     awk -v threshold="$RSSI_THRESHOLD" '{
         if ($3 ~ /,/) {
         split($3, a, ",");
@@ -78,9 +78,8 @@ done
 
 # Run tshark on secondary channels for the calculated scan time
 for channel in "${SECONDARY_CHANNELS[@]}"; do
-    echo "Switching to channel $channel..."
     sudo iw dev wlan1 set channel $channel
-    tshark -i wlan1 -a duration:$SECONDARY_SCAN_TIME -T fields -e wlan.sa -e wlan.seq -e radiotap.dbm_antsignal >/dev/null 2>&1 | \
+    tshark -i wlan1 -a duration:$SECONDARY_SCAN_TIME -T fields -e wlan.sa -e wlan.seq -e radiotap.dbm_antsignal 2>/dev/null | \
     awk -v threshold="$RSSI_THRESHOLD" '{
         if ($3 ~ /,/) {
         split($3, a, ",");
