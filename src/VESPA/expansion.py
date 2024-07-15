@@ -106,6 +106,7 @@ def expansion_listener (self,vehicle):
             the listener will recall this loop again to trigger the listener only when data is available 
             '''
             msg= retrieve_msg_from_buffer(self.expansion_stop)
+            print ("msg", msg)
             
             self.exchange_neighbors_info_communication(msg)
             
@@ -240,6 +241,7 @@ def initial_movement(self,vehicle, rec_msg, ID, spot, lon, lat):
         # Broadcast the message only if it is not brodcasted before and it is not message for the current drone ( since another message for self.id can arrive from other broadcasting)
         if (ID not in self.first_movement_command_broadcasted) and (ID !=self.id):
             self.first_movement_command_broadcasted.append(ID)
+            print("msg brodcasted", rec_msg)
             send_msg(rec_msg)
 
 def calibration_ping_pong(self, vehicle, msg ):
