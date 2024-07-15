@@ -215,22 +215,21 @@ Since the simulation is entirely done on the local machine, here are some import
 2. **Xbee Modules**: Ensure Xbee modules are connected via USB.
 
 3. **MAVLink Communication**: Communication with MAVLink in SITL will be done using localhost with different Port for each vehicle.
-For each Vehicle you want to simulate should has it is proper port and STL instance
-    ```bash
-        python script.py --connect  127.0.0.1:Port_x
-        python sim_vehicle.py -v ArduCopter -f quad -I x --custom-location=Latitude,Longitude,Altitude,Heading --out=  127.0.0.1:Port_x --console --map
-    ```
-1. **Run the Script**: Execute the script with the proper connection details:
-     ```bash
-        python script.py --connect 127.0.0.1:Port_x --id=x
-     ```
+For each Vehicle you want to simulate should has it is proper port and STL instance:
 
-2. **Launch SITL Instance**: Launch SITL for the vehicle.
-     ```bash
-        python sim_vehicle.py -v ArduCopter -f quad -I x --custom-location=Latitude,Longitude,Altitude,Heading --out=127.0.0.1:Port_x --console --map
-     ```
-    - `127.0.0.1:Port_x`: Specifies the local host and port for communication.
-    - `-I x`: Identifier for the simulation instance.
+    1. **Launch SITL Instance**: Launch SITL for the vehicle.
+        ```bash
+            python sim_vehicle.py -v ArduCopter -f quad -I x --custom-location=Latitude,Longitude,Altitude,Heading --out=127.0.0.1:Port_x --console --map
+        ```
+        - `127.0.0.1:Port_x`: Specifies the local host and port for communication.
+        - `-I x`: Identifier for the simulation instance.
+
+    2. **Run the Script**: Execute the script with the proper connection details:
+        ```bash
+            python script.py --connect 127.0.0.1:Port_x --id=x
+        ```
+
+
 
 
 ## Run tests
