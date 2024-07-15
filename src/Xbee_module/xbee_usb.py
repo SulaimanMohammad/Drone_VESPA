@@ -44,7 +44,7 @@ def retrieve_msg_from_buffer(stop_flag):
                 # If a valid header is not found, clear the buffer and return
                 if header_index == -1:
                     message_buffer.clear()
-                    return bytearray(b'')
+                    break  # Exit the inner loop to read more data
 
                 # Find the end of the message (newline character)
                 newline_index = message_buffer.find(b'\n', header_index)
@@ -56,11 +56,13 @@ def retrieve_msg_from_buffer(stop_flag):
                 complete_message = message_buffer[header_index:newline_index + 1]
                 # Remove the processed message from the buffer
                 message_buffer = message_buffer[newline_index + 1:]
-                # Return the complete message
-                return complete_message
+                # Check if the message complies with the required format  
+                if complete_message[0] in headers_ascii_values and complete_message.endswith(b'\n'):
+                    # Return the complete message
+                    return complete_message
             
             # Short sleep to prevent high CPU usage
-            time.sleep(0.1)
+            time.sleep(0.02)
 
         except:
             raise Exception("Thread retrieve_msg_from_buffer Interrupt received, stopping...")   
