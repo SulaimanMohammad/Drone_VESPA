@@ -9,11 +9,6 @@ from VESPA.VESPA_module import *
 from VESPA.expansion import first_exapnsion,further_expansion
 from VESPA.spanning import spanning
 from VESPA.balancing import balancing
-
-
-parent_directory = os.path.abspath(os.path.join(os.path.dirname(__file__), './src'))
-# Add the parent directory to sys.path
-sys.path.append(parent_directory)
 from drone.set_drone_parameters import * 
 
 def parse_arguments():
