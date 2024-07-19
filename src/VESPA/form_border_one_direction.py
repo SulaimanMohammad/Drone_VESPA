@@ -384,11 +384,14 @@ def confirm_border_connectivity(self):
 
 def re_form_border(self):
     if not self.border_verified.is_set():
+        # First there is need to check the neighbours to see the changes 
+        self.demand_neighbors_info() # return after gathering all info
+        self.check_Ownership() # To see if drone is lost and ownership can be taken in spot 
         if self.get_state() == Border:
             self.change_state_to(Owner)
         if self.get_state() == Irremovable_boarder:
             self.change_state_to(Irremovable)
         Form_border(self)
-        if self.border_formed == False:
-            write_log_message("Return home border is not re-formed")
+        if self.border_candidate and (not self.Forming_Border_Broadcast_REC.is_set()) and self.Forming_border_failed.set():
+            write_log_message("Return home border is not formed even after re-form process")
             self.emergency_stop()
