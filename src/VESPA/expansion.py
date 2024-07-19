@@ -403,23 +403,22 @@ def expand_and_form_border(self,vehicle):
     # Wait until all border messages are processed and the current topology is saved upon forming border to be used for border verification 
     time.sleep(exchange_data_latency)  
 
-    write_log_message("Verify the border formation")
-    if self.border_formed != False:
-        border_well_confirmed= confirm_border_connectivity(self)
-        if self.get_current_spot()["drones_in"]==1 and border_well_confirmed:
+    border_well_confirmed= confirm_border_connectivity(self)
+    if border_well_confirmed:
+        if self.get_current_spot()["drones_in"]==1:
             write_log_message (" Drone is Alone Go to ref ")
             try: 
                 go_to_ref_altitude(vehicle,self.ref_alt)
             except:
                 write_log_message("An error occurred while go_to_ref_altitude")
-                self.emergency_stop()    
-        # If the border is not formed you can add reformation border again 
-        # re_form_border(self)
-        num_people_around= self.count_num_people(4,-100)
-        self.send_data_message_station(vehicle, data=num_people_around)  
-    else:
-        write_log_message("Return home border is not formed")
-        self.emergency_stop()
+                self.emergency_stop()
+    else: 
+        # Wait then reform the border 
+        time.sleep(10*exchange_data_latency)
+        re_form_border(self) 
+    
+    num_people_around= self.count_num_people(4,-100)
+    self.send_data_message_station(vehicle, data=num_people_around)
            
 def first_exapnsion (self, vehicle):
     # Lance a thread to read messages continuously
