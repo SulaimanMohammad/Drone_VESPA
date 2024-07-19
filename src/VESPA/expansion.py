@@ -281,7 +281,7 @@ def calibration_ping_pong(self, vehicle, msg ):
     elif indicator==0 and xbee_range>0:
         self.update_xbee_range(a)
         set_a(a)
-        clear_buffer()
+
 
 
 '''
@@ -402,7 +402,6 @@ def expand_and_form_border(self,vehicle):
     Form_border(self)
     # Wait until all border messages are processed and the current topology is saved upon forming border to be used for border verification 
     time.sleep(exchange_data_latency)  
-    clear_buffer()
 
     write_log_message("Verify the border formation")
     if self.border_formed != False:
@@ -453,7 +452,6 @@ def first_exapnsion (self, vehicle):
     self.expansion_stop.set()
     xbee_receive_message_thread.join() # stop listening to message
     self.expansion_stop.clear()
-    clear_buffer()
 
     save_unoccupied_spots_around_border(self)
     # Time guarantees that all drones begin the searching procedure simultaneously and synchronized.
@@ -480,7 +478,7 @@ def further_expansion (self,vehicle):
     self.expansion_stop.set()
     xbee_receive_message_thread.join() # stop listening to message
     self.expansion_stop.clear()
-    clear_buffer()
+
     
     save_unoccupied_spots_around_border(self)
     # Time guarantees that all drones begin the searching procedure simultaneously and synchronized.
