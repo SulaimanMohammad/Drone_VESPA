@@ -116,12 +116,10 @@ def form_border_one_direction(self,header,msg):
             if self.id == target_id:
                 if self.id == candidate:
                     if sender_id == self.current_target_id: # The mesage came backward not in circle
-                        self.border_formed=False
                         finish_timer_forme_border(self)
 
                     else: 
                         circle_completed(self)
-                        self.border_formed= True
                         finish_timer_forme_border(self)
                 else: 
                     with self.candidate_to_send_lock:
@@ -295,20 +293,19 @@ def Form_border(self):
     self.Forming_Border_Broadcast_REC.clear()
     wait_message_rec = threading.Thread(target=send_msg_border_until_confirmation, args=(self,Forming_border_header)) #pass the function reference and arguments separately to the Thread constructor.
     wait_message_rec.start()
-    
     number_of_try=0
-    #start_forming_bordertime used to stop border formation in case of endless messages (infinit formation) and which will lead to call emergency due to not forming border 
+    # Start_forming_border time used to stop border formation in case of endless messages (infinit formation) and which will lead to call emergency due to not forming border 
     start_forming_bordertime=time.time() 
-    #Continue checking in case of not forming border the process will start again 
-    while (not self.Forming_Border_Broadcast_REC.is_set()) and (number_of_try<=3) and (not self.expansion_stop.is_set()) and (not self.Emergency_stop.is_set()):
-        check_border_candidate_eligibility(self)
-        if self.border_candidate :
-            write_log_message("Drone is border candidate")
-            choose_spot_right_handed(self) # chose spot only when it is candidate 
-            self.update_candidate_spot_info_to_neighbors() # Useful if the drone arrived and filled a spot made others sourounded
-            '''launch a message circulation for current candidat'''
-            start_msg_one_direction(self)
-                    
+    check_border_candidate_eligibility(self)
+    # Only border candidate start trying to form the border
+    while self.border_candidate and (not self.Forming_Border_Broadcast_REC.is_set()) and (number_of_try<=3) and (not self.expansion_stop.is_set()) and (not self.Emergency_stop.is_set()):
+        
+        write_log_message("Drone is border candidate")
+        choose_spot_right_handed(self) # chose spot only when it is candidate 
+        self.update_candidate_spot_info_to_neighbors() # Useful if the drone arrived and filled a spot made others sourounded
+        '''launch a message circulation for current candidat'''
+        start_msg_one_direction(self)
+                
         # This timer will be reset upon each border message is recived 
         # It will be also stopped when forming border broadcast is received 
         # Note in case the border is not formed with absance of new messages, when the timer is up the while loop will re-executed 
@@ -322,8 +319,10 @@ def Form_border(self):
                         break
             time.sleep(0.1)
         
-        if (self.border_formed == False) and (time.time()-start_forming_bordertime < 500) : 
+        if (time.time()-start_forming_bordertime < 500) : 
             number_of_try=number_of_try+1
+            # re-check eligibility
+            check_border_candidate_eligibility(self)
             '''
             Wait after each try if it did not succeed and wait for the topology to change 
             that can happen if not all the drones finished moving, then reset all and try again
@@ -332,24 +331,23 @@ def Form_border(self):
             reset_border_variables(self)
             write_log_message(f"Attempt {number_of_try} to form border")
         else:
-            break # Border is formed stop 
-
-
-    if self.border_formed == True:
-        self.Forming_Border_Broadcast_REC.wait()
+            break 
+    # Here the candidate drone will be already break the loop in case the border is formed 
+    # While non-candidate will wait this flag and in case no border formed and time out it will mark that border is not formed 
+    self.Forming_Border_Broadcast_REC.wait(500) # Time out here equal to start_forming_bordertime which is the max to form border 
+    if self.Forming_Border_Broadcast_REC.is_set():
         wait_message_rec.join() # wait wait_message_rec thread to finish and detect the Forming_Border_Broadcast_REC flag
-
+        time.sleep(1)
         self.demand_neighbors_info() # Update neighbor_list to see the changes in the drones states ( like owner became border)
         self.neighbor_list_upon_border_formation=copy.deepcopy( self.get_neighbor_list()) # Save the Topology arround so it can be used to verfiy the border
-
-        self.Forming_Border_Broadcast_REC.clear()
-
-    else:
+        print( self.neighbor_list_upon_border_formation)
+    
+    else: # Border is not formed after many tries 
         # In case of 3 tries and the border is not formed then stop the process especially the thread of send_msg_border_until_confirmation
         self.Forming_border_failed.set()
         wait_message_rec.join()
-        self.Forming_border_failed.clear()
-        
+        write_log_message("Return home border is not formed")
+                 
     reset_border_variables(self)
 
 
@@ -358,17 +356,21 @@ def confirm_border_connectivity(self):
     if self.get_state()== Border or self.get_state()==Irremovable_boarder: 
         choose_spot_right_handed(self,self.neighbor_list_upon_border_formation) 
         if self.current_target_id is not None:
+            print(" drone is border and send data to ", self.current_target_id)
             msg= build_border_message(self,Verify_border_header,self.current_target_id, self.id)
             send_msg(msg)
-    
-        reset_timer_forme_border(self, Verify_border_header)
-        while (not self.Emergency_stop.is_set()) and (time.time()-start_forming_bordertime < 100 ):
-            with self.lock_boder_timer:
-                self.remaining_time_forme_border -= 0.1
-                if self.remaining_time_forme_border <= 0:
-                        break
-            time.sleep(0.1)
 
+    # The next section will be performed by all drones at any state (non-border or border),Free shoudl wait the end of this process for synch other phases aftarwards
+    # Since the non-border also need to wait the signal of confirmation     
+    reset_timer_forme_border(self, Verify_border_header)
+    while (not self.Emergency_stop.is_set()) and (time.time()-start_forming_bordertime < 100 ):
+        with self.lock_boder_timer:
+            self.remaining_time_forme_border -= 0.1
+            if self.remaining_time_forme_border <= 0:
+                    break
+        time.sleep(0.1)
+
+    self.border_verified.wait(100) 
     if self.border_verified.is_set():
         write_log_message("Border confirmed")
         border_is_confirmed= True 
