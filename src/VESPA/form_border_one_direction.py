@@ -65,13 +65,13 @@ def circle_completed(self):
                 self.change_state_to(Border) 
             
             Broadcast_Msg= build_border_message(self,Forming_border_header,-1, self.id)
-            #send_msg_border_upon_confirmation(self, Broadcast_Msg)
             send_msg(Broadcast_Msg)
             self.Forming_Border_Broadcast_REC.set() # to end the the loop
         else:
             # the drone got new neigbors and became Free            
             if self.get_state() == Owner: # the one for example a irremovable should not change and stay irremovabe 
-                self.change_state_to(Free)
+                if self.id != 1: # Sink shoudl not be free
+                    self.change_state_to(Free)
 
 def border_broadcast_respond(self, candidate):
     if candidate in self.rec_candidate: # the sender of broadcast already sent msg to the current drone so it is part of the circle
@@ -83,6 +83,7 @@ def border_broadcast_respond(self, candidate):
                 self.change_state_to(Border) 
     else: # if drone doesnt have the candidate or the sourounding has changed
          if self.get_state() == Owner: # the one for example a irremovable should not change and stay irremovabe 
+            if self.id != 1: # Sink shoudl not be free
                 self.change_state_to(Free)
 
 
@@ -94,7 +95,7 @@ def forward_broadcast_message(self,header,candidate):
     send_msg(msg)
 
 def form_border_one_direction(self,header,msg):
-    if not self.Forming_Border_Broadcast_REC.is_set(): # React only if border is not formed yet 
+    if not self.Forming_Border_Broadcast_REC.is_set(): # React only if border is not formed yet, to avoid multiple brodcasting
         sender_id, target_id, candidate= decode_border_message(msg)
         reset_timer_forme_border(self,header) # Reset for any message even from out the region because that means the border is not yet formed 
         if sender_id in self.neighbors_ids: # Signal comes from the neighbor drone, dont consider messages out of the region 
@@ -107,7 +108,7 @@ def form_border_one_direction(self,header,msg):
             if target_id==-1:
                 if self.border_candidate==True:
                     border_broadcast_respond(self, candidate)
-                # Here any drone in any state needs to forward the boradcast message and rise ending flag
+                # Here any drone in any state (including free) needs to forward the boradcast message and raise ending flag
                 forward_broadcast_message(self, Forming_border_header,candidate)
                 finish_timer_forme_border(self)
                 self.Forming_Border_Broadcast_REC.set()
@@ -163,7 +164,7 @@ def verify_border(self,header, msg):
         reset_timer_forme_border(self, header)
         if sender_id in self.neighbors_ids: # Signal comes from the neighbor drone, dont consider messages out of the region 
             if target_id==-1:
-                # Here any drone in any state needs to forward the boradcast message and rise ending flag
+                # Here any drone in any state (including free) needs to forward the boradcast message and raise ending flag
                 forward_broadcast_message(self, header,candidate)
                 finish_timer_forme_border(self)
                 self.border_verified.set()
@@ -171,7 +172,6 @@ def verify_border(self,header, msg):
             if self.id == target_id :
                 if self.id == candidate and (self.get_state()== Border or self.get_state()== Irremovable_boarder) :
                     Broadcast_Msg= build_border_message(self,header,-1, self.id)
-                    #send_msg_border_upon_confirmation(self, Broadcast_Msg)
                     send_msg(Broadcast_Msg) # bordacst doent need to be waiting conformation 
                     finish_timer_forme_border(self)
                     self.border_verified.set() # to end the the loop
@@ -201,7 +201,7 @@ def finish_timer_forme_border(self):
         self.remaining_time_forme_border=0
   
 def check_border_candidate_eligibility(self):
-    if (self.get_state() == Free): # Irremovable and border are also owner 
+    if (self.get_state() == Free): #  Not owner or Irrmovable or border or Irremovable-border 
         self.border_candidate=False
         return self.border_candidate
     
@@ -258,11 +258,14 @@ def start_msg_one_direction(self):
             self.candidate_to_send.append(self.id)
             self.rec_candidate.append(self.id)
 
-def reset_border_variables(self): 
+def reset_border_variables(self):
+    time.sleep(0.5) # Wait to clear flags so other threads have time to recognize them before clearing
     self.current_target_id=None
     self.candidate_to_send=[]
     self.rec_candidate=[]
     self.border_candidate=False
+    self.Forming_border_failed.clear()
+    self.Forming_Border_Broadcast_REC.clear()
 
 
 
