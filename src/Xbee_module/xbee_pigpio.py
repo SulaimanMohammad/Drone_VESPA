@@ -3,6 +3,7 @@ import time
 from VESPA.headers_variables import *
 import threading
 import sys 
+import struct
 
 send_lock = threading.Lock()
 
@@ -38,12 +39,44 @@ def connect_xbee(TX,RX,baud_rate_set):
     time.sleep(0.5) # wait until all set 
     send_msg('test'.encode() ) # Warm up message 
 
+
+
+def position_sensitive_checksum(message):
+    checksum = 0
+    for index, byte in enumerate(message):
+        # Multiply each byte by its position index (position + 1 to avoid multiplication by zero)
+        checksum += (index + 1) * byte
+    return checksum % 256
+
+def appened_checksum(msg):
+    # Calculate the checksum
+    checksum = position_sensitive_checksum(msg[:-1])  # Exclude the newline character for checksum calculation
+    checksum_byte = struct.pack('>B', checksum)
+
+    # Insert the checksum before the newline character
+    msg = msg[:-1] + checksum_byte + msg[-1:]
+    return msg
+
+def verify_checksum(msg):
+    message_without_newline = msg[:-1]
+    # Extract checksum from the message
+    received_checksum = struct.unpack('>B', message_without_newline[-1:])[0]
+    # Recalculate checksum for the message excluding the checksum byte itself
+    calculated_checksum = position_sensitive_checksum(message_without_newline[:-1]) 
+    if received_checksum == calculated_checksum: 
+        return True
+    else:
+        return False 
+
 def send_msg(msg):
     with send_lock:
         try: 
             # Check if the message is empty or not in a byte-like format
             if not msg or not isinstance(msg, (bytes, bytearray)):
                 return
+            
+            # Add checksum to the message before sending it 
+            msg= appened_checksum(msg)
 
             pi.wave_clear()  # Clear any existing waveforms
             if pi.wave_get_micros() > 0:  # Check if there's any data in the buffer
@@ -113,8 +146,11 @@ def retrieve_msg_from_buffer(stop_flag):
                 message_buffer = message_buffer[newline_index + 1:]
                 # Check if the message complies with the required format  
                 if complete_message[0] in headers_ascii_values and complete_message.endswith(b'\n'):
-                    # Return the complete message
-                    return complete_message
+                    if verify_checksum( complete_message): 
+                        original_message = complete_message[:-2] + complete_message[-1:]
+                        return original_message
+                    else: 
+                        break 
 
             # Short sleep to prevent high CPU usage
             if count == 0:

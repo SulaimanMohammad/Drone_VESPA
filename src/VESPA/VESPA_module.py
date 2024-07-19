@@ -368,21 +368,10 @@ class Drone:
         # Append the id 
         message += struct.pack('>B', max_byte_count)        
         message += self.id.to_bytes(max_byte_count, 'big')
-        # Calculate checksum
-        checksum = self.position_sensitive_checksum(message)
-        message += struct.pack('>B', checksum) + b'\n'
+        message +=b'\n'
         return message
 
     def decode_spot_info_message(self,message):
-        message_without_newline = message[:-1]
-        # Extract checksum from the message
-        received_checksum = struct.unpack('>B', message_without_newline[-1:])[0]
-        # Recalculate checksum for the message excluding the checksum byte itself
-        calculated_checksum = self.position_sensitive_checksum(message_without_newline[:-1])
-
-        if received_checksum != calculated_checksum:
-            write_log_message(" Bad message recived")
-            return [-1]
         index = 1  # Header is 1 byte
         # Decode length and positionX
         lengthX = struct.unpack('>B', message[index:index+1])[0]
