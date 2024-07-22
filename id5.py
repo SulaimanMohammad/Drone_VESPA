@@ -31,7 +31,6 @@ def wait_start_signal():
         msg= retrieve_msg_from_buffer(waitflag)
         if msg.startswith(Inauguration_header.encode()) and msg.endswith(b'\n'):
             write_log_message("Start VESPA receivd ")
-            send_msg(msg)
             start_recived=False
     time.sleep(2)
 
@@ -53,9 +52,13 @@ def main():
     
     # Create vehicle object 
     logs= create_log_file()
-    # Create drone object and also connect to Xbee (so any data arrives will be captured in the buffer )
-    drone = Drone(0.0,0.0,0.0, parse_arguments())
+    # Create drone object and a5lso connect to Xbee (so any data arrives will be captured in the buffer )
+    drone = Drone(0.0,0.0,0.0, passed_id=5, xbee_serial_port= '/dev/ttyUSB0')
     vehicle=drone_connect()
+    send_msg(GCS_Started_header.encode()+ b'\n') # GCS has started notify the fleet to start preparation
+    time.sleep(0.1)
+    msg= Inauguration_header.encode()+ b'\n'
+    send_msg(msg)
     set_data_rate(vehicle, 20)
     signal.signal(signal.SIGINT, lambda sig, frame: drone.interrupt(vehicle))
     # Wait until GCS is launched 
@@ -65,16 +68,16 @@ def main():
     drone.system_is_ready() # Send message to GCS that system is ready 
     wait_start_signal() # Wait the start flag to initiate VESPA
 
-    # try:
-    first_exapnsion(drone, vehicle)
-    # except:
-    #     write_log_message("Error in performing VESPA")
-    #     drone.emergency_stop()
-    # finally:
-    drone.return_home(vehicle) 
-    close_xbee_port()
-    vehicle.close()
-    write_log_message("Serial connection closed.")
+    try:
+        first_exapnsion(drone, vehicle)
+    except:
+        write_log_message("Error in performing VESPA")
+        drone.emergency_stop()
+    finally:
+        drone.return_home(vehicle) 
+        close_xbee_port()
+        vehicle.close()
+        write_log_message("Serial connection closed.")
 
 if __name__ == "__main__":
     main()
