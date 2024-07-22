@@ -1,6 +1,7 @@
 from .VESPA_module import *
 from .form_border_tow_direction import forward_border_message, build_border_message,forward_broadcast_message, decode_border_message
 from .expansion import Fire_border_msg
+from .form_border_one_direction import *
 
 set_env(globals())
 
@@ -31,20 +32,21 @@ def decode_local_movement_message(message):
     destination = int.from_bytes(message[target_id_end:target_id_end+1], 'big')  # Since destination is always one byte
     return target_id, destination
 
+# Find to what spot a drone should move along the border to achive the balance with difference of 1 between neighbors border spots 
 def lead_local_balancing(self):
     No_free_drone=None 
     # Extract the 'free' drone IDs in s0
-    s0 = next(spot for spot in self.self.get_neighbor_list() if spot['name'] == 's0')
-    s0_free_ids = sorted([s0['drones_in_id'][idx] for idx, state in enumerate(s0['states']) if state == Free])
+    s0 = next(spot for spot in self.self.get_neighbor_list() if spot["name"] == "s0")
+    s0_free_ids = sorted([s0['drones_in_id'][idx] for idx, state in enumerate(s0["states"]) if state == Free])
     if s0_free_ids==0:
         No_free_drone=1 
 
-    # Identify all spot with the "border" state but out of the s0 ( the current spot),  List of neighbors without S0 
-    border_spots = [spot for spot in  self.get_neighbor_list()[1:] if Border or Irremovable_boarder in spot['states']]
+    # Identify all spot with the "border" state but out of the s0 (the current spot),  List of neighbors without S0 
+    border_spots = [spot for spot in  self.get_neighbor_list()[1:] if (Border or Irremovable_boarder) in spot["states"]]
     moves = []
-    # For each "border" spot, calculate the difference in the number of "free" states with s0
+    # For each "neighbor border" spot, calculate the difference in the number of "free" states with s0
     for spot in border_spots:
-        spot_free_count = sum(1 for state in spot['states'] if state == Free)
+        spot_free_count = sum(1 for state in spot["states"] if state == Free)
         # Track if the S0 and the border neigbor are empty means partially there are no more free drone 
         if No_free_drone != None and spot_free_count==0:
             No_free_drone+=1            
@@ -52,7 +54,7 @@ def lead_local_balancing(self):
         # If s0 has more 'free' drones than the "border" spot by more than 1, move the smallest "free" drone ID
         while diff > 1 and s0_free_ids:
             drone_id_to_move = s0_free_ids.pop(0)  # Get the smallest "free" drone ID
-            destination_number = spot['name'][1:]  # Extract the number after "s"
+            destination_number = spot["name"][1:]  # Extract the number after "s"
             moves.append((drone_id_to_move, destination_number)) # append tuple of id , destination 
             diff -= 1
 
@@ -62,9 +64,9 @@ def lead_local_balancing(self):
 
 def build_shared_allowed_spots_message(self):
     # Extract data of S0 current spot
-    s0 = next(spot for spot in  self.get_neighbor_list() if spot['name'] == 's0')
+    s0 = next(spot for spot in  self.get_neighbor_list() if spot["name"] == "s0")
     # Create a list to store the IDs of drones with 'free' state in s0
-    targets_id = [drone_id for drone_id, state in zip(s0['drones_in_id'], s0['states']) if state == Free]
+    targets_id = [drone_id for drone_id, state in zip(s0["drones_in_id"], s0["states"]) if state == Free]
     max_byte_count_targets = max(self.determine_max_byte_size(num) for num in targets_id)
     # Start message with 'G', max byte count for targets_id, followed by the length of targets_id
     message = Guidance_header.encode() 
@@ -103,24 +105,25 @@ def check_continuity_of_listening(self):
 -------------------------------------------------------------------------------------
 '''
 
-def send_lead_local_balancing_message(self, all_moves):
+def send_lead_local_balancing_message(all_moves):
     for move in all_moves:
         id, destination = move  # Unpack the tuple
         msg= build_local_movement_message(id, destination)
         send_msg(msg)
-    time.sleep(movement_time)    
+    time.sleep((a/speed_of_drone)+10)    
 
 class Boarder_Timer:
-    def __init__(border_t,self,timeout=2*movement_time):
+    def __init__(border_t,self,timeout=(a/speed_of_drone)+10):
         border_t.timeout = timeout
         border_t.remaining_time = border_t.timeout
+        border_t.lock_border= threading.Lock()  # Create a lock
         border_t.message_thread = threading.Thread(target=border_listener, args=(border_t,self,timeout,))
         border_t.message_thread.start()
         self.end_of_balancing= threading.Event()
 
     def run(border_t, self):
         while True: 
-            with border_t.lock_sink:  # Acquire the lock
+            with border_t.lock_border:  # Acquire the lock
                 border_t.remaining_time -= 0.5
                 write_log_message(f"Remaining time: {border_t.remaining_time:.2f} seconds")
                 if border_t.remaining_time <= 0:
@@ -129,7 +132,7 @@ class Boarder_Timer:
             time.sleep(0.5)               
         
     def time_up(border_t,self):
-        #Called when the timer reaches its timeout without being reset.
+        # Called when the timer reaches its timeout without being reset.
         write_log_message("Time's up! ")
         # Ensure that balanced achived 
         self.demand_neighbors_info()
@@ -139,7 +142,7 @@ class Boarder_Timer:
            Fire_border_msg(Algorithm_termination_header)
         else: 
             if len(all_moves) >0 : # there are drones need to be moved 
-                send_lead_local_balancing_message(self, all_moves)
+                send_lead_local_balancing_message( all_moves)
             # Moves =0 ( local balance achived)
             border_t.local_balancing.set() # flag to identify local balancing
             # Need to be sent in this stage,the thread of listining of free drone would joined after completing the circle 
@@ -170,7 +173,7 @@ def border_listener(self,border_t):
                 positionX, positionY, state, id_value= self.decode_spot_info_message(msg)
                 self.update_neighbors_list(positionX, positionY, state, id_value )
                 border_t.remaining_time = border_t.timeout     
-                all_moves= lead_local_balancing(self)
+                all_moves= lead_local_balancing(self) # Find what drone should move to what spot after the balance is disturbed upon the new arrival
                 send_lead_local_balancing_message(self, all_moves)
 
             if ( msg.startswith(Balance_header.encode()) or msg.startswith(Algorithm_termination_header.encode())  ) and msg.endswith(b'\n') :
@@ -265,33 +268,44 @@ def search_to_border(self):
     border_found=False
     
     #Find states with 'border'
-    border_states = [s for s in self.get_neighbor_list() if 'border' in s['states']]
+    border_states = [s for s in self.get_neighbor_list() if (Border or Irremovable_boarder) in s["states"]]
     
     # If only one border state is found
     if len(border_states) == 1:
         border_found= True
-        return border_found, int(border_states[0]['name'][1:])
+        return border_found, int(border_states[0]["name"][1:]) # Return only the number of spot 
     
     # If multiple border states are found
     elif len(border_states) > 1:
         # Sort by drones_in
         border_found= True
-        border_states.sort(key=lambda x: x['drones_in'])
+        border_states.sort(key=lambda x: x["drones_in"])
         
         # Filter states with the least drones
-        least_drones = border_states[0]['drones_in']
-        least_drones_states = [s for s in border_states if s['drones_in'] == least_drones]
+        least_drones = border_states[0]["drones_in"]
+        least_drones_states = [s for s in border_states if s["drones_in"] == least_drones]
         
         # Choose randomly the states with the least drones if many have same numbers of drones in 
         chosen_spot= random.choice(least_drones_states)
-        return border_found, int(chosen_spot['name'][1:])
+        return border_found, int(chosen_spot["name"][1:])
     
     # If no border state is found, find the spot with the maximum distance (close to the border)
     else:
-        max_distance_spot = max( self.get_neighbor_list(), key=lambda x: x['distance'])
-        return border_found, int(max_distance_spot['name'][1:]) 
+        max_distance_spot = max( self.get_neighbor_list(), key=lambda x: x["distance"])
+        return border_found, int(max_distance_spot["name"][1:]) 
+
+
+'''
+-------------------------------------------------------------------------------------
+------------------------------- General Procedure --------------------------------
+-------------------------------------------------------------------------------------
+'''
 
 def balancing(self, vehicle):
+    # confirm the border first if it doesnt exit reform it 
+    border_well_confirmed= confirm_border_connectivity(self)
+    if not border_well_confirmed: 
+        re_form_border(self) 
 
     # Border is the chef of the spot 
     if self.get_state()== Border or Irremovable_boarder:
@@ -313,7 +327,5 @@ def balancing(self, vehicle):
         self.end_of_balancing.wait()
         self.end_of_balancing.clear() 
     
-    # rest this indecator for the next use in the border formation
-    # self.rec_candidate=[]   
-    clear_buffer()
+
     xbee_receive_message_thread.join()
