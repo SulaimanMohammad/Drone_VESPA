@@ -251,6 +251,8 @@ def choose_spot_right_handed(self, neighbor_list_upon_border=None):
         self.current_target_id=chosen_id
 
 def start_msg_one_direction(self):
+    # Appanding the self.id to candidate_to_send, then the mesage will be send in send_msg_border_until_confirmation
+    # send_msg_border_until_confirmation used to send and forward message for all the entries in candidate_to_send during the formation of border 
     with self.candidate_to_send_lock:
         if self.id not in self.candidate_to_send:
             self.candidate_to_send.append(self.id)
@@ -319,7 +321,10 @@ def Form_border(self):
                         break
             time.sleep(0.1)
         
-        if (time.time()-start_forming_bordertime < 500) : 
+        # This timer here ensure that sum of all tries will not stay very long (no block) 
+        # Also there is no need for another try if the border fromed thus Forming_Border_Broadcast_REC cheked 
+        # Wait is used since this if-statement will be executed after remaining_time_forme_border is up so maybe the flag would not be raised instantly 
+        if (time.time()-start_forming_bordertime < 500) and (self.Forming_Border_Broadcast_REC.wait(2)): 
             number_of_try=number_of_try+1
             '''
             Wait after each try if it did not succeed and wait for the topology to change 
