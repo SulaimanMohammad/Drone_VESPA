@@ -321,14 +321,14 @@ def Form_border(self):
         
         if (time.time()-start_forming_bordertime < 500) : 
             number_of_try=number_of_try+1
-            # re-check eligibility
-            check_border_candidate_eligibility(self)
             '''
             Wait after each try if it did not succeed and wait for the topology to change 
             that can happen if not all the drones finished moving (collect data again of all drones around), then reset all and try again 
             '''
             time.sleep(150)
             self.demand_neighbors_info() 
+            # re-check eligibility
+            check_border_candidate_eligibility(self)
             reset_border_variables(self)
             write_log_message(f"Attempt {number_of_try} to form border")
         else:
