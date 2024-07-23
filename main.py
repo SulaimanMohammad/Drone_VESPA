@@ -33,6 +33,7 @@ def wait_start_signal():
         msg= retrieve_msg_from_buffer(waitflag)
         if msg.startswith(Inauguration_header.encode()) and msg.endswith(b'\n'):
             write_log_message("Start VESPA receivd ")
+            send_msg(msg) # Reforward the message to the other drones in case they are far from GCS 
             start_recived=False
     time.sleep(2)
 
