@@ -250,8 +250,10 @@ def check_gps_fix(self):
 
     if fix_type >= 3 and num_satellites >= 8:
         write_log_message("GPS is working and providing valid values.")
-    
-    return True
+        return True
+    else: 
+        write_log_message("GPS does not provid valid values.")
+        return False
             
 
 def arm_and_takeoff(self, aTargetAltitude):
