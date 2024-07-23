@@ -26,22 +26,22 @@ signal.signal(signal.SIGINT, interrupt)
 drone_hight=2 
 arm_and_takeoff(vehicle,drone_hight)
 
-time.sleep(5) # needed to stable and set EKF 
+wait_and_hover(vehicle, 2)
 
-#vehicle.groundspeed =5
+vehicle.groundspeed =5
 
 print( "come move_to_poition 1")
 
 x=3
 y=0
 move_to_poition(vehicle,x,y,drone_hight) #need to set the ground velocity 
-time.sleep(8)
+wait_and_hover(vehicle, 2)
 
 print( "come move_to_poition 2")
 x=0
 y=0
 move_to_poition(vehicle,x,y, drone_hight)
-time.sleep(8)
+wait_and_hover(vehicle, 2)
 
 x=3
 y=0
@@ -51,7 +51,7 @@ print( "come back")
 x=-3
 y=0
 move_to_stages_long(vehicle,x,y,10)
-time.sleep(1)
+wait_and_hover(vehicle, 2)
 
 
 write_log_message(f" Coming Home")

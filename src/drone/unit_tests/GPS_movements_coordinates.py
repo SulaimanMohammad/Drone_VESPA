@@ -31,7 +31,9 @@ signal.signal(signal.SIGINT, interrupt)
 drone_hight=2 
 arm_and_takeoff(vehicle,drone_hight)
 print( "Takeoff and wait 2 sec")
-time.sleep(2)
+
+
+wait_and_hover(vehicle, 2)
 
 defined_groundspeed=1
 distance=10
@@ -45,10 +47,9 @@ point1 = LocationGlobalRelative( lat,long,drone_hight)
 vehicle.simple_goto( point1, groundspeed=defined_groundspeed)
 # simple_goto will retuen after the command is sent, thus you need to sleep to give the drone time to move 
 time.sleep( (distance/defined_groundspeed)+1 )
-#loiter mode and hover in your place if it is before sleep then the drone will not move
-vehicle.mode    = VehicleMode("LOITER") #loiter mode and hover in your place 
-time.sleep(2)
-vehicle.mode     = VehicleMode("GUIDED")
+
+# loiter mode and hover in your place if it is before sleep then the drone will not move
+wait_and_hover(vehicle, 2)
 
 print( "move to the other direction")
 angl_dir= 270#135

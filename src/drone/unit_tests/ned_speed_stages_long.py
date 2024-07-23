@@ -28,7 +28,7 @@ drone_hight=2
 arm_and_takeoff(vehicle,drone_hight)
 
 print( "Takeoff and wait 2 sec")
-time.sleep(5)
+wait_and_hover(vehicle, 2)
 
 
 # write_log_message(f" current_lat = {vehicle.location.global_relative_frame.lat}") 
@@ -40,14 +40,14 @@ x=2
 y=0
 move_to_stages_long(vehicle,x,y,time_to_pass) # go 3m in X 
 print(" move on x to" ,x , " in speed of",  x/float(time_to_pass) )
-time.sleep(5)
+wait_and_hover(vehicle, 2)
 
 
 x=-2
 y=0
 move_to_stages_long(vehicle,x,y,time_to_pass) # go 3m in X 
 print(" move on x to" ,x , " in speed of",  x/float(time_to_pass) )
-time.sleep(5)
+wait_and_hover(vehicle, 2)
 
 write_log_message(f" Coming Home")
 vehicle.mode = VehicleMode ("LAND")

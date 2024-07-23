@@ -65,16 +65,16 @@ x=3
 y=0
 move_to_poition(vehicle,x,y, drone_hight) # go 3m in X 
 print(" move on x to" ,x , " in speed of",  x/float(time_to_pass) )
-time.sleep(2)
+wait_and_hover(vehicle, 2)
 move_to_poition(vehicle,x,y, 0) # go 3m in X 
-time.sleep(8)
+wait_and_hover(vehicle, 2)
 
 
 x=0
 y=0
 move_to_poition(vehicle,x,y, drone_hight) # go 3m in X 
 print(" move on x to" ,x , " in speed of",  x/float(time_to_pass) )
-time.sleep(10)
+wait_and_hover(vehicle, 2)
 
 write_log_message(f" Coming Home")
 vehicle.mode = VehicleMode ("LAND")

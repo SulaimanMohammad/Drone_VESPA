@@ -31,9 +31,7 @@ arm_and_takeoff(vehicle,drone_hight)
 
 print( "Takeoff and wait 2 sec")
 
-vehicle.mode    = VehicleMode("LOITER") 
-time.sleep(2)
-vehicle.mode     = VehicleMode("GUIDED")
+wait_and_hover(vehicle, 2)
 
 hex_side=1
 angl_dir=[0,120, 180,240,300,360,60,180]
@@ -44,9 +42,7 @@ for i in range(len(angl_dir)):
     print( "************************* Moving to",angl_dir[i], "*************************" )    
     move_body_PID(vehicle, angl_dir[i], hex_side)
     
-    vehicle.mode    = VehicleMode("LOITER") 
-    time.sleep(2)
-    vehicle.mode     = VehicleMode("GUIDED")
+    wait_and_hover(vehicle, 2)
 
 time.sleep(2)
 

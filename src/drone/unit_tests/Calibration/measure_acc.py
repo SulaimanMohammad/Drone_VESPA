@@ -67,18 +67,14 @@ global vehicle
 
 vehicle=drone_connect()
 signal.signal(signal.SIGINT, interrupt)
+set_data_rate(vehicle, 20)
 
 drone_hight=2 
 arm_and_takeoff(vehicle,drone_hight)
 logger.write( "Takeoff and wait 2 sec")
 
-#loiter mode and hover in your place 
-vehicle.mode    = VehicleMode("LOITER") #loiter mode and hover in your place 
-time.sleep(2)
-vehicle.mode     = VehicleMode("GUIDED")
-
-set_data_rate(vehicle, 20)
-
+# loiter mode and hover in your place 
+wait_and_hover(vehicle, 2)
 
 angl_dir= 90#-45
 
@@ -134,10 +130,8 @@ while remaining_distance >= 0.1:
 
 logger.write("STOP")
 send_control_body(vehicle, 0, 0, 0) # stop 
-vehicle.mode    = VehicleMode("LOITER") #loiter mode and hover in your place 
-time.sleep(2)
+wait_and_hover(vehicle, 2)
 vehicle.remove_attribute_listener('velocity', on_velocity)
-vehicle.mode     = VehicleMode("GUIDED")
 
 # write_log_message(f" Coming Home")
 vehicle.mode = VehicleMode ("LAND")
