@@ -196,6 +196,7 @@ def sink_movement_command(self,vehicle,drones_id):
     assigned_spots=assign_spots(drones_id) 
     if assigned_spots: 
         for ids, spot in assigned_spots.items():
+            write_log_message(f"Command drone {ids} Tos S {spot}")
             angle, distance = self.convert_spot_angle_distance(spot)
             if check_gps_fix(vehicle): # GPS data are correct
                 current_lat = vehicle.location.global_relative_frame.lat
@@ -417,8 +418,10 @@ def expand_and_form_border(self,vehicle):
         time.sleep(10*exchange_data_latency)
         re_form_border(self) 
     
-    num_people_around= self.count_num_people(4,-100)
-    self.send_data_message_station(vehicle, data=num_people_around)
+    if count_people_via_wifi: 
+        write_log_message("Count number of pepole")
+        num_people_around= self.count_num_people(4,-100)
+        self.send_data_message_station(vehicle, data=num_people_around)
            
 def first_exapnsion (self, vehicle):
     # Lance a thread to read messages continuously

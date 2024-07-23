@@ -27,6 +27,7 @@ Xbee_change_range= False # Calibration procedure used to define the limit of Xbe
 xbee_proficiency_ratio= 0.8 # Ratio to avoid being on the edge of xbee range
 ref_alt_ratio= 0.8 # Ensure that alitude of the drone doesn't arrive to the limit of xbee , refalt= ratio*xbee_proficiency_ratio
 print_show= True    
+count_people_via_wifi= True # Estimate the number of people by scanning the phone wifi (wifi adapter with monitoring mode connected with Rpi)
 
 #----------------Xbee variables---------------
 xbee_serial_port='/dev/ttyUSB0'
