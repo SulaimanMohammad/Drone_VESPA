@@ -82,7 +82,8 @@ def write_to_csv(id, longitude, latitude,data):
                 writer.writerow(['id', 'longitude', 'latitude', 'data'])
             writer.writerow([id, longitude, latitude, data])
 
-def GCS_listener(self,Stop_flag):
+def GCS_listener(self,num_drones,Stop_flag):
+    id_ready_receiced=[]
     while not Stop_flag.is_set():    
         msg= retrieve_msg_from_buffer(Stop_flag)
 
@@ -91,7 +92,12 @@ def GCS_listener(self,Stop_flag):
         
         elif msg.startswith(Prepared_header.encode()) and msg.endswith(b'\n'):
             # New system is ready, restart the timer to wait another system to be done 
-            reset_collect_drones_ready_timer(self)
+            ids=self.decode_drone_is_ready_message(msg)
+            if ids not in id_ready_receiced:
+                id_ready_receiced.append(ids)
+                reset_collect_drones_ready_timer(self,num_drones)
+            if len(id_ready_receiced)==num_drones:
+                collect_drones_ready_done(self)
 
         elif msg.startswith(Info_header.encode()) and msg.endswith(b'\n'):
             id_target, sender_id, longitude,  latitude, data = self.decode_data_message(msg)
@@ -100,8 +106,8 @@ def GCS_listener(self,Stop_flag):
                 write_to_csv(sender_id, longitude, latitude, data)
         
 
-def initialize_collect_drones_ready_timer(self):
-    reset_collect_drones_ready_timer(self)
+def initialize_collect_drones_ready_timer(self,num_drones):
+    reset_collect_drones_ready_timer(self,num_drones)
     while True:
         with self.Drone_ready_lock:
             self.timer_count -= 0.1
@@ -109,15 +115,19 @@ def initialize_collect_drones_ready_timer(self):
                     break
         time.sleep(0.1)
 
-def reset_collect_drones_ready_timer(self):
+def reset_collect_drones_ready_timer(self,num_drones):
     with self.Drone_ready_lock:
-        self.timer_count=20 
-    
+        self.timer_count=200*num_drones # 200 is the max time given to each drone to be armable ( see  src/drone/drone_ardupilot.py )
+
+def collect_drones_ready_done(self):
+    with self.Drone_ready_lock:
+      self.timer_count=0  
+
 def interrupt(drone,Stop_flag):
+    Stop_flag.set()
     emergency_msg= drone.build_emergency_message()
     send_msg(emergency_msg)
-    Stop_flag.set()
-    time.sleep(10)
+    time.sleep(1)
     revert_file(file_path, changes)
     close_xbee_port()
     print("Serial connection closed.")
@@ -143,12 +153,13 @@ def main():
     signal.signal(signal.SIGINT, lambda sig, frame: interrupt(drone,Stop_flag))
     GCS_launched()
     print("GCS launched signal is sent")
-    drone.Drone_ready_lock= threading.Lock() # Timer lock (timer is shared between 2 threads ( main ,GCS_listener ))
+    num_drones = int(input("Enter number of drones: ")) # To check that all drones are ready and armable
     # Create GCS_listener to receive messages
-    GCS_receive_message_thread = threading.Thread(target=GCS_listener, args=(drone,Stop_flag))
+    drone.Drone_ready_lock= threading.Lock() # Timer lock (timer is shared between 2 threads ( main ,GCS_listener ))
+    GCS_receive_message_thread = threading.Thread(target=GCS_listener, args=(drone,num_drones,Stop_flag))
     GCS_receive_message_thread.start()
     print("Waiting for signal that drones' systems are ready")
-    initialize_collect_drones_ready_timer(drone)
+    initialize_collect_drones_ready_timer(drone,num_drones)
     # After all the drone systems are ready, ask for start 
     wait_for_start()
 
