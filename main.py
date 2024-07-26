@@ -22,7 +22,7 @@ def parse_arguments():
     else: 
         return None
 
-def wait_start_signal():
+def wait_start_signal(self):
     # Dummy flag class with an is_set method needed for retrieve_msg_from_buffer
     class waitflag:
         def is_set():
@@ -31,6 +31,11 @@ def wait_start_signal():
     start_recived=True  
     while start_recived: 
         msg= retrieve_msg_from_buffer(waitflag)
+        
+        if msg.startswith(Emergecy_header.encode()) and msg.endswith(b'\n'):
+            self.emergency_stop()
+            break
+    
         if msg.startswith(Inauguration_header.encode()) and msg.endswith(b'\n'):
             write_log_message("Start VESPA receivd ")
             send_msg(msg) # Reforward the message to the other drones in case they are far from GCS 
@@ -65,7 +70,7 @@ def main():
     # Configure parameter of drone based on VESPA
     config_parameters(vehicle, drone)
     drone.system_is_ready() # Send message to GCS that system is ready 
-    wait_start_signal() # Wait the start flag to initiate VESPA
+    wait_start_signal(drone) # Wait the start flag to initiate VESPA
 
     try:
         first_exapnsion(drone, vehicle)
