@@ -74,7 +74,8 @@ def main():
     wait_start_GCS()
     # Configure parameter of drone based on VESPA
     config_parameters(vehicle, drone)
-    drone.system_is_ready() # Send message to GCS that system is ready 
+    if check_armablity(vehicle):
+        drone.system_is_ready() # Send message to GCS that system is ready and armable 
     wait_start_signal(drone) # Wait the start flag to initiate VESPA
 
     try:
