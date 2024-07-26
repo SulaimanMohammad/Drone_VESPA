@@ -274,8 +274,8 @@ class Drone:
         id_start_index = header_size + 1
         id_end_index = id_start_index + max_byte_count
         id_bytes = encoded_message[id_start_index:id_end_index]
-        id = int.from_bytes(id_bytes, 'big')
-        return id
+        ids = int.from_bytes(id_bytes, 'big')
+        return ids
     
 
     def compare_with_neighbor_list(self, list1, key):
@@ -333,9 +333,9 @@ class Drone:
         # Extract id and target_id
         id_bytes = content[id_start:id_end]
         target_id_bytes = content[target_id_start:target_id_end]
-        id = int.from_bytes(id_bytes, 'big')
+        ids = int.from_bytes(id_bytes, 'big')
         target_id = int.from_bytes(target_id_bytes, 'big')
-        return id, target_id
+        return ids, target_id
     
     def encode_float_to_int(self, value, precision=multiplier):
         """Encodes a float as an integer with a given multiplier."""
