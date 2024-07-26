@@ -242,8 +242,22 @@ class Drone:
     '''
     def build_drone_is_ready_message(self):
         message= Prepared_header.encode()
+        max_byte_count = determine_max_byte_size(self.id)
+        message += struct.pack('>B', max_byte_count)
+        message += self.id.to_bytes(max_byte_count, 'big')
         message += b'\n'
         return message
+    
+    def decode_drone_is_ready_message(self,msg):
+        demand_header = msg[:1].decode()
+        # Extract the max_byte_count which is the next byte after the header
+        max_byte_count = struct.unpack('>B', msg[1:2])[0]
+        # Extract the ID using the max_byte_count
+        id_start_index = 2
+        id_end_index = id_start_index + max_byte_count
+        id_bytes = msg[id_start_index:id_end_index]
+        ids = int.from_bytes(id_bytes, 'big')
+        return ids
 
     def build_emergency_message(self):
         message= Emergecy_header.encode()
