@@ -925,7 +925,7 @@ class Drone:
         try:
             if check_gps_fix(vehicle) and use_GPS:
                 arm_and_takeoff(vehicle,self.drone_alt)
-                time.sleep(2)
+                hover(vehicle) # Ensure that the drone stay in plac
             else:
                 #TODO in drone_ardupilot.py in drone repo # arm_and_takeoff_no_GPS(vehicle,self.drone_alt)
                 pass

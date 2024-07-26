@@ -216,7 +216,7 @@ def initial_movement(self,vehicle, rec_msg, ID, spot, lon, lat):
         self.first_movement_command_received= True
         self.update_location(spot) # update the destination even before arriving ( all drones in sky will know the next drone heading in advance)
         self.take_off_drone(vehicle)
-        
+        time.sleep(1)
         if lon!=0 and lat!=0:
             if check_gps_fix(vehicle) and use_GPS:
                 self.move_using_coord(vehicle, lon, lat)
