@@ -4,6 +4,7 @@ import time
 import os
 import sys
 import signal
+import threading
 
 # Get the parent directory path
 parent_directory = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
@@ -11,7 +12,10 @@ parent_directory = os.path.abspath(os.path.join(os.path.dirname(__file__), '..')
 sys.path.append(parent_directory)
 from drone_ardupilot import *
 
+# Create the emergency flag used to stop movement
+emergency_message_flag = threading.Event()
 def interrupt(signal_num, frame):
+    emergency_message_flag.set()  # Set the emergency flag
     print("Interrupted!")
     global vehicle
     if vehicle is not None:
@@ -39,7 +43,7 @@ angl_dir= 90#-45
 
 try:
     # angle dir in degree 
-    move_body_PID(vehicle,angl_dir, distance)
+    move_body_PID(vehicle,angl_dir, distance, emergency_message_flag)
     go_to_ref_altitude(vehicle)
     time.sleep(2)
     vehicle.mode = VehicleMode("GUIDED")
