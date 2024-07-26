@@ -255,6 +255,16 @@ def check_gps_fix(self):
         write_log_message("GPS does not provid valid values.")
         return False
             
+def check_armablity(self):
+    start_wait_ToArm=time.time() 
+    while not self.is_armable and (time.time()- start_wait_ToArm < 200):
+            write_log_message ("Waiting for self to initialise and Armability...")
+            time.sleep(1)
+    if not self.is_armable:
+        write_log_message ("Could not arm the drone")
+        raise Exception("Vehicle not armable")
+    else: 
+        return True
 
 def arm_and_takeoff(self, aTargetAltitude):
     write_log_message (f"{get_current_function_name()} called:") 
@@ -271,13 +281,8 @@ def arm_and_takeoff(self, aTargetAltitude):
     # TODO check that gps lock before the fly by listening to the raw data of the channel
     #GPs usually it is done by the system  of pixhawc 
     # TODO check that the battery is enough to fly
-    start_wait_ToArm=time.time() 
-    while not self.is_armable and (time.time()- start_wait_ToArm < 200):
-        write_log_message ("Waiting for self to initialise and Armability...")
-        time.sleep(1)
-    if not self.is_armable:
-        write_log_message ("Could not arm the drone")
-        raise Exception("Vehicle not armable")
+    
+    check_armablity(self)
 
     write_log_message ("Arming motors")
     # Copter should arm in GUIDED mode
@@ -966,6 +971,7 @@ def move_body_PID(self, angl_dir, distance, emergency_message_flag ,ref_alt=9.7,
     send_control_body(self, desired_vel_x, desired_vel_y, desired_vel_z)     
     
     while remaining_distance >= 0.1 and (not emergency_message_flag.is_set()):
+        old_velocity_z= desired_vel_z # Set initial in case lidar is not activated
         #-------------------------------------------------------------
         #--------------------- Lidar for regular_scan-----------------
         #-------------------------------------------------------------
