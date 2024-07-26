@@ -27,20 +27,25 @@ def wait_start_signal(self):
     class waitflag:
         def is_set():
             return False
-    
-    start_recived=True  
-    while start_recived: 
+    ready_msg_broadcasted=[]
+    start_received=True  
+    while start_received: 
         msg= retrieve_msg_from_buffer(waitflag)
         
         if msg.startswith(Emergecy_header.encode()) and msg.endswith(b'\n'):
             self.emergency_stop()
             break
+
+        if msg.startswith(Prepared_header.encode()) and msg.endswith(b'\n'):
+            ids=self.decode_drone_is_ready_message(msg)
+            if ids not in ready_msg_broadcasted:
+                send_msg(msg)
+                ready_msg_broadcasted.append(ids)
     
         if msg.startswith(Inauguration_header.encode()) and msg.endswith(b'\n'):
             write_log_message("Start VESPA receivd ")
             send_msg(msg) # Reforward the message to the other drones in case they are far from GCS 
-            start_recived=False
-    time.sleep(2)
+            start_received=False
 
 def wait_start_GCS():
     # Dummy flag class with an is_set method needed for retrieve_msg_from_buffer
