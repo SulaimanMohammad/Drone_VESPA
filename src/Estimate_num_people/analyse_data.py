@@ -54,13 +54,13 @@ def detect_phones(filename, updated_sequence):
     return sum_values
 
 def main():
-
     # File contains unique MACs
-    unique_mac = 'unique.txt'
+    script_dir = os.path.dirname(os.path.realpath(__file__))
+    unique_mac = os.path.join(script_dir, 'unique.txt')
     # Read the data from the file and update the sequence
     updated_sequence = process_file(unique_mac)
     # File contains MACS of devices that are not phones
-    Non_phones_mac = 'Non_phones_macs.txt'
+    Non_phones_mac = os.path.join(script_dir, 'Non_phones_macs.txt')
     numebr_of_phones= detect_phones( Non_phones_mac, updated_sequence)
     print( numebr_of_phones)
 
