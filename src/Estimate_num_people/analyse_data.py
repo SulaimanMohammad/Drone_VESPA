@@ -1,3 +1,4 @@
+import os 
 allowable_gap = 50
 def update_sequence_with_mac(sequences):
     A = {}  # Initialize the dictionary to store MAC prefixes as keys, with lists of sequence numbers as values
