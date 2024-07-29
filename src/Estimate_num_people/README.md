@@ -70,5 +70,3 @@ These addresses represent the same device. The script considers the prefix (firs
 When phones have random MACs, the prefix will not match any in `Non_phones_macs`. Other devices like laptops and routers will have fixed MAC addresses listed in `Non_phones_macs`.
 - If a prefix is found, it is not a phone it is another device with fixed prefixe for the manufacturer.
 - If a prefix is not found, it is either a phone's manufacturer prefix ( not included in `Non_phones_macs`) or a random prefix representing a phone.
-
-
