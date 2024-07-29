@@ -34,6 +34,10 @@ if ! command -v tshark &> /dev/null; then
 fi
 
 
+# Bring up WiFi interface
+ifconfig $INTERFACE up
+touch $FLAG_FILE
+
 # Set monitor mode if not already set
 if ! iw $INTERFACE info | grep -q "type monitor"; then
     ifconfig $INTERFACE down
@@ -76,4 +80,7 @@ done
 # Process captured data
 awk '{if (!seen[$1] || $2 > seen[$1]) seen[$1] = $2} END {for (mac in seen) print mac, seen[mac]}' "$FILENAME" > "$FILENAME_UNIQUE"
 
+# Bring down WiFi interface
+ifconfig $INTERFACE down
+rm -f $FLAG_FILE
 
