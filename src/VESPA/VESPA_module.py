@@ -1075,6 +1075,6 @@ class Drone:
             return float(number_of_phones)
         
         except:
-            write_log_message("Could count people ")
+            write_log_message("Could not count people ")
             self.emergency_stop() 
 

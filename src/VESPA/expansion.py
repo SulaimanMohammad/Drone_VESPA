@@ -196,7 +196,7 @@ def sink_movement_command(self,vehicle,drones_id):
     assigned_spots=assign_spots(drones_id) 
     if assigned_spots: 
         for ids, spot in assigned_spots.items():
-            write_log_message(f"Command drone {ids} Tos S {spot}")
+            write_log_message(f"Command drone {ids} To S{spot}")
             angle, distance = self.convert_spot_angle_distance(spot)
             if check_gps_fix(vehicle): # GPS data are correct
                 current_lat = vehicle.location.global_relative_frame.lat

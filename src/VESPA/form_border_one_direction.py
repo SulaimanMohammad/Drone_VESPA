@@ -343,10 +343,10 @@ def Form_border(self):
     self.Forming_Border_Broadcast_REC.wait(500) # Time out here equal to start_forming_bordertime which is the max to form border 
     if self.Forming_Border_Broadcast_REC.is_set():
         wait_message_rec.join() # wait wait_message_rec thread to finish and detect the Forming_Border_Broadcast_REC flag
-        time.sleep(1)
+        time.sleep(2)
         self.demand_neighbors_info() # Update neighbor_list to see the changes in the drones states ( like owner became border)
         self.neighbor_list_upon_border_formation=copy.deepcopy( self.get_neighbor_list()) # Save the Topology arround so it can be used to verfiy the border
-        print( self.neighbor_list_upon_border_formation)
+        
     
     else: # Border is not formed after many tries 
         # In case of 3 tries and the border is not formed then stop the process especially the thread of send_msg_border_until_confirmation
@@ -362,7 +362,6 @@ def confirm_border_connectivity(self):
     if self.get_state()== Border or self.get_state()==Irremovable_boarder: 
         choose_spot_right_handed(self,self.neighbor_list_upon_border_formation) 
         if self.current_target_id is not None:
-            print(" drone is border and send data to ", self.current_target_id)
             msg= build_border_message(self,Verify_border_header,self.current_target_id, self.id)
             send_msg(msg)
 
