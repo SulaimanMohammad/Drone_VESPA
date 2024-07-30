@@ -7,27 +7,27 @@ defined_groundspeed=2 # m/s speed used while moving using GPS coordinates
 drone_length=60
 drone_width=60
 drone_hight=40
-telemetry1_baudrate= 57000 
-telemetry2_baudrate= 230400 
+telemetry1_baudrate=57000 
+telemetry2_baudrate=230400 
 # Telemetry device connected to port telemetry1, Serial1(Pixhawk)
 # Raspberry pi UART connected to telemetry2, Serial2(Pixhawk)
 # If there is a need to change baud rates they should be changed in Pixhawk parameter using MAVlink then here respectively  
 
 #----------------VESPA variables---------------
-drone_id= 0
-C= 100
-eps= 20
-multiplier= 100 # Define the precision of floating-point data 
-sync_time= 2
-scanning_time= 10 # Time to scan area to find object 
-exchange_data_latency= 0.5
-spacing= 3 # Space between a drone and another, Preferred to be 2 minimum where low barometer accuracy cause oscillation of height, smaller with external accuract barometer
-use_GPS= True # Not recommended to set it false due to need to GPS, #TODO If you want to fly without GPS, set off GPS check in ardupilot to be able to take off wihtout 
-Xbee_change_range= False # Calibration procedure used to define the limit of Xbee range, #TODO need to be tested 
-xbee_proficiency_ratio= 0.8 # Ratio to avoid being on the edge of xbee range
-ref_alt_ratio= 0.8 # Ensure that alitude of the drone doesn't arrive to the limit of xbee , refalt= ratio*xbee_proficiency_ratio
-print_show= True    
-count_people_via_wifi= True # Estimate the number of people by scanning the phone wifi (wifi adapter with monitoring mode connected with Rpi)
+drone_id=0
+C=100
+eps=20
+multiplier=100 # Define the precision of floating-point data 
+sync_time=2
+scanning_time=10 # Time to scan area to find object 
+exchange_data_latency=0.5
+spacing=3 # Space between a drone and another, Preferred to be 2 minimum where low barometer accuracy cause oscillation of height, smaller with external accuract barometer
+use_GPS=True # Not recommended to set it false due to need to GPS, #TODO If you want to fly without GPS, set off GPS check in ardupilot to be able to take off wihtout 
+Xbee_change_range=False # Calibration procedure used to define the limit of Xbee range, #TODO need to be tested 
+xbee_proficiency_ratio=0.8 # Ratio to avoid being on the edge of xbee range
+ref_alt_ratio=0.8 # Ensure that alitude of the drone doesn't arrive to the limit of xbee , refalt= ratio*xbee_proficiency_ratio
+print_show=True    
+count_people_via_wifi=True # Estimate the number of people by scanning the phone wifi (wifi adapter with monitoring mode connected with Rpi)
 
 #----------------Xbee variables---------------
 xbee_serial_port='/dev/ttyUSB0'
