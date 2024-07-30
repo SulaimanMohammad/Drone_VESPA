@@ -324,7 +324,7 @@ def Form_border(self):
         # This timer here ensure that sum of all tries will not stay very long (no block) 
         # Also there is no need for another try if the border fromed thus Forming_Border_Broadcast_REC cheked 
         # Wait is used since this if-statement will be executed after remaining_time_forme_border is up so maybe the flag would not be raised instantly 
-        if (time.time()-start_forming_bordertime < 500) and (self.Forming_Border_Broadcast_REC.wait(2)): 
+        if (time.time()-start_forming_bordertime < 500) and ( not self.Forming_Border_Broadcast_REC.wait(2)):
             number_of_try=number_of_try+1
             '''
             Wait after each try if it did not succeed and wait for the topology to change 
