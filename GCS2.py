@@ -15,72 +15,40 @@ parent_directory = os.path.abspath(os.path.join(os.path.dirname(__file__), './sr
 # Add the parent directory to sys.path
 sys.path.append(parent_directory)
 
-# Make the sation Xbee worrk with USB serial 
-def modify_file(file_path):
-    # Check the operating system
-    if platform.system() == "Windows":
-        xbee_serial_port = "COM3"
-    else:
-        xbee_serial_port = "/dev/ttyUSB0"
-    
-    # Read the file contents
-    with open(file_path, 'r') as file:
-        content = file.read()
-    
-    # Find the original Tx and Rx values using regular expressions
-    tx_match = re.search(r'Tx=(\d+)', content)
-    rx_match = re.search(r'Rx=(\d+)', content)
-    
-    # Find the original xbee_serial_port value using regular expressions
-    xbee_serial_port_match = re.search(r"xbee_serial_port='.*'", content)
-    
-    if tx_match and rx_match and xbee_serial_port_match:
-        original_tx = tx_match.group(0)
-        original_rx = rx_match.group(0)
-        original_xbee_serial_port = xbee_serial_port_match.group(0)
-        
-        # Create the changes dictionary
-        changes = {
-            original_tx: 'Tx=None',
-            original_rx: 'Rx=None',
-            original_xbee_serial_port: f"xbee_serial_port='{xbee_serial_port}'"
-        }
-        
-        # Apply the changes
-        for old, new in changes.items():
-            content = content.replace(old, new)
-        
-        # Write the modified content back to the file
-        with open(file_path, 'w') as file:
-            file.write(content)
-        
-        return changes
-    else:
-        return None
-
-def revert_file(file_path, changes):
-    if changes is None:
-        return
-    
-    # Read the file contents
-    with open(file_path, 'r') as file:
-        content = file.read()
-    
-    # Revert the changes
-    for new, old in changes.items():
-        content = content.replace(old, new)
-    
-    # Write the reverted content back to the file
-    with open(file_path, 'w') as file:
-        file.write(content)
-
-# Define the file path
-file_path = 'src/Operational_Data.txt'
-
-# Call the function to modify the file
-changes = modify_file(file_path)
-
 from VESPA.headers_variables import * 
+
+# # Check the operating system
+# if platform.system() == "Windows":
+#     xbee_serial_port = "COM3"
+# else:
+#     xbee_serial_port = "/dev/ttyUSB0"
+
+import serial.tools.list_ports
+from Xbee_module.xbee_usb import * 
+
+def find_xbee_serial_port():
+    ports = serial.tools.list_ports.comports()
+    xbee_ports = []
+
+    for port in ports:
+        try:
+            # Attempt to open the serial port with a typical Xbee configuration
+            ser = serial.Serial(port.device, baudrate=9600, timeout=1)
+            ser.close()
+            # If the port opens successfully, it might be an Xbee module
+            xbee_ports.append(port.device)
+        except (OSError, serial.SerialException):
+            pass
+
+    if not xbee_ports:
+        print("No Xbee module found.")
+        return None
+    else:
+        # If multiple Xbee modules are found, you can handle them accordingly
+        # For now, we return the first found Xbee port
+        print(f"Found Xbee module(s) on port(s): {xbee_ports}")
+        return xbee_ports[0]
+    
 
 # Shared variables
 timer_count = 0
@@ -223,7 +191,6 @@ def interrupt(Stop_flag):
     emergency_msg= build_emergency_message()
     send_msg(emergency_msg)
     time.sleep(1)
-    revert_file(file_path, changes)
     close_xbee_port()
     print("Serial connection closed.")
     sys.exit(0)
@@ -242,15 +209,11 @@ def GCS_launched():
 
 def main():
     Stop_flag= threading.Event()
+    xbee_serial_port = find_xbee_serial_port()
     try: 
         global GCS_id
         GCS_id = 0 
-        # Create drone object of VESPA
-        set_env(globals())
-        if uart:
-            connect_xbee(xbee_serial_port, baud_rate)
-        else:
-            connect_xbee(Tx,Rx, baud_rate)
+        connect_xbee(xbee_serial_port, 9600)
     except: 
         print("Serial port of Xbee is not right change it to ttyUSB0/Linux or COM3/Windows and re-run")
         exit(0)    
