@@ -401,14 +401,14 @@ def expand_and_form_border(self,vehicle):
     
     write_log_message("Start border formation")
     Form_border(self)
-    write_log_message(f"Current neighbor list:\n" + "\n".join([str(neighbor) for neighbor in self.get_neighbor_list()]))
     # Wait until all border messages are processed and the current topology is saved upon forming border to be used for border verification 
     time.sleep(exchange_data_latency)  
 
     border_well_confirmed= confirm_border_connectivity(self)
     if border_well_confirmed:
-        if self.get_current_spot()["drones_in"]==1:
-            write_log_message (" Drone is Alone Go to ref ")
+        write_log_message(f"neighbor list after forming the border:\n" + "\n".join([str(neighbor) for neighbor in self.get_neighbor_list()]))
+        if self.get_current_spot()["drones_in"]==1 and self.id != 1: # sink stays 
+            write_log_message ("Drone is Alone Go to ref ")
             try: 
                 go_to_ref_altitude(vehicle,self.ref_alt)
             except:
@@ -421,7 +421,7 @@ def expand_and_form_border(self,vehicle):
     
     if count_people_via_wifi: 
         write_log_message("Count number of pepole")
-        num_people_around= self.count_num_people(4,-100)
+        num_people_around= self.count_num_people(4,-80)
         self.send_data_message_station(vehicle, data=num_people_around)
            
 def first_exapnsion (self, vehicle):
