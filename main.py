@@ -56,15 +56,11 @@ def wait_start_GCS():
     while GCS_started_recived: 
         msg= retrieve_msg_from_buffer(waitflag)
         if msg.startswith(GCS_Started_header.encode()) and msg.endswith(b'\n'):
-            write_log_message("GCD Started VESPA receivd ")
             # Re-brodcast the message so it arrives to the drones far from the GCS local machine 
             send_msg(GCS_Started_header.encode()+ b'\n') # GCS has started notify the fleet to start preparation
             GCS_started_recived=False
 
 def main():
-    
-    # Create vehicle object 
-    logs= create_log_file()
     # Create drone object and also connect to Xbee (so any data arrives will be captured in the buffer )
     drone = Drone(0.0,0.0,0.0, parse_arguments())
     vehicle=drone_connect()
@@ -72,6 +68,7 @@ def main():
     signal.signal(signal.SIGINT, lambda sig, frame: drone.interrupt(vehicle))
     # Wait until GCS is launched 
     wait_start_GCS()
+    create_log_file() # Create log of the process 
     # Configure parameter of drone based on VESPA
     config_parameters(vehicle, drone)
     if check_armablity(vehicle):
