@@ -189,7 +189,7 @@ def verify_border(self,header, msg):
 def reset_timer_forme_border(self, header):
     with self.lock_boder_timer:
         if header== Forming_border_header:
-            self.remaining_time_forme_border=exchange_data_latency*50 # Contains waiting and confirm the msg arrival 
+            self.remaining_time_forme_border=exchange_data_latency*100 # Contains waiting and confirm the msg arrival 
         else:
             self.remaining_time_forme_border=exchange_data_latency*20   # This used in case of verfiy the border the messages flow fast
 
