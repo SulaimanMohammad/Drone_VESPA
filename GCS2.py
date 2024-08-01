@@ -4,39 +4,29 @@ import sys
 import os
 import re
 import csv
-import platform
 import time
 import threading
 import signal
 import struct
 from datetime import datetime
+import serial.tools.list_ports
 
 parent_directory = os.path.abspath(os.path.join(os.path.dirname(__file__), './src'))
 # Add the parent directory to sys.path
 sys.path.append(parent_directory)
 
 from VESPA.headers_variables import * 
-
-# # Check the operating system
-# if platform.system() == "Windows":
-#     xbee_serial_port = "COM3"
-# else:
-#     xbee_serial_port = "/dev/ttyUSB0"
-
-import serial.tools.list_ports
 from Xbee_module.xbee_usb import * 
 
 def find_xbee_serial_port():
     ports = serial.tools.list_ports.comports()
-    xbee_ports = []
-
     for port in ports:
         try:
-            # Attempt to open the serial port with a typical Xbee configuration
+            # Attempt to open the serial port with a Xbee 
             ser = serial.Serial(port.device, baudrate=9600, timeout=1)
             ser.close()
             # If the port opens successfully, it might be an Xbee module
-            xbee_ports.append(port.device)
+            xbee_ports=port.device
         except (OSError, serial.SerialException):
             pass
 
@@ -44,10 +34,8 @@ def find_xbee_serial_port():
         print("No Xbee module found.")
         return None
     else:
-        # If multiple Xbee modules are found, you can handle them accordingly
-        # For now, we return the first found Xbee port
         print(f"Found Xbee module(s) on port(s): {xbee_ports}")
-        return xbee_ports[0]
+        return xbee_ports
     
 
 # Shared variables
@@ -122,26 +110,6 @@ def write_to_csv(id, longitude, latitude, data):
                 writer.writerow(['id', 'longitude', 'latitude', 'data'])
             writer.writerow([id, longitude, latitude, data])
 
-# def write_to_csv(id, longitude, latitude,data):
-#     file_path = os.path.join(get_log_file_directory(), 'target.csv')
-#     # Check if the file already exists and read its contents
-#     data_exists = False
-#     if os.path.isfile(file_path):
-#         with open(file_path, mode='r', newline='', encoding='utf-8') as file:
-#             reader = csv.reader(file)
-#             for row in reader:
-#                 if row[0] == str(id):
-#                     data_exists = True
-#                     break
-#     # Write data if the id is not found
-#     if not data_exists:
-#         with open(file_path, mode='a', newline='', encoding='utf-8') as file:
-#             writer = csv.writer(file)
-#             # If the file was newly created, write the header
-#             if file.tell() == 0:
-#                 writer.writerow(['id', 'longitude', 'latitude', 'data'])
-#             writer.writerow([id, longitude, latitude, data])
-
 def GCS_listener(num_drones,Stop_flag):
     id_ready_receiced=[]
     while not Stop_flag.is_set():    
@@ -215,14 +183,14 @@ def main():
         GCS_id = 0 
         connect_xbee(xbee_serial_port, 9600)
     except: 
-        print("Serial port of Xbee is not right change it to ttyUSB0/Linux or COM3/Windows and re-run")
+        print("Cannnot connect to Xbee, re-run")
         exit(0)    
+
     signal.signal(signal.SIGINT, lambda sig, frame: interrupt(Stop_flag))
     create_log_file()
     GCS_launched()
     print("GCS launched signal is sent")
     num_drones = int(input("Enter number of drones: ")) # To check that all drones are ready and armable
-    # Create GCS_listener to receive messages
     global Drone_ready_lock
     Drone_ready_lock= threading.Lock() # Timer lock (timer is shared between 2 threads ( main ,GCS_listener ))
     GCS_receive_message_thread = threading.Thread(target=GCS_listener, args=(num_drones,Stop_flag))
