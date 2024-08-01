@@ -725,6 +725,7 @@ class Drone:
             file.writelines(new_content)
     
     def inform_neighbors_of_change(self):
+        print("send updatz")
         msg=self.build_spot_info_message(Response_header)
         send_msg(msg)
 
