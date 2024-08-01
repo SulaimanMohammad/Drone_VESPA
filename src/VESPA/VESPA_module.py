@@ -727,7 +727,7 @@ class Drone:
     def inform_neighbors_of_change(self):
         print("send updatz")
         msg=self.build_spot_info_message(Response_header)
-        #send_msg(msg)
+        send_msg(msg)
 
     def get_neighbor_list(self):
         # To get the list,if it is in the process of updating should wait the process or we get wrong list 
