@@ -401,6 +401,7 @@ def expand_and_form_border(self,vehicle):
     
     write_log_message("Start border formation")
     Form_border(self)
+    print("finished border")
     # Wait until all border messages are processed and the current topology is saved upon forming border to be used for border verification 
     time.sleep(exchange_data_latency)  
 
