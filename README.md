@@ -1,4 +1,8 @@
-# Vehicle (Drone) Spreading using Self-organized Parallel Algorithm
+<p align="center">
+  <img src="https://github.com/SulaimanMohammad/Drone_VESPA/blob/main/monitoring_interface/logos/VESPA_color.png" alt="VESPA Logo" width="300"/>
+</p>
+
+<h1 align="center">Vehicles (Drones) Spreading using Self-organized Parallel Algorithm</h1>
 
 ## Overview
 
