@@ -80,22 +80,7 @@ def main():
 
     try:
         first_exapnsion(drone, vehicle)
-        spanning(drone)
-        balancing(drone, vehicle)
-
-        while drone.check_termination():
-            further_expansion( drone, vehicle)
-            spanning(drone,vehicle)
-            # Since the irremovable drone as stuck in spanning, then it will retuen and try to performe balancing 
-            if drone.state==Irremovable and drone.VESPA_termination.is_set():
-                break
-            # NO need to do same for border because VESPA_termination will be set in balancing and then while evaluation comes
-            balancing(drone, vehicle )
-
     except:
-        write_log_message("Error in performing VESPA")
-        drone.emergency_stop()
-    finally:
         drone.return_home(vehicle) 
         close_xbee_port()
         vehicle.close()
