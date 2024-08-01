@@ -725,7 +725,6 @@ class Drone:
             file.writelines(new_content)
     
     def inform_neighbors_of_change(self):
-        print("send updatz")
         msg=self.build_spot_info_message(Response_header)
         send_msg(msg)
 
@@ -755,12 +754,13 @@ class Drone:
         self.inform_neighbors_of_change()
 
     def change_state_to( self, new_state):
+        
         with self.lock_state:
             self.previous_state= self.state # save the preivious state
             self.state= new_state # change the state
         with self.lock_neighbor_list:
             # Change state in neighbor_list where first entry is the drone spot
-            self.current_spot["previous_state"][0]=self.state
+            self.current_spot["previous_state"][0]=self.previous_state
             self.current_spot["states"][0]=self.state
         self.inform_neighbors_of_change()
 
