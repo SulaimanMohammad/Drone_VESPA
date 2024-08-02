@@ -79,6 +79,9 @@ def main():
     try:
         first_exapnsion(drone, vehicle)
     except:
+        write_log_message("Error in performing VESPA")
+        drone.emergency_stop()
+    finally:
         drone.return_home(vehicle) 
         close_xbee_port()
         vehicle.close()
