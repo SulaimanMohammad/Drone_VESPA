@@ -78,30 +78,30 @@ def send_msg(msg):
             
             # Add checksum to the message before sending it 
             msg= appened_checksum(msg)
+            for i in range(2):
+                pi.wave_clear()  # Clear any existing waveforms
+                if pi.wave_get_micros() > 0:  # Check if there's any data in the buffer
+                    pi.wave_clear()  # Clear it again to be sure
 
-            pi.wave_clear()  # Clear any existing waveforms
-            if pi.wave_get_micros() > 0:  # Check if there's any data in the buffer
-                pi.wave_clear()  # Clear it again to be sure
+                pi.wave_add_serial(tx_pin, baud_rate, msg)  # Add a new waveform
+                # wave_id = pi.wave_create()  # Create the waveform
+                max_attempts = 20  # Maximum number of attempts to create the waveform
+                wave_id = None
+                for attempt in range(max_attempts):
+                    try:
+                        wave_id = pi.wave_create()  # Attempt to create the waveform
+                        if wave_id >= 0:
+                            break  # Waveform created successfully, exit the loop
+                    except pigpio.error as e:
+                        time.sleep(0.05)  # Wait for 0.05 seconds before the next attempt
 
-            pi.wave_add_serial(tx_pin, baud_rate, msg)  # Add a new waveform
-            # wave_id = pi.wave_create()  # Create the waveform
-            max_attempts = 20  # Maximum number of attempts to create the waveform
-            wave_id = None
-            for attempt in range(max_attempts):
-                try:
-                    wave_id = pi.wave_create()  # Attempt to create the waveform
-                    if wave_id >= 0:
-                        break  # Waveform created successfully, exit the loop
-                except pigpio.error as e:
-                    time.sleep(0.05)  # Wait for 0.05 seconds before the next attempt
+                # Check if the waveform was created successfully after all attempts
+                if wave_id is None or wave_id < 0:
+                    return
 
-            # Check if the waveform was created successfully after all attempts
-            if wave_id is None or wave_id < 0:
-                return
-
-            pi.wave_send_once(wave_id)  # Send the waveform
-            while pi.wave_tx_busy():  # Wait until the waveform is sent
-                time.sleep(0.05)
+                pi.wave_send_once(wave_id)  # Send the waveform
+                while pi.wave_tx_busy():  # Wait until the waveform is sent
+                    time.sleep(0.05)
         except:
             raise Exception("Thread send_msg Interrupt received, stopping...")
 

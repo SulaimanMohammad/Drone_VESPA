@@ -95,8 +95,10 @@ def forward_broadcast_message(self,header,candidate):
     send_msg(msg)
 
 def form_border_one_direction(self,header,msg):
+    
     if not self.Forming_Border_Broadcast_REC.is_set(): # React only if border is not formed yet, to avoid multiple brodcasting
         sender_id, target_id, candidate= decode_border_message(msg)
+        write_log_message(f"Border message rec, sender_id: {sender_id}  target_id: {target_id} candidate {candidate}")
         reset_timer_forme_border(self,header) # Reset for any message even from out the region because that means the border is not yet formed 
         if sender_id in self.neighbors_ids: # Signal comes from the neighbor drone, dont consider messages out of the region 
             if sender_id == self.current_target_id and (candidate in self.rec_candidate):
@@ -304,9 +306,10 @@ def Form_border(self):
         
         write_log_message("Drone is border candidate")
         choose_spot_right_handed(self) # chose spot only when it is candidate 
+        write_log_message(f"current_target_id {self.current_target_id}")
         '''launch a message circulation for current candidat'''
         start_msg_one_direction(self)
-                
+        write_log_message("Start sending border message")
         # This timer will be reset upon each border message is recived 
         # It will be also stopped when forming border broadcast is received 
         # Note in case the border is not formed with absance of new messages, when the timer is up the while loop will re-executed 
@@ -329,12 +332,12 @@ def Form_border(self):
             Wait after each try if it did not succeed and wait for the topology to change 
             that can happen if not all the drones finished moving (collect data again of all drones around), then reset all and try again 
             '''
+            write_log_message(f"Attempt {number_of_try} to form border")
             time.sleep(150)
             self.demand_neighbors_info() 
             # re-check eligibility
             check_border_candidate_eligibility(self)
             reset_border_variables(self)
-            write_log_message(f"Attempt {number_of_try} to form border")
         else:
             break 
     # Here the candidate drone will be already break the loop in case the border is formed 
