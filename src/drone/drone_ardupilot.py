@@ -240,8 +240,6 @@ def check_gps_fix(self):
         write_log_message("Waiting for the vehicle to become armable...")
         time.sleep(1)
 
-    write_log_message("Checking GPS status...")
-
     # Get the GPS fix type
     fix_type = self.gps_0.fix_type
 
@@ -249,10 +247,8 @@ def check_gps_fix(self):
     num_satellites = self.gps_0.satellites_visible
 
     if fix_type >= 3 and num_satellites >= 8:
-        write_log_message("GPS is working and providing valid values.")
         return True
     else: 
-        write_log_message("GPS does not provid valid values.")
         return False
             
 def check_armablity(self):

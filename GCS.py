@@ -9,6 +9,7 @@ import threading
 import signal
 import struct
 from datetime import datetime
+import serial
 import serial.tools.list_ports
 
 parent_directory = os.path.abspath(os.path.join(os.path.dirname(__file__), './src'))
