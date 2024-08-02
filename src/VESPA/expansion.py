@@ -424,7 +424,7 @@ def expand_and_form_border(self,vehicle):
     else: 
         # Wait then reform the border 
         time.sleep(10*exchange_data_latency)
-        re_form _border(self) 
+        re_form_border(self) 
     
 
     '''
