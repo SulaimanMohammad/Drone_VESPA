@@ -398,8 +398,10 @@ def expand_and_form_border(self,vehicle):
     write_log_message("Drone is owner")
     self.inform_neighbors_of_change()
     self.demand_neighbors_info()
-    
     write_log_message(f"neighbor list after forming the border:\n" + "\n".join([str(neighbor) for neighbor in self.get_neighbor_list()]))
+    
+    time.sleep(5)
+    
     if self.get_current_spot()["drones_in"]==1 and self.id != 1: # sink stays 
         write_log_message ("Drone is Alone Go to ref ")
         try: 
