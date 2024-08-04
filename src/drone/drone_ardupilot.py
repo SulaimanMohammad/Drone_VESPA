@@ -1090,7 +1090,7 @@ def go_to_ref_altitude(self,ref_alt=9.7):
 
             current_time = time.time()
             if (current_time - start_control_timer > 0.2) or current_desired_vel_Z != desired_vel_Z :
-                write_log_message(f"alt= {get_altitude(self)}, velocity_z= {desired_vel_Z}" )
+                #write_log_message(f"alt= {get_altitude(self)}, velocity_z= {desired_vel_Z}" )
                 send_control_body(self, 0, 0, desired_vel_Z)
                 start_control_timer = current_time  # Reset timer
                 current_desired_vel_Z= desired_vel_Z
