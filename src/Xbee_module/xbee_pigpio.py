@@ -78,7 +78,7 @@ def send_msg(msg):
             
             # Add checksum to the message before sending it 
             msg= appened_checksum(msg)
-            for i in range(2):
+            for i in range(1):
                 pi.wave_clear()  # Clear any existing waveforms
                 if pi.wave_get_micros() > 0:  # Check if there's any data in the buffer
                     pi.wave_clear()  # Clear it again to be sure
