@@ -22,7 +22,7 @@ from Xbee_module.xbee_usb import *
 # Shared variables
 timer_count = 0
 Drone_ready_lock = threading.Lock()
-
+id_ready_receiced=[]
 def find_xbee_serial_port():
     ports = serial.tools.list_ports.comports()
     for port in ports:
@@ -69,7 +69,7 @@ def decode_data_message(message):
     latitude = float(parts[3])
     data = float(parts[4])
     return id_target, sender_id, longitude, latitude, data 
-       
+
 def create_log_file():
     # Define the base log directory
     base_directory = 'mission_log'
@@ -111,7 +111,7 @@ def write_to_csv(id, longitude, latitude, data):
             writer.writerow([id, longitude, latitude, data])
 
 def GCS_listener(num_drones,Stop_flag):
-    id_ready_receiced=[]
+    
     while not Stop_flag.is_set():    
         msg= retrieve_msg_from_buffer(Stop_flag)
 
@@ -121,6 +121,7 @@ def GCS_listener(num_drones,Stop_flag):
         elif msg.startswith(Prepared_header.encode()) and msg.endswith(b'\n'):
             # New system is ready, restart the timer to wait another system to be done 
             ids=decode_drone_is_ready_message(msg)
+            global id_ready_receiced
             if ids not in id_ready_receiced:
                 id_ready_receiced.append(ids)
                 reset_collect_drones_ready_timer(num_drones)
@@ -163,7 +164,7 @@ def interrupt(Stop_flag):
     print("Serial connection closed.")
     sys.exit(0)
 
-def wait_for_start():
+def wait_for_authorization():
     message = "All drones' systems are ready, When you are ready start VESPA by pressing enter"
     input(message)  # This will display the message and wait for the user to press Enter
     msg= Inauguration_header.encode()+ b'\n'
@@ -196,9 +197,12 @@ def main():
     GCS_receive_message_thread = threading.Thread(target=GCS_listener, args=(num_drones,Stop_flag))
     GCS_receive_message_thread.start()
     print("Waiting for signal that drones' systems are ready")
-    initialize_collect_drones_ready_timer(num_drones)
-    # After all the drone systems are ready, ask for start 
-    wait_for_start()
+    initialize_collect_drones_ready_timer(num_drones)    
+    if len(id_ready_receiced)==num_drones:
+        # After all the drone systems are ready, ask for start 
+        wait_for_authorization()
+    else:
+        print(f" Drones are not ready ( Not armable or xbee not working )")
 
     while not Stop_flag.is_set():
         time.sleep(0.1)
