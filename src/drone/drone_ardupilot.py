@@ -191,15 +191,15 @@ def drone_connect():
     retuned_parse = parse_connect()
     # Check the argument
     if retuned_parse.connect:
-        print("Simulation")
+        #print("Simulation")
         vehicle = connect (retuned_parse.connect, wait_ready=False) # for simulation 
         simulation_dont_hover= True
     
     elif retuned_parse.command == "telemetry":
-        print("Telemetry connection")
+        #print("Telemetry connection")
         vehicle = connect("/dev/ttyUSB0", baud= telemetry1_baudrate,  wait_ready=False, rate=10) #for telemetry 1
     elif retuned_parse.command == "":
-        print("Actual drone connection")
+        #print("Actual drone connection")
         vehicle = connect("/dev/serial0", baud= telemetry2_baudrate,  wait_ready=False) # for raspberry pi
     else:
         print(f"Unknown argument: {retuned_parse.command}")
