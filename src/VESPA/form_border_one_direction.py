@@ -379,11 +379,11 @@ def confirm_border_connectivity(self):
 
     self.border_verified.wait(100) 
     if self.border_verified.is_set():
-        write_log_message("Border confirmed")
+        write_log_message("     Border confirmed       ")
         border_is_confirmed= True 
 
     else:
-        write_log_message("Border Non confirmed")
+        write_log_message("     Border Non confirmed    ")
         reset_border_variables(self)   
         self.border_verified.clear()
         border_is_confirmed= False

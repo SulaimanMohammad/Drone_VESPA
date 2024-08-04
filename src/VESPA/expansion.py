@@ -413,34 +413,34 @@ def expand_and_form_border(self,vehicle):
     
     time.sleep(5)
     
-    if self.get_current_spot()["drones_in"]==1 and self.id != 1: # sink stays 
-        write_log_message ("Drone is Alone Go to ref ")
-        try: 
-            go_to_ref_altitude(vehicle,self.ref_alt)
-        except:
-            write_log_message("An error occurred while go_to_ref_altitude")
-            self.emergency_stop()
+    # if self.get_current_spot()["drones_in"]==1 and self.id != 1: # sink stays 
+    #     write_log_message ("Drone is Alone Go to ref ")
+    #     try: 
+    #         go_to_ref_altitude(vehicle,self.ref_alt)
+    #     except:
+    #         write_log_message("An error occurred while go_to_ref_altitude")
+    #         self.emergency_stop()
         
-    if count_people_via_wifi: 
-        write_log_message("Count number of pepole")
-        num_people_around= self.count_num_people(1,-80)
-        self.send_data_message_station(vehicle, data=num_people_around)
+    # if count_people_via_wifi: 
+    #     write_log_message("Count number of pepole")
+    #     num_people_around= self.count_num_people(1,-80)
+    #     self.send_data_message_station(vehicle, data=num_people_around)
 
-    write_log_message("Start border formation")
+    write_log_message(" Start border formation  ")
     Form_border(self)
     # Wait until all border messages are processed and the current topology is saved upon forming border to be used for border verification 
     time.sleep(exchange_data_latency)  
 
-    border_well_confirmed= confirm_border_connectivity(self)
-    if border_well_confirmed:
-        write_log_message(f"neighbor list after forming the border:\n" + "\n".join([str(neighbor) for neighbor in self.get_neighbor_list()]))
-    else: 
-        # Wait then reform the border 
-        time.sleep(10*exchange_data_latency)
-        re_form_border(self) 
+    # border_well_confirmed= confirm_border_connectivity(self)
+    # if border_well_confirmed:
+    #     write_log_message(f"neighbor list after forming the border:\n" + "\n".join([str(neighbor) for neighbor in self.get_neighbor_list()]))
+    # else: 
+    #     # Wait then reform the border 
+    #     time.sleep(10*exchange_data_latency)
+    #     re_form_border(self) 
     
 
-    '''
+ 
     border_well_confirmed= confirm_border_connectivity(self)
     if border_well_confirmed:
         write_log_message(f"neighbor list after forming the border:\n" + "\n".join([str(neighbor) for neighbor in self.get_neighbor_list()]))
@@ -460,7 +460,7 @@ def expand_and_form_border(self,vehicle):
         write_log_message("Count number of pepole")
         num_people_around= self.count_num_people(4,-80)
         self.send_data_message_station(vehicle, data=num_people_around)
-    '''
+
     
     
      
