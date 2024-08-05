@@ -521,7 +521,7 @@ def set_altitude(self, target_altitude):
 
 def check_mode(self):
     # Set mode to GUIDED
-    if self.mode != "GUIDED":
+    if self.mode.name != "GUIDED":
         self.mode = VehicleMode("GUIDED")
     
 def get_acceleration():
