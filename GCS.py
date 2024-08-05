@@ -166,7 +166,6 @@ def wait_for_start():
     message = "All drones' systems are ready, When you are ready start VESPA by pressing enter"
     input(message)  # This will display the message and wait for the user to press Enter
     msg= Inauguration_header.encode()+ b'\n'
-    print(msg)
     send_msg(msg)
     print("Proceeding...")
 
