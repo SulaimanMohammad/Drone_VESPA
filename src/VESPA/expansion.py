@@ -459,9 +459,10 @@ def expand_and_form_border(self,vehicle):
     if count_people_via_wifi: 
         write_log_message("Count number of pepole")
         num_people_around= self.count_num_people(4,-80)
+        write_log_message(f"num_people_around found {num_people_around}")
         self.send_data_message_station(vehicle, data=num_people_around)
 
-    
+    write_log_message("     \nFinish expansion      \n")  
     
      
 def first_exapnsion (self, vehicle):
