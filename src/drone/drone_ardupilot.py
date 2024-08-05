@@ -239,20 +239,13 @@ def check_gps_fix(self):
     while not self.is_armable:
         write_log_message("Waiting for the vehicle to become armable...")
         time.sleep(1)
-
-    write_log_message("Checking GPS status...")
-
     # Get the GPS fix type
     fix_type = self.gps_0.fix_type
-
     # Get the number of satellites
     num_satellites = self.gps_0.satellites_visible
-
     if fix_type >= 3 and num_satellites >= 8:
-        write_log_message("GPS is working and providing valid values.")
         return True
     else: 
-        write_log_message("GPS does not provid valid values.")
         return False
             
 def check_armablity(self):
@@ -264,7 +257,13 @@ def check_armablity(self):
         write_log_message ("Could not arm the drone")
         raise Exception("Vehicle not armable")
     else: 
-        return True
+        fix_type = self.gps_0.fix_type
+        num_satellites = self.gps_0.satellites_visible
+        if fix_type >= 3 and num_satellites >= 8:
+            return True
+        else:
+            write_log_message ("GPS is not ready")   
+            return False
 
 def arm_and_takeoff(self, aTargetAltitude):
     write_log_message (f"{get_current_function_name()} called:") 
