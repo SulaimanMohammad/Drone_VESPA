@@ -1058,29 +1058,41 @@ def move_body_PID(self, angl_dir, distance, emergency_message_flag ,ref_alt=9.7,
 
     
 def go_to_ref_altitude(self,ref_alt=9.7):
-    time.sleep(0.5) # stablize Z 
+    write_log_message(f"Go to reference altitude from {get_altitude(self)} to {ref_alt}")
+    check_mode(self)
+    time.sleep(0.5) # stablize Z  
+    max_vel_Z= 2 # 2m/s
+    effective_ref_alt=ref_alt*0.95
+    error_ref= abs(get_altitude(self)- effective_ref_alt)/effective_ref_alt
 
-    if( get_altitude(self) > ref_alt * 0.95 ): # ref_alt is under , go downe 
-        desired_vel_Z= 0.5
+    if( get_altitude(self) > ref_alt * 0.95 ): # ref_alt is under, go downe 
+        coeff= 1 # Go down 
     elif( get_altitude(self) < ref_alt * 0.95 ): 
-        desired_vel_Z=-0.5
+        coeff= -1  # Go up 
+    
+    if error_ref <0.2:
+       desired_vel_Z=0 
     else: 
-        desired_vel_Z=0 
+        start_control_timer=time.time()  # Initialize the timer outside the loop
+        current_desired_vel_Z=0
+        while ( abs(get_altitude(self) - ref_alt)>=0.2 and (get_altitude(self) > ref_alt-1 or get_altitude(self) < ref_alt+1 )  ):
+            error_ref= abs(get_altitude(self)- effective_ref_alt)/effective_ref_alt
+            desired_vel_Z= coeff*round(error_ref* max_vel_Z,2) 
+            if (abs(desired_vel_Z))<0.5:
+                desired_vel_Z=coeff*0.5
 
-    if desired_vel_Z!=0: 
-        start_control_timer=0 
-        while ( abs(get_altitude(self) - ref_alt)>=0.2 and  (get_altitude(self) > ref_alt-1 or get_altitude(self) < ref_alt+1 )  ):
-            if (time.time() - start_control_timer > 0.2):
-                write_log_message(f"alt= {get_altitude(self)}, velocity_z= {desired_vel_Z}" )
+            current_time = time.time()
+            if (current_time - start_control_timer > 0.2) or current_desired_vel_Z != desired_vel_Z :
                 send_control_body(self, 0, 0, desired_vel_Z)
-                start_control_timer= time.time()
+                start_control_timer = current_time  # Reset timer
+                current_desired_vel_Z= desired_vel_Z
 
         # Ensure stop 
         send_control_body(self, 0, 0, 0)
         time.sleep(0.2)
         send_control_body(self, 0, 0, 0)
-    
-    time.sleep(1)
+        
+    hover(self)
 
 
 def convert_angle_to_set_dir(self, angle): 
