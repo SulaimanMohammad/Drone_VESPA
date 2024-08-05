@@ -189,7 +189,7 @@ def verify_border(self,header, msg):
 def reset_timer_forme_border(self, header):
     with self.lock_boder_timer:
         if header== Forming_border_header:
-            self.remaining_time_forme_border=exchange_data_latency*50 # Contains waiting and confirm the msg arrival 
+            self.remaining_time_forme_border=exchange_data_latency*100 # Contains waiting and confirm the msg arrival 
         else:
             self.remaining_time_forme_border=exchange_data_latency*20   # This used in case of verfiy the border the messages flow fast
 
@@ -330,12 +330,13 @@ def Form_border(self):
             Wait after each try if it did not succeed and wait for the topology to change 
             that can happen if not all the drones finished moving (collect data again of all drones around), then reset all and try again 
             '''
-            time.sleep(150)
+            write_log_message(f"Attempt {number_of_try} to form border")
+            time.sleep(60)
             self.demand_neighbors_info() 
             # re-check eligibility
             check_border_candidate_eligibility(self)
             reset_border_variables(self)
-            write_log_message(f"Attempt {number_of_try} to form border")
+            
         else:
             break 
     # Here the candidate drone will be already break the loop in case the border is formed 
@@ -377,11 +378,11 @@ def confirm_border_connectivity(self):
 
     self.border_verified.wait(100) 
     if self.border_verified.is_set():
-        write_log_message("Border confirmed")
+        write_log_message("     Border confirmed")
         border_is_confirmed= True 
 
     else:
-        write_log_message("Border Non confirmed")
+        write_log_message("     Border Non confirmed")
         reset_border_variables(self)   
         self.border_verified.clear()
         border_is_confirmed= False
