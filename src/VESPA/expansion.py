@@ -406,6 +406,7 @@ def expand_and_form_border(self,vehicle):
 
     border_well_confirmed= confirm_border_connectivity(self)
     if border_well_confirmed:
+        write_log_message(f"Neighbor list after forming the border:\n" + "\n".join([str(neighbor) for neighbor in self.get_neighbor_list()]))
         if self.get_current_spot()["drones_in"]==1:
             write_log_message (" Drone is Alone Go to ref ")
             try: 
