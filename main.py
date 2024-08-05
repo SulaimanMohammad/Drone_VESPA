@@ -67,11 +67,11 @@ def main():
     signal.signal(signal.SIGINT, lambda sig, frame: drone.interrupt(vehicle))
     # Wait until GCS is launched 
     wait_start_GCS()
+    create_log_file()
     # Configure parameter of drone based on VESPA
     config_parameters(vehicle, drone)
     if check_armablity(vehicle):
         drone.system_is_ready() # Send message to GCS that system is ready and armable 
-    create_log_file()
     wait_start_signal(drone) # Wait the start flag to initiate VESPA
     
     try:
