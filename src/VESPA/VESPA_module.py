@@ -754,7 +754,7 @@ class Drone:
             self.state= new_state # change the state
         with self.lock_neighbor_list:
             # Change state in neighbor_list where first entry is the drone spot
-            self.current_spot["previous_state"][0]=self.state
+            self.current_spot["previous_state"][0]=self.previous_state
             self.current_spot["states"][0]=self.state
 
     def check_Ownership(self):
