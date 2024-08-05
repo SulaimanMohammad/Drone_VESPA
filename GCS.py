@@ -188,13 +188,13 @@ def main():
     signal.signal(signal.SIGINT, lambda sig, frame: interrupt(Stop_flag))
     create_log_file()
     GCS_launched()
-    print("GCS launched signal is sent")
-    num_drones = int(input("Enter number of drones: ")) # To check that all drones are ready and armable
+    print("     GCS launched signal is sent     ")
+    num_drones = int(input("\nEnter number of drones: ")) # To check that all drones are ready and armable
     global Drone_ready_lock
     Drone_ready_lock= threading.Lock() # Timer lock (timer is shared between 2 threads ( main ,GCS_listener ))
     GCS_receive_message_thread = threading.Thread(target=GCS_listener, args=(num_drones,Stop_flag))
     GCS_receive_message_thread.start()
-    print("Waiting for signal that drones' systems are ready")
+    print("\nWaiting for signal that drones' systems are ready")
     initialize_collect_drones_ready_timer(num_drones)
     # After all the drone systems are ready, ask for start 
     wait_for_start()
