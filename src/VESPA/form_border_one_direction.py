@@ -304,7 +304,6 @@ def Form_border(self):
         
         write_log_message("Drone is border candidate")
         choose_spot_right_handed(self) # chose spot only when it is candidate 
-        self.update_candidate_spot_info_to_neighbors() # Useful if the drone arrived and filled a spot made others sourounded
         '''launch a message circulation for current candidat'''
         start_msg_one_direction(self)
                 

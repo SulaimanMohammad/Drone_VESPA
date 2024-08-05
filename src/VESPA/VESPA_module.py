@@ -130,7 +130,7 @@ class Drone:
             self.id= passed_id
         # Alt for each drone related to ID to avoid collision while movement
         self.ref_alt= round(sqrt(pow(a*ref_alt_ratio,2)- pow(((a*ref_alt_ratio)/sq3),2)),2) # Reference alt (drone hight when it is alone )
-        self.drone_alt= ((self.id-1)*spacing)+ self.ref_alt
+        self.drone_alt= ((self.id-1)*spacing)+ self.ref_alt # Drone alt while movement
         self.defined_groundspeed= defined_groundspeed
         # init s0 and it will be part of the spots list
         self.neighbor_list=[{"name": "s" + str(0), "distance": 0, "priority": 0, "drones_in": 1,"drones_in_id":[], "states": [] , "previous_state": []}]
@@ -723,7 +723,11 @@ class Drone:
         # Write the updated content back to the file
         with open(Operational_Data_path, 'w') as file:
             file.writelines(new_content)
- 
+
+    def inform_neighbors_of_change(self):
+        msg=self.build_spot_info_message(Response_header)
+        send_msg(msg)
+
     def get_neighbor_list(self):
         # To get the list,if it is in the process of updating should wait the process or we get wrong list 
         if not self.list_finished_update.is_set():
@@ -747,6 +751,7 @@ class Drone:
     def write_state(self, state):
         with self.lock_state:
             self.state= state
+        self.inform_neighbors_of_change()
 
     def change_state_to( self, new_state):
         with self.lock_state:
@@ -756,6 +761,7 @@ class Drone:
             # Change state in neighbor_list where first entry is the drone spot
             self.current_spot["previous_state"][0]=self.previous_state
             self.current_spot["states"][0]=self.state
+        self.inform_neighbors_of_change()
 
     def check_Ownership(self):
         if self.get_state() != Owner:
@@ -815,10 +821,7 @@ class Drone:
             # self.rearrange_neighbor_statically_upon_movement(dir)
             # Find the distance of the neigboors at the new position
             self.calculate_neighbors_distance_sink()
-
-    def update_candidate_spot_info_to_neighbors(self):
-        msg= self.build_spot_info_message(Arrival_header)
-        send_msg(msg)
+            self.inform_neighbors_of_change()
 
     def rest_neighbor_list(self):
         with self.lock_neighbor_list: # Locker needed since it is writing 

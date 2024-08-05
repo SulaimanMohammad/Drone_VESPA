@@ -396,7 +396,7 @@ def expand_and_form_border(self,vehicle):
         spatial_observation(self)
 
     write_log_message("Drone is owner")
-    send_msg(self.build_spot_info_message(Response_header))
+    self.inform_neighbors_of_change()
     self.demand_neighbors_info()
     
     write_log_message("Start border formation")
