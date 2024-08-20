@@ -924,6 +924,12 @@ class Drone:
     -------------------------------- Movement -------------------------------
     -------------------------------------------------------------------------------------
     '''
+    # In case comanion computer was reboot during the travle abanndon the process 
+    # The drone should not be in the sky when VESPA starts 
+    def safty_check(self,vehicle):
+        if get_altitude(vehicle)>1:
+            self.emergency_stop() 
+
     def take_off_drone(self, vehicle):
         # FLy with GPS
         try:

@@ -65,6 +65,7 @@ def main():
     vehicle=drone_connect()
     set_data_rate(vehicle, 20)
     signal.signal(signal.SIGINT, lambda sig, frame: drone.interrupt(vehicle))
+    drone.safty_check(vehicle)
     # Wait until GCS is launched 
     wait_start_GCS()
     create_log_file()
