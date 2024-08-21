@@ -179,8 +179,6 @@ def set_priorities(self):
                         s["priority"]= random.uniform(s["drones_in"]* C + eps, (s["drones_in"]+1)*C)
             else:
                 s["priority"]= float("inf")
-        if self.allowed_spots: # This constraint should be used only one time after the balancing to avoid going behind the border again
-            self.allowed_spots=[]
 
 def find_priority(self):
     min_Priority = min(self.get_neighbor_list(), key=lambda x: x["priority"])["priority"]
@@ -342,11 +340,6 @@ def assign_spots(drones_id):
 ---------------------------------Mange allowed spots---------------------------------
 -------------------------------------------------------------------------------------
 '''
-def save_unoccupied_spots_around_border(self):
-    # Save the spots they are unoccupied to dont back behind border in the next expansion
-    if self.get_state()==Border or self.get_state()==Irremovable_boarder:
-        self.allowed_spots = [int(neighbor['name'][1:]) for neighbor in self.get_neighbor_list() if neighbor['drones_in'] == 0]
-
 
 def reset_allowed_spots(self):
     # This only done only after leaving the border not before 
@@ -369,7 +362,7 @@ def expand_and_form_border(self,vehicle):
         self.change_state_to(Owner)
 
     spatial_observation(self)
-    while self.get_state() !=Owner:
+    while self.get_state() !=Owner and  self.get_state() != Irremovable_boarder and self.get_state() != Irremovable:
         set_priorities(self)
         self.destination_spot= find_priority(self)
         self.elected_id= neighbors_election(self)
@@ -383,6 +376,13 @@ def expand_and_form_border(self,vehicle):
                 send_msg(movement_done_msg)
                 
                 if self.movemnt_from_border==False:
+                   '''
+                    self.movemnt_from_border will be set to False when further_expansion starts 
+                    For free drones that need to move after the balancing phase, the calculation of priorities (see set_priorities) should consider allowed spots during the first move.
+                    This approach minimizes the risk of the drone returning to empty spots behind the border. 
+                    After this first move, the allowed spots should be reset to include all possible locations, as the drone will have moved away from the empty spots behind border. 
+                    Without this reset, the drone might miss potential spots to move to, limiting its movement options.
+                   '''
                    reset_allowed_spots(self)
                    self.movemnt_from_border=True
         else:
@@ -456,7 +456,6 @@ def first_exapnsion (self, vehicle):
     xbee_receive_message_thread.join() # stop listening to message
     self.expansion_stop.clear()
 
-    save_unoccupied_spots_around_border(self)
     # Time guarantees that all drones begin the searching procedure simultaneously and synchronized.
     time.sleep(sync_time)
     self.search_for_target() # This is blocking until the end of movement
@@ -471,6 +470,13 @@ def further_expansion (self,vehicle):
     
     if self.get_state() == Border:
         self.change_state_to(Owner) # The border save it is own spot
+        '''
+        When a border drone becomes an owner (it means that it will not move, its allowed spots remain the same ( no rest will be applied, 
+        since rest is done in the loop of movement in expand_and_form_border).
+        If it continues to be part of the border in the next formation, its allowed spots will be updated based on any changes in the next balancing phase. 
+        If the drone becomes free, it will inherit new allowed spots from the border in the next balancing phase. 
+        It's important to note that even though the former border drones are now owners, they will still need to use their allowed spots for the formation of the new border (to not consider the empty spots behind to define if the drone is a border candidate or not).
+        '''
     elif self.get_state() == Irremovable_boarder:
         self.change_state_to(Irremovable)
     else: # State is Free the only free will move 
@@ -482,8 +488,6 @@ def further_expansion (self,vehicle):
     xbee_receive_message_thread.join() # stop listening to message
     self.expansion_stop.clear()
 
-    
-    save_unoccupied_spots_around_border(self)
     # Time guarantees that all drones begin the searching procedure simultaneously and synchronized.
     time.sleep(sync_time)
     self.search_for_target() # This is blocking until the end of movement
