@@ -1,6 +1,6 @@
 from .VESPA_module import *
 from .form_border_tow_direction import forward_border_message, build_border_message,forward_broadcast_message, decode_border_message
-from .expansion import Fire_border_msg
+from .form_border_one_direction import confirm_border_connectivity, re_form_border
 
 set_env(globals())
 
@@ -292,6 +292,10 @@ def search_to_border(self):
         return border_found, int(max_distance_spot['name'][1:]) 
 
 def balancing(self, vehicle):
+    # Confirm the border first if it doesnt exit reform it 
+    border_well_confirmed= confirm_border_connectivity(self)
+    if not border_well_confirmed: 
+        re_form_border(self) 
 
     # Border is the chef of the spot 
     if self.get_state()== Border or Irremovable_boarder:
@@ -307,13 +311,10 @@ def balancing(self, vehicle):
             border_found, spot_to_go = search_to_border(self)
             # Move             
             self.move_to_spot(vehicle, spot_to_go)
-        # This message will be read by the border drone and its niegbor
+        # This message will inform the border drone around and its neighbors
         data_msg= self.build_spot_info_message(Arrival_header)
         send_msg(data_msg)
         self.end_of_balancing.wait()
         self.end_of_balancing.clear() 
     
-    # rest this indecator for the next use in the border formation
-    # self.rec_candidate=[]   
-    clear_buffer()
     xbee_receive_message_thread.join()
