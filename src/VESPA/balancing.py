@@ -109,29 +109,34 @@ def send_lead_local_balancing_message(self, all_moves):
         id, destination = move  # Unpack the tuple
         msg= build_local_movement_message(id, destination)
         send_msg(msg)
-    time.sleep(movement_time)    
+    time.sleep((a/speed_of_drone)+2) 
+
+def rest_border_timer(border_t):
+    with border_t.lock_border:
+       border_t.remaining_time = border_t.timeout   
 
 class Boarder_Timer:
-    def __init__(border_t,self,timeout=2*movement_time):
+    def __init__(border_t,self,timeout=(a/speed_of_drone)+10):
         border_t.timeout = timeout
         border_t.remaining_time = border_t.timeout
+        border_t.lock_border= threading.Lock()  
         border_t.message_thread = threading.Thread(target=border_listener, args=(border_t,self,timeout,))
         border_t.message_thread.start()
         self.end_of_balancing= threading.Event()
 
     def run(border_t, self):
         while True: 
-            with border_t.lock_sink:  # Acquire the lock
-                border_t.remaining_time -= 0.5
-                write_log_message(f"Remaining time: {border_t.remaining_time:.2f} seconds")
+            with border_t.lock_border:  # Acquire the lock
+                border_t.remaining_time -= 0.1
+                write_log_message(f"Remaining time for border_t.lock : {border_t.remaining_time:.2f} seconds")
                 if border_t.remaining_time <= 0:
                     border_t.time_up(border_t,self)
                     break
-            time.sleep(0.5)               
+            time.sleep(0.1)               
         
     def time_up(border_t,self):
-        #Called when the timer reaches its timeout without being reset.
-        write_log_message("Time's up! ")
+        # Called when the timer reaches its timeout without being reset, meanning no more movment is done
+        write_log_message("Time's up no more movement detected ! ")
         # Ensure that balanced achived 
         self.demand_neighbors_info()
         all_moves= lead_local_balancing(self)
@@ -167,6 +172,7 @@ def border_listener(self,border_t):
             self.exchange_neighbors_info_communication(msg)
 
             if msg.startswith(Arrival_header.encode()) and msg.endswith(b'\n'):
+                rest_border_timer(border_t) # New arrival reset the timer 
                 # This can be recived in case of drone arrive to the current spot or another border neigbors
                 positionX, positionY, state, id_value= self.decode_spot_info_message(msg)
                 self.update_neighbors_list(positionX, positionY, state, id_value )
