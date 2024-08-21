@@ -1,5 +1,5 @@
 from .VESPA_module import *
-from .form_border_one_direction import confirm_border_connectivity, re_form_border, circulate_border_msg, build_border_message, decode_border_message, forward_broadcast_message
+from .form_border_one_direction import confirm_border_connectivity, re_form_border, circulate_msg_along_border, build_border_message, decode_border_message, forward_broadcast_message
 
 set_env(globals())
 
@@ -102,6 +102,16 @@ def check_continuity_of_listening(self):
 ---------------------------------- Border Procedure ---------------------------------
 -------------------------------------------------------------------------------------
 '''
+def construct_allowed_spots(self):
+    # Should be done using list constructed over the phases, thus any new populated area will be removed from the list ofallowed spots 
+    spot_populated = [int(neighbor["name"][1:]) for neighbor in self.get_neighbor_list() if neighbor["drones_in"] > 0]
+    if spot_populated: 
+        for spot in spot_populated:
+            self.allowed_spots.remove(spot)
+
+def share_allowed_spots_with_free(self):
+    message= build_shared_allowed_spots_message(self)
+    send_msg(message) 
 
 def send_lead_local_balancing_message(all_moves):
     if all_moves != -1 : # there are moves to be taken 
@@ -142,8 +152,8 @@ class Boarder_Timer:
         all_moves= lead_local_balancing(self)
         if all_moves==-1: # No Free drones around, then possible end of the algorithm 
            border_t.local_balancing.set() # If no drones around that still means local balancing, so both messages will be sent
-           circulate_border_msg(Algorithm_termination_header)
-           circulate_border_msg(Balance_header) 
+           circulate_msg_along_border(Algorithm_termination_header)
+           circulate_msg_along_border(Balance_header) 
         else: 
             # Keep checking until all dones is distributed correctly
             while len(all_moves) >0 : # there are drones need to be moved 
@@ -154,9 +164,8 @@ class Boarder_Timer:
             # Moves =0, meaning local balance is achived
             border_t.local_balancing.set() # Flag to identify local balancing
             # Allowed spots need to be sent in this stage,the thread of listining of free drone would joined after completing the circle 
-            message= build_shared_allowed_spots_message(self)
-            send_msg(message) 
-            circulate_border_msg(Balance_header)
+            share_allowed_spots_with_free(self)
+            circulate_msg_along_border(Balance_header)
 
         self.end_of_balancing.wait()
         border_t.local_balancing.clear()
@@ -180,8 +189,7 @@ def border_listener(self,border_t):
                 rest_border_timer(border_t) # New arrival reset the timer 
                 # This can be recived in case of drone arrive to the current spot or another border neigbors
                 positionX, positionY, state, id_value= self.decode_spot_info_message(msg)
-                self.update_neighbors_list(positionX, positionY, state, id_value )
-                border_t.remaining_time = border_t.timeout     
+                self.update_neighbors_list(positionX, positionY, state, id_value )   
                 all_moves= lead_local_balancing(self)
                 send_lead_local_balancing_message(self, all_moves)
 
@@ -318,6 +326,7 @@ def balancing(self, vehicle):
 
     # Border is the chef of the spot 
     if self.get_state()== Border or Irremovable_boarder:
+        construct_allowed_spots(self) # Create the allwoed spots
         border_process=Boarder_Timer()
         border_process.run()
     
