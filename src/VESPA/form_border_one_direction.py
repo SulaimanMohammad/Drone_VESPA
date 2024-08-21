@@ -388,6 +388,12 @@ def confirm_border_connectivity(self):
     
     return border_is_confirmed
 
+def circulate_msg_along_border(self, headr):
+    if self.get_state()== Border or self.get_state()==Irremovable_boarder: 
+        choose_spot_right_handed(self) 
+        if self.current_target_id is not None:
+            msg= build_border_message(self,headr,self.current_target_id, self.id)
+            send_msg(msg)
 
 def re_form_border(self):
     if not self.border_verified.is_set():
