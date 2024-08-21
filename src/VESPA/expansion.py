@@ -179,8 +179,8 @@ def set_priorities(self):
                         s["priority"]= random.uniform(s["drones_in"]* C + eps, (s["drones_in"]+1)*C)
             else:
                 s["priority"]= float("inf")
-        if self.allowed_spots: # This constraint should be used only one time after the balancing to avoid going behind the border again
-            self.allowed_spots=[]
+        # if self.allowed_spots: # This constraint should be used only one time after the balancing to avoid going behind the border again
+        #     self.allowed_spots=[]
 
 def find_priority(self):
     min_Priority = min(self.get_neighbor_list(), key=lambda x: x["priority"])["priority"]
@@ -341,10 +341,10 @@ def assign_spots(drones_id):
 ---------------------------------Mange allowed spots---------------------------------
 -------------------------------------------------------------------------------------
 '''
-def save_unoccupied_spots_around_border(self):
-    # Save the spots they are unoccupied to dont back behind border in the next expansion
-    if self.get_state()==Border or self.get_state()==Irremovable_boarder:
-        self.allowed_spots = [int(neighbor['name'][1:]) for neighbor in self.get_neighbor_list() if neighbor['drones_in'] == 0]
+# def save_unoccupied_spots_around_border(self):
+#     # Save the spots they are unoccupied to dont back behind border in the next expansion
+#     if self.get_state()==Border or self.get_state()==Irremovable_boarder:
+#         self.allowed_spots = [int(neighbor['name'][1:]) for neighbor in self.get_neighbor_list() if neighbor['drones_in'] == 0]
 
 
 def reset_allowed_spots(self):
@@ -360,6 +360,7 @@ def reset_allowed_spots(self):
 -------------------------------------------------------------------------------------
 '''
 
+
 def expand_and_form_border(self,vehicle):
     
     self.elected_droen_arrived= threading.Event()
@@ -368,7 +369,7 @@ def expand_and_form_border(self,vehicle):
         self.change_state_to(Owner)
 
     spatial_observation(self)
-    while self.get_state() !=Owner:
+    while self.get_state() !=Owner and  self.get_state() != Irremovable_boarder and self.get_state() != Irremovable:
         set_priorities(self)
         self.destination_spot= find_priority(self)
         self.elected_id= neighbors_election(self)
@@ -381,6 +382,13 @@ def expand_and_form_border(self,vehicle):
                 movement_done_msg= build_expan_elected(self.id)
                 send_msg(movement_done_msg)
                 
+                # in case of drones that are free and should move after baolance 
+                # then allowed spot need to considered in calculating pripoity only after the firt step no more 
+                # then it will be reset to full or they will miss spot to move to 
+                # while the previous border drone became owner so thier aloowed spot will stay same i
+                # in case they are still border in the formation the alllowed spot will be update based on the changes 
+                # if they became free then they will inherent another allowed spot from border in next plancing 
+                # note that the borde that became owner dornes need to use the allowed spot to for the formation of border 
                 if self.movemnt_from_border==False:
                    reset_allowed_spots(self)
                    self.movemnt_from_border=True
@@ -452,7 +460,7 @@ def first_exapnsion (self, vehicle):
     xbee_receive_message_thread.join() # stop listening to message
     self.expansion_stop.clear()
 
-    save_unoccupied_spots_around_border(self)
+    # save_unoccupied_spots_around_border(self)
     # Time guarantees that all drones begin the searching procedure simultaneously and synchronized.
     time.sleep(sync_time)
     self.search_for_target() # This is blocking until the end of movement
@@ -479,7 +487,7 @@ def further_expansion (self,vehicle):
     self.expansion_stop.clear()
 
     
-    save_unoccupied_spots_around_border(self)
+    # save_unoccupied_spots_around_border(self)
     # Time guarantees that all drones begin the searching procedure simultaneously and synchronized.
     time.sleep(sync_time)
     self.search_for_target() # This is blocking until the end of movement
