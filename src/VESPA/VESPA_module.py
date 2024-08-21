@@ -454,7 +454,7 @@ class Drone:
                 self.append_id_demanders_list(id_need_data)
             self.reset_timer_demand()
                 
-        if msg.startswith(ACK_header.encode()) and msg.endswith(b'\n'):
+        elif msg.startswith(ACK_header.encode()) and msg.endswith(b'\n'):
                 sender_id, target_id =self.decode_ACK_data_message(msg)
                 if target_id== self.id and sender_id in self.demanders_list: 
                     self.remove_id_demanders_list(sender_id)
@@ -468,8 +468,15 @@ class Drone:
                     self.demand_timer.join()
 
         # Receiving message containing data     
-        if msg.startswith(Response_header.encode()) and msg.endswith(b'\n'):
+        elif msg.startswith(Response_header.encode()) and msg.endswith(b'\n'):
             self.get_neighbors_info(msg)
+
+        elif msg.startswith(Handover_change_header.encode()) and msg.endswith(b'\n'):
+            decoded_msg= self.decode_spot_info_message(msg) # If the message is invalid decode will return [-1]
+            # Ack will be sent only if the message is correct, Otherwise the lack of ACK will force the target of resending data 
+            if len(decoded_msg)>1 : # No erorr of receiving
+                positionX, positionY, state, previous_state, id_value= decoded_msg
+                self.update_neighbors_list(positionX, positionY, state, previous_state,id_value)
 
     def system_is_ready(self):
         #Send message to GCS that system is ready 
@@ -725,7 +732,7 @@ class Drone:
             file.writelines(new_content)
 
     def inform_neighbors_of_change(self):
-        msg=self.build_spot_info_message(Response_header)
+        msg=self.build_spot_info_message(Handover_change_header)
         send_msg(msg)
 
     def get_neighbor_list(self):

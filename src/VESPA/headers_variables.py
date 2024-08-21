@@ -15,6 +15,7 @@ Movement_command= 'M'
 Calibration= 'C'
 Demand_header= 'D'
 Response_header= 'R'
+Handover_change_header= 'H'
 ACK_header= 'K'
 Info_header= 'N' # Send data to GCS
 
@@ -38,7 +39,7 @@ Emergecy_header= 'Y'
 
 # Create an array of headers
 headers = [
-    GCS_Started_header, Prepared_header, Inauguration_header,Info_header, Movement_command, Calibration, Demand_header, Response_header,ACK_header,
+    GCS_Started_header, Prepared_header, Inauguration_header,Info_header, Movement_command, Calibration, Demand_header, Response_header,Handover_change_header, ACK_header,
     Expan_header, Arrival_header, Identification_header, Identification_Caught_header, 
     Forming_border_header,Verify_border_header,
     Spanning_header, Local_balance_header,
