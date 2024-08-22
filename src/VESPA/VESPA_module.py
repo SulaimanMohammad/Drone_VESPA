@@ -985,9 +985,9 @@ class Drone:
         if destination_spot_info["drones_in"] >0: # The spot is not empty 
             alitudes_diff=[]
             for drone_id in destination_spot_info['drones_in_id']:
-                drone_in_spot_alitude= (drone_id*spacing)+ self.ref_alt
-                alitudes_diff.append( abs(drone_in_spot_alitude- get_altitude(vehicle))) # estimated alt of drones - acutal hight of current drone 
-            write_log_message(f"alitudes_diff {alitudes_diff}" )
+                drone_in_spot_altitude= ((drone_id-1)*spacing)+ self.ref_alt
+                alitudes_diff.append( abs(drone_in_spot_altitude- get_altitude(vehicle))) # estimated alt of drones - acutal hight of current drone 
+            write_log_message(f"Before movement the alitudes_diff with other drones is {alitudes_diff}" )
             if all(alts > 1.8*spacing for alts in alitudes_diff):
                 movement_velocity=speed_of_drone # can go in speed , there is enough place to move in 
             else: #risky gap should move slowly 
@@ -1071,6 +1071,7 @@ class Drone:
         The main program will first check if the drone is at altitude and armed, indicating that the Raspberry Pi stopped during the operation due to a fault. 
         If this is the case, an emergency return command will be sent to the drones, as the main program cannot restart the process normally without reapplying all the phases.
         '''
+        #TODO Read the recent log and get the old statue and in what phase the drone was and demand info of drones around and build neighbor list again 
         if get_altitude(vehicle)>2 or vehicle.armed:
             #return immediately because in case the communication is not activated so emergency stop will not be executed will and that risk not set RTL
             vehicle.mode = VehicleMode ("RTL") 

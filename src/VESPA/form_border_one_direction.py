@@ -209,9 +209,11 @@ def check_border_candidate_eligibility(self):
     for neighbor in self.get_neighbor_list():
         # This is in the further expansion is needed , where the candidate is decides based on the allowed_spots
         if self.get_previous_state()==Border or self.get_previous_state()==Irremovable_boarder:
-            if int(neighbor["name"][1:]) in self.allowed_spots:
+            if int(neighbor["name"][1:]) in self.allowed_spots: # Check only allowed spot since not allowed are behind the border and doesnt matter if they are empty 
                 if neighbor["drones_in"] == 0:
-                    unoccupied_spots_counter += 1               
+                    unoccupied_spots_counter += 1
+                else:
+                    continue                
         else: # the drone was not part of the previous border
            if neighbor["drones_in"] == 0: # spot also is not occupied
                unoccupied_spots_counter += 1
