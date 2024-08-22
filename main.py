@@ -68,7 +68,8 @@ def main():
     signal.signal(signal.SIGINT, lambda sig, frame: drone.interrupt(vehicle))
     # Wait until GCS is launched 
     wait_start_GCS()
-    create_log_file() # Create log of the process 
+    create_log_file() # Create log of the process
+    drone.check_VESPA_safety(vehicle) # check if a reboot occurred due to a sudden error and deal wit it as emergency 
     # Configure parameter of drone based on VESPA
     config_parameters(vehicle, drone)
     if check_armablity(vehicle):

@@ -927,7 +927,7 @@ class Drone:
 
     '''
     -------------------------------------------------------------------------------------
-    -------------------------------- Movement -------------------------------
+    ---------------------------------- Movement -----------------------------------------
     -------------------------------------------------------------------------------------
     '''
     def take_off_drone(self, vehicle):
@@ -1019,6 +1019,11 @@ class Drone:
         else: 
             self.change_state_to(Irremovable)
 
+    '''
+    -------------------------------------------------------------------------------------
+    ------------------------------- Emergency procedures --------------------------------
+    -------------------------------------------------------------------------------------
+    '''
 
     def return_home(self, vehicle):
         if vehicle.armed and (get_altitude(vehicle) >= 1): # Drone in the sky 
@@ -1059,7 +1064,17 @@ class Drone:
             write_log_message("Call interrupt")
             os.kill(os.getpid(), signal.SIGINT) # That will call interrupt which use vehicle object to return home  
 
-    
+    def check_VESPA_safety(self,vehicle):
+        '''
+        If the companion computer (e.g., Raspberry Pi) suddenly stops while the drones are in the air, 
+        the service will automatically restart upon reboot and run the main program. 
+        The main program will first check if the drone is at altitude and armed, indicating that the Raspberry Pi stopped during the operation due to a fault. 
+        If this is the case, an emergency return command will be sent to the drones, as the main program cannot restart the process normally without reapplying all the phases.
+        '''
+        if get_altitude(vehicle)>2 or vehicle.armed:
+            #return immediately because in case the communication is not activated so emergency stop will not be executed will and that risk not set RTL
+            vehicle.mode = VehicleMode ("RTL") 
+            self.emergency_stop()
 
     '''
     -------------------------------------------------------------------------------------
