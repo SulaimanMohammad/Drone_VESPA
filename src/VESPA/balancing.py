@@ -319,6 +319,7 @@ def search_to_border(self):
 '''
 
 def balancing(self, vehicle):
+    write_log_message(" -------- Balancing -------- ")
     # Confirm the border first if it doesnt exit reform it 
     border_well_confirmed= confirm_border_connectivity(self)
     if not border_well_confirmed: 
@@ -326,11 +327,13 @@ def balancing(self, vehicle):
 
     # Border is the chef of the spot 
     if self.get_state()== Border or Irremovable_boarder:
+        write_log_message(" -------- Balancing Border or Irremovable_boarde -------- ")
         construct_allowed_spots(self) # Create the allwoed spots
         border_process=Boarder_Timer()
         border_process.run()
     
     elif self.get_state() == Free: 
+        write_log_message(" -------- Balancing Free -------- ")
         xbee_receive_message_thread = threading.Thread(target=communication_balancing_free_drones, args=(self,vehicle,)) #pass the function reference and arguments separately to the Thread constructor.
         xbee_receive_message_thread.start()
         border_found= False

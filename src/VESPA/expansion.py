@@ -425,6 +425,7 @@ def expand_and_form_border(self,vehicle):
         self.send_data_message_station(vehicle, data=num_people_around)
            
 def first_exapnsion (self, vehicle):
+    write_log_message(" -------- First expansion -------- ")
     # Lance a thread to read messages continuously
     xbee_receive_message_thread = threading.Thread(target=expansion_listener, args=(self,vehicle)) #pass the function reference and arguments separately to the Thread constructor.
     xbee_receive_message_thread.start()
@@ -464,6 +465,7 @@ def first_exapnsion (self, vehicle):
     # It's essential to clear the buffer before the next phase to prevent any surplus.
     
 def further_expansion (self,vehicle):
+    write_log_message(" -------- Further expansion -------- ")
     # Lance a thread to read messages continuously
     xbee_receive_message_thread = threading.Thread(target=expansion_listener, args=(self,vehicle)) #pass the function reference and arguments separately to the Thread constructor.
     xbee_receive_message_thread.start()
