@@ -777,7 +777,7 @@ def move_body_PID(self, angl_dir, distance, emergency_message_flag ,ref_alt=9.7,
     previous_desired_vel_x=0
     estimated_acceleration=1
 
-    check_mode(self) 
+    set_to_move(self) 
     max_acceleration,max_deceleration= get_acceleration()
     lidar_scan=get_lidar_setting() 
     set_yaw_to_dir_PID( self, angl_dir)
@@ -921,7 +921,7 @@ def move_body_PID(self, angl_dir, distance, emergency_message_flag ,ref_alt=9.7,
 
 def go_to_altitude(self,alt):
     write_log_message(f"Go to reference altitude from {get_altitude(self)} to {alt}")
-    check_mode(self)
+    set_to_move(self)
     time.sleep(0.5) # stablize Z  
     max_vel_Z= 2 # 2m/s
     effective_alt=alt*0.95
@@ -966,7 +966,8 @@ def hover(self):
             self.mode    = VehicleMode("LOITER") #loiter mode and hover in your place 
 
 def set_to_move(self):
-    self.mode     = VehicleMode("GUIDED")
+    if self.mode.name != "GUIDED":
+        self.mode     = VehicleMode("GUIDED")
 
 def get_altitude(self):
     return self.location.global_relative_frame.alt
@@ -978,13 +979,6 @@ def set_altitude(self, target_altitude):
                                              target_altitude)
     # Command the vehicle to go to the target location
     self.simple_goto(target_location)
-
-def check_mode(self):
-    # Set mode to GUIDED
-    if self.mode.name != "GUIDED":
-        self.mode = VehicleMode("GUIDED")
-
-
 
 '''
 ---------------------------------------------------------------------------------------------------------
