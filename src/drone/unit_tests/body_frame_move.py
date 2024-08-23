@@ -44,7 +44,7 @@ angl_dir= 90#-45
 try:
     # angle dir in degree 
     move_body_PID(vehicle,angl_dir, distance, emergency_message_flag)
-    go_to_ref_altitude(vehicle)
+    go_to_altitude(vehicle,6)
     time.sleep(2)
     vehicle.mode = VehicleMode("GUIDED")
     vehicle.mode = VehicleMode ("LAND")

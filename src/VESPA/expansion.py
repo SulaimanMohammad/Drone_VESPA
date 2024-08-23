@@ -410,9 +410,9 @@ def expand_and_form_border(self,vehicle):
         if self.get_current_spot()["drones_in"]==1:
             write_log_message (" Drone is Alone Go to ref ")
             try: 
-                go_to_ref_altitude(vehicle,self.ref_alt)
+                go_to_altitude(vehicle,self.ref_alt)
             except:
-                write_log_message("An error occurred while go_to_ref_altitude")
+                write_log_message("An error occurred while go_to_altitude")
                 self.emergency_stop()
     else: 
         # Wait then reform the border 

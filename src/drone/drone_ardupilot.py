@@ -193,7 +193,9 @@ def arm_and_takeoff(self, aTargetAltitude):
             break
         time.sleep(1)
 
-
+def search_for_sink_tag(slef):
+    # That will help on taking off without GPS using compute vision 
+    pass
 
 '''
 ---------------------------------------------------------------------------------------------------------
@@ -917,25 +919,25 @@ def move_body_PID(self, angl_dir, distance, emergency_message_flag ,ref_alt=9.7,
 ---------------------------------------------------------------------------------------------------------
 '''
 
-def go_to_ref_altitude(self,ref_alt=9.7):
-    write_log_message(f"Go to reference altitude from {get_altitude(self)} to {ref_alt}")
+def go_to_altitude(self,alt):
+    write_log_message(f"Go to reference altitude from {get_altitude(self)} to {alt}")
     check_mode(self)
     time.sleep(0.5) # stablize Z  
     max_vel_Z= 2 # 2m/s
-    effective_ref_alt=ref_alt*0.95
-    error_ref= abs(get_altitude(self)- effective_ref_alt)/effective_ref_alt
-    if( get_altitude(self) > ref_alt * 0.95 ): # ref_alt is under, go downe 
+    effective_alt=alt*0.95
+    error_alt= abs(get_altitude(self)- effective_alt)/effective_alt
+    if( get_altitude(self) > alt * 0.95 ): # ref_alt is under, go downe 
         coeff= 1 # Go down 
-    elif( get_altitude(self) < ref_alt * 0.95 ): 
+    elif( get_altitude(self) < alt * 0.95 ): 
         coeff= -1  # Go up 
-    if error_ref <0.2:
+    if error_alt <0.2:
        desired_vel_Z=0 
     else: 
         start_control_timer=time.time()  # Initialize the timer outside the loop
         current_desired_vel_Z=0
-        while ( abs(get_altitude(self) - ref_alt)>=0.2 and (get_altitude(self) > ref_alt-1 or get_altitude(self) < ref_alt+1 )  ):
-            error_ref= abs(get_altitude(self)- effective_ref_alt)/effective_ref_alt
-            desired_vel_Z= coeff*round(error_ref* max_vel_Z,2) 
+        while ( abs(get_altitude(self) - alt)>=0.2 and (get_altitude(self) > alt-1 or get_altitude(self) < alt+1 )  ):
+            error_alt= abs(get_altitude(self)- effective_alt)/effective_alt
+            desired_vel_Z= coeff*round(error_alt* max_vel_Z,2) 
             if (abs(desired_vel_Z))<0.5:
                 desired_vel_Z=coeff*0.5
             current_time = time.time()
@@ -946,9 +948,8 @@ def go_to_ref_altitude(self,ref_alt=9.7):
         # Ensure stop 
         send_control_body(self, 0, 0, 0)
         time.sleep(0.2)
-        send_control_body(self, 0, 0, 0)
-        
-    hover(self)
+        send_control_body(self, 0, 0, 0)   
+    hover(self) # stay stationary 
 
     
 def wait_and_hover(self, time_req):
@@ -961,7 +962,8 @@ def wait_and_hover(self, time_req):
 def hover(self):
     global simulation_dont_hover
     if not simulation_dont_hover:
-        self.mode    = VehicleMode("LOITER") #loiter mode and hover in your place 
+        if self.mode.name != "LOITER":
+            self.mode    = VehicleMode("LOITER") #loiter mode and hover in your place 
 
 def set_to_move(self):
     self.mode     = VehicleMode("GUIDED")
@@ -982,8 +984,6 @@ def check_mode(self):
     if self.mode.name != "GUIDED":
         self.mode = VehicleMode("GUIDED")
 
-def search_for_sink_tag(slef):
-    pass 
 
 
 '''
