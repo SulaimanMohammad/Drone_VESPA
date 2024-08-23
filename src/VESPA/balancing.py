@@ -259,7 +259,7 @@ def communication_balancing_free_drones(self,vehicle):
             elif msg.startswith(Local_balance_header.encode()) and msg.endswith(b'\n'):
                 rec_id,destination= self.decode_local_movement_message(msg)
                 if rec_id == self.id: # Current drone is targeted
-                    self.move_to_spot(vehicle, destination)
+                    self.move_to_spot(vehicle, destination) # Blocking until the movement and sould go to drone alt since it was on ref after expansion is done
                     data_msg= self.build_spot_info_message(Arrival_header)
                     send_msg(data_msg)
 

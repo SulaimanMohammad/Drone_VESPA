@@ -999,6 +999,7 @@ class Drone:
     
 
     def move_to_spot(self,vehicle, destination_spot):
+        go_to_altitude(vehicle,self.drone_alt) # Be sure that you are on the right alt to move 
         movement_velocity= self.calculate_velocity_based_on_alt_differences(vehicle, destination_spot)
         self.update_location(destination_spot)
         set_to_move(vehicle)
