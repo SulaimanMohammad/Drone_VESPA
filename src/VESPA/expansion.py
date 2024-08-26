@@ -133,7 +133,7 @@ def expansion_listener (self,vehicle):
             
             elif msg.startswith(Joint_drones_num_header.encode()) and msg.endswith(b'\n'):
                 num_drones_brodcasted= False
-                self.num_drones= decode_movement_command_message(msg)
+                self.num_drones= decode_identification_message(msg)
                 print(" number of drones :",self.num_drones )
                 if num_drones_brodcasted != True: 
                     brodacst_number_of_drones(self.num_drones)
