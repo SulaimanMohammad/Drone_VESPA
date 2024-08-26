@@ -1,5 +1,5 @@
 from .VESPA_module import *
-from .form_border_one_direction import confirm_border_connectivity, re_form_border, circulate_msg_along_border, build_border_message, decode_border_message, forward_broadcast_message
+from .form_border_one_direction import confirm_border_connectivity, re_form_border, circulate_msg_along_border, build_border_message, decode_border_message, forward_broadcast_message,reset_border_variables
 
 set_env(globals())
 
@@ -170,6 +170,7 @@ class Boarder_Timer:
         self.end_of_balancing.wait()
         border_t.local_balancing.clear()
         self.end_of_balancing.clear() 
+        reset_border_variables(self)
         border_listener.join() # stop listenning
 
 def border_listener(self,border_t):
