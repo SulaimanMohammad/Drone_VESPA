@@ -135,7 +135,7 @@ def expansion_listener (self,vehicle):
                 num_drones_brodcasted= False
                 self.num_drones= decode_identification_message(msg)
                 print(" number of drones :",self.num_drones )
-                if num_drones_brodcasted != True: 
+                if num_drones_brodcasted != True and self.id !=1: 
                     brodacst_number_of_drones(self.num_drones)
                     num_drones_brodcasted= True
 
