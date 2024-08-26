@@ -57,6 +57,7 @@ To set up a fleet of N drones, follow these steps:
         ```
     - Configure RPi to be used with pixhawk and VESAP
         ```bash
+            chmod +x rpi_setup.sh
             ./rpi_setup.sh
         ```
         This script call the followig scripts also:
