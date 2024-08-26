@@ -1,5 +1,6 @@
 #bash
 echo -e "\033[32m ------Configure Drone_VESPA parameters ------ \033[0m"
+sudo chmod +x setup_drone_info.sh
 ./setup_drone_info.sh
 
 echo -e "\033[32m ------Create service to start VESPA automatically upon booting ------ \033[0m"
