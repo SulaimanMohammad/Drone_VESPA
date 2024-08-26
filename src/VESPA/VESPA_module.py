@@ -154,6 +154,8 @@ class Drone:
         self.first_movement_command_received= False
         self.broadcasted_Identificatio=[]
         self.broadcasted_sink_handshake=[]
+        self.num_drones_brodcasted= False
+
         self.current_target_id=None
         self.current_target_id_lock=threading.Lock() 
         self.lock_state = threading.Lock()

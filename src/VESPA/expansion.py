@@ -132,12 +132,10 @@ def expansion_listener (self,vehicle):
                         send_msg(msg) 
             
             elif msg.startswith(Joint_drones_num_header.encode()) and msg.endswith(b'\n'):
-                num_drones_brodcasted= False
                 self.num_drones= decode_identification_message(msg)
                 print(" number of drones :",self.num_drones )
-                if num_drones_brodcasted != True and self.id !=1: 
-                    brodacst_number_of_drones(self.num_drones)
-                    num_drones_brodcasted= True
+                brodacst_number_of_drones(self, self.num_drones)
+                self.num_drones_brodcasted= True
 
             elif msg.startswith(Movement_command.encode()) and msg.endswith(b'\n'):
                 ids, spot, lon, lat= decode_movement_command_message(msg)
@@ -331,9 +329,11 @@ def update_initial_drones_around(self,found_id):
         reset_collect_drones_info_timer(self)
 
 
-def brodacst_number_of_drones(num_drones):
-    msg= build_identification_message(Joint_drones_num_header, num_drones)
-    send_msg(msg)
+def brodacst_number_of_drones(self,num_drones):
+    if self.num_drones_brodcasted != True:
+        msg= build_identification_message(Joint_drones_num_header, num_drones)
+        send_msg(msg)
+        self.num_drones_brodcasted= True 
 
 def sync_Identification(self):
     '''
@@ -487,7 +487,7 @@ def first_exapnsion (self, vehicle):
         write_log_message("Sink collect data")
         initialize_collect_drones_info_timer(self) # Sink waiting for the drones to make themselves known befor start
         if (len(self.collected_ids) +1)>=3:  # 3 drones needed including the sink, collected_ids contains id of other drones , sink not included 
-            brodacst_number_of_drones(len(self.collected_ids))
+            brodacst_number_of_drones(self, len(self.collected_ids))
             self.take_off_drone(vehicle)
             sink_movement_command(self,vehicle,self.collected_ids)
             # The end send message referes that all in position
