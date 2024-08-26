@@ -486,8 +486,9 @@ def first_exapnsion (self, vehicle):
     if self.id==1: # Sink:
         write_log_message("Sink collect data")
         initialize_collect_drones_info_timer(self) # Sink waiting for the drones to make themselves known befor start
-        if (len(self.collected_ids) +1)>=3:  # 3 drones needed including the sink, collected_ids contains id of other drones , sink not included 
-            brodacst_number_of_drones(self, len(self.collected_ids))
+        self.num_drones= len(self.collected_ids) +1
+        if (self.num_drones)>=3:  # 3 drones needed including the sink, collected_ids contains id of other drones , sink not included 
+            brodacst_number_of_drones(self, self.num_drones)
             self.take_off_drone(vehicle)
             sink_movement_command(self,vehicle,self.collected_ids)
             # The end send message referes that all in position
