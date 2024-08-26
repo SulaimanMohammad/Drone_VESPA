@@ -152,7 +152,8 @@ class Drone:
         # First movement messages 
         self.first_movement_command_broadcasted=[]
         self.first_movement_command_received= False
-
+        self.broadcasted_Identificatio=[]
+        self.broadcasted_sink_handshake=[]
         self.current_target_id=None
         self.current_target_id_lock=threading.Lock() 
         self.lock_state = threading.Lock()

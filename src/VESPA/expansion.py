@@ -114,24 +114,30 @@ def expansion_listener (self,vehicle):
                 break
 
             elif msg.startswith(Identification_header.encode()) and msg.endswith(b'\n'):
-                self.broadcasted_Identificatio=[]
                 rec_id= decode_identification_message(msg)
                 if self.id==1: # It is sink drone, check if the id of the drone is not saved if not save and send confirmation 
                     update_initial_drones_around(self,rec_id)
-                #else: # drone wiil broadcast the identification to ensure arriving 
-                #    if rec_id not in self.broadcasted_Identificatio:
-                #        self.broadcasted_Identificatio.append(rec_id)
-                #        send_msg(msg)
+                else: # drone will broadcast the identification to ensure arriving 
+                   if rec_id not in self.broadcasted_Identificatio:
+                       self.broadcasted_Identificatio.append(rec_id)
+                       send_msg(msg)
 
-            elif msg.startswith(Identification_Caught_header.encode()) and msg.endswith(b'\n'):
-                #self.broadcasted_sink_handshake=[]
+            elif msg.startswith(Identification_Caught_header.encode()) and msg.endswith(b'\n'):  
                 rec_id=decode_identification_message(msg)
                 if self.id==rec_id: # Message from the sink recognizes that the identification is arrived 
                     self.sink_handshake.set() 
-                #else: # drone wiil broadcast the Identification_Caught_header to ensure arriving 
-                #    if rec_id not in self.broadcasted_sink_handshake:
-                #       self.broadcasted_sink_handshake.append(rec_id)
-                       #send_msg(msg) 
+                else: # drone wiil broadcast the Identification_Caught_header to ensure arriving 
+                   if rec_id not in self.broadcasted_sink_handshake:
+                        self.broadcasted_sink_handshake.append(rec_id)
+                        send_msg(msg) 
+            
+            elif msg.startswith(Joint_drones_num_header.encode()) and msg.endswith(b'\n'):
+                num_drones_brodcasted= False
+                self.num_drones= decode_movement_command_message(msg)
+                print(" number of drones :",self.num_drones )
+                if num_drones_brodcasted != True: 
+                    brodacst_number_of_drones(self.num_drones)
+                    num_drones_brodcasted= True
 
             elif msg.startswith(Movement_command.encode()) and msg.endswith(b'\n'):
                 ids, spot, lon, lat= decode_movement_command_message(msg)
@@ -324,6 +330,11 @@ def update_initial_drones_around(self,found_id):
         send_msg(msg)
         reset_collect_drones_info_timer(self)
 
+
+def brodacst_number_of_drones(num_drones):
+    msg= build_identification_message(Joint_drones_num_header, num_drones)
+    send_msg(msg)
+
 def sync_Identification(self):
     '''
     Each drone that is not the sink will keep sending its ID until receiving a 
@@ -476,6 +487,7 @@ def first_exapnsion (self, vehicle):
         write_log_message("Sink collect data")
         initialize_collect_drones_info_timer(self) # Sink waiting for the drones to make themselves known befor start
         if (len(self.collected_ids) +1)>=3:  # 3 drones needed including the sink, collected_ids contains id of other drones , sink not included 
+            brodacst_number_of_drones(len(self.collected_ids))
             self.take_off_drone(vehicle)
             sink_movement_command(self,vehicle,self.collected_ids)
             # The end send message referes that all in position
