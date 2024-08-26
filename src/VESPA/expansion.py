@@ -97,7 +97,7 @@ def check_continuity_of_listening(self):
 def expansion_listener (self,vehicle):
 
     while check_continuity_of_listening(self):
-        try:
+        #try:
             '''
             Data-Driven retrieve_msg_from_buffer will continue reading and will break only wwhen data is available 
             in this way the listener will process the message upon arrival 
@@ -161,9 +161,9 @@ def expansion_listener (self,vehicle):
             elif msg.startswith(Verify_border_header.encode()) and msg.endswith(b'\n'):
                 verify_border(self,Verify_border_header,msg)
         
-        except:
-            write_log_message("Thread expansion_listener Interrupt received, stopping...")
-            self.emergency_stop()   
+        # except:
+        #     write_log_message("Thread expansion_listener Interrupt received, stopping...")
+        #     self.emergency_stop()   
                      
 '''
 -------------------------------------------------------------------------------------
