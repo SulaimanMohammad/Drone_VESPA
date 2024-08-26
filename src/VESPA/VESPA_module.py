@@ -148,7 +148,9 @@ class Drone:
         # Identification 
         self.collect_drones_info_timer_lock = threading.Lock()
         self.collected_ids=[] # The list that contains all the drones that participate in VESPA
-        self.sink_handshake= threading.Event() 
+        self.sink_handshake= threading.Event()
+        self.broadcasted_Identificatio=[]
+        self.broadcasted_sink_handshake=[]
         # First movement messages 
         self.first_movement_command_broadcasted=[]
         self.first_movement_command_received= False

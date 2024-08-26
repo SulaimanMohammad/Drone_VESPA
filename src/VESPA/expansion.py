@@ -114,13 +114,22 @@ def expansion_listener (self,vehicle):
                 break
 
             elif msg.startswith(Identification_header.encode()) and msg.endswith(b'\n'):
-                if self.id==1: # It is sink drone, check if the id of the drone is not saved if not save and send confirmation 
-                    update_initial_drones_around(self,msg)
+                rec_id= decode_identification_message(msg)
+                if self.id==1: # It is sink drone, check if the id of the drone is not saved, if not save and send confirmation 
+                    update_initial_drones_around(self,rec_id)
+                else: # Drone will re-broadcast the identification to ensure that signals of far drones reache sink 
+                   if rec_id not in self.broadcasted_Identificatio:
+                       self.broadcasted_Identificatio.append(rec_id)
+                       send_msg(msg)
 
             elif msg.startswith(Identification_Caught_header.encode()) and msg.endswith(b'\n'):
-                ids=decode_identification_message(msg)
-                if self.id==ids: # Message from the sink recognizes that the identification is arrived 
+                rec_id=decode_identification_message(msg)
+                if self.id==rec_id: # Message from the sink recognizes that the identification is arrived 
                     self.sink_handshake.set() 
+                else: # Other drones will re-broadcast the Identification_Caught_header to ensure sink's signal arrives the targeted drone ( in case it is far) 
+                   if rec_id not in self.broadcasted_sink_handshake:
+                        self.broadcasted_sink_handshake.append(rec_id)
+                        send_msg(msg) 
 
             elif msg.startswith(Movement_command.encode()) and msg.endswith(b'\n'):
                 ids, spot, lon, lat= decode_movement_command_message(msg)
@@ -301,10 +310,9 @@ def reset_collect_drones_info_timer(self):
     with self.collect_drones_info_timer_lock:
         self.remaining_collect_time=10 # wait to get ids of drones around  
 
-def update_initial_drones_around(self,msg):
+def update_initial_drones_around(self,found_id):
     # This function will be called by the listener thread 
     # No need for lock to update collected_ids becauset this list will be used by main thread only after the timer is up  
-    found_id= decode_identification_message(msg)
     if (found_id not in self.collected_ids) and (self.remaining_collect_time>=0):
         self.collected_ids.append(found_id)
         msg=build_identification_message(Identification_Caught_header, found_id)
