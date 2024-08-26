@@ -10,6 +10,14 @@ echo -e "\033[32m ------Create VESPA shell commands ------ \033[0m"
 sudo cp vespa /usr/local/bin
 sudo chmod +x /usr/local/bin/vespa
 
+echo -e "\033[32m ------Create service for Wifi provider upon booting ------ \033[0m"
+original_dir=$(pwd)
+cd ../src/Estimate_num_people
+sudo chmod +x create_disable_wifi_service.sh
+sudo chmod +x detect_wifi.sh
+sudo ./create_disable_wifi_service.sh || { echo "Script execution failed"; exit 1; }
+cd "$original_dir"
+
 # Set the text color to green
 echo -e "\033[32m ------ Upgrade system  ------ \033[0m"
 # Update and upgrade system packages
