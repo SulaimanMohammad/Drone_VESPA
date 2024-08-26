@@ -71,9 +71,18 @@ argent_warning_distance=$(awk -v x="$x" 'BEGIN{print int(x *10 *1.5 + 0.5)}')
 
 # Update the value in DBSCAN_lidar_3D.ino
 sed -i "s/#define argent_warning_distance .*/#define argent_warning_distance $argent_warning_distance/" $INO_PATH
-
 echo "Updated argent_warning_distance to $argent_warning_distance in ESP code"
 
+
+#------------------------------------------
+#-------set Spacing between drones --------
+#------------------------------------------
+# Calculate margin as Height * 3 and convert from cm to m
+margin=$(awk -v height="$drone_height" 'BEGIN{margin=height*3/100; print (margin < 2) ? 2 : margin}')
+cd "../src" || { echo "Failed to navigate to ../src directory"; exit 1; }
+# Update the spacing value in Operational_Data.txt
+sed -i "s/spacing=[0-9]*/spacing=$margin/" Operational_Data.txt
+echo "Spacing value updated to $margin in Operational_Data.txt"
 
 #------------------------------------------
 #------------ set id of drone -------------
