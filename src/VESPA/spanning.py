@@ -69,7 +69,8 @@ def path_around_exist(self):
     
     if filtered_neighbors is not None:  # There are occupied neighbors
             neighbor_irremovable = next((neighbor for neighbor in filtered_neighbors if ( neighbor['states'] == Irremovable) ), None)
-    if neighbor_irremovable>0:
+            print( "neighbor_irremovable ", neighbor_irremovable)
+    if (neighbor_irremovable is not None) and neighbor_irremovable>0:
         return True
     else: 
         return False
@@ -397,13 +398,13 @@ def spanning(self, vehicle):
         # For Irremovables and Free drones that were changed  
         if (self.get_state()== Irremovable) or (self.get_state() == Irremovable_boarder):
             write_log_message(" -------- Spanning Irremovable or Irremovable_boarder -------- ")
-            self.demand_neighbors_info()
+            # self.demand_neighbors_info()
             build_path(self)
             # Time needed so the drone in the sink direction received msg,  changed its state and try to build its path 
             time.sleep(2) 
             # Send message to the sink about the corrdinates 
             # Not all Irremovable found targets, irremovable can be only part of the path
-            if self.target_detected:
+            if self.target_detected and len(self.drone_id_to_sink)>0:
                 self.send_data_message_station(vehicle, id_to_send_to= self.drone_id_to_sink[0]) 
 
         # Send a message that will travel from border to sink and that will annouce end of the pahse 

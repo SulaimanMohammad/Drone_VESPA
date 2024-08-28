@@ -327,7 +327,7 @@ def balancing(self, vehicle):
         write_log_message(" -------- Balancing Border or Irremovable_boarde -------- ")
         construct_allowed_spots(self) # Create the allwoed spots
         border_process=Boarder_Timer(self)
-        border_process.run()
+        border_process.run(self)
     
     elif self.get_state() == Free: 
         write_log_message(" -------- Balancing Free -------- ")

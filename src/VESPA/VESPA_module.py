@@ -1015,12 +1015,13 @@ class Drone:
         hover(vehicle)
 
     def search_for_target(self): # find if there is target in the area or not
+        pass 
         # move in the place and couver it to check if there is target or not
-        self.target_detected= True
-        if self.get_state() == Border:
-            self.change_state_to(Irremovable_boarder)
-        else: 
-            self.change_state_to(Irremovable)
+        if self.target_detected== True:
+            if self.get_state() == Border:
+                self.change_state_to(Irremovable_boarder)
+            else: 
+                self.change_state_to(Irremovable)
 
     '''
     -------------------------------------------------------------------------------------
