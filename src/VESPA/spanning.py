@@ -349,7 +349,7 @@ def find_close_neigboor_2border(self):
     print("neighbor_irremovable", neighbor_irremovable)
 
     if neighbor_irremovable== None: # No irremovable found, check what is the closest to the sink
-        print("neighbor_irremovable", int((max(filtered_neighbors, key=lambda x: x["distance"])["drones_in_id"])[0])
+        print("neighbor_irremovable", int((max(filtered_neighbors, key=lambda x: x["distance"])["drones_in_id"])[0]))
 
         return int((max(filtered_neighbors, key=lambda x: x["distance"])["drones_in_id"])[0]) # Retuen the id of the drone 
 
