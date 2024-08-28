@@ -137,7 +137,7 @@ class Sink_Timer:
                 send_msg(msg)
         self.VESPA_termination.wait()
         self.VESPA_termination.clear()
-        clear_buffer()
+        # clear_buffer()
         sink_t.message_thread.join() 
 
 def sink_listener(sink_t, self):
@@ -404,8 +404,9 @@ def spanning(self, vehicle):
         if (self.get_state()== Free) or (self.get_state()== Border):
             write_log_message(" -------- Spanning Free or Border -------- ")
             # Wait for spanning_listener to signal that state has been changed ( doesn't keep the CPU busy.)
-            while not listener_current_updated_irremovable.is_set() or ( not listener_end_of_spanning.is_set()):
-                time.sleep(1)
+            while (not listener_current_updated_irremovable.is_set()) or ( not listener_end_of_spanning.is_set()):
+                time.sleep(0.5)
+                print( listener_current_updated_irremovable)
             listener_current_updated_irremovable.clear() # need to be cleared for the next spanning 
         
         # For Irremovables and Free drones that were changed  
@@ -430,7 +431,7 @@ def spanning(self, vehicle):
         if self.get_state()==Irremovable:
             self.VESPA_termination.wait()
             self.VESPA_termination.clear()
-            clear_buffer()
+            # clear_buffer()
             xbee_thread.join() 
         
         else: # for free and border drones 
