@@ -133,7 +133,7 @@ class Sink_Timer:
                 # Send message to a drone that had Id= target_id
                 append_id_to_path( self.drone_id_to_border, target_id ) 
                 print("self.drone_id_to_border", self.drone_id_to_border)
-                msg= build_target_message(target_id[0])
+                msg= build_target_message(target_id)
                 send_msg(msg)
         self.VESPA_termination.wait()
         self.VESPA_termination.clear()
@@ -236,12 +236,15 @@ def spanning_listener(self):
             # Message of building the path 
             if msg.startswith(Spanning_header.encode()) and msg.endswith(b'\n'):
                 id_rec, data= decode_target_message(msg)       
+                print("Spanning_header", id_rec, data)
                 if id_rec == self.id :
                     if data==0:
                         if self.get_state()== Border: 
                             self.change_state_to(Irremovable_boarder)
+                            print("became Irremovable_boarder")
                         else: 
                             self.change_state_to(Irremovable)
+                            print("became Irremovable")
                         # Send message to the neighbors to inform the new changes 
                         msg= build_target_message(self.id)
                         send_msg(msg)
