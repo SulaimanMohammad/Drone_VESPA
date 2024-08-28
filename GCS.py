@@ -154,6 +154,7 @@ def collect_drones_ready_done():
       timer_count=0  
 
 def interrupt(Stop_flag):
+    print(" interrupt called ")
     Stop_flag.set()
     emergency_msg= build_emergency_message()
     send_msg(emergency_msg)

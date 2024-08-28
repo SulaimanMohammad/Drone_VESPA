@@ -133,6 +133,7 @@ def expansion_listener (self,vehicle):
 
             elif msg.startswith(Movement_command.encode()) and msg.endswith(b'\n'):
                 ids, spot, lon, lat= decode_movement_command_message(msg)
+                print( "rcive the end of first movement ")
                 if ids==-1 and spot==-1 and lon==0 and lat==0: # mean all drone are in sky
                     self.start_expanding.set()
                 else:
@@ -429,7 +430,8 @@ def expand_and_form_border(self,vehicle):
     
     if count_people_via_wifi: 
         write_log_message("Count number of pepole")
-        num_people_around= self.count_num_people(0.1,-100)
+        #num_people_around= self.count_num_people(0.1,-100)
+        num_people_around=0
         self.send_data_message_station(vehicle, data=num_people_around)
            
 def first_exapnsion (self, vehicle):
@@ -460,14 +462,14 @@ def first_exapnsion (self, vehicle):
     
     write_log_message("The first movement is done by all drones, start expansion")
     expand_and_form_border(self, vehicle)
-    time.sleep(30) #sleep to ensure all messages where processed by the listner 
+    time.sleep(10) #sleep to ensure all messages where processed by the listner 
     self.expansion_stop.set()
     xbee_receive_message_thread.join() # stop listening to message
     self.expansion_stop.clear()
 
     # Time guarantees that all drones begin the searching procedure simultaneously and synchronized.
-    time.sleep(sync_time)
-    self.search_for_target() # This is blocking until the end of movement
+    #time.sleep(sync_time)
+    #self.search_for_target() # This is blocking until the end of movement
     self.elected_id=None 
     # Since broadcast messages might still be circulating while retrieval has stopped, there could be leftover messages in the buffer.
     # It's essential to clear the buffer before the next phase to prevent any surplus.

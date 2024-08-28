@@ -123,9 +123,12 @@ class Sink_Timer:
         # Called when the timer reaches its timeout without being reset.
         write_log_message("Time's up! ")
         self.change_state_to(Irremovable) # The sink will always be irremovable
+        print("sink_t.message_counter",sink_t.message_counter)
+        print("not path_around_exist(self))",not path_around_exist(self))
         # No message received, thus the sink must build path to the border 
         if sink_t.message_counter==0 or (not path_around_exist(self)): 
             target_id= find_close_neigboor_2border(self)
+            print("self.drone_id_to_border", self.drone_id_to_border)
             if target_id != -1 : # No irremovable send msg to a drone to make it irremovable 
                 # Send message to a drone that had Id= target_id
                 append_id_to_path( self.drone_id_to_border, target_id ) 
