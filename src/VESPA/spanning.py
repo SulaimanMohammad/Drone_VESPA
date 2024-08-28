@@ -146,7 +146,7 @@ def sink_listener(sink_t, self):
      
     '''
     while check_continuity_of_listening(self): # the end is not reached , keep listenning
-        try: 
+
 
             msg= retrieve_msg_from_buffer(self.VESPA_termination) 
 
@@ -185,9 +185,7 @@ def sink_listener(sink_t, self):
 
             else: 
                 continue
-        except:
-            write_log_message("Thread sink_listener spanning Interrupt received, stopping...")
-            self.emergency_stop()   
+
                 
 
 def spanning_sink(self):
@@ -220,7 +218,7 @@ def spanning_listener(self):
     '''
     # Keep listening until reciving a end of the phase 
     while check_continuity_of_listening(self): 
-        try: 
+
 
             msg= retrieve_msg_from_buffer_spanning(self)
             
@@ -267,9 +265,6 @@ def spanning_listener(self):
             else: 
                 continue
 
-        except:
-            write_log_message("Thread spanning_listener Interrupt received, stopping...")
-            self.emergency_stop()   
 
 
 '''
