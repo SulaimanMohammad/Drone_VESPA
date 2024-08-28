@@ -115,6 +115,7 @@ def GCS_listener(num_drones,Stop_flag):
         msg= retrieve_msg_from_buffer(Stop_flag)
 
         if msg.startswith(Emergecy_header.encode()) and msg.endswith(b'\n'):
+            print(" recive emergency ")
             os.kill(os.getpid(), signal.SIGINT) # That will call interrupt which use vehicle object to return home
         
         elif msg.startswith(Prepared_header.encode()) and msg.endswith(b'\n'):

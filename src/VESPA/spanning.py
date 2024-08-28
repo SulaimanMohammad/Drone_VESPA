@@ -326,27 +326,33 @@ def find_close_neigboor_2sink(self):
   
 def find_close_neigboor_2border(self):
     neighbor_irremovable= None
-    
+    print("self.get_neighbor_list()", self.get_neighbor_list())
     reference_distance = self.get_neighbor_list()[0]['distance']
+    print("reference_distance", reference_distance)
 
     # Filter neighbors with distance from sink bigger than current spot and sort them
     sorted_neighbors = sorted(
     [neighbor for neighbor in  self.get_neighbor_list()[1:] if neighbor['distance'] > reference_distance],
     key=lambda x: x['distance'])
-    
+    print("sorted_neighbors", sorted_neighbors)
     # Extract the first 3 elements with the max distances (close to the border)
     three_max_neighbors = sorted_neighbors[:3]
-
+    print("three_max_neighbors", three_max_neighbors)
     # Filter the neighbor_list for objects with "drones_in" > 0 as it contains a drone in 
     filtered_neighbors = [neighbor for neighbor in three_max_neighbors if neighbor["drones_in"] > 0]
-    
+    print("filtered_neighbors", filtered_neighbors)
+
     # Find the neighbor with drone that is irremovable or irremovable- border because 
     # if there is a irremovable or irremovable-border there is no need to send message
     # Here a mutex needed in this operation to read  the state
     neighbor_irremovable = next((neighbor for neighbor in filtered_neighbors if ( Irremovable in neighbor['states'] or Irremovable_boarder in neighbor['states']) ), None)
+    print("neighbor_irremovable", neighbor_irremovable)
 
     if neighbor_irremovable== None: # No irremovable found, check what is the closest to the sink
+        print("neighbor_irremovable", int((max(filtered_neighbors, key=lambda x: x["distance"])["drones_in_id"])[0])
+
         return int((max(filtered_neighbors, key=lambda x: x["distance"])["drones_in_id"])[0]) # Retuen the id of the drone 
+
     else: # There is a irremovable drone in occupied neighbors but usually it is only one
         append_id_to_path(self.drone_id_to_border, neighbor_irremovable["drones_in_id"])
         return -1 
