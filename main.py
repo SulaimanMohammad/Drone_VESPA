@@ -76,7 +76,7 @@ def main():
         drone.system_is_ready() # Send message to GCS that system is ready and armable 
     wait_start_signal(drone) # Wait the start flag to initiate VESPA
     first_exapnsion(drone, vehicle)
-    spanning(drone)
+    spanning(drone,vehicle)
     balancing(drone, vehicle)
 
     while drone.check_termination():

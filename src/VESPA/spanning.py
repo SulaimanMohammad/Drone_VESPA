@@ -369,11 +369,13 @@ def build_path(self):
 ----------------------------------- Main function ----------------------------------
 -------------------------------------------------------------------------------------
 '''     
-def spanning(self, vehicle): 
+def spanning(self, vehicle):
+    self.demand_neighbors_info() 
+    print("drone state: ", self.get_state())
     write_log_message(" -------- Spanning -------- ")
     if self.id==1 and self.get_current_spot()["distance"]==0 : # if the drone is sink ( leader of the termination of the spaning phase)
         write_log_message(" -------- Spanning Sink-------- ")
-        self.demand_neighbors_info()
+        
         spanning_sink(self)
     
     else:
@@ -382,10 +384,10 @@ def spanning(self, vehicle):
 
         # Update neigboors info after the end of expansion and wait the data to be recived
         # Needed to find what neigbour that became irremvable due to finding target 
-        self.demand_neighbors_info()
+        # self.demand_neighbors_info()
 
         # Free drone wait for msg to become irremovable by another drone or wait broadcast from sink of finihing Spainning
-        if self.get_state()== Free or self.get_state()== Border:
+        if (self.get_state()== Free) or (self.get_state()== Border):
             write_log_message(" -------- Spanning Free or Border -------- ")
             # Wait for spanning_listener to signal that state has been changed ( doesn't keep the CPU busy.)
             while not listener_current_updated_irremovable.is_set() or ( not listener_end_of_spanning.is_set()):
