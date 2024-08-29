@@ -161,6 +161,7 @@ class Boarder_Timer:
         if all_moves==-1: # No Free drones around, then possible end of the algorithm 
            border_t.local_balancing.set() # If no drones around that still means local balancing, so both messages will be sent
            circulate_msg_along_border(self, Algorithm_termination_header)
+           time.sleep(10) # wait until th emssage circilate if you send immidatly thge balnce header thant can back fast and stop the listenze 
            circulate_msg_along_border(self,Balance_header) 
         else: 
             # Keep checking until all dones is distributed correctly
