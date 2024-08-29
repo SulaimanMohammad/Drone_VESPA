@@ -69,9 +69,11 @@ def main():
     # Wait until GCS is launched 
     wait_start_GCS()
     create_log_file() # Create log of the process
+    print( "check_VESPA_safety")
     drone.check_VESPA_safety(vehicle) # check if a reboot occurred due to a sudden error and deal wit it as emergency 
     # Configure parameter of drone based on VESPA
     config_parameters(vehicle, drone)
+    
     if check_armablity(vehicle):
         drone.system_is_ready() # Send message to GCS that system is ready and armable 
     wait_start_signal(drone) # Wait the start flag to initiate VESPA

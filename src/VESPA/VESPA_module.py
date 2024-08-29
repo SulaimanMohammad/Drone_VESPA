@@ -1077,6 +1077,7 @@ class Drone:
         '''
         #TODO Read the recent log and get the old statue and in what phase the drone was and demand info of drones around and build neighbor list again 
         if get_altitude(vehicle)>2 or vehicle.armed:
+            print( "vehicle.armed", vehicle.armed , "get_altitude(vehicle)>2",get_altitude(vehicle)>2 )
             #return immediately because in case the communication is not activated so emergency stop will not be executed will and that risk not set RTL
             vehicle.mode = VehicleMode ("RTL") 
             self.emergency_stop()
