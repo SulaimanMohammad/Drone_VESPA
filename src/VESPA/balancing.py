@@ -140,7 +140,7 @@ class Boarder_Timer:
         while True: 
             with border_t.lock_border:  # Acquire the lock
                 border_t.remaining_time -= 0.1
-                write_log_message(f"Remaining time for border_t.lock : {border_t.remaining_time:.2f} seconds")
+                #write_log_message(f"Remaining time for border_t.lock : {border_t.remaining_time:.2f} seconds")
                 if border_t.remaining_time <= 0:
                     border_t.time_up(self)
                     break
@@ -154,8 +154,8 @@ class Boarder_Timer:
         all_moves= lead_local_balancing(self)
         if all_moves==-1: # No Free drones around, then possible end of the algorithm 
            border_t.local_balancing.set() # If no drones around that still means local balancing, so both messages will be sent
-           circulate_msg_along_border(Algorithm_termination_header)
-           circulate_msg_along_border(Balance_header) 
+           circulate_msg_along_border(self, Algorithm_termination_header)
+           circulate_msg_along_border(self,Balance_header) 
         else: 
             # Keep checking until all dones is distributed correctly
             while len(all_moves) >0 : # there are drones need to be moved 
@@ -168,7 +168,7 @@ class Boarder_Timer:
             border_t.local_balancing.set() # Flag to identify local balancing
             # Allowed spots need to be sent in this stage,the thread of listining of free drone would joined after completing the circle 
             share_allowed_spots_with_free(self)
-            circulate_msg_along_border(Balance_header)
+            circulate_msg_along_border(self,Balance_header)
 
         self.end_of_balancing.wait()
         border_t.local_balancing.clear()
@@ -181,7 +181,7 @@ def border_listener(self,border_t):
     while check_continuity_of_listening(self): # the end is not reached , keep listenning 
         
 
-            msg= self.retrieve_msg_from_buffer(self.end_of_balancing) 
+            msg= retrieve_msg_from_buffer(self.end_of_balancing) 
             
             self.exchange_neighbors_info_communication(msg)
 
