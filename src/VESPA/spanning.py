@@ -77,13 +77,18 @@ def path_around_exist(self):
     
 
 def check_continuity_of_listening(self):
-    if self.get_state()==Irremovable:
-        if self.VESPA_termination.is_set():
-            return False
-    else:
-        if listener_end_of_spanning.is_set():
-            return False 
-    return True
+    # if self.get_state()==Irremovable:
+    #     if self.VESPA_termination.is_set():
+    #         return False
+    # else:
+    #     if listener_end_of_spanning.is_set():
+    #         return False 
+    # return True
+
+    if listener_end_of_spanning.is_set():
+        return False 
+    else: 
+        return True
 
 def retrieve_msg_from_buffer_spanning(self):
     if self.get_state()==Irremovable:

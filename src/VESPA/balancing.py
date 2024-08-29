@@ -133,6 +133,7 @@ class Boarder_Timer:
         border_t.message_thread = threading.Thread(target=border_listener, args=(self,border_t,))
         border_t.message_thread.start()
         self.end_of_balancing= threading.Event()
+        border_t.local_balancing= threading.Event()
 
     def run(border_t, self):
         while True: 
