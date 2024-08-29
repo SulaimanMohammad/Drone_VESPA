@@ -137,8 +137,9 @@ class Sink_Timer:
                 send_msg(msg)
         # listener_end_of_spanning.wait() 
         # listener_end_of_spanning.clear()
-        self.VESPA_termination.wait()
-        self.VESPA_termination.clear()
+        # sink should go also to plancin in case another will move over it and to be part of the circle of commio,nction in case it is border 
+        # self.VESPA_termination.wait()
+        # self.VESPA_termination.clear()
         # clear_buffer()
         sink_t.message_thread.join() 
 
