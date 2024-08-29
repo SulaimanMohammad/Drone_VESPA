@@ -65,7 +65,7 @@ def build_shared_allowed_spots_message(self):
     s0 = next(spot for spot in  self.get_neighbor_list() if spot["name"] == "s0")
     # Create a list to store the IDs of drones with 'free' state in s0
     targets_id = [drone_id for drone_id, state in zip(s0["drones_in_id"], s0["states"]) if state == Free]
-    if targets_id is not None:
+    if len(targets_id) >0 :
         max_byte_count_targets = max(self.determine_max_byte_size(num) for num in targets_id)
         # Start message with 'G', max byte count for targets_id, followed by the length of targets_id
         message = Guidance_header.encode() 
