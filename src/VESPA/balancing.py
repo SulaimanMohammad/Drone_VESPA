@@ -34,7 +34,7 @@ def decode_local_movement_message(message):
 def lead_local_balancing(self):
     No_free_drone=None 
     # Extract the 'free' drone IDs in s0
-    s0 = next(spot for spot in self.self.get_neighbor_list() if spot["name"] == "s0")
+    s0 = next(spot for spot in self.get_neighbor_list() if spot["name"] == "s0")
     s0_free_ids = sorted([s0['drones_in_id'][idx] for idx, state in enumerate(s0["states"]) if state == Free])
     if s0_free_ids==0:
         No_free_drone=1 

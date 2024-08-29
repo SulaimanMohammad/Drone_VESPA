@@ -432,8 +432,8 @@ def spanning(self, vehicle):
 
 
         if self.get_state()==Irremovable or self.get_state()==Irremovable_boarder:
-            self.VESPA_termination.wait()
-            self.VESPA_termination.clear()
+            # self.VESPA_termination.wait()
+            # self.VESPA_termination.clear()
             # clear_buffer()
             xbee_thread.join() 
         
