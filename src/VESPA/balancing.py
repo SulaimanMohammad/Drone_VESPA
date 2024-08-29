@@ -1,5 +1,5 @@
 from .VESPA_module import *
-from .form_border_one_direction import confirm_border_connectivity, re_form_border, circulate_msg_along_border, build_border_message, decode_border_message, forward_broadcast_message,reset_border_variables
+from .form_border_one_direction import confirm_border_connectivity, re_form_border, circulate_msg_along_border, build_border_message, decode_border_message, forward_broadcast_message,reset_border_variables,choose_spot_right_handed
 
 set_env(globals())
 
@@ -135,7 +135,7 @@ class Boarder_Timer:
         border_t.message_thread = threading.Thread(target=border_listener, args=(self,border_t,))
         border_t.message_thread.start()
         border_t.local_balancing= threading.Event()
-
+        choose_spot_right_handed(self) 
     def run(border_t, self):
         while True: 
             with border_t.lock_border:  # Acquire the lock
@@ -218,7 +218,7 @@ def border_listener(self,border_t):
                         # This nedd to be set in both cases so the pahse finish to recognize the end of the algorithm 
                         self.end_of_balancing.set()
                     
-                    elif self.id == target_id: # Drone respond only if it is targeted
+                    elif target_id == self.id : # Drone respond only if it is targeted
                         if candidate == self.id and (self.get_state()== Border or self.get_state()== Irremovable_boarder):# the message recived contains the id of the drone means the message came back  
                             Broadcast_Msg= build_border_message(self,header_in_use, terminator_indecator, self.id)
                             send_msg(Broadcast_Msg) # Bordacst doesnt need to be waiting conformation 
