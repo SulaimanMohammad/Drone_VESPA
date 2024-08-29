@@ -209,7 +209,8 @@ def border_listener(self,border_t):
                 # The border drone will respond to the message only if it is in local balancing otherwise drop it 
                 if border_t.local_balancing.is_set():
                     # End of the balancing broadcast msg
-                    if target_id== terminator_indecator:                         
+                    if target_id== terminator_indecator:  
+                        print(" termination signal")                       
                         # Here any drone in any state needs to forward the boradcast message and rise ending flag  
                         forward_broadcast_message(self, header_in_use,candidate)
                         if header_in_use== Algorithm_termination_header:
@@ -219,7 +220,9 @@ def border_listener(self,border_t):
                         self.end_of_balancing.set()
                     
                     elif target_id == self.id : # Drone respond only if it is targeted
+
                         if candidate == self.id and (self.get_state()== Border or self.get_state()== Irremovable_boarder):# the message recived contains the id of the drone means the message came back  
+                            print(" signal came back ")                       
                             Broadcast_Msg= build_border_message(self,header_in_use, terminator_indecator, self.id)
                             send_msg(Broadcast_Msg) # Bordacst doesnt need to be waiting conformation 
                             if header_in_use== Algorithm_termination_header:
@@ -230,6 +233,7 @@ def border_listener(self,border_t):
                             
                         else: # The current drone received a message from a candidate border so it needs to forward it                                      
                             if self.get_state()== Border or self.get_state()== Irremovable_boarder:
+                                print(" signal to forward to target ", self.current_target_id )
                                 if self.current_target_id is not None:
                                     msg= build_border_message(self,header_in_use, self.current_target_id, candidate)
                                     send_msg(msg) 
