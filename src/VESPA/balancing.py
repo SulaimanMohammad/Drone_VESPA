@@ -205,6 +205,7 @@ def border_listener(self,border_t):
                     header_in_use= Algorithm_termination_header
 
                 sender_id, target_id, candidate= decode_border_message(msg)
+                print ("Algorithm_termination_header or ,Balance_header ",header_in_use, sender_id, target_id, candidate )
                 # The border drone will respond to the message only if it is in local balancing otherwise drop it 
                 if border_t.local_balancing.is_set():
                     # End of the balancing broadcast msg
