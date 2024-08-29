@@ -132,7 +132,6 @@ class Boarder_Timer:
         border_t.lock_border= threading.Lock()  
         border_t.message_thread = threading.Thread(target=border_listener, args=(self,border_t,))
         border_t.message_thread.start()
-        self.end_of_balancing= threading.Event()
         border_t.local_balancing= threading.Event()
 
     def run(border_t, self):
@@ -322,6 +321,7 @@ def search_to_border(self):
 
 def balancing(self, vehicle):
     write_log_message(" -------- Balancing -------- ")
+    self.end_of_balancing= threading.Event()
     # Confirm the border first if it doesnt exit reform it 
     border_well_confirmed= confirm_border_connectivity(self)
     if not border_well_confirmed: 

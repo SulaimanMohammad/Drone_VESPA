@@ -146,6 +146,7 @@ class Sink_Timer:
         # self.VESPA_termination.wait()
         # self.VESPA_termination.clear()
         # clear_buffer()
+        print("wait joining the listener ")
         sink_t.message_thread.join() 
 
 def sink_listener(sink_t, self):
@@ -181,11 +182,18 @@ def sink_listener(sink_t, self):
                         # Sink sends the end of spanning
                         end_msg= build_target_message(spanning_terminator)
                         send_msg(end_msg)
+                
+                elif id_rec == spanning_terminator: # Message sent by the sink announcing the end of spanning phase
+                    end_msg= build_target_message(spanning_terminator)
+                    send_msg(end_msg)
+                    listener_end_of_spanning.set()
+                    
                 else: # Recieved msg refer to changes in state to irrremovable in one of the nighbors
                     self.update_state_in_neighbors_list(id_rec, Irremovable)
                     # Save the ids of drone that is (irremovable) has path to border 
                     # All drones arounf the sink are to the border 
                     append_id_to_path( self.drone_id_to_border, id_rec)
+
 
             elif  msg.startswith(Info_header.encode()) and msg.endswith(b'\n'):
                 self.forward_data_message(msg, self.drone_id_to_sink[0])
@@ -399,6 +407,7 @@ def spanning(self, vehicle):
         write_log_message(" -------- Spanning Sink-------- ")
         
         spanning_sink(self)
+        print("finish the spanning ")
     
     else:
         xbee_thread = threading.Thread(target=spanning_listener, args=(self,))
