@@ -135,6 +135,8 @@ class Sink_Timer:
                 print("self.drone_id_to_border", self.drone_id_to_border)
                 msg= build_target_message(target_id)
                 send_msg(msg)
+        # listener_end_of_spanning.wait() 
+        # listener_end_of_spanning.clear()
         self.VESPA_termination.wait()
         self.VESPA_termination.clear()
         # clear_buffer()
@@ -428,7 +430,7 @@ def spanning(self, vehicle):
             forward_confirm_msg(self,Border_sink_confirm)
 
 
-        if self.get_state()==Irremovable:
+        if self.get_state()==Irremovable or self.get_state()==Irremovable_boarder:
             self.VESPA_termination.wait()
             self.VESPA_termination.clear()
             # clear_buffer()

@@ -130,7 +130,7 @@ class Boarder_Timer:
         border_t.timeout = timeout
         border_t.remaining_time = border_t.timeout
         border_t.lock_border= threading.Lock()  
-        border_t.message_thread = threading.Thread(target=border_listener, args=(border_t,self,timeout,))
+        border_t.message_thread = threading.Thread(target=border_listener, args=(self,border_t,))
         border_t.message_thread.start()
         self.end_of_balancing= threading.Event()
 
@@ -140,7 +140,7 @@ class Boarder_Timer:
                 border_t.remaining_time -= 0.1
                 write_log_message(f"Remaining time for border_t.lock : {border_t.remaining_time:.2f} seconds")
                 if border_t.remaining_time <= 0:
-                    border_t.time_up(border_t,self)
+                    border_t.time_up(self)
                     break
             time.sleep(0.1)               
         
