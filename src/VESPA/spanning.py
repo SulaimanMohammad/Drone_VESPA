@@ -128,6 +128,7 @@ class Sink_Timer:
         # Called when the timer reaches its timeout without being reset.
         # Sink can be border 
         write_log_message("Time's up! ")
+        
         if self.get_state() == Border:
             self.change_state_to(Irremovable_boarder) # The sink will always be irremovable
         else:

@@ -38,7 +38,7 @@ def lead_local_balancing(self):
     print("so,", s0 )
     s0_free_ids = sorted([s0['drones_in_id'][idx] for idx, state in enumerate(s0["states"]) if state == Free])
     print("s0_free_ids", s0_free_ids )
-    if s0_free_ids==0:
+    if len(s0_free_ids)==0:
         No_free_drone=1 
 
     # Identify all spot with the "border" state but out of the s0 (the current spot),  List of neighbors without S0 
@@ -48,8 +48,9 @@ def lead_local_balancing(self):
     # For each "neighbor border" spot, calculate the difference in the number of "free" states with s0
     for spot in border_spots:
         spot_free_count = sum(1 for state in spot["states"] if state == Free)
+        print( "spot_free_count", spot_free_count)
         # Track if the S0 and the border neigbor are empty means partially there are no more free drone 
-        if No_free_drone != None and spot_free_count==0:
+        if spot_free_count==0:
             No_free_drone+=1            
         diff = len(s0_free_ids) - spot_free_count
         # If s0 has more 'free' drones than the "border" spot by more than 1, move the smallest "free" drone ID
@@ -217,12 +218,17 @@ def border_listener(self,border_t):
                     if target_id== terminator_indecator:  
                         print(" termination signal")                       
                         # Here any drone in any state needs to forward the boradcast message and rise ending flag  
-                        forward_broadcast_message(self, header_in_use,candidate)
+                        
                         if header_in_use== Algorithm_termination_header:
-                                print(" VESPA_termination.set() ")
-                                self.VESPA_termination.set()
-                        # This nedd to be set in both cases so the pahse finish to recognize the end of the algorithm 
-                        self.end_of_balancing.set()
+                                if lead_local_balancing(self)==-1:
+                                    print(" VESPA_termination.set() ")
+                                    self.VESPA_termination.set()
+                                    forward_broadcast_message(self, Algorithm_termination_header,candidate)
+                                    self.end_of_balancing.set()
+                        else:
+                            forward_broadcast_message(self, Balance_header,candidate)
+                            # This nedd to be set in both cases so the pahse finish to recognize the end of the algorithm 
+                            self.end_of_balancing.set()
                     
                     elif target_id == self.id : # Drone respond only if it is targeted
 
@@ -232,7 +238,6 @@ def border_listener(self,border_t):
                             send_msg(Broadcast_Msg) # Bordacst doesnt need to be waiting conformation 
                             if header_in_use== Algorithm_termination_header:
                                 print(" VESPA_termination.set() ")
-
                                 self.VESPA_termination.set()
                             self.end_of_balancing.set() 
                             
