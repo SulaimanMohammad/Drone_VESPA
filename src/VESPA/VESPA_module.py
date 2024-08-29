@@ -186,7 +186,7 @@ class Drone:
 
         self.Emergency_stop = threading.Event() # Flag in case a problem or abort is needed
         self.expansion_stop=  threading.Event() # Flage refer that the expansion is ended 
-        
+
         if uart:
             connect_xbee(xbee_serial_port, baud_rate)
         else:
@@ -923,6 +923,7 @@ class Drone:
         # if VESPA_termination is set that means the algorithm is done 
         # This should be used in while loop where VESPA is applied when this flag is not set 
         if self.VESPA_termination.is_set():
+            print("self.VESPA_termination", self.VESPA_termination )
             return False
         else: 
             return True

@@ -35,13 +35,16 @@ def lead_local_balancing(self):
     No_free_drone=None 
     # Extract the 'free' drone IDs in s0
     s0 = next(spot for spot in self.get_neighbor_list() if spot["name"] == "s0")
+    print("so,", s0 )
     s0_free_ids = sorted([s0['drones_in_id'][idx] for idx, state in enumerate(s0["states"]) if state == Free])
+    print("s0_free_ids", s0_free_ids )
     if s0_free_ids==0:
         No_free_drone=1 
 
     # Identify all spot with the "border" state but out of the s0 (the current spot),  List of neighbors without S0 
     border_spots = [spot for spot in  self.get_neighbor_list()[1:] if (Border or Irremovable_boarder) in spot["states"]]
     moves = []
+    print( "No_free_drone", No_free_drone)
     # For each "neighbor border" spot, calculate the difference in the number of "free" states with s0
     for spot in border_spots:
         spot_free_count = sum(1 for state in spot["states"] if state == Free)
@@ -55,7 +58,8 @@ def lead_local_balancing(self):
             destination_number = spot["name"][1:]  # Extract the number after "s"
             moves.append((drone_id_to_move, destination_number)) # append tuple of id , destination 
             diff -= 1
-
+    print( "No_free_drone", No_free_drone)
+    print( "len(border_spots)", len(border_spots))
     if No_free_drone == len(border_spots)+1: # If no drone found in the border neighbors and also the current border  
         moves=-1 
     return moves
@@ -152,6 +156,7 @@ class Boarder_Timer:
         # Ensure that balanced achived 
         self.demand_neighbors_info()
         all_moves= lead_local_balancing(self)
+        print( "all moves", all_moves)
         if all_moves==-1: # No Free drones around, then possible end of the algorithm 
            border_t.local_balancing.set() # If no drones around that still means local balancing, so both messages will be sent
            circulate_msg_along_border(self, Algorithm_termination_header)
@@ -174,7 +179,7 @@ class Boarder_Timer:
         border_t.local_balancing.clear()
         self.end_of_balancing.clear() 
         reset_border_variables(self)
-        border_listener.join() # stop listenning
+        border_t.message_thread.join() # stop listenning
 
 def border_listener(self,border_t):
     
@@ -357,4 +362,4 @@ def balancing(self, vehicle):
         self.end_of_balancing.wait()
         self.end_of_balancing.clear() 
     
-    xbee_receive_message_thread.join()
+        xbee_receive_message_thread.join()

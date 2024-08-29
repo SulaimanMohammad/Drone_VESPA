@@ -135,7 +135,7 @@ class Sink_Timer:
         print("sink_t.message_counter",sink_t.message_counter)
         print("not path_around_exist(self))",not path_around_exist(self))
 
-        if self.get_state()==  Irremovable_boarder:
+        if self.get_state()== Irremovable_boarder:
             end_msg= build_target_message(spanning_terminator)
             send_msg(end_msg)
         else:     
