@@ -134,22 +134,27 @@ class Sink_Timer:
             self.change_state_to(Irremovable) # The sink will always be irremovable
         print("sink_t.message_counter",sink_t.message_counter)
         print("not path_around_exist(self))",not path_around_exist(self))
-        # No message received, thus the sink must build path to the border 
-        if sink_t.message_counter==0 or (not path_around_exist(self)): 
-            target_id= find_close_neigboor_2border(self)
-            print("target_id", target_id)
-            if target_id != -1 : # No irremovable send msg to a drone to make it irremovable 
-                # Send message to a drone that had Id= target_id
-                append_id_to_path( self.drone_id_to_border, target_id ) 
-                print("self.drone_id_to_border", self.drone_id_to_border)
-                msg= build_target_message(target_id)
-                send_msg(msg)
-        # listener_end_of_spanning.wait() 
-        # listener_end_of_spanning.clear()
-        # sink should go also to plancin in case another will move over it and to be part of the circle of commio,nction in case it is border 
-        # self.VESPA_termination.wait()
-        # self.VESPA_termination.clear()
-        # clear_buffer()
+
+        if self.get_state()==  Irremovable_boarder:
+            end_msg= build_target_message(spanning_terminator)
+            send_msg(end_msg)
+        else:     
+            # No message received, thus the sink must build path to the border 
+            if sink_t.message_counter==0 or (not path_around_exist(self)): 
+                target_id= find_close_neigboor_2border(self)
+                print("target_id", target_id)
+                if target_id != -1 : # No irremovable send msg to a drone to make it irremovable 
+                    # Send message to a drone that had Id= target_id
+                    append_id_to_path( self.drone_id_to_border, target_id ) 
+                    print("self.drone_id_to_border", self.drone_id_to_border)
+                    msg= build_target_message(target_id)
+                    send_msg(msg)
+            # listener_end_of_spanning.wait() 
+            # listener_end_of_spanning.clear()
+            # sink should go also to plancin in case another will move over it and to be part of the circle of commio,nction in case it is border 
+            # self.VESPA_termination.wait()
+            # self.VESPA_termination.clear()
+            # clear_buffer()
         print("wait joining the listener ")
         sink_t.message_thread.join() 
 
