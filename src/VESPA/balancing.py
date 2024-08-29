@@ -162,6 +162,7 @@ class Boarder_Timer:
                 all_moves= lead_local_balancing(self)
 
             # Moves =0, meaning local balance is achived
+            print(" set locacl plancing ")
             border_t.local_balancing.set() # Flag to identify local balancing
             # Allowed spots need to be sent in this stage,the thread of listining of free drone would joined after completing the circle 
             share_allowed_spots_with_free(self)
@@ -209,6 +210,7 @@ def border_listener(self,border_t):
                         # Here any drone in any state needs to forward the boradcast message and rise ending flag  
                         forward_broadcast_message(self, header_in_use,candidate)
                         if header_in_use== Algorithm_termination_header:
+                                print(" VESPA_termination.set() ")
                                 self.VESPA_termination.set()
                         # This nedd to be set in both cases so the pahse finish to recognize the end of the algorithm 
                         self.end_of_balancing.set()
@@ -218,6 +220,8 @@ def border_listener(self,border_t):
                             Broadcast_Msg= build_border_message(self,header_in_use, terminator_indecator, self.id)
                             send_msg(Broadcast_Msg) # Bordacst doesnt need to be waiting conformation 
                             if header_in_use== Algorithm_termination_header:
+                                print(" VESPA_termination.set() ")
+
                                 self.VESPA_termination.set()
                             self.end_of_balancing.set() 
                             
