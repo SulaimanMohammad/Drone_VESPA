@@ -126,8 +126,12 @@ class Sink_Timer:
 
     def time_up(sink_t,self):
         # Called when the timer reaches its timeout without being reset.
+        # Sink can be border 
         write_log_message("Time's up! ")
-        self.change_state_to(Irremovable) # The sink will always be irremovable
+        if self.get_state() == Border:
+            self.change_state_to(Irremovable_boarder) # The sink will always be irremovable
+        else:
+            self.change_state_to(Irremovable) # The sink will always be irremovable
         print("sink_t.message_counter",sink_t.message_counter)
         print("not path_around_exist(self))",not path_around_exist(self))
         # No message received, thus the sink must build path to the border 
@@ -187,7 +191,7 @@ def sink_listener(sink_t, self):
                     end_msg= build_target_message(spanning_terminator)
                     send_msg(end_msg)
                     listener_end_of_spanning.set()
-                    
+
                 else: # Recieved msg refer to changes in state to irrremovable in one of the nighbors
                     self.update_state_in_neighbors_list(id_rec, Irremovable)
                     # Save the ids of drone that is (irremovable) has path to border 
