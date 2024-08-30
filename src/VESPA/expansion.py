@@ -468,6 +468,13 @@ def first_exapnsion (self, vehicle):
     # Time guarantees that all drones begin the searching procedure simultaneously and synchronized.
     time.sleep(sync_time)
     self.search_for_target() # This is blocking until the end of movement
+    # At the end of research all drones go back to thier alt ( so irremovable after spanning will stay and that hight) which will help in avoidence during balancing movemnt 
+    try: 
+        go_to_altitude(vehicle,self.drone_alt)
+    except:
+        write_log_message("An error occurred while go_back_to_altitude")
+        self.emergency_stop()
+
     self.elected_id=None 
     # Since broadcast messages might still be circulating while retrieval has stopped, there could be leftover messages in the buffer.
     # It's essential to clear the buffer before the next phase to prevent any surplus.
