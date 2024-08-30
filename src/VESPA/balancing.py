@@ -152,7 +152,13 @@ class Boarder_Timer:
         all_moves= lead_local_balancing(self)
         if all_moves==-1: # No Free drones around, then possible end of the algorithm 
            border_t.local_balancing.set() # If no drones around that still means local balancing, so both messages will be sent
+           write_log_message("No free drones around possible end of VESPA need to check other border spots")
            circulate_msg_along_border(self, Algorithm_termination_header)
+           '''
+            wait until the message circulates if you send  
+            the balance header that can back fast and stop the listener before checking if other spots of the border don't have any free drones also.
+           '''
+           time.sleep(10) # wait until th message circilate if you send immidatly thge balnce header thant can back fast and stop the listenze 
            circulate_msg_along_border(self, Balance_header) 
         else: 
             # Keep checking until all dones is distributed correctly
@@ -165,7 +171,10 @@ class Boarder_Timer:
             border_t.local_balancing.set() # Flag to identify local balancing
             # Allowed spots need to be sent in this stage,the thread of listining of free drone would joined after completing the circle 
             share_allowed_spots_with_free(self)
-            circulate_msg_along_border(self,Balance_header)
+            '''
+            This reflects that local balancing is achieved if it is received back which means all border spot has balance so the phase can end
+            '''
+            circulate_msg_along_border(self,Balance_header) 
 
         self.end_of_balancing.wait()
         border_t.local_balancing.clear()
