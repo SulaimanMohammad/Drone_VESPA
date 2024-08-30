@@ -14,13 +14,11 @@ def build_target_message(target_id, header=Spanning_header, data=0):
     max_byte_count = determine_max_byte_size (target_id)
     message = header.encode() + struct.pack('>B', max_byte_count)
     message += target_id.to_bytes(max_byte_count,  byteorder='big',signed=True)
-
     data_byte_size = determine_max_byte_size(data)
     # Convert to bytes using two's complement
     data_bytes = data.to_bytes(data_byte_size, byteorder='big', signed=True)
     message += struct.pack('>B', data_byte_size)
     message += data_bytes
-
     message += b'\n'
     return message
 
@@ -33,7 +31,6 @@ def decode_target_message(message):
     target_id = int.from_bytes(message[target_id_start:target_id_end], 'big',signed=True)
     # Extract the data size and data
     data_size_start = target_id_end
-
     data_size_end = data_size_start + 1  # Since data size is stored in 1 byte
     data_size = int.from_bytes(message[data_size_start:data_size_end], 'big')
     # Extract and convert the data bytes to integer
@@ -42,7 +39,6 @@ def decode_target_message(message):
     data_bytes = message[data_start:data_end]
     # Decode the data bytes as a signed integer
     data = int.from_bytes(data_bytes, 'big', signed=True)
-
     return target_id, data
 
 
@@ -107,24 +103,32 @@ class Sink_Timer:
     def time_up(sink_t,self):
         # Called when the timer reaches its timeout without being reset.
         write_log_message("Time's up for the sink counter! ")
-        # The sink will always be irremovable
+        # The sink will always be irremovable 
         if self.get_state() == Border:
             self.change_state_to(Irremovable_boarder) 
         else:
             self.change_state_to(Irremovable) 
-
-        # No message received, thus the sink must build path to the border 
-        if sink_t.message_counter==0 or (not path_around_exist(self)): 
-            write_log_message("No path message has been received and no path found")
-            target_id= find_close_neigboor_2border(self)
-            write_log_message(f"Build path from sink to border through drone {target_id}")
-            if target_id != -1 : # No irremovable send msg to a drone to make it irremovable 
-                # Send message to a drone that had Id= target_id
-                append_id_to_path( self.drone_id_to_border, target_id ) 
-                msg= build_target_message(target_id)
-                send_msg(msg)
+        
+        if self.get_state()== Irremovable_boarder:
+            # Sink is part of the border also then send end of spanning 
+            end_msg= build_target_message(spanning_terminator)
+            send_msg(end_msg)
+            listener_end_of_spanning.set()
+        else:
+            # No message received, thus the sink must build path to the border 
+            if sink_t.message_counter==0 or (not path_around_exist(self)): 
+                write_log_message("No path message has been received and no path found")
+                target_id= find_close_neigboor_2border(self)
+                write_log_message(f"Build path from sink to border through drone {target_id}")
+                if target_id != -1 : # No irremovable send msg to a drone to make it irremovable 
+                    # Send message to a drone that had Id= target_id
+                    append_id_to_path( self.drone_id_to_border, target_id ) 
+                    msg= build_target_message(target_id)
+                    send_msg(msg)
 
         sink_t.message_thread.join() 
+        # Sink should also go to the balancing phase in case another will move over it and be part of the circular communication in case it is a border
+
 
 def sink_listener(sink_t, self):
     '''
@@ -138,15 +142,11 @@ def sink_listener(sink_t, self):
     '''
     while check_continuity_of_listening(self): # the end is not reached , keep listenning
         try: 
-
             msg= retrieve_msg_from_buffer(listener_end_of_spanning) 
-
             if msg.startswith(Emergecy_header.encode()) and msg.endswith(b'\n'):
                 self.emergency_stop()
                 break
-
             self.exchange_neighbors_info_communication(msg)
-
             if msg.startswith(Spanning_header.encode()) and msg.endswith(b'\n'):
                 id_rec,data = decode_target_message(msg)
                 if id_rec == self.id: 
@@ -159,8 +159,6 @@ def sink_listener(sink_t, self):
                         # Sink sends the end of spanning
                         end_msg= build_target_message(spanning_terminator)
                         send_msg(end_msg)
-  
-
                 else: # Recieved msg refer to changes in state to irrremovable in one of the nighbors
                     self.update_state_in_neighbors_list(id_rec, Irremovable)
                     # Save the ids of drone that is (irremovable) has path to border 
@@ -207,16 +205,13 @@ def spanning_listener(self):
     '''
     # Keep listening until reciving a end of the phase 
     while check_continuity_of_listening(self): 
-        try: 
-
+        try:
             msg=retrieve_msg_from_buffer(listener_end_of_spanning)
             
             if msg.startswith(Emergecy_header.encode()) and msg.endswith(b'\n'):
                 self.emergency_stop()
                 break
-            
             self.exchange_neighbors_info_communication(msg)
-            
             # Message of building the path 
             if msg.startswith(Spanning_header.encode()) and msg.endswith(b'\n'):
                 id_rec, data= decode_target_message(msg)       
@@ -232,13 +227,11 @@ def spanning_listener(self):
                         msg= build_target_message(self.id)
                         send_msg(msg)
                         listener_current_updated_irremovable.set() # Flag that the state was changed to irremovable
-
                     elif data == Border_sink_confirm:
                         # It's a meaage flow from border to sink to verfiry the path and end the pahse
                         # verfiy if became already irremovable drone (part of the path)
                         if (self.get_state() == Irremovable):
                             forward_confirm_msg(self,Border_sink_confirm)
-
                 elif id_rec == spanning_terminator: # Message sent by the sink announcing the end of spanning phase
                     end_msg= build_target_message(spanning_terminator)
                     send_msg(end_msg)
@@ -249,10 +242,8 @@ def spanning_listener(self):
             
             elif  msg.startswith(Info_header.encode()) and msg.endswith(b'\n'):
                     self.forward_data_message(msg, self.drone_id_to_sink[0])
-
             else: 
                 continue
-
         except:
             write_log_message("Thread spanning_listener Interrupt received, stopping...")
             self.emergency_stop()   
@@ -268,24 +259,18 @@ def spanning_listener(self):
 def find_close_neigboor_2sink(self):
     neighbor_irremovable= None
     filtered_neighbors= None
-
     # The search should be only in the neighbor_list but since it contains also the data of s0 (current spot)
     # But because we need to find min of occupied distance, we should remove the s0 from the list 
-
     # Sort the neighbor_list based on the distance
     reference_distance = self.get_neighbor_list()[0]['distance']
-
     # Filter neighbors with distance from sink less than current spot and sort them
     sorted_neighbors = sorted(
     [neighbor for neighbor in self.get_neighbor_list()[1:] if neighbor['distance'] < reference_distance],
     key=lambda x: x['distance'])
-    
     # Extract the first 3 elements with the minimum distances
     three_min_neighbors = sorted_neighbors[:3]
-
     # Filter the neighbor_list with minimum distance the spot should be occupied "drones_in" > 0  
     filtered_neighbors = [neighbor for neighbor in three_min_neighbors if neighbor["drones_in"] > 0]
-
     if filtered_neighbors is not None:  # There are occupied neighbors
         # Find the neighbor with id of the drone that is irremovable 
         # if you arrive to irremovable 
@@ -302,36 +287,29 @@ def find_close_neigboor_2sink(self):
         # The case of no occupied neighbors close to sink around is very possible after further expansion
         # Check if any of the neighbors drones are preivious border 
         drone_previous_border = [neighbor for neighbor in self.get_neighbor_list() if ( neighbor["drones_in"] > 0 and neighbor["previous_state"]== Border or neighbor["previous_state"]== Irremovable_boarder ) ] 
-        
         # If there are many drones had a state border befor chose the one closer to sink 
         if drone_previous_border>1: 
             return int((min(drone_previous_border, key=lambda x: x["distance"])["drones_in_id"])[0])
         elif drone_previous_border==1:
             return (drone_previous_border["drones_in_id"])[0]
-
         # Founding no drone it is not possible, after the further exapnsion, the drones will be between the old border an dthe new one 
-  
-def find_close_neigboor_2border(self):
-    neighbor_irremovable= None
-    
-    reference_distance = self.get_neighbor_list()[0]['distance']
 
+
+def find_close_neigboor_2border(self):
+    neighbor_irremovable= None 
+    reference_distance = self.get_neighbor_list()[0]['distance']
     # Filter neighbors with distance from sink bigger than current spot and sort them
     sorted_neighbors = sorted(
     [neighbor for neighbor in  self.get_neighbor_list()[1:] if neighbor['distance'] > reference_distance],
     key=lambda x: x['distance'])
-    
     # Extract the first 3 elements with the max distances (close to the border)
     three_max_neighbors = sorted_neighbors[:3]
-
     # Filter the neighbor_list for objects with "drones_in" > 0 as it contains a drone in 
     filtered_neighbors = [neighbor for neighbor in three_max_neighbors if neighbor["drones_in"] > 0]
-    
     # Find the neighbor with drone that is irremovable or irremovable- border because 
     # if there is a irremovable or irremovable-border there is no need to send message
     # Here a mutex needed in this operation to read  the state
     neighbor_irremovable = next((neighbor for neighbor in filtered_neighbors if ( Irremovable in neighbor['states'] or Irremovable_boarder in neighbor['states']) ), None)
-
     if neighbor_irremovable== None: # No irremovable found, check what is the closest to the sink
         return int((max(filtered_neighbors, key=lambda x: x["distance"])["drones_in_id"])[0]) # Retuen the id of the drone 
     else: # There is a irremovable drone in occupied neighbors but usually it is only one
@@ -373,7 +351,6 @@ def spanning(self, vehicle):
         # Update neigboors info after the end of expansion and wait the data to be recived
         # Needed to find what neigbour that became irremvable due to finding target 
         self.demand_neighbors_info()
-
         # Free drone wait for msg to become irremovable by another drone or wait broadcast from sink of finihing Spainning
         if (self.get_state()== Free) or self.get_state()== Border:
             write_log_message(" -------- Spanning Free or Border -------- ")
@@ -400,7 +377,6 @@ def spanning(self, vehicle):
             while not self.drone_id_to_sink: # wait until list not empty 
                 time.sleep(1)
             forward_confirm_msg(self,Border_sink_confirm)
-
 
         listener_end_of_spanning.wait() 
         listener_end_of_spanning.clear()
