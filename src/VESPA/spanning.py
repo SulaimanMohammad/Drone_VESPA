@@ -236,12 +236,15 @@ def spanning_listener(self):
                     if data==0:
                         if self.get_state()== Border: 
                             self.change_state_to(Irremovable_boarder)
+                            write_log_message("Become Irremovable_boarder")
                         else: 
                             self.change_state_to(Irremovable)
+                            write_log_message("Become Irremovable")
                         # Send message to the neighbors to inform the new changes 
                         msg= build_target_message(self.id)
                         send_msg(msg)
-                        listener_current_updated_irremovable.set() # Flag that the state was changed to irremovable 
+                        listener_current_updated_irremovable.set() # Flag that the state was changed to irremovable
+
                     elif data == Border_sink_confirm:
                         # It's a meaage flow from border to sink to verfiry the path and end the pahse
                         # verfiy if became already irremovable drone (part of the path)
@@ -389,12 +392,13 @@ def spanning(self, vehicle):
         self.demand_neighbors_info()
 
         # Free drone wait for msg to become irremovable by another drone or wait broadcast from sink of finihing Spainning
-        if self.get_state()== Free or self.get_state()== Border:
+        if (self.get_state()== Free) or self.get_state()== Border:
             write_log_message(" -------- Spanning Free or Border -------- ")
             # Wait for spanning_listener to signal that state has been changed ( doesn't keep the CPU busy.)
-            while not listener_current_updated_irremovable.is_set() or ( not listener_end_of_spanning.is_set()):
-                time.sleep(1)
-            listener_current_updated_irremovable.clear() # need to be cleared for the next spanning 
+            while (not listener_current_updated_irremovable.is_set()) or ( not listener_end_of_spanning.is_set()):
+                time.sleep(0.2)
+            listener_current_updated_irremovable.clear() # need to be cleared for the next spanning
+            # Here if the drone became part of the path the second if statment will be true and it will find path to sink-border
         
         # For Irremovables and Free drones that were changed  
         if (self.get_state()== Irremovable) or (self.get_state() == Irremovable_boarder):
@@ -405,7 +409,7 @@ def spanning(self, vehicle):
             time.sleep(2) 
             # Send message to the sink about the corrdinates 
             # Not all Irremovable found targets, irremovable can be only part of the path
-            if self.target_detected:
+            if self.target_detected and len(self.drone_id_to_sink)>0:
                 self.send_data_message_station(vehicle, id_to_send_to= self.drone_id_to_sink[0]) 
 
         # Send a message that will travel from border to sink and that will annouce end of the pahse 
