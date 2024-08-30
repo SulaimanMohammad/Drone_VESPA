@@ -64,12 +64,10 @@ def append_id_to_path(list_to_append, ids):
             list_to_append.append(id)
 
 def path_around_exist(self):
-
     filtered_neighbors = [neighbor for neighbor in self.get_neighbor_list()[1:] if neighbor["drones_in"] > 0]
-    
     if filtered_neighbors is not None:  # There are occupied neighbors
             neighbor_irremovable = next((neighbor for neighbor in filtered_neighbors if ( neighbor['states'] == Irremovable) ), None)
-    if neighbor_irremovable>0:
+    if (neighbor_irremovable is not None) and neighbor_irremovable>0:
         return True
     else: 
         return False
@@ -112,7 +110,6 @@ class Sink_Timer:
         while True:
             with sink_t.lock_sink:  # Acquire the lock
                 sink_t.remaining_time -= 0.5
-                write_log_message(f"Remaining time: {sink_t.remaining_time:.2f} seconds")
                 if sink_t.remaining_time <= 0:
                     sink_t.time_up(self)
                     break
@@ -120,11 +117,13 @@ class Sink_Timer:
 
     def time_up(sink_t,self):
         # Called when the timer reaches its timeout without being reset.
-        write_log_message("Time's up! ")
+        write_log_message("Time's up for the sink counter! ")
         self.change_state_to(Irremovable) # The sink will always be irremovable
         # No message received, thus the sink must build path to the border 
         if sink_t.message_counter==0 or (not path_around_exist(self)): 
+            write_log_message("No path message has been received and no path found")
             target_id= find_close_neigboor_2border(self)
+            write_log_message(f"Build path from sink to border through drone {target_id}")
             if target_id != -1 : # No irremovable send msg to a drone to make it irremovable 
                 # Send message to a drone that had Id= target_id
                 append_id_to_path( self.drone_id_to_border, target_id ) 
