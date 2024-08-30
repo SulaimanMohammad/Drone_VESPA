@@ -78,7 +78,7 @@ def main():
 
     try:
         first_exapnsion(drone, vehicle)
-        spanning(drone)
+        spanning(drone,vehicle)
         balancing(drone, vehicle)
 
         while drone.check_termination():
