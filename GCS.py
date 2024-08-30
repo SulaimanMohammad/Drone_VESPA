@@ -21,7 +21,7 @@ from Xbee_module.xbee_usb import *
 # Shared variables
 timer_count = 0
 Drone_ready_lock = threading.Lock()
-
+Stop_flag= threading.Event()
 def find_xbee_serial_port():
     ports = serial.tools.list_ports.comports()
     for port in ports:
@@ -68,7 +68,33 @@ def decode_data_message(message):
     latitude = float(parts[3])
     data = float(parts[4])
     return id_target, sender_id, longitude, latitude, data 
-       
+
+def decode_border_message(message):
+    # Read the header (assuming it's a fixed length -- you'll need to define this)
+    header_length = 1  # Replace with the actual length of the header
+    message = message[header_length:]
+
+    # Read the max byte count
+    max_byte_count = message[0]
+    message = message[1:]
+
+    # Read the target id based on the max_byte_count
+    target_id_bytes = message[:max_byte_count]
+    target_id = int.from_bytes(target_id_bytes, byteorder='big', signed=True)
+    message = message[max_byte_count:]
+
+    # Read sender id
+    sender_id_bytes = message[:max_byte_count]
+    sender_id = int.from_bytes(sender_id_bytes, byteorder='big')
+    message = message[max_byte_count:]
+
+    # Read candidate id
+    candidate_id_bytes = message[:max_byte_count]
+    candidate_id = int.from_bytes(candidate_id_bytes, byteorder='big')
+    message = message[max_byte_count:]
+
+    return sender_id, target_id, candidate_id
+     
 def create_log_file():
     # Define the base log directory
     base_directory = 'mission_log'
@@ -132,6 +158,15 @@ def GCS_listener(num_drones,Stop_flag):
                 print("Drone_id ", sender_id," Longitude: ",longitude," Latitude: ", latitude, " Data: ", data)
                 write_to_csv(sender_id, longitude, latitude, data)
         
+        elif msg.startswith(Algorithm_termination_header.encode()) and msg.endswith(b'\n'):
+            sender_id, target_id, candidate= decode_border_message(msg)
+            if candidate==-1:
+                Stop_flag.set()
+                time.sleep(1)
+                close_xbee_port()
+                print("Serial connection closed.")
+                sys.exit(0)
+
 
 def initialize_collect_drones_ready_timer(num_drones):
     reset_collect_drones_ready_timer(num_drones)
@@ -174,7 +209,7 @@ def GCS_launched():
     time.sleep(0.5)
 
 def main():
-    Stop_flag= threading.Event()
+    
     xbee_serial_port = find_xbee_serial_port()
     try: 
         global GCS_id
