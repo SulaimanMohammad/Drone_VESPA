@@ -34,11 +34,10 @@ def decode_local_movement_message(message):
 def lead_local_balancing(self):
     No_free_drone=None 
     # Extract the 'free' drone IDs in s0
-    s0 = next(spot for spot in self.self.get_neighbor_list() if spot["name"] == "s0")
+    s0 = next(spot for spot in self.get_neighbor_list() if spot["name"] == "s0")
     s0_free_ids = sorted([s0['drones_in_id'][idx] for idx, state in enumerate(s0["states"]) if state == Free])
-    if s0_free_ids==0:
+    if len(s0_free_ids)==0:
         No_free_drone=1 
-
     # Identify all spot with the "border" state but out of the s0 (the current spot),  List of neighbors without S0 
     border_spots = [spot for spot in  self.get_neighbor_list()[1:] if (Border or Irremovable_boarder) in spot["states"]]
     moves = []
