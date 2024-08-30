@@ -107,7 +107,12 @@ class Sink_Timer:
     def time_up(sink_t,self):
         # Called when the timer reaches its timeout without being reset.
         write_log_message("Time's up for the sink counter! ")
-        self.change_state_to(Irremovable) # The sink will always be irremovable
+        # The sink will always be irremovable
+        if self.get_state() == Border:
+            self.change_state_to(Irremovable_boarder) 
+        else:
+            self.change_state_to(Irremovable) 
+
         # No message received, thus the sink must build path to the border 
         if sink_t.message_counter==0 or (not path_around_exist(self)): 
             write_log_message("No path message has been received and no path found")
@@ -359,7 +364,6 @@ def spanning(self, vehicle):
     write_log_message(" -------- Spanning -------- ")
     if self.id==1 and self.get_current_spot()["distance"]==0 : # if the drone is sink ( leader of the termination of the spaning phase)
         write_log_message(" -------- Spanning Sink-------- ")
-        self.demand_neighbors_info()
         spanning_sink(self)
     
     else:
