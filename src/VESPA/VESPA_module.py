@@ -1015,12 +1015,14 @@ class Drone:
         hover(vehicle)
 
     def search_for_target(self): # find if there is target in the area or not
+        pass 
+        # TODO implement the methode to detect if the drone find target ( like Computer vision) with movement in the Hexagon of the drone 
         # move in the place and couver it to check if there is target or not
-        self.target_detected= True
-        if self.get_state() == Border:
-            self.change_state_to(Irremovable_boarder)
-        else: 
-            self.change_state_to(Irremovable)
+        if self.target_detected== True:
+            if self.get_state() == Border:
+                self.change_state_to(Irremovable_boarder)
+            else: 
+                self.change_state_to(Irremovable)
 
     '''
     -------------------------------------------------------------------------------------
@@ -1076,6 +1078,7 @@ class Drone:
         '''
         #TODO Read the recent log and get the old statue and in what phase the drone was and demand info of drones around and build neighbor list again 
         if get_altitude(vehicle)>2 or vehicle.armed:
+            write_log_message("Safety failure, Drone is armed and in sky -> RTL")
             #return immediately because in case the communication is not activated so emergency stop will not be executed will and that risk not set RTL
             vehicle.mode = VehicleMode ("RTL") 
             self.emergency_stop()
