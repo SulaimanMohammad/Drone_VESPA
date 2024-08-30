@@ -1,6 +1,5 @@
 from .VESPA_module import *
-from .form_border_one_direction import confirm_border_connectivity, re_form_border, circulate_msg_along_border, build_border_message, decode_border_message, forward_broadcast_message,reset_border_variables
-
+from .form_border_one_direction import *
 set_env(globals())
 
 '''
@@ -134,7 +133,8 @@ class Boarder_Timer:
         border_t.message_thread = threading.Thread(target=border_listener, args=(self,border_t,))
         border_t.message_thread.start()
         border_t.local_balancing= threading.Event()
-        
+        choose_spot_right_handed(self) # For msg along the border can be forwarded 
+
     def run(border_t, self):
         while True: 
             with border_t.lock_border:  # Acquire the lock
@@ -205,11 +205,14 @@ def border_listener(self,border_t):
                 if border_t.local_balancing.is_set():
                     # End of the balancing broadcast msg
                     if target_id== terminator_indecator:                         
-                        # Here any drone in any state needs to forward the boradcast message and rise ending flag  
-                        forward_broadcast_message(self, header_in_use,candidate)
                         if header_in_use== Algorithm_termination_header:
-                                self.VESPA_termination.set()
-                        # This nedd to be set in both cases so the pahse finish to recognize the end of the algorithm 
+                                if lead_local_balancing(self)==-1:
+                                    write_log_message(" VESPA_termination is detected ")
+                                    self.VESPA_termination.set()
+                                    forward_broadcast_message(self, Algorithm_termination_header,candidate)
+                        else:
+                            forward_broadcast_message(self, Balance_header,candidate)
+                        # This is need to be set in both cases do the phase finishes and recognize the end of the algorithm 
                         self.end_of_balancing.set()
                     
                     elif target_id == self.id: # Drone respond only if it is targeted
