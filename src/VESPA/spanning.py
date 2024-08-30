@@ -74,22 +74,11 @@ def path_around_exist(self):
     
 
 def check_continuity_of_listening(self):
-    if self.get_state()==Irremovable:
-        if self.VESPA_termination.is_set():
-            return False
-    else:
-        if listener_end_of_spanning.is_set():
-            return False 
-    return True
-
-def retrieve_msg_from_buffer_spanning(self):
-    if self.get_state()==Irremovable:
-        msg= retrieve_msg_from_buffer(self.VESPA_termination)
-    else:
-        msg= retrieve_msg_from_buffer(listener_end_of_spanning)
-    return msg
-
-
+    if listener_end_of_spanning.is_set():
+        return False 
+    else: 
+        return True
+    
 '''
 -------------------------------------------------------------------------------------
 ---------------------------------- Sink Procedure------------------------------------
@@ -129,9 +118,7 @@ class Sink_Timer:
                 append_id_to_path( self.drone_id_to_border, target_id ) 
                 msg= build_target_message(target_id)
                 send_msg(msg)
-        self.VESPA_termination.wait()
-        self.VESPA_termination.clear()
-        clear_buffer()
+
         sink_t.message_thread.join() 
 
 def sink_listener(sink_t, self):
@@ -147,7 +134,7 @@ def sink_listener(sink_t, self):
     while check_continuity_of_listening(self): # the end is not reached , keep listenning
         try: 
 
-            msg= retrieve_msg_from_buffer(self.VESPA_termination) 
+            msg= retrieve_msg_from_buffer(listener_end_of_spanning) 
 
             if msg.startswith(Emergecy_header.encode()) and msg.endswith(b'\n'):
                 self.emergency_stop()
@@ -167,6 +154,8 @@ def sink_listener(sink_t, self):
                         # Sink sends the end of spanning
                         end_msg= build_target_message(spanning_terminator)
                         send_msg(end_msg)
+  
+
                 else: # Recieved msg refer to changes in state to irrremovable in one of the nighbors
                     self.update_state_in_neighbors_list(id_rec, Irremovable)
                     # Save the ids of drone that is (irremovable) has path to border 
@@ -175,12 +164,6 @@ def sink_listener(sink_t, self):
 
             elif  msg.startswith(Info_header.encode()) and msg.endswith(b'\n'):
                 self.forward_data_message(msg, self.drone_id_to_sink[0])
-            
-            elif msg.startswith(Algorithm_termination_header.encode()) and msg.endswith(b'\n'):
-                for id in self.drone_id_to_border:
-                    msg_border_sink= build_target_message(id,Algorithm_termination_header)
-                    send_msg(msg_border_sink)
-                self.VESPA_termination.set()
 
             else: 
                 continue
@@ -221,7 +204,7 @@ def spanning_listener(self):
     while check_continuity_of_listening(self): 
         try: 
 
-            msg= retrieve_msg_from_buffer_spanning(self)
+            msg=retrieve_msg_from_buffer(listener_end_of_spanning)
             
             if msg.startswith(Emergecy_header.encode()) and msg.endswith(b'\n'):
                 self.emergency_stop()
@@ -261,10 +244,6 @@ def spanning_listener(self):
             
             elif  msg.startswith(Info_header.encode()) and msg.endswith(b'\n'):
                     self.forward_data_message(msg, self.drone_id_to_sink[0])
-
-            elif msg.startswith(Algorithm_termination_header.encode()) and msg.endswith(b'\n'):
-                forward_confirm_msg(self,0, Algorithm_termination_header)
-                self.VESPA_termination.set()
 
             else: 
                 continue
@@ -419,18 +398,8 @@ def spanning(self, vehicle):
             forward_confirm_msg(self,Border_sink_confirm)
 
 
-        if self.get_state()==Irremovable:
-            self.VESPA_termination.wait()
-            self.VESPA_termination.clear()
-            clear_buffer()
-            xbee_thread.join() 
-        
-        else: # for free and border drones 
-            # Wait until reciving end to finish this phase 
-            listener_end_of_spanning.wait() 
-            listener_end_of_spanning.clear()
-            # Stop listener
-            clear_buffer()
-            xbee_thread.join() 
+        listener_end_of_spanning.wait() 
+        listener_end_of_spanning.clear()
+        xbee_thread.join() 
             
         
