@@ -64,18 +64,20 @@ def build_shared_allowed_spots_message(self):
     s0 = next(spot for spot in  self.get_neighbor_list() if spot["name"] == "s0")
     # Create a list to store the IDs of drones with 'free' state in s0
     targets_id = [drone_id for drone_id, state in zip(s0["drones_in_id"], s0["states"]) if state == Free]
-    max_byte_count_targets = max(self.determine_max_byte_size(num) for num in targets_id)
-    # Start message with 'G', max byte count for targets_id, followed by the length of targets_id
-    message = Guidance_header.encode() 
-    message += struct.pack('>BB', max_byte_count_targets, len(targets_id))
-    for num in targets_id:
-        message += num.to_bytes(max_byte_count_targets, 'big')
-    # Add length of allowed_spots
-    message += struct.pack('>B', len(self.allowed_spots))
-    for num in self.allowed_spots:
-        message += num.to_bytes(1, 'big')
-    message += b'\n'
-    
+    if len(targets_id) >0 :
+        max_byte_count_targets = max(self.determine_max_byte_size(num) for num in targets_id)
+        # Start message with 'G', max byte count for targets_id, followed by the length of targets_id
+        message = Guidance_header.encode() 
+        message += struct.pack('>BB', max_byte_count_targets, len(targets_id))
+        for num in targets_id:
+            message += num.to_bytes(max_byte_count_targets, 'big')
+        # Add length of allowed_spots
+        message += struct.pack('>B', len(self.allowed_spots))
+        for num in self.allowed_spots:
+            message += num.to_bytes(1, 'big')
+        message += b'\n'
+    else:
+        message=  b'\n'
     return message
 
 def decode_shared_allowed_spots_message(message):
