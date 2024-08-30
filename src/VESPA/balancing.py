@@ -130,7 +130,7 @@ class Boarder_Timer:
         border_t.timeout = timeout
         border_t.remaining_time = border_t.timeout
         border_t.lock_border= threading.Lock()  
-        border_t.message_thread = threading.Thread(target=border_listener, args=(border_t,self,timeout,))
+        border_t.message_thread = threading.Thread(target=border_listener, args=(border_t,self,))
         border_t.message_thread.start()
         self.end_of_balancing= threading.Event()
 
@@ -138,9 +138,8 @@ class Boarder_Timer:
         while True: 
             with border_t.lock_border:  # Acquire the lock
                 border_t.remaining_time -= 0.1
-                write_log_message(f"Remaining time for border_t.lock : {border_t.remaining_time:.2f} seconds")
                 if border_t.remaining_time <= 0:
-                    border_t.time_up(border_t,self)
+                    border_t.time_up(self)
                     break
             time.sleep(0.1)               
         
@@ -152,8 +151,8 @@ class Boarder_Timer:
         all_moves= lead_local_balancing(self)
         if all_moves==-1: # No Free drones around, then possible end of the algorithm 
            border_t.local_balancing.set() # If no drones around that still means local balancing, so both messages will be sent
-           circulate_msg_along_border(Algorithm_termination_header)
-           circulate_msg_along_border(Balance_header) 
+           circulate_msg_along_border(self, Algorithm_termination_header)
+           circulate_msg_along_border(self, Balance_header) 
         else: 
             # Keep checking until all dones is distributed correctly
             while len(all_moves) >0 : # there are drones need to be moved 
@@ -165,21 +164,20 @@ class Boarder_Timer:
             border_t.local_balancing.set() # Flag to identify local balancing
             # Allowed spots need to be sent in this stage,the thread of listining of free drone would joined after completing the circle 
             share_allowed_spots_with_free(self)
-            circulate_msg_along_border(Balance_header)
+            circulate_msg_along_border(self, Balance_header)
 
         self.end_of_balancing.wait()
         border_t.local_balancing.clear()
         self.end_of_balancing.clear() 
         reset_border_variables(self)
-        border_listener.join() # stop listenning
+        border_t.message_thread.join() # stop listenning # stop listenning
 
 def border_listener(self,border_t):
     
     while check_continuity_of_listening(self): # the end is not reached , keep listenning 
         try: 
 
-            msg= self.retrieve_msg_from_buffer(self.end_of_balancing) 
-            
+            msg= retrieve_msg_from_buffer(self.end_of_balancing) 
             self.exchange_neighbors_info_communication(msg)
 
             if msg.startswith(Emergecy_header.encode()) and msg.endswith(b'\n'):
@@ -213,7 +211,7 @@ def border_listener(self,border_t):
                         # This nedd to be set in both cases so the pahse finish to recognize the end of the algorithm 
                         self.end_of_balancing.set()
                     
-                    elif self.id == target_id: # Drone respond only if it is targeted
+                    elif target_id == self.id: # Drone respond only if it is targeted
                         if candidate == self.id and (self.get_state()== Border or self.get_state()== Irremovable_boarder):# the message recived contains the id of the drone means the message came back  
                             Broadcast_Msg= build_border_message(self,header_in_use, terminator_indecator, self.id)
                             send_msg(Broadcast_Msg) # Bordacst doesnt need to be waiting conformation 
@@ -243,7 +241,7 @@ def communication_balancing_free_drones(self,vehicle):
     while check_continuity_of_listening(self): # the end is not reached , keep listenning 
         try: 
 
-            msg= self.retrieve_msg_from_buffer(self.end_of_balancing) 
+            msg= retrieve_msg_from_buffer(self.end_of_balancing) 
             
             self.exchange_neighbors_info_communication(msg)
 
@@ -283,29 +281,23 @@ def communication_balancing_free_drones(self,vehicle):
 
 def search_to_border(self):
     border_found=False
-    
     #Find states with 'border'
-    border_states = [s for s in self.get_neighbor_list() if (Border or Irremovable_boarder) in s["states"]]
-    
+    border_states = [s for s in self.get_neighbor_list() if (Border or Irremovable_boarder) in s["states"]] 
     # If only one border state is found
     if len(border_states) == 1:
         border_found= True
         return border_found, int(border_states[0]["name"][1:]) # Return only the number of spot 
-    
     # If multiple border states are found
     elif len(border_states) > 1:
         # Sort by drones_in
         border_found= True
         border_states.sort(key=lambda x: x["drones_in"])
-        
         # Filter states with the least drones
         least_drones = border_states[0]["drones_in"]
         least_drones_states = [s for s in border_states if s["drones_in"] == least_drones]
-        
         # Choose randomly the states with the least drones if many have same numbers of drones in 
         chosen_spot= random.choice(least_drones_states)
         return border_found, int(chosen_spot["name"][1:])
-    
     # If no border state is found, find the spot with the maximum distance (close to the border)
     else:
         max_distance_spot = max( self.get_neighbor_list(), key=lambda x: x["distance"])
@@ -330,8 +322,8 @@ def balancing(self, vehicle):
     if self.get_state()== Border or Irremovable_boarder:
         write_log_message(" -------- Balancing Border or Irremovable_boarde -------- ")
         construct_allowed_spots(self) # Create the allwoed spots
-        border_process=Boarder_Timer()
-        border_process.run()
+        border_process=Boarder_Timer(self)
+        border_process.run(self)
     
     elif self.get_state() == Free: 
         write_log_message(" -------- Balancing Free -------- ")
