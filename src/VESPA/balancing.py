@@ -133,7 +133,6 @@ class Boarder_Timer:
         border_t.lock_border= threading.Lock()  
         border_t.message_thread = threading.Thread(target=border_listener, args=(border_t,self,))
         border_t.message_thread.start()
-        self.end_of_balancing= threading.Event()
 
     def run(border_t, self):
         while True: 
@@ -165,13 +164,13 @@ class Boarder_Timer:
             border_t.local_balancing.set() # Flag to identify local balancing
             # Allowed spots need to be sent in this stage,the thread of listining of free drone would joined after completing the circle 
             share_allowed_spots_with_free(self)
-            circulate_msg_along_border(self, Balance_header)
+            circulate_msg_along_border(self,Balance_header)
 
         self.end_of_balancing.wait()
         border_t.local_balancing.clear()
         self.end_of_balancing.clear() 
         reset_border_variables(self)
-        border_t.message_thread.join() # stop listenning # stop listenning
+        border_t.message_thread.join() # stop listenning 
 
 def border_listener(self,border_t):
     
@@ -314,6 +313,7 @@ def search_to_border(self):
 
 def balancing(self, vehicle):
     write_log_message(" -------- Balancing -------- ")
+    self.end_of_balancing= threading.Event()
     # Confirm the border first if it doesnt exit reform it 
     border_well_confirmed= confirm_border_connectivity(self)
     if not border_well_confirmed: 
@@ -342,4 +342,4 @@ def balancing(self, vehicle):
         self.end_of_balancing.wait()
         self.end_of_balancing.clear() 
     
-    xbee_receive_message_thread.join()
+        xbee_receive_message_thread.join()
