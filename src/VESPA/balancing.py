@@ -131,9 +131,10 @@ class Boarder_Timer:
         border_t.timeout = timeout
         border_t.remaining_time = border_t.timeout
         border_t.lock_border= threading.Lock()  
-        border_t.message_thread = threading.Thread(target=border_listener, args=(border_t,self,))
+        border_t.message_thread = threading.Thread(target=border_listener, args=(self,border_t,))
         border_t.message_thread.start()
-
+        border_t.local_balancing= threading.Event()
+        
     def run(border_t, self):
         while True: 
             with border_t.lock_border:  # Acquire the lock
@@ -282,7 +283,7 @@ def communication_balancing_free_drones(self,vehicle):
 def search_to_border(self):
     border_found=False
     #Find states with 'border'
-    border_states = [s for s in self.get_neighbor_list() if (Border or Irremovable_boarder) in s["states"]] 
+    border_states = [s for s in self.get_neighbor_list() if (Border or Irremovable_boarder) in s["states"]]
     # If only one border state is found
     if len(border_states) == 1:
         border_found= True
