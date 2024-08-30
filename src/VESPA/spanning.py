@@ -355,7 +355,7 @@ def spanning(self, vehicle):
         if (self.get_state()== Free) or self.get_state()== Border:
             write_log_message(" -------- Spanning Free or Border -------- ")
             # Wait for spanning_listener to signal that state has been changed ( doesn't keep the CPU busy.)
-            while (not listener_current_updated_irremovable.is_set()) or ( not listener_end_of_spanning.is_set()):
+            while (not listener_current_updated_irremovable.is_set()) and ( not listener_end_of_spanning.is_set()):
                 time.sleep(0.2)
             listener_current_updated_irremovable.clear() # need to be cleared for the next spanning
             # Here if the drone became part of the path the second if statment will be true and it will find path to sink-border
