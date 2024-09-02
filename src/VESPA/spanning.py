@@ -205,15 +205,15 @@ def spanning_listener(self):
     '''
     # Keep listening until reciving a end of the phase 
     while check_continuity_of_listening(self): 
-        try:
+        # try:
             msg=retrieve_msg_from_buffer(listener_end_of_spanning)
-            
+            self.exchange_neighbors_info_communication(msg)
+
             if msg.startswith(Emergecy_header.encode()) and msg.endswith(b'\n'):
                 self.emergency_stop()
                 break
-            self.exchange_neighbors_info_communication(msg)
             # Message of building the path 
-            if msg.startswith(Spanning_header.encode()) and msg.endswith(b'\n'):
+            elif msg.startswith(Spanning_header.encode()) and msg.endswith(b'\n'):
                 id_rec, data= decode_target_message(msg)       
                 if id_rec == self.id :
                     if data==0:
@@ -244,9 +244,9 @@ def spanning_listener(self):
                     self.forward_data_message(msg, self.drone_id_to_sink[0])
             else: 
                 continue
-        except:
-            write_log_message("Thread spanning_listener Interrupt received, stopping...")
-            self.emergency_stop()   
+        # except:
+        #     write_log_message("Thread spanning_listener Interrupt received, stopping...")
+        #     self.emergency_stop()   
 
 
 '''
