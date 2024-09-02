@@ -144,9 +144,9 @@ def retrieve_msg_from_buffer(stop_flag):
                 complete_message = message_buffer[header_index:newline_index + 1]
                 # Remove the processed message from the buffer
                 message_buffer = message_buffer[newline_index + 1:]
-                print( "buffer message is:", message_buffer)
                 # Check if the message complies with the required format  
                 if complete_message[0] in headers_ascii_values and complete_message.endswith(b'\n'):
+                    print( "buffer message is:", message_buffer)
                     if verify_checksum( complete_message): 
                         original_message = complete_message[:-2] + complete_message[-1:]
                         return original_message
