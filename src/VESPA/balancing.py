@@ -185,7 +185,7 @@ class Boarder_Timer:
 def border_listener(self,border_t):
     
     while check_continuity_of_listening(self): # the end is not reached , keep listenning 
-        try: 
+        #try: 
 
             msg= retrieve_msg_from_buffer(self.end_of_balancing) 
             self.exchange_neighbors_info_communication(msg)
@@ -249,9 +249,9 @@ def border_listener(self,border_t):
                                 
             else: # Drone is not targeted ( doesnt matter if it is free or candidate) thus it drops the message 
                 continue
-        except:
-            write_log_message("Thread border_listener Interrupt received, stopping...")
-            self.emergency_stop() 
+        # except:
+        #     write_log_message("Thread border_listener Interrupt received, stopping...")
+        #     self.emergency_stop() 
                 
 '''
 -------------------------------------------------------------------------------------
