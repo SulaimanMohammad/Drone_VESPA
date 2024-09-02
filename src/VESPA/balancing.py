@@ -215,9 +215,11 @@ def border_listener(self,border_t):
                     # End of the balancing broadcast msg
                     if target_id== terminator_indecator:                         
                         if header_in_use== Algorithm_termination_header: 
-                            if candidate != self.id :
+                            if candidate != self.id and  candidate != -1:
                                 if lead_local_balancing(self)==-1:# No free drones around 
-                                    forward_broadcast_message(self, Algorithm_termination_header,candidate)
+                                    write_log_message(" VESPA_termination is recived")
+                                    msg= build_border_message(self,header_in_use, self.current_target_id, candidate)
+                                    send_msg(msg)
                             elif candidate == self.id:
                                 write_log_message(" VESPA_termination is circulated and back, End of VESPA")
                                 self.VESPA_termination.set()
