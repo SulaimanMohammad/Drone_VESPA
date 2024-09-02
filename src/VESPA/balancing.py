@@ -205,47 +205,50 @@ def border_listener(self,border_t):
             elif ( msg.startswith(Balance_header.encode()) or msg.startswith(Algorithm_termination_header.encode()) ) and msg.endswith(b'\n') :
                 
                 if msg.startswith(Balance_header.encode()):
-                    header_in_use= Balance_header
-                else:
-                    header_in_use= Algorithm_termination_header
+                    if border_t.local_balancing.is_set():
+                        sender_id, target_id, candidate= decode_border_message(msg)
 
-                sender_id, target_id, candidate= decode_border_message(msg)
-                # The border drone will respond to the message only if it is in local balancing otherwise drop it 
-                if border_t.local_balancing.is_set():
-                    # End of the balancing broadcast msg
-                    if target_id== terminator_indecator:                         
-                        if header_in_use== Algorithm_termination_header: 
-                            if candidate != self.id and  candidate != -1:
-                                if lead_local_balancing(self)==-1:# No free drones around 
-                                    write_log_message(" VESPA_termination is recived")
-                                    msg= build_border_message(self,header_in_use, self.current_target_id, candidate)
-                                    send_msg(msg)
-                            elif candidate == self.id:
-                                write_log_message(" VESPA_termination is circulated and back, End of VESPA")
-                                self.VESPA_termination.set()
-                                forward_broadcast_message(self, Algorithm_termination_header,-1) # Announce the end
-                            elif candidate == -1:
-                                forward_broadcast_message(self, Algorithm_termination_header,-1)
-                                self.VESPA_termination.set()
-                        else:
-                            forward_broadcast_message(self, Balance_header,candidate)
-                        # This is need to be set in both cases do the phase finishes and recognize the end of the algorithm 
-                        self.end_of_balancing.set()
-                    
-                    elif target_id == self.id: # Drone respond only if it is targeted
-                        if candidate == self.id and (self.get_state()== Border or self.get_state()== Irremovable_boarder):# the message recived contains the id of the drone means the message came back  
-                            Broadcast_Msg= build_border_message(self,header_in_use, terminator_indecator, self.id)
+                        if  target_id != self.id and candidate != terminator_indecator: # The current drone received a message from a candidate border so it needs to forward it                                      
+                            if self.current_target_id is not None:
+                                msg= build_border_message(self,Balance_header, self.current_target_id, candidate)
+                                send_msg(msg) 
+
+                        elif target_id == self.id and candidate == self.id: # Drone respond only if it is targeted
+                            # the message recived contains the id of the drone means the message came back 
+                            Broadcast_Msg= build_border_message(self,Balance_header, terminator_indecator, self.id)
                             send_msg(Broadcast_Msg) # Bordacst doesnt need to be waiting conformation 
                             self.end_of_balancing.set() 
-                            
-                        else: # The current drone received a message from a candidate border so it needs to forward it                                      
-                            if self.get_state()== Border or self.get_state()== Irremovable_boarder:
-                                if self.current_target_id is not None:
-                                    msg= build_border_message(self,header_in_use, self.current_target_id, candidate)
-                                    send_msg(msg) 
+
+                        elif candidate== terminator_indecator:
+                            Broadcast_Msg= build_border_message(self,Balance_header, terminator_indecator, self.id)
+                            send_msg(Broadcast_Msg) # Bordacst doesnt need to be waiting conformation 
+                            self.end_of_balancing.set() 
+
+
+                elif msg.startswith(Algorithm_termination_header.encode()):
+                    if border_t.local_balancing.is_set():
+                        sender_id, target_id, candidate= decode_border_message(msg)
+                        if target_id != self.id and  candidate != terminator_indecator:
+                            if lead_local_balancing(self)==-1:# No free drones around 
+                                write_log_message(" VESPA_termination is recived from ", sender_id, "send to ", self.current_target_id)
+                                msg= build_border_message(self,Algorithm_termination_header, self.current_target_id, candidate)
+                                send_msg(msg)
+
+                        elif target_id == self.id  and candidate == self.id:
+                                write_log_message(" VESPA_termination is circulated and back, End of VESPA")
+                                self.VESPA_termination.set()
+                                self.end_of_balancing.set()
+                                forward_broadcast_message(self, Algorithm_termination_header,terminator_indecator) # Announce the end
+                        
+                        elif candidate == terminator_indecator:
+                                write_log_message(" Brodcast VESPA_termination End of VESPA")
+                                forward_broadcast_message(self, Algorithm_termination_header,terminator_indecator)
+                                self.VESPA_termination.set()
+                                self.end_of_balancing.set()
+        
                                 
-                    else: # Drone is not targeted ( doesnt matter if it is free or candidate) thus it drops the message 
-                        continue
+            else: # Drone is not targeted ( doesnt matter if it is free or candidate) thus it drops the message 
+                continue
         except:
             write_log_message("Thread border_listener Interrupt received, stopping...")
             self.emergency_stop() 
