@@ -340,6 +340,7 @@ def search_to_border(self):
 
 def balancing(self, vehicle):
     write_log_message(" -------- Balancing -------- ")
+    print(self.get_neighbor_list())
     self.end_of_balancing= threading.Event()
     # Confirm the border first if it doesnt exit reform it 
     border_well_confirmed= confirm_border_connectivity(self)
