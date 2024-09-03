@@ -152,7 +152,7 @@ def retrieve_msg_from_buffer(stop_flag):
                         original_message = complete_message[:-2] + complete_message[-1:]
                         return original_message
                     else: 
-                        #print( "complete_message is: NOT ked sume correct", complete_message)
+                        print( "complete_message is: NOT ked sume correct", complete_message)
                         break 
 
             # Short sleep to prevent high CPU usage
