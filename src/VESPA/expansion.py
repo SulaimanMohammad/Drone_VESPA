@@ -440,7 +440,7 @@ def first_exapnsion (self, vehicle):
     # Lance a thread to read messages continuously
     xbee_receive_message_thread = threading.Thread(target=expansion_listener, args=(self,vehicle)) #pass the function reference and arguments separately to the Thread constructor.
     xbee_receive_message_thread.start()
-    self.start_expanding= threading.Event()
+    
     self.elected_droen_arrived= threading.Event()
      # First movement started by commands of the sink
     if self.id==1: # Sink:

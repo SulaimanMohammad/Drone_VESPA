@@ -160,7 +160,7 @@ def GCS_listener(num_drones,Stop_flag):
         
         elif msg.startswith(Algorithm_termination_header.encode()) and msg.endswith(b'\n'):
             sender_id, target_id, candidate= decode_border_message(msg)
-            if candidate==-1:
+            if target_id==-1:
                 Stop_flag.set()
                 time.sleep(1)
                 close_xbee_port()
