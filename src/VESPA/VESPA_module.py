@@ -164,7 +164,6 @@ class Drone:
         self.VESPA_termination= threading.Event() 
         self.Forming_Border_Broadcast_REC= threading.Event()
         self.Forming_border_failed= threading.Event() # Flag used to stop the threads of forming border in case the failure of formation 
-        self.start_expanding= None
         self.demanders_list=[]
         self.demand_timer=None
         self.remaining_time_demand=None
