@@ -90,7 +90,7 @@ class Sink_Timer:
         sink_t.message_thread.start()
 
         # Needed to find what neigbour that became irremvable due to finding target
-        self.demand_neighbors_info() 
+        #self.demand_neighbors_info() 
     def run(sink_t, self):
         while True:
             with sink_t.lock_sink:  # Acquire the lock
@@ -350,7 +350,7 @@ def spanning(self, vehicle):
 
         # Update neigboors info after the end of expansion and wait the data to be recived
         # Needed to find what neigbour that became irremvable due to finding target 
-        self.demand_neighbors_info()
+        #self.demand_neighbors_info()
         # Free drone wait for msg to become irremovable by another drone or wait broadcast from sink of finihing Spainning
         if (self.get_state()== Free) or self.get_state()== Border:
             write_log_message(" -------- Spanning Free or Border -------- ")
@@ -363,7 +363,7 @@ def spanning(self, vehicle):
         # For Irremovables and Free drones that were changed  
         if (self.get_state()== Irremovable) or (self.get_state() == Irremovable_boarder):
             write_log_message(" -------- Spanning Irremovable or Irremovable_boarder -------- ")
-            self.demand_neighbors_info()
+            #self.demand_neighbors_info()
             build_path(self)
             # Time needed so the drone in the sink direction received msg,  changed its state and try to build its path 
             time.sleep(2) 
