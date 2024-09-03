@@ -148,9 +148,11 @@ def retrieve_msg_from_buffer(stop_flag):
                 if complete_message and complete_message[0] in headers_ascii_values and complete_message.endswith(b'\n'):
                     print( "complete_message is:", complete_message)
                     if verify_checksum( complete_message): 
+                        print( "complete_message is: checked sume correct", complete_message)
                         original_message = complete_message[:-2] + complete_message[-1:]
                         return original_message
                     else: 
+                        print( "complete_message is: NOT ked sume correct", complete_message)
                         break 
 
             # Short sleep to prevent high CPU usage
