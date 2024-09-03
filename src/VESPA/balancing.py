@@ -148,7 +148,7 @@ class Boarder_Timer:
         # Called when the timer reaches its timeout without being reset, meanning no more movment is done
         write_log_message("Time's up no more movement detected ! ")
         # Ensure that balanced achived 
-        self.demand_neighbors_info()
+        # self.demand_neighbors_info()
         all_moves= lead_local_balancing(self)
         if all_moves==-1: # No Free drones around, then possible end of the algorithm 
            border_t.local_balancing.set() # If no drones around that still means local balancing, so both messages will be sent

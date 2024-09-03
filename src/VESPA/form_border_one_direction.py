@@ -393,6 +393,7 @@ def confirm_border_connectivity(self):
 def circulate_msg_along_border(self, headr):
     if self.get_state()== Border or self.get_state()==Irremovable_boarder: 
         choose_spot_right_handed(self) 
+        print( "send along border to ",self.current_target_id)
         if self.current_target_id is not None:
             msg= build_border_message(self,headr,self.current_target_id, self.id)
             send_msg(msg)

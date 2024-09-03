@@ -463,13 +463,13 @@ def first_exapnsion (self, vehicle):
     
     write_log_message("The first movement is done by all drones, start expansion")
     expand_and_form_border(self, vehicle)
-    time.sleep(30) #sleep to ensure all messages where processed by the listner 
+    #time.sleep(30) #sleep to ensure all messages where processed by the listner 
     self.expansion_stop.set()
     xbee_receive_message_thread.join() # stop listening to message
     self.expansion_stop.clear()
 
     # Time guarantees that all drones begin the searching procedure simultaneously and synchronized.
-    time.sleep(sync_time)
+    #time.sleep(sync_time)
     self.search_for_target() # This is blocking until the end of movement
     # At the end of research all drones go back to thier alt ( so irremovable after spanning will stay and that hight) which will help in avoidence during balancing movemnt 
     try: 
