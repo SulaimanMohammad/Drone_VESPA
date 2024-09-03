@@ -153,6 +153,8 @@ def expansion_listener (self,vehicle):
                 #form_border_two_direction(self,Forming_border_header,msg)
             elif msg.startswith(Verify_border_header.encode()) and msg.endswith(b'\n'):
                 verify_border(self,Verify_border_header,msg)
+            else:
+                time.sleep(0.05)
         
         except:
             write_log_message("Thread expansion_listener Interrupt received, stopping...")
