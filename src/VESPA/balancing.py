@@ -219,7 +219,7 @@ def border_listener(self,border_t):
                             send_msg(Broadcast_Msg) # Bordacst doesnt need to be waiting conformation 
                             self.end_of_balancing.set() 
 
-                        elif candidate== terminator_indecator:
+                        elif target_id== terminator_indecator:
                             Broadcast_Msg= build_border_message(self,Balance_header, terminator_indecator, self.id)
                             send_msg(Broadcast_Msg) # Bordacst doesnt need to be waiting conformation 
                             self.end_of_balancing.set() 
@@ -240,7 +240,7 @@ def border_listener(self,border_t):
                                 self.end_of_balancing.set()
                                 forward_broadcast_message(self, Algorithm_termination_header,self.id) # Announce the end
                         
-                        elif candidate == terminator_indecator:
+                        elif target_id == terminator_indecator:
                                 write_log_message(" Brodcast VESPA_termination End of VESPA")
                                 forward_broadcast_message(self, Algorithm_termination_header,self.id)
                                 self.VESPA_termination.set()
