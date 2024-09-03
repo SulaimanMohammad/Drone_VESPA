@@ -141,7 +141,7 @@ def GCS_listener(num_drones,Stop_flag):
         msg= retrieve_msg_from_buffer(Stop_flag)
 
         if msg.startswith(Emergecy_header.encode()) and msg.endswith(b'\n'):
-            os.kill(os.getpid(), signal.SIGINT) # That will call interrupt which use vehicle object to return home
+            os.kill(os.getpid(), signal.SIGINT) # That will call interrupt which use vehicle
         
         elif msg.startswith(Prepared_header.encode()) and msg.endswith(b'\n'):
             # New system is ready, restart the timer to wait another system to be done 
@@ -161,11 +161,9 @@ def GCS_listener(num_drones,Stop_flag):
         elif msg.startswith(Algorithm_termination_header.encode()) and msg.endswith(b'\n'):
             sender_id, target_id, candidate= decode_border_message(msg)
             if target_id==-1:
-                Stop_flag.set()
-                time.sleep(1)
-                close_xbee_port()
-                print("Serial connection closed.")
-                sys.exit(0)
+                print("End of VESPA Recieved")
+                os.kill(os.getpid(), signal.SIGINT) # That will call interrupt which use vehicle
+
 
 
 def initialize_collect_drones_ready_timer(num_drones):
