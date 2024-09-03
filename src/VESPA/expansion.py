@@ -134,6 +134,7 @@ def expansion_listener (self,vehicle):
             elif msg.startswith(Movement_command.encode()) and msg.endswith(b'\n'):
                 ids, spot, lon, lat= decode_movement_command_message(msg)
                 if ids==-1 and spot==-1 and lon==0 and lat==0: # mean all drone are in sky
+                    print("recived end ", msg)
                     self.start_expanding.set()
                 else:
                     initial_movement(self, vehicle, msg, ids, spot, lon, lat)
