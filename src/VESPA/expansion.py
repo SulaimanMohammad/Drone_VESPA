@@ -328,7 +328,7 @@ def sync_Identification(self):
     while(not self.sink_handshake.is_set()):
         msg=build_identification_message(Identification_header, self.id)
         send_msg(msg)
-        time.sleep(2)
+        time.sleep(0.1)
 
 def assign_spots(drones_id):
     # Use round robin to assign a spot to each drone to maintain good equal distribution as possible
