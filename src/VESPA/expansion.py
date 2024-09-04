@@ -457,6 +457,7 @@ def first_exapnsion (self, vehicle):
     else:
         write_log_message("Send ID and wait for command")
         sync_Identification(self)
+        print( "now wait the flage f expand ")
         self.start_expanding.wait()
         self.start_expanding.clear()
     
