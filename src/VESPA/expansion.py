@@ -128,7 +128,7 @@ def expansion_listener (self,vehicle):
                     if not self.sink_handshake.is_set():
                         print("handshalr recived ")
                         self.sink_handshake.set() 
-                        
+
                 else: # Other drones will re-broadcast the Identification_Caught_header to ensure sink's signal arrives the targeted drone ( in case it is far) 
                    if rec_id not in self.broadcasted_sink_handshake:
                         self.broadcasted_sink_handshake.append(rec_id)
@@ -321,9 +321,13 @@ def update_initial_drones_around(self,found_id):
     if (found_id not in self.collected_ids) and (self.remaining_collect_time>=0):
         self.collected_ids.append(found_id)
         print ("id rec", found_id)
+        
+        reset_collect_drones_info_timer(self)
+
+def send_handshakes(self):
+    for found_id in self.collected_ids:
         msg=build_identification_message(Identification_Caught_header, found_id)
         send_msg(msg)
-        reset_collect_drones_info_timer(self)
 
 def sync_Identification(self):
     '''
@@ -449,6 +453,7 @@ def first_exapnsion (self, vehicle):
     if self.id==1: # Sink:
         write_log_message("Sink collect data")
         initialize_collect_drones_info_timer(self) # Sink waiting for the drones to make themselves known befor start
+        send_handshakes(self)
         if (len(self.collected_ids) +1)>=3:  # 3 drones needed including the sink, collected_ids contains id of other drones , sink not included 
             self.take_off_drone(vehicle)
             sink_movement_command(self,vehicle,self.collected_ids)
