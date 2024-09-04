@@ -15,7 +15,6 @@ parent_directory = os.path.abspath(os.path.join(os.path.dirname(__file__), './sr
 # Add the parent directory to sys.path
 sys.path.append(parent_directory)
 
-from VESPA.VESPA_module import determine_max_byte_size
 from VESPA.headers_variables import * 
 from Xbee_module.xbee_usb import * 
 
@@ -23,6 +22,23 @@ from Xbee_module.xbee_usb import *
 timer_count = 0
 Drone_ready_lock = threading.Lock()
 Stop_flag= threading.Event()
+
+
+def determine_max_byte_size(number):
+    if number< 0:
+        return (number.bit_length() + 7) // 8
+    else:
+        if number == 0:
+            return 1  # Handle zero explicitly
+        elif number <= 0xFF:
+            return 1
+        elif number <= 0xFFFF:
+            return 2
+        elif number <= 0xFFFFFF:
+            return 3
+        else:
+            return 4
+
 def find_xbee_serial_port():
     ports = serial.tools.list_ports.comports()
     for port in ports:

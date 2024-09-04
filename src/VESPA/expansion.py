@@ -312,8 +312,12 @@ def initialize_collect_drones_info_timer(self):
         time.sleep(0.1)
 
 def reset_collect_drones_info_timer(self):
-    with self.collect_drones_info_timer_lock:
-        self.remaining_collect_time=10 # wait to get ids of drones around  
+    if len(self.collected_ids)+1 < self.estimated_numer_drones:
+        with self.collect_drones_info_timer_lock:
+            self.remaining_collect_time=20 # wait to get ids of drones around 
+    else:
+        print( "most of number arrived ")
+        self.remaining_collect_time=2
 
 def update_initial_drones_around(self,found_id):
     # This function will be called by the listener thread 
@@ -321,7 +325,6 @@ def update_initial_drones_around(self,found_id):
     if (found_id not in self.collected_ids) and (self.remaining_collect_time>=0):
         self.collected_ids.append(found_id)
         print ("id rec", found_id)
-        
         reset_collect_drones_info_timer(self)
 
 def send_handshakes(self):
