@@ -151,6 +151,7 @@ class Drone:
         self.sink_handshake= threading.Event()
         self.broadcasted_Identificatio=[]
         self.broadcasted_sink_handshake=[]
+        self.estimated_numer_drones=0
         # First movement messages 
         self.first_movement_command_broadcasted=[]
         self.first_movement_command_received= False
@@ -259,6 +260,19 @@ class Drone:
         id_bytes = msg[id_start_index:id_end_index]
         ids = int.from_bytes(id_bytes, 'big')
         return ids
+    
+    def decode_Start_VESPA_message(self, encoded_message):
+        header_size = 1  
+        demand_header = encoded_message[:header_size].decode()
+        # Extract the max_byte_count which is the next byte after the header
+        max_byte_count = struct.unpack('>B', encoded_message[header_size:header_size+1])[0]
+        # Extract the ID using the max_byte_count
+        num_drone_start_index = header_size + 1
+        num_drone_end_index = num_drone_start_index + max_byte_count
+        num_drone_bytes = encoded_message[num_drone_start_index:num_drone_end_index]
+        num_drone = int.from_bytes(num_drone_bytes, 'big')
+        return num_drone
+
 
     def build_emergency_message(self):
         message= Emergecy_header.encode()

@@ -15,6 +15,7 @@ parent_directory = os.path.abspath(os.path.join(os.path.dirname(__file__), './sr
 # Add the parent directory to sys.path
 sys.path.append(parent_directory)
 
+from VESPA.VESPA_module import determine_max_byte_size
 from VESPA.headers_variables import * 
 from Xbee_module.xbee_usb import * 
 
@@ -195,10 +196,11 @@ def interrupt(Stop_flag):
     print("Serial connection closed.")
     sys.exit(0)
 
-def wait_for_start():
+def wait_for_start(expected_num_drones):
     message = "All drones' systems are ready, When you are ready start VESPA by pressing enter"
     input(message)  # This will display the message and wait for the user to press Enter
-    msg= Inauguration_header.encode()+ b'\n'
+    max_byte_count = determine_max_byte_size(expected_num_drones)
+    msg= Inauguration_header.encode()+  struct.pack('>B', max_byte_count)+ expected_num_drones.to_bytes(max_byte_count, 'big')  +b'\n'
     send_msg(msg)
     print("Proceeding...")
 
@@ -229,7 +231,7 @@ def main():
     print("\nWaiting for signal that drones' systems are ready")
     initialize_collect_drones_ready_timer(num_drones)
     # After all the drone systems are ready, ask for start 
-    wait_for_start()
+    wait_for_start(num_drones)
 
     while not Stop_flag.is_set():
         time.sleep(0.1)
