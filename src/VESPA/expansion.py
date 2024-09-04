@@ -124,7 +124,8 @@ def expansion_listener (self,vehicle):
 
             elif msg.startswith(Identification_Caught_header.encode()) and msg.endswith(b'\n'):
                 rec_id=decode_identification_message(msg)
-                if self.id==rec_id: # Message from the sink recognizes that the identification is arrived 
+                if self.id==rec_id: # Message from the sink recognizes that the identification is arrived
+                    print("handshalr recived ")
                     self.sink_handshake.set() 
                 else: # Other drones will re-broadcast the Identification_Caught_header to ensure sink's signal arrives the targeted drone ( in case it is far) 
                    if rec_id not in self.broadcasted_sink_handshake:
@@ -317,6 +318,7 @@ def update_initial_drones_around(self,found_id):
     # No need for lock to update collected_ids becauset this list will be used by main thread only after the timer is up  
     if (found_id not in self.collected_ids) and (self.remaining_collect_time>=0):
         self.collected_ids.append(found_id)
+        print ("id rec", found_id)
         msg=build_identification_message(Identification_Caught_header, found_id)
         send_msg(msg)
         reset_collect_drones_info_timer(self)
@@ -329,7 +331,7 @@ def sync_Identification(self):
     while(not self.sink_handshake.is_set()):
         msg=build_identification_message(Identification_header, self.id)
         send_msg(msg)
-        time.sleep(0.1)
+        time.sleep(2)
 
 def assign_spots(drones_id):
     # Use round robin to assign a spot to each drone to maintain good equal distribution as possible
