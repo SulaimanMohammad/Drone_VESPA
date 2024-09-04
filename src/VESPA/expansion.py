@@ -125,8 +125,10 @@ def expansion_listener (self,vehicle):
             elif msg.startswith(Identification_Caught_header.encode()) and msg.endswith(b'\n'):
                 rec_id=decode_identification_message(msg)
                 if self.id==rec_id: # Message from the sink recognizes that the identification is arrived
-                    print("handshalr recived ")
-                    self.sink_handshake.set() 
+                    if not self.sink_handshake.is_set():
+                        print("handshalr recived ")
+                        self.sink_handshake.set() 
+                        
                 else: # Other drones will re-broadcast the Identification_Caught_header to ensure sink's signal arrives the targeted drone ( in case it is far) 
                    if rec_id not in self.broadcasted_sink_handshake:
                         self.broadcasted_sink_handshake.append(rec_id)
