@@ -215,8 +215,8 @@ def interrupt(Stop_flag):
 def wait_for_start(expected_num_drones):
     message = "All drones' systems are ready, When you are ready start VESPA by pressing enter"
     input(message)  # This will display the message and wait for the user to press Enter
-    max_byte_count = determine_max_byte_size(expected_num_drones)
-    msg= Inauguration_header.encode()+  struct.pack('>B', max_byte_count)+ expected_num_drones.to_bytes(max_byte_count, 'big')  +b'\n'
+    # use 2 byes to encode the numbers so the number of drones can arrive to 65535
+    msg= Inauguration_header.encode()+  struct.pack('>B', 2)+ expected_num_drones.to_bytes(2, 'big')  +b'\n'
     send_msg(msg)
     print("Proceeding...")
 
