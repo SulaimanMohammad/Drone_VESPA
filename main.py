@@ -44,6 +44,7 @@ def wait_start_signal(self):
     
         if msg.startswith(Inauguration_header.encode()) and msg.endswith(b'\n'):
             write_log_message("Start VESPA receivd ")
+            self.estimated_numer_drones=self.decode_Start_VESPA_message(msg)
             send_msg(msg) # Reforward the message to the other drones in case they are far from GCS 
             start_received=False
 
@@ -72,6 +73,7 @@ def main():
     drone.check_VESPA_safety(vehicle) # check if a reboot occurred due to a sudden error and deal wit it as emergency 
     # Configure parameter of drone based on VESPA
     config_parameters(vehicle, drone)
+    time.sleep(2) # wait until the GCS is ready to read systems ready 
     if check_armablity(vehicle):
         drone.system_is_ready() # Send message to GCS that system is ready and armable 
     wait_start_signal(drone) # Wait the start flag to initiate VESPA

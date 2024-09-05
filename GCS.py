@@ -162,10 +162,12 @@ def interrupt(Stop_flag):
     print("Serial connection closed.")
     sys.exit(0)
 
-def wait_for_start():
+def wait_for_start(expected_num_drones):
     message = "All drones' systems are ready, When you are ready start VESPA by pressing enter"
     input(message)  # This will display the message and wait for the user to press Enter
-    msg= Inauguration_header.encode()+ b'\n'
+    # Share the number of drones with all drones through the VESPA start command 
+    # use 2 byes to encode the numbers so the number of drones can be up to 65535
+    msg= Inauguration_header.encode()+  struct.pack('>B', 2)+ expected_num_drones.to_bytes(2, 'big')  +b'\n'
     send_msg(msg)
     print("Proceeding...")
 
@@ -196,7 +198,7 @@ def main():
     print("\nWaiting for signal that drones' systems are ready")
     initialize_collect_drones_ready_timer(num_drones)
     # After all the drone systems are ready, ask for start 
-    wait_for_start()
+    wait_for_start(num_drones)
 
     while not Stop_flag.is_set():
         time.sleep(0.1)
