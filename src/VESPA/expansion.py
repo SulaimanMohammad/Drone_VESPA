@@ -432,24 +432,24 @@ def expand_and_form_border(self,vehicle):
     time.sleep(exchange_data_latency)  
 
     border_well_confirmed= confirm_border_connectivity(self)
-    # if border_well_confirmed:
-    #     write_log_message(f"Neighbor list after forming the border:\n" + "\n".join([str(neighbor) for neighbor in self.get_neighbor_list()]))
-    #     if self.get_current_spot()["drones_in"]==1:
-    #         write_log_message (" Drone is Alone Go to ref ")
-    #         try: 
-    #             go_to_altitude(vehicle,self.ref_alt)
-    #         except:
-    #             write_log_message("An error occurred while go_to_altitude")
-    #             self.emergency_stop()
-    # else: 
-    #     # Wait then reform the border 
-    #     time.sleep(10*exchange_data_latency)
-    #     re_form_border(self) 
+    if border_well_confirmed:
+        write_log_message(f"Neighbor list after forming the border:\n" + "\n".join([str(neighbor) for neighbor in self.get_neighbor_list()]))
+        if self.get_current_spot()["drones_in"]==1:
+            write_log_message (" Drone is Alone Go to ref ")
+            try: 
+                go_to_altitude(vehicle,self.ref_alt)
+            except:
+                write_log_message("An error occurred while go_to_altitude")
+                self.emergency_stop()
+    else: 
+        # Wait then reform the border 
+        time.sleep(10*exchange_data_latency)
+        re_form_border(self) 
     
-    # if count_people_via_wifi: 
-    #     write_log_message("Count number of pepole")
-    #     num_people_around= self.count_num_people(4,-100)
-    #     self.send_data_message_station(vehicle, data=num_people_around)
+    if count_people_via_wifi: 
+        write_log_message("Count number of pepole")
+        num_people_around= self.count_num_people(4,-100)
+        self.send_data_message_station(vehicle, data=num_people_around)
            
 def first_exapnsion (self, vehicle):
     write_log_message(" -------- First expansion -------- ")
@@ -498,7 +498,7 @@ def first_exapnsion (self, vehicle):
     except:
         write_log_message("An error occurred while go_back_to_altitude")
         self.emergency_stop()
-
+    time.sleep (  (((self.higher_id-self.id)*spacing)+ self.ref_alt)/2  )
     self.elected_id=None 
     # Since broadcast messages might still be circulating while retrieval has stopped, there could be leftover messages in the buffer.
     # It's essential to clear the buffer before the next phase to prevent any surplus.
