@@ -126,7 +126,6 @@ def expansion_listener (self,vehicle):
                 rec_id=decode_identification_message(msg)
                 if self.id==rec_id: # Message from the sink recognizes that the identification is arrived
                     if not self.sink_handshake.is_set():
-                        print("handshalr recived ")
                         self.sink_handshake.set() 
 
                 else: # Other drones will re-broadcast the Identification_Caught_header to ensure sink's signal arrives the targeted drone ( in case it is far) 
@@ -137,10 +136,8 @@ def expansion_listener (self,vehicle):
             elif msg.startswith(Movement_command.encode()) and msg.endswith(b'\n'):
                 ids, spot, lon, lat= decode_movement_command_message(msg)
                 if ids==-1 and spot==-1 and lon==0: # mean all drone are in sky
-                    print("recived end ", msg)
                     self.start_expanding.set()
                     self.higher_id= lat
-                    print(self.higher_id)
                     
                 else:
                     initial_movement(self, vehicle, msg, ids, spot, lon, lat)
@@ -318,7 +315,6 @@ def reset_collect_drones_info_timer(self):
         with self.collect_drones_info_timer_lock:
             self.remaining_collect_time=25 # wait to get ids of drones around 
     else:
-        print( "most of number arrived ")
         with self.collect_drones_info_timer_lock:
             self.remaining_collect_time=5
 
@@ -327,7 +323,6 @@ def update_initial_drones_around(self,found_id):
     # No need for lock to update collected_ids becauset this list will be used by main thread only after the timer is up  
     if (found_id not in self.collected_ids) and (self.remaining_collect_time>=0):
         self.collected_ids.append(found_id)
-        print ("id rec", found_id)
         reset_collect_drones_info_timer(self)
 
 def send_handshakes(self):
@@ -342,11 +337,9 @@ def sync_Identification(self):
     Each drone that is not the sink will keep sending its ID until receiving a 
     confirmation from the sink that the identification is received
     '''
-    #while(not self.sink_handshake.is_set()):
     msg=build_identification_message(Identification_header, self.id)
     send_msg(msg)
-    #    time.sleep(50)
-        #print("keep sending the idenification")
+
 
 def assign_spots(drones_id):
     # Use round robin to assign a spot to each drone to maintain good equal distribution as possible
@@ -476,7 +469,6 @@ def first_exapnsion (self, vehicle):
     else:
         write_log_message("Send ID and wait for command")
         sync_Identification(self)
-        print( "now wait the flage f expand ")
         self.start_expanding.wait()
         self.start_expanding.clear()
     
