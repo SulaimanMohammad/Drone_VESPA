@@ -342,11 +342,11 @@ def sync_Identification(self):
     Each drone that is not the sink will keep sending its ID until receiving a 
     confirmation from the sink that the identification is received
     '''
-    while(not self.sink_handshake.is_set()):
-        msg=build_identification_message(Identification_header, self.id)
-        send_msg(msg)
-        time.sleep(5)
-        print("keep sending the idenification")
+    #while(not self.sink_handshake.is_set()):
+    msg=build_identification_message(Identification_header, self.id)
+    send_msg(msg)
+    #    time.sleep(50)
+        #print("keep sending the idenification")
 
 def assign_spots(drones_id):
     # Use round robin to assign a spot to each drone to maintain good equal distribution as possible
@@ -468,9 +468,7 @@ def first_exapnsion (self, vehicle):
             self.take_off_drone(vehicle)
             sink_movement_command(self,vehicle,self.collected_ids)
             # The end send message referes that all in position
-            msg= build_movement_command_message(-1,-1, 0, self.higher_id
-                                                
-                                                )
+            msg= build_movement_command_message(-1,-1, 0, self.higher_id)                                   
             send_msg(msg)
         else: 
             write_log_message("Not enough drones to perform VESPA, minimum 3 drones needed")
