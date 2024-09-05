@@ -136,9 +136,11 @@ def expansion_listener (self,vehicle):
 
             elif msg.startswith(Movement_command.encode()) and msg.endswith(b'\n'):
                 ids, spot, lon, lat= decode_movement_command_message(msg)
-                if ids==-1 and spot==-1 and lon==0 and lat==0: # mean all drone are in sky
+                if ids==-1 and spot==-1 and lon==0: # mean all drone are in sky
                     print("recived end ", msg)
                     self.start_expanding.set()
+                    self.higher_id= lat
+                    print(self.higher_id)
                     
                 else:
                     initial_movement(self, vehicle, msg, ids, spot, lon, lat)
@@ -221,7 +223,7 @@ def sink_movement_command(self,vehicle,drones_id):
                 time.sleep(((a/defined_groundspeed)+1)+ (ids*spacing + self.ref_alt)+2) # +2 more time to enusre that the drone arrived 
             else:
                 # It is command to drone to start,( 0,0) is null island where it is imposible to start from
-                msg= build_movement_command_message(id,spot, 0, 0)
+                msg= build_movement_command_message(ids,spot, 0, 0)
 
 def initial_movement(self,vehicle, rec_msg, ID, spot, lon, lat):
     if ID!=1 and (ID==self.id) and (not self.first_movement_command_received): # drone is not sink it is targeted (skink=1 ) and still not moved 
@@ -314,10 +316,11 @@ def initialize_collect_drones_info_timer(self):
 def reset_collect_drones_info_timer(self):
     if len(self.collected_ids)+1 < self.estimated_numer_drones:
         with self.collect_drones_info_timer_lock:
-            self.remaining_collect_time=20 # wait to get ids of drones around 
+            self.remaining_collect_time=25 # wait to get ids of drones around 
     else:
         print( "most of number arrived ")
-        self.remaining_collect_time=2
+        with self.collect_drones_info_timer_lock:
+            self.remaining_collect_time=5
 
 def update_initial_drones_around(self,found_id):
     # This function will be called by the listener thread 
@@ -461,7 +464,7 @@ def first_exapnsion (self, vehicle):
             self.take_off_drone(vehicle)
             sink_movement_command(self,vehicle,self.collected_ids)
             # The end send message referes that all in position
-            msg= build_movement_command_message(-1,-1, 0, 0)
+            msg= build_movement_command_message(-1,-1, 0, max(self.collected_ids))
             send_msg(msg)
         else: 
             write_log_message("Not enough drones to perform VESPA, minimum 3 drones needed")
