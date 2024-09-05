@@ -136,7 +136,7 @@ def expansion_listener (self,vehicle):
                 ids, spot, lon, lat= decode_movement_command_message(msg)
                 if ids==-1 and spot==-1 and lon==0: # mean all drone are in sky and lon contains the higher id which will be used to estimate wiaiting time of search for target
                     self.start_expanding.set()
-                    self.higher_id= lat
+                    self.highest_id= lat
 
                 else:
                     initial_movement(self, vehicle, msg, ids, spot, lon, lat)
@@ -451,11 +451,11 @@ def first_exapnsion (self, vehicle):
         initialize_collect_drones_info_timer(self) # Sink waiting for the drones to make themselves known befor start
         send_handshakes(self) # Send handshakes to all the drones that sent thier id 
         if (len(self.collected_ids) +1)>=3:  # 3 drones needed including the sink, collected_ids contains id of other drones , sink not included 
-            self.higher_id= max(self.collected_ids) # note self.collected_ids will be empty after sink_movement_command because it pops elements from the list 
+            self.highest_id= max(self.collected_ids) # note self.collected_ids will be empty after sink_movement_command because it pops elements from the list 
             self.take_off_drone(vehicle)
             sink_movement_command(self,vehicle,self.collected_ids)
             # The end send message referes that all in position
-            msg= build_movement_command_message(-1,-1, 0, self.higher_id)
+            msg= build_movement_command_message(-1,-1, 0, self.highest_id)
             send_msg(msg)
         else: 
             write_log_message("Not enough drones to perform VESPA, minimum 3 drones needed")
@@ -480,6 +480,14 @@ def first_exapnsion (self, vehicle):
         self.emergency_stop()
     
     # Time guarantees that all drones begin the searching procedure simultaneously and synchronized.
+    '''
+    The drone with the highest id will be on the highest drone_alt and the time to go to ref-alt and from it to drone-alt could be long 
+    Since the time of search is almost same, thus the difference in time is moving to alititude 
+    Time to sync is calculated based on the difference in time between the current drone and the highest 
+    t=d/v, v=2 for go_to_altitude , d= (from drone_alt to ref_alt)+ (from ref_alt to droneè_alt) and both are equal 
+    FInd the differnce beteen the highest drone and the current calculated based on Ids 
+    '''
+    time.sleep (  (((self.highest_id- (self.id-1) )*spacing)+ self.ref_alt)+sync_time )
 
     self.elected_id=None
     self.expansion_stop.set()
