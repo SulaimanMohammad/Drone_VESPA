@@ -1063,6 +1063,7 @@ class Drone:
             self.set_thread_flags()
             emergency_msg= self.build_emergency_message()
             send_msg(emergency_msg)
+            self.stop_wifi()
             write_log_message("Retuen home")
             vehicle.remove_attribute_listener('velocity', on_velocity)
             self.return_home(vehicle)
@@ -1122,3 +1123,11 @@ class Drone:
             write_log_message("Could not count people ")
             self.emergency_stop() 
 
+
+    def stop_wifi(self):
+        parent_directory = os.path.abspath(os.path.join(os.path.dirname(__file__), '../'))
+        script_path = os.path.join(parent_directory, 'Estimate_num_people', 'bring_down_wifi.sh')
+        # Ensure the script is executable
+        subprocess.run(['chmod', '+x', script_path], check=True)
+        # Call the Bash script 
+        result = subprocess.run(['sudo',script_path], capture_output=True, text=True, check=True)
