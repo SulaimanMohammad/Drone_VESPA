@@ -166,7 +166,10 @@ def sink_listener(sink_t, self):
                     append_id_to_path( self.drone_id_to_border, id_rec)
 
             elif  msg.startswith(Info_header.encode()) and msg.endswith(b'\n'):
-                self.forward_data_message(msg, self.drone_id_to_sink[0])
+                if self.drone_id_to_sink:
+                    self.forward_data_message(msg, self.drone_id_to_sink[0])
+                else:
+                   self.forward_data_message(msg,  self.find_close_to_sink() ) 
 
             else: 
                 continue
@@ -241,7 +244,10 @@ def spanning_listener(self):
                     self.update_state_in_neighbors_list(id_rec, Irremovable) 
             
             elif  msg.startswith(Info_header.encode()) and msg.endswith(b'\n'):
+                if self.drone_id_to_sink:
                     self.forward_data_message(msg, self.drone_id_to_sink[0])
+                else:
+                   self.forward_data_message(msg,  self.find_close_to_sink() ) 
             else: 
                 continue
         # except:
