@@ -464,6 +464,7 @@ def first_exapnsion (self, vehicle):
             self.take_off_drone(vehicle)
             sink_movement_command(self,vehicle,self.collected_ids)
             # The end send message referes that all in position
+            print( "from sink", max(self.collected_ids))
             msg= build_movement_command_message(-1,-1, 0, max(self.collected_ids))
             send_msg(msg)
         else: 
