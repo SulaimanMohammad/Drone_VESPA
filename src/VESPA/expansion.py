@@ -134,8 +134,10 @@ def expansion_listener (self,vehicle):
 
             elif msg.startswith(Movement_command.encode()) and msg.endswith(b'\n'):
                 ids, spot, lon, lat= decode_movement_command_message(msg)
-                if ids==-1 and spot==-1 and lon==0 and lat==0: # mean all drone are in sky
+                if ids==-1 and spot==-1 and lon==0: # mean all drone are in sky and lon contains the higher id which will be used to estimate wiaiting time of search for target
                     self.start_expanding.set()
+                    self.higher_id= lat
+
                 else:
                     initial_movement(self, vehicle, msg, ids, spot, lon, lat)
 
@@ -217,7 +219,7 @@ def sink_movement_command(self,vehicle,drones_id):
                 time.sleep(((a/defined_groundspeed)+1)+ (ids*spacing + self.ref_alt)+2) # +2 more time to enusre that the drone arrived 
             else:
                 # It is command to drone to start,( 0,0) is null island where it is imposible to start from
-                msg= build_movement_command_message(id,spot, 0, 0)
+                msg= build_movement_command_message(ids,spot, 0, 0)
 
 def initial_movement(self,vehicle, rec_msg, ID, spot, lon, lat):
     if ID!=1 and (ID==self.id) and (not self.first_movement_command_received): # drone is not sink it is targeted (skink=1 ) and still not moved 
@@ -308,7 +310,7 @@ def initialize_collect_drones_info_timer(self):
         time.sleep(0.1)
 
 def reset_collect_drones_info_timer(self):
-    # If number of Ids recived are equal to estimated_number_drones then wait less time 
+    # If number of Ids received are equal to estimated_number_drones then wait less time 
     if len(self.collected_ids)+1 < self.estimated_number_drones:
         with self.collect_drones_info_timer_lock:
             self.remaining_collect_time=25 # wait to get ids of drones around 
@@ -449,10 +451,11 @@ def first_exapnsion (self, vehicle):
         initialize_collect_drones_info_timer(self) # Sink waiting for the drones to make themselves known befor start
         send_handshakes(self) # Send handshakes to all the drones that sent thier id 
         if (len(self.collected_ids) +1)>=3:  # 3 drones needed including the sink, collected_ids contains id of other drones , sink not included 
+            self.higher_id= max(self.collected_ids) # note self.collected_ids will be empty after sink_movement_command because it pops elements from the list 
             self.take_off_drone(vehicle)
             sink_movement_command(self,vehicle,self.collected_ids)
             # The end send message referes that all in position
-            msg= build_movement_command_message(-1,-1, 0, 0)
+            msg= build_movement_command_message(-1,-1, 0, self.higher_id)
             send_msg(msg)
         else: 
             write_log_message("Not enough drones to perform VESPA, minimum 3 drones needed")
