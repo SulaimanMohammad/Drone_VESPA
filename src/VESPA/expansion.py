@@ -124,8 +124,9 @@ def expansion_listener (self,vehicle):
 
             elif msg.startswith(Identification_Caught_header.encode()) and msg.endswith(b'\n'):
                 rec_id=decode_identification_message(msg)
-                if self.id==rec_id: # Message from the sink recognizes that the identification is arrived 
-                    self.sink_handshake.set() 
+                if self.id==rec_id: # Message from the sink recognizes that the identification is arrived
+                    if not self.sink_handshake.is_set():
+                        self.sink_handshake.set() 
                 else: # Other drones will re-broadcast the Identification_Caught_header to ensure sink's signal arrives the targeted drone ( in case it is far) 
                    if rec_id not in self.broadcasted_sink_handshake:
                         self.broadcasted_sink_handshake.append(rec_id)
@@ -310,24 +311,23 @@ def reset_collect_drones_info_timer(self):
     with self.collect_drones_info_timer_lock:
         self.remaining_collect_time=10 # wait to get ids of drones around  
 
+
 def update_initial_drones_around(self,found_id):
     # This function will be called by the listener thread 
     # No need for lock to update collected_ids becauset this list will be used by main thread only after the timer is up  
     if (found_id not in self.collected_ids) and (self.remaining_collect_time>=0):
         self.collected_ids.append(found_id)
-        msg=build_identification_message(Identification_Caught_header, found_id)
-        send_msg(msg)
         reset_collect_drones_info_timer(self)
 
-def sync_Identification(self):
-    '''
-    Each drone that is not the sink will keep sending its ID until receiving a 
-    confirmation from the sink that the identification is received
-    '''
-    while(not self.sink_handshake.is_set()):
-        msg=build_identification_message(Identification_header, self.id)
+def send_handshakes(self):
+    for found_id in self.collected_ids:
+        msg=build_identification_message(Identification_Caught_header, found_id)
         send_msg(msg)
-        time.sleep(2)
+
+def sync_Identification(self):
+    msg=build_identification_message(Identification_header, self.id)
+    send_msg(msg)
+
 
 def assign_spots(drones_id):
     # Use round robin to assign a spot to each drone to maintain good equal distribution as possible
@@ -437,7 +437,6 @@ def first_exapnsion (self, vehicle):
     # Lance a thread to read messages continuously
     xbee_receive_message_thread = threading.Thread(target=expansion_listener, args=(self,vehicle)) #pass the function reference and arguments separately to the Thread constructor.
     xbee_receive_message_thread.start()
-    self.start_expanding= threading.Event()
     self.elected_droen_arrived= threading.Event()
      # First movement started by commands of the sink
     if self.id==1: # Sink:
@@ -460,24 +459,23 @@ def first_exapnsion (self, vehicle):
     
     write_log_message("The first movement is done by all drones, start expansion")
     expand_and_form_border(self, vehicle)
-    time.sleep(30) #sleep to ensure all messages where processed by the listner 
-    self.expansion_stop.set()
-    xbee_receive_message_thread.join() # stop listening to message
-    self.expansion_stop.clear()
-
-    # Time guarantees that all drones begin the searching procedure simultaneously and synchronized.
-    time.sleep(sync_time)
+    # Since broadcast messages might still be circulating while retrieval has stopped, there could be leftover messages in the buffer.
+    time.sleep(20) # sleep to ensure all messages where processed by the listner 
+    
     self.search_for_target() # This is blocking until the end of movement
-    # At the end of research all drones go back to thier alt ( so irremovable after spanning will stay and that hight) which will help in avoidence during balancing movemnt 
+    # At the end of research all drones go back to thier alt (so irremovable after spanning will stay and that hight) which will help in avoidence during balancing movemnt 
     try: 
         go_to_altitude(vehicle,self.drone_alt)
     except:
         write_log_message("An error occurred while go_back_to_altitude")
         self.emergency_stop()
+    
+    # Time guarantees that all drones begin the searching procedure simultaneously and synchronized.
 
-    self.elected_id=None 
-    # Since broadcast messages might still be circulating while retrieval has stopped, there could be leftover messages in the buffer.
-    # It's essential to clear the buffer before the next phase to prevent any surplus.
+    self.elected_id=None
+    self.expansion_stop.set()
+    xbee_receive_message_thread.join() # stop listening to message
+    self.expansion_stop.clear()
     
 def further_expansion (self,vehicle):
     write_log_message(" -------- Further expansion -------- ")
