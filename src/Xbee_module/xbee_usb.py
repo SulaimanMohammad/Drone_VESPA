@@ -84,7 +84,7 @@ def retrieve_msg_from_buffer(stop_flag):
                 # Remove the processed message from the buffer
                 message_buffer = message_buffer[newline_index + 1:]
                 # Check if the message complies with the required format  
-                if complete_message[0] in headers_ascii_values and complete_message.endswith(b'\n'):
+                if complete_message and complete_message[0] in headers_ascii_values and complete_message.endswith(b'\n'):
                     if verify_checksum( complete_message): 
                         original_message = complete_message[:-2] + complete_message[-1:]
                         return original_message
@@ -92,7 +92,7 @@ def retrieve_msg_from_buffer(stop_flag):
                         break 
             
             # Short sleep to prevent high CPU usage
-            time.sleep(0.02)
+            time.sleep(0.05)
 
         except:
             raise Exception("Thread retrieve_msg_from_buffer Interrupt received, stopping...")   
