@@ -496,7 +496,7 @@ def first_exapnsion (self, vehicle):
     except:
         write_log_message("An error occurred while go_back_to_altitude")
         self.emergency_stop()
-    time.sleep (  (((self.higher_id-self.id)*spacing)+ self.ref_alt)/2  )
+    time.sleep (  (((self.higher_id-self.id)*spacing)+ self.ref_alt))
     self.elected_id=None 
     # Since broadcast messages might still be circulating while retrieval has stopped, there could be leftover messages in the buffer.
     # It's essential to clear the buffer before the next phase to prevent any surplus.
