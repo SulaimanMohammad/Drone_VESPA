@@ -166,7 +166,10 @@ def sink_listener(sink_t, self):
                     append_id_to_path( self.drone_id_to_border, id_rec)
 
             elif  msg.startswith(Info_header.encode()) and msg.endswith(b'\n'):
-                self.forward_data_message(msg, self.drone_id_to_sink[0])
+                if self.drone_id_to_sink:
+                    self.forward_data_message(msg, self.drone_id_to_sink[0])
+                else:
+                   self.forward_data_message(msg,  self.find_close_to_sink() ) 
 
             else: 
                 continue
@@ -207,13 +210,13 @@ def spanning_listener(self):
     while check_continuity_of_listening(self): 
         try:
             msg=retrieve_msg_from_buffer(listener_end_of_spanning)
-            
+            self.exchange_neighbors_info_communication(msg)
+
             if msg.startswith(Emergecy_header.encode()) and msg.endswith(b'\n'):
                 self.emergency_stop()
                 break
-            self.exchange_neighbors_info_communication(msg)
             # Message of building the path 
-            if msg.startswith(Spanning_header.encode()) and msg.endswith(b'\n'):
+            elif msg.startswith(Spanning_header.encode()) and msg.endswith(b'\n'):
                 id_rec, data= decode_target_message(msg)       
                 if id_rec == self.id :
                     if data==0:
@@ -241,7 +244,11 @@ def spanning_listener(self):
                     self.update_state_in_neighbors_list(id_rec, Irremovable) 
             
             elif  msg.startswith(Info_header.encode()) and msg.endswith(b'\n'):
+                if self.drone_id_to_sink:
                     self.forward_data_message(msg, self.drone_id_to_sink[0])
+                else:
+                   # If no drone to sink found it can forward to drone close to the sink 
+                   self.forward_data_message(msg,  self.find_close_to_sink() ) 
             else: 
                 continue
         except:
