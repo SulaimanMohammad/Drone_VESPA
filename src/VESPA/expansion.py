@@ -308,8 +308,13 @@ def initialize_collect_drones_info_timer(self):
         time.sleep(0.1)
 
 def reset_collect_drones_info_timer(self):
-    with self.collect_drones_info_timer_lock:
-        self.remaining_collect_time=10 # wait to get ids of drones around  
+    # If number of Ids recived are equal to estimated_number_drones then wait less time 
+    if len(self.collected_ids)+1 < self.estimated_number_drones:
+        with self.collect_drones_info_timer_lock:
+            self.remaining_collect_time=25 # wait to get ids of drones around 
+    else:
+        with self.collect_drones_info_timer_lock:
+            self.remaining_collect_time=5
 
 
 def update_initial_drones_around(self,found_id):
@@ -442,6 +447,7 @@ def first_exapnsion (self, vehicle):
     if self.id==1: # Sink:
         write_log_message("Sink collect data")
         initialize_collect_drones_info_timer(self) # Sink waiting for the drones to make themselves known befor start
+        send_handshakes(self) # Send handshakes to all the drones that sent thier id 
         if (len(self.collected_ids) +1)>=3:  # 3 drones needed including the sink, collected_ids contains id of other drones , sink not included 
             self.take_off_drone(vehicle)
             sink_movement_command(self,vehicle,self.collected_ids)

@@ -151,7 +151,7 @@ class Drone:
         self.sink_handshake= threading.Event()
         self.broadcasted_Identificatio=[]
         self.broadcasted_sink_handshake=[]
-        self.estimated_numer_drones=0
+        self.estimated_number_drones=0
         # First movement messages 
         self.first_movement_command_broadcasted=[]
         self.first_movement_command_received= False

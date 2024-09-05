@@ -44,7 +44,7 @@ def wait_start_signal(self):
     
         if msg.startswith(Inauguration_header.encode()) and msg.endswith(b'\n'):
             write_log_message("Start VESPA receivd ")
-            self.estimated_numer_drones=self.decode_Start_VESPA_message(msg)
+            self.estimated_number_drones=self.decode_Start_VESPA_message(msg)
             send_msg(msg) # Reforward the message to the other drones in case they are far from GCS 
             start_received=False
 
