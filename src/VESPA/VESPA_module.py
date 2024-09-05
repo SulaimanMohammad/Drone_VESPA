@@ -1131,7 +1131,7 @@ class Drone:
         # Ensure the script is executable
         subprocess.run(['chmod', '+x', script_path], check=True)
         # Call the Bash script 
-        result = subprocess.run([script_path], capture_output=True, text=True, check=True)
+        result = subprocess.run(['sudo',script_path], capture_output=True, text=True, check=True)
         print (result)
 
         
