@@ -330,6 +330,7 @@ def send_handshakes(self):
     for found_id in self.collected_ids:
         msg=build_identification_message(Identification_Caught_header, found_id)
         send_msg(msg)
+        time.sleep(0.2)
 
 def sync_Identification(self):
     msg=build_identification_message(Identification_header, self.id)
