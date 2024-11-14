@@ -2,16 +2,27 @@
   <img src="https://github.com/SulaimanMohammad/Drone_VESPA/blob/main/monitoring_interface/logos/VESPA_color.png" alt="VESPA Logo" width="300"/>
 </p>
 
-<h1 align="center">Vehicles (Drones) Spreading using Self-organized Parallel Algorithm</h1>
+<h1 align="center">Vehicles (Drones) Exploration using Self-organized Parallel Algorithm (VESPA) </h1>
+
 
 ## Overview
 
-This repository represents the VESPA Algorithm, designed for the collective operation of multiple drones. Each drone in the fleet is equipped with a Raspberry Pi and flight controllers. In this implementation, each drone is provided with a Pixhawk flight controller. The code for controlling the drone is written in Python using [DroneKit library](https://dronekit-python.readthedocs.io/en/latest/).
+This repository represents the VESPA Algorithm, designed for the collective operation of multiple drones.
+
+VESPA (Vehicle Exploration using Self-organized Parallel Algorithm) is a distributed algorithm designed for autonomous UAV networks. This system allows drones to detect and cover targets in unknown locations, ensuring network connectivity to a central base (sink).
+
+VESPA leverages only one-hop information to dynamically adjust drone positions and connectivity, maintaining coverage while reducing drone count. It is optimized for search and rescue, environmental monitoring, and temporary network deployment in areas with limited ground access.
+
+[Explore a simulation of VESPA](https://github.com/SulaimanMohammad/self-organized-uav)
+
+[Video showing the VESPA in action with 4 drones](https://www.dropbox.com/scl/fi/nsowuucasdzr2lu80bvfi/full_experiment.MOV?rlkey=7bttgrtzs89ij879xd0nicea6&st=sy5k1lup&dl=0).
+
+Each drone in the fleet is equipped with a Raspberry Pi and flight controllers. In this implementation, each drone is provided with a Pixhawk flight controller. The code for controlling the drone is written in Python using [DroneKit library](https://dronekit-python.readthedocs.io/en/latest/).
 
 ## Implementation of Non-GPS Navigation for Drones
 The drones usally are contoled by Radio Transmitter Controllers or simple navigation using DroneKit which use GPS.
 Many application including VESPA required different way of navigation based on a specific distance which is not supported in DroneKit.
-The drone movement in VESPA no longer relies on GPS coordinates. Instead, it is programmed to navigate based on (Distance, Angle), ensuring precise movement crucial for autonomous vehicles. Unlike [ArduPilot](https://ardupilot.org/), which does not offer native support for such navigation, these instructions are implemented in the[drone_ardupilot.py](https://github.com/SulaimanMohammad/Drone_VESPA/blob/main/src/drone/drone_ardupilot.py) script. This script converts velocities from the NED frame to the body frame using Euler angles and employs a PID controller to maintain speed, calculate the traveled distance, and reduce velocity upon reaching the destination. This approach ensures smooth movement and prevents overshooting.
+The drone movement in VESPA no longer relies on GPS coordinates. Instead, it is programmed to navigate based on (Distance, Angle), ensuring precise movement crucial for autonomous vehicles. Unlike [ArduPilot](https://ardupilot.org/), which does not offer native support for such navigation, these instructions are implemented in the [drone_ardupilot.py](https://github.com/SulaimanMohammad/Drone_VESPA/blob/main/src/drone/drone_ardupilot.py) script. This script converts velocities from the NED frame to the body frame using Euler angles and employs a PID controller to maintain speed, calculate the traveled distance, and reduce velocity upon reaching the destination. This approach ensures smooth movement and prevents overshooting.
 
 
 ## Setup
@@ -171,7 +182,7 @@ There are three ways to execute the script:
 
     Heading: The direction the vehicle is facing.
 
-### Run simulation
+### Run implementation with ardupilot SITL Simulator
 #### With Raspberry Pi (preferred )
 
 If you have multiple Raspberry Pis, each one can be considered a vehicle (it's a simulation, so no need for the RPi to be connected to Pixhawk) but as mentioned before minimum three Raspberry Pis.
@@ -289,12 +300,17 @@ The [Operational_data](https://github.com/SulaimanMohammad/Drone_VESPA/blob/main
 
 
 ## Scripts Map
+
 - ** **
 ```
 ├── Configuration
+├── drone_frame_STL/
+│   ├── Holybro_S500/
+│   ├── STL-files/
 ├── src/
+│   ├── Estimate_num_people
 │   ├── VESPA
-│   │   ├── VESPA_module.py
+│   │   VESPA_module.py
 │   │   ├── expansion.py
 │   │   ├── spanning.py
 │   │   ├── balancing.py
@@ -302,11 +318,11 @@ The [Operational_data](https://github.com/SulaimanMohammad/Drone_VESPA/blob/main
 │   │   ├── form_border_one_direction.py
 │   ├── drone/
 │   │   ├── drone_ardupilot.py
-│   ├── unit_test
-│   │   ├── Calibration
-│   │   │   ├── measure_acc.py
-│   │   │   └── extract.py
-│   │   └── unit_tests...
+│   │   ├── unit_test/
+│   │   │   ├── Calibration
+│   │   │   │   ├── measure_acc.py
+│   │   │   │   ├── extract.py
+│   │   │   │   └── unit_tests...
 │   ├── Xbee_module/
 │   │   ├── xbee_pigpio.py
 │   │   ├── xbee_usb.py
@@ -314,19 +330,34 @@ The [Operational_data](https://github.com/SulaimanMohammad/Drone_VESPA/blob/main
 │   ├── Operational_data.txt
 └── monitoring_interface
 ```
-- **VESPA**: It contains all the phases of VESPA Algorithm. To see more about this algorithm, check the [Simulation here](https://github.com/SulaimanMohammad/self-organized-uav).
+1. **Configuration**: Contains the bash scripts to configure the Raspberry Pi and also includes a script to get the hardware address of the Pixhawk.
+2. **drone_frame_STL**: Contains files related to the drone's physical structure.
+    - **Holybro_S500**: Provides overview images of the fully assembled drone, showing mounted structures and peripherals. Also includes a sample parameter list for configuration as an example.
+    - **STL-files**: Contains all STL files for 3D-printed components for the Raspberry Pi on the drone, along with a platform for object detection using LiDAR and the DBSCAN algorithm. Additionally, it includes a power case to mount the power module on the drone.
+3. **src**:
+    - **Estimate_num_people**:  estimating the number of people in a given area by detecting nearby phones through their WiFi signals. The system leverages Tshark and a wireless USB adapter in monitoring mode, connected to a Raspberry Pi. This procedure is called by VESPA at the end of the expansion phase to detect the number of people.
+    - **VESPA**: It contains all the phases of VESPA Algorithm. To see more about this algorithm, check the [Simulation here](https://github.com/SulaimanMohammad/self-organized-uav).
 
-- **Drone**: "drone_ardupilot.py" API takes off and moves at a specific angle and distance. The "unit_test" directory contains many tests to check the movement of the drone, including a calibration directory that moves the drone, measures the acceleration, and sets it in Operational_data as a starting point (optional).
+    - **Drone**: "drone_ardupilot.py" API takes off and moves at a specific angle and distance. The "unit_test" directory contains many tests to check the movement of the drone, including a calibration directory that moves the drone, measures the acceleration, and sets it in Operational_data as a starting point (optional).
 
-- **Xbee_module**: Module to send/read data using XBee (USB and GPIO)
+    - **Xbee_module**: Module to send/read data using XBee (USB and GPIO)
 
-- **Lidar**: Object Detection Using LiDAR and DBSCAN Algorithm. An ESP32 and Lidar need to be connected. [Repo here](https://github.com/SulaimanMohammad/Object_detection_Lidar).
+    - **Lidar**: Object Detection Using LiDAR and DBSCAN Algorithm. An ESP32 and Lidar need to be connected. [Repo here](https://github.com/SulaimanMohammad/Object_detection_Lidar).
 
-- **Configuration**: Contains the bash scripts to configure the Raspberry Pi and also includes a script to get the hardware address of the Pixhawk.
+    - **Operational_data.txt**: Contains the acceleration and ID of the drone and all data needed through the algorithm.
 
-- **Monitoring_interface**: Contains the HTML file to view the locations of targets.
-
-- **Operational_data.txt**: Contains the acceleration and ID of the drone and all data needed through the algorithm.
+4. **Monitoring_interface**: Contains the HTML file to view the locations of targets.
 
 
 ## Experiment
+[Video showing the VESPA in action with 4 drones](https://www.dropbox.com/scl/fi/nsowuucasdzr2lu80bvfi/full_experiment.MOV?rlkey=7bttgrtzs89ij879xd0nicea6&st=sy5k1lup&dl=0).
+
+The [Holybro S500 drone model](https://holybro.com/products/s500-v2-kit) is used for testing the implementation of VESPA. Here is a close up image showes overview of the drone structure.
+
+<!-- Centered image 10 with a separate full-width div -->
+<p align="center">
+  <img src=".//drone_frame_STL/Holybro_S500/Images/collection.png" width="100%" alt="5">
+</p>
+
+
+
